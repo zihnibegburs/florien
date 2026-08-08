@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
@@ -50,34 +49,46 @@ class TaskCard extends ConsumerWidget {
     final isPaused = isFocused && (session?.isPaused ?? false);
     final color = MimioColors.fromHex(task.color);
     final timeFormat = DateFormat('HH:mm');
-    final startTime = task.scheduledAt != null ? timeFormat.format(task.scheduledAt!.toLocal()) : '--:--';
-    final endTime = task.scheduledAt != null ? timeFormat.format(task.endTime.toLocal()) : '--:--';
+    final startTime = task.scheduledAt != null
+        ? timeFormat.format(task.scheduledAt!.toLocal())
+        : '--:--';
+    final endTime = task.scheduledAt != null
+        ? timeFormat.format(task.endTime.toLocal())
+        : '--:--';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       child: _SwipeToDelete(
         onDelete: onDelete,
         deleteLabel: s.delete,
         child: LiquidGlass(
           blur: false,
-          borderRadius: BorderRadius.circular(22),
-          tintOpacity: Theme.of(context).brightness == Brightness.dark ? 0.72 : 0.78,
+          borderRadius: BorderRadius.circular(20),
+          tintOpacity: 1,
           boxShadow: isActive || isPaused
-              ? [BoxShadow(color: color.withValues(alpha: 0.22), blurRadius: 16, offset: const Offset(0, 6))]
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.16),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
               : LiquidGlassTokens.elevation(context),
           child: IntrinsicHeight(
             child: Row(
               children: [
                 Container(
-                  width: 6,
+                  width: 3,
                   decoration: BoxDecoration(
                     color: color,
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(22)),
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(18),
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(13, 12, 14, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -93,19 +104,18 @@ class TaskCard extends ConsumerWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: color.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          '$startTime – $endTime',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: color,
-                                          ),
+                                      Icon(
+                                        Icons.schedule_rounded,
+                                        size: 14,
+                                        color: color,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        '$startTime – $endTime',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: color,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -119,27 +129,46 @@ class TaskCard extends ConsumerWidget {
                                       if (task.energyLevel != null) ...[
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: MimioColors.warning.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(6),
+                                            color: MimioColors.warning
+                                                .withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             s.energyLabel(task.energyLevel!),
-                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: MimioColors.warning),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: MimioColors.warning,
+                                            ),
                                           ),
                                         ),
                                       ],
                                       if (task.hasSubtasks) ...[
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: MimioColors.primary.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(6),
+                                            color: MimioColors.primary
+                                                .withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
-                                            s.stepsProgress(task.completedSubtaskCount, task.subtasks.length),
+                                            s.stepsProgress(
+                                              task.completedSubtaskCount,
+                                              task.subtasks.length,
+                                            ),
                                             style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
@@ -149,55 +178,86 @@ class TaskCard extends ConsumerWidget {
                                         ),
                                       ],
                                       const Spacer(),
-                                      if (task.isCompleted)
-                                        Icon(Icons.check_circle_rounded, color: MimioColors.success, size: 20),
                                       if (onTap != null)
-                                        Icon(Icons.more_horiz_rounded, size: 18, color: context.palette.textSecondary.withValues(alpha: 0.6)),
+                                        Icon(
+                                          Icons.more_horiz_rounded,
+                                          size: 18,
+                                          color: context.palette.textSecondary
+                                              .withValues(alpha: 0.6),
+                                        ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
+                                      _CompletionRadio(
+                                        isCompleted: task.isCompleted,
+                                        accentColor: color,
+                                        onTap: !task.isCompleted
+                                            ? onComplete
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 6),
                                       Container(
-                                        width: 38,
-                                        height: 38,
+                                        width: 34,
+                                        height: 34,
                                         decoration: BoxDecoration(
                                           color: color.withValues(alpha: 0.14),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            9,
+                                          ),
                                         ),
                                         child: Icon(
-                                          TaskIcons.iconForTask(title: task.title, icon: task.icon),
+                                          TaskIcons.iconForTask(
+                                            title: task.title,
+                                            icon: task.icon,
+                                          ),
                                           color: color,
-                                          size: 20,
+                                          size: 16,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
                                           task.title,
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: task.isCompleted ? context.palette.textSecondary : context.palette.textPrimary,
-                                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                            color: task.isCompleted
+                                                ? context.palette.textSecondary
+                                                : context.palette.textPrimary,
+                                            decoration: task.isCompleted
+                                                ? TextDecoration.lineThrough
+                                                : null,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  if (task.hasMotivation && !task.isCompleted) ...[
+                                  if (task.hasMotivation &&
+                                      !task.isCompleted) ...[
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        Icon(Icons.lightbulb_outline_rounded, size: 14, color: context.palette.textSecondary),
+                                        Icon(
+                                          Icons.lightbulb_outline_rounded,
+                                          size: 14,
+                                          color: context.palette.textSecondary,
+                                        ),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             task.motivation!,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(fontSize: 12, color: context.palette.textSecondary, fontStyle: FontStyle.italic),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color:
+                                                  context.palette.textSecondary,
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -210,7 +270,9 @@ class TaskCard extends ConsumerWidget {
                                         Icon(
                                           Icons.card_giftcard_rounded,
                                           size: 14,
-                                          color: const Color(0xFFE6A800).withValues(alpha: 0.9),
+                                          color: const Color(
+                                            0xFFE6A800,
+                                          ).withValues(alpha: 0.9),
                                         ),
                                         const SizedBox(width: 4),
                                         Expanded(
@@ -234,21 +296,33 @@ class TaskCard extends ConsumerWidget {
                           ),
                         ),
                         if (task.hasSubtasks) ...[
-                          const SizedBox(height: 12),
-                          ...task.subtasks.map((sub) => _SubtaskRow(
-                                subtask: sub,
-                                parentColor: color,
-                                s: s,
-                                focusSession: session,
-                                onTap: onSubtaskTap != null ? () => onSubtaskTap!(sub) : null,
-                                onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
-                                onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
-                                onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
-                                onCancel: onSubtaskCancel != null ? () => onSubtaskCancel!(sub) : null,
-                              )),
+                          const SizedBox(height: 8),
+                          ...task.subtasks.map(
+                            (sub) => _SubtaskRow(
+                              subtask: sub,
+                              parentColor: color,
+                              s: s,
+                              focusSession: session,
+                              onTap: onSubtaskTap != null
+                                  ? () => onSubtaskTap!(sub)
+                                  : null,
+                              onStart: onSubtaskStart != null
+                                  ? () => onSubtaskStart!(sub)
+                                  : null,
+                              onPause: onSubtaskPause != null
+                                  ? () => onSubtaskPause!(sub)
+                                  : null,
+                              onComplete: onSubtaskComplete != null
+                                  ? () => onSubtaskComplete!(sub)
+                                  : null,
+                              onCancel: onSubtaskCancel != null
+                                  ? () => onSubtaskCancel!(sub)
+                                  : null,
+                            ),
+                          ),
                         ],
                         if ((isActive || isPaused) && !task.hasSubtasks) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           _ActiveControls(
                             pauseLabel: isPaused ? s.continueLabel : s.pause,
                             finishLabel: s.finish,
@@ -257,24 +331,15 @@ class TaskCard extends ConsumerWidget {
                             onComplete: onComplete,
                             onCancel: onCancel,
                           ),
-                        ] else if (!task.isCompleted && !task.hasSubtasks && !isFocused) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _ActionChip(
-                                label: s.start,
-                                icon: Icons.play_arrow_rounded,
-                                color: color,
-                                onTap: onStart,
-                              ),
-                              const SizedBox(width: 8),
-                              _ActionChip(
-                                label: s.complete,
-                                icon: Icons.check_rounded,
-                                color: MimioColors.success,
-                                onTap: onComplete,
-                              ),
-                            ],
+                        ] else if (!task.isCompleted &&
+                            !task.hasSubtasks &&
+                            !isFocused) ...[
+                          const SizedBox(height: 8),
+                          _ActionChip(
+                            label: s.start,
+                            icon: Icons.play_arrow_rounded,
+                            color: color,
+                            onTap: onStart,
                           ),
                         ],
                       ],
@@ -324,28 +389,29 @@ class _SubtaskRow extends StatelessWidget {
         ? timeFormat.format(subtask.scheduledAt!.toLocal())
         : '';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: isActive || isPaused ? Border.all(color: subColor, width: 1.5) : null,
+        color: isDark
+            ? context.palette.textPrimary.withValues(alpha: 0.06)
+            : subColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isActive || isPaused
+              ? subColor.withValues(alpha: 0.6)
+              : context.palette.border,
+        ),
       ),
       child: Row(
         children: [
-          Icon(
-            subtask.isCompleted
-                ? Icons.check_circle_rounded
-                : isActive || isPaused
-                    ? Icons.play_circle_rounded
-                    : Icons.circle_outlined,
-            size: 18,
-            color: subtask.isCompleted
-                ? MimioColors.success
-                : isActive || isPaused
-                    ? subColor
-                    : context.palette.textSecondary,
+          _CompletionRadio(
+            isCompleted: subtask.isCompleted,
+            accentColor: subColor,
+            size: 20,
+            onTap: !subtask.isCompleted && !isFocused ? onComplete : null,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -364,14 +430,21 @@ class _SubtaskRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
-                          color: subtask.isCompleted ? context.palette.textSecondary : context.palette.textPrimary,
+                          decoration: subtask.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: subtask.isCompleted
+                              ? context.palette.textSecondary
+                              : context.palette.textPrimary,
                         ),
                       ),
                       if (timeLabel.isNotEmpty)
                         Text(
                           '$timeLabel · ${s.minutesShort(subtask.durationMinutes)}',
-                          style: TextStyle(fontSize: 11, color: context.palette.textSecondary),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: context.palette.textSecondary,
+                          ),
                         ),
                     ],
                   ),
@@ -380,24 +453,95 @@ class _SubtaskRow extends StatelessWidget {
             ),
           ),
           if (isActive || isPaused) ...[
-            _MiniAction(icon: Icons.pause_rounded, color: MimioColors.warning, onTap: onPause),
+            _MiniAction(
+              icon: Icons.pause_rounded,
+              color: MimioColors.warning,
+              onTap: onPause,
+            ),
             const SizedBox(width: 4),
-            _MiniAction(icon: Icons.close_rounded, color: MimioColors.accent, onTap: onCancel),
+            _MiniAction(
+              icon: Icons.close_rounded,
+              color: MimioColors.accent,
+              onTap: onCancel,
+            ),
             const SizedBox(width: 4),
-            _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
+            _MiniAction(
+              icon: Icons.check_rounded,
+              color: MimioColors.success,
+              onTap: onComplete,
+            ),
           ] else if (!subtask.isCompleted && !isFocused) ...[
-            _MiniAction(icon: Icons.play_arrow_rounded, color: parentColor, onTap: onStart),
-            const SizedBox(width: 4),
-            _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
+            _MiniAction(
+              icon: Icons.play_arrow_rounded,
+              color: parentColor,
+              onTap: onStart,
+            ),
           ],
           if (onTap != null) ...[
             const SizedBox(width: 4),
             GestureDetector(
               onTap: onTap,
-              child: Icon(Icons.more_horiz_rounded, size: 16, color: context.palette.textSecondary.withValues(alpha: 0.5)),
+              child: Icon(
+                Icons.more_horiz_rounded,
+                size: 16,
+                color: context.palette.textSecondary.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _CompletionRadio extends StatelessWidget {
+  const _CompletionRadio({
+    required this.isCompleted,
+    required this.accentColor,
+    this.size = 22,
+    this.onTap,
+  });
+
+  final bool isCompleted;
+  final Color accentColor;
+  final double size;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isCompleted
+        ? MimioColors.success
+        : accentColor.withValues(alpha: 0.5);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Center(
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isCompleted ? MimioColors.success : Colors.transparent,
+                  border: Border.all(color: borderColor, width: 1.8),
+                ),
+                child: isCompleted
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: size * 0.62,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -509,17 +653,24 @@ class _ActionChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 16, color: color),
               const SizedBox(width: 4),
-              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
             ],
           ),
         ),
@@ -543,9 +694,10 @@ class _SwipeToDelete extends StatefulWidget {
   State<_SwipeToDelete> createState() => _SwipeToDeleteState();
 }
 
-class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProviderStateMixin {
+class _SwipeToDeleteState extends State<_SwipeToDelete>
+    with SingleTickerProviderStateMixin {
   static const _actionWidth = 76.0;
-  static const _borderRadius = 22.0;
+  static const _borderRadius = 18.0;
   static const _dragResistance = 1.8;
   static const _openThreshold = 0.55;
 
@@ -555,10 +707,14 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
-    _offset = Tween<double>(begin: 0, end: -_actionWidth).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
     );
+    _offset = Tween<double>(
+      begin: 0,
+      end: -_actionWidth,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -605,7 +761,11 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+                              const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
                               const SizedBox(height: 4),
                               Text(
                                 widget.deleteLabel,
@@ -627,15 +787,17 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
           ),
           GestureDetector(
             onHorizontalDragUpdate: (details) {
-              _controller.value = (_controller.value -
-                      details.delta.dx / (_actionWidth * _dragResistance))
-                  .clamp(0.0, 1.0);
+              _controller.value =
+                  (_controller.value -
+                          details.delta.dx / (_actionWidth * _dragResistance))
+                      .clamp(0.0, 1.0);
             },
             onHorizontalDragEnd: (details) {
               final velocity = details.primaryVelocity ?? 0;
               if (velocity > 500) {
                 _close();
-              } else if (_controller.value > _openThreshold || velocity < -650) {
+              } else if (_controller.value > _openThreshold ||
+                  velocity < -650) {
                 _open();
               } else {
                 _close();
@@ -649,10 +811,7 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
                   child: ClipRRect(
                     borderRadius: cardRadius,
                     clipBehavior: Clip.antiAlias,
-                    child: ColoredBox(
-                      color: surfaceColor,
-                      child: child,
-                    ),
+                    child: ColoredBox(color: surfaceColor, child: child),
                   ),
                 );
               },

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -12,7 +14,6 @@ import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/platform/siri_sync_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
-import 'package:mimio/core/storage/token_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
@@ -21,7 +22,6 @@ import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/ai/ai_plan_screen.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/features/brain_dump/brain_dump_screen.dart';
 import 'package:mimio/features/weekly/weekly_retrospective_screen.dart';
 import 'package:mimio/features/integrations/calendar_import_screen.dart';
 import 'package:mimio/features/focus/focus_screen.dart';
@@ -29,17 +29,31 @@ import 'package:mimio/features/profile/profile_screen.dart';
 import 'package:mimio/features/timeline/home_screen.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/web/web_shell.dart';
+import 'package:mimio/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   for (final locale in ['tr_TR', 'en_US', 'es_ES', 'fr_FR', 'de_DE']) {
     await initializeDateFormatting(locale);
   }
+
+  if (DefaultFirebaseOptions.isConfigured) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } else {
+    debugPrint(
+      'Firebase not configured — fill mobile/lib/firebase_options.dart via `flutterfire configure`.',
+    );
+  }
+
   await WidgetSyncService.initialize();
   await LiveActivityService.instance.initialize();
   await NotificationService(FlutterLocalNotificationsPlugin()).initialize();
-  final existingToken = await TokenStorage().getToken();
-  await SiriSyncService.syncCredentials(token: existingToken);
+
+  String? token;
+  if (DefaultFirebaseOptions.isConfigured) {
+    token = await FirebaseAuth.instance.currentUser?.getIdToken();
+  }
+  await SiriSyncService.syncCredentials(token: token);
   runApp(const ProviderScope(child: MimioApp()));
 }
 
@@ -96,7 +110,6 @@ class _LiveActivityDeepLinkListenerState extends ConsumerState<LiveActivityDeepL
         if (router.state.matchedLocation != '/home') {
           router.go('/home');
         }
-        router.push('/focus');
       }
     });
   }
@@ -153,7 +166,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/brain-dump',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const BrainDumpScreen()),
+        redirect: (_, __) => '/ai',
       ),
       GoRoute(
         path: '/weekly-retro',

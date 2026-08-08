@@ -11,19 +11,20 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
-		A1SIRI0000000000000001 /* MimioSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* MimioSharedStorage.swift */; };
-		A1SIRI0000000000000002 /* MimioTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* MimioTaskApi.swift */; };
-		A1SIRI0000000000000003 /* AddMimioTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */; };
-		A1SIRI0000000000000004 /* MimioShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* MimioShortcuts.swift */; };
-		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
+		8579399C84F0B5BFE495A128 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */; };
 		8EEC8C49C141BC47C3AA36E0 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
 		A1MIMIOW0000000000000001 /* MimioWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000004 /* MimioWidget.swift */; };
 		A1MIMIOW0000000000000002 /* MimioWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1MIMIOW0000000000000015 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000007 /* WidgetKit.framework */; };
 		A1MIMIOW0000000000000016 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000008 /* SwiftUI.framework */; };
+		A1SIRI0000000000000001 /* MimioSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* MimioSharedStorage.swift */; };
+		A1SIRI0000000000000002 /* MimioTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* MimioTaskApi.swift */; };
+		A1SIRI0000000000000003 /* AddMimioTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */; };
+		A1SIRI0000000000000004 /* MimioShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* MimioShortcuts.swift */; };
 		D84D71E2C470CF85FDD9AB84 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
 
@@ -79,11 +80,6 @@
 		3C65F1106E3CC88729E1F445 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000005 /* MimioSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioSharedStorage.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000006 /* MimioTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioTaskApi.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMimioTaskIntent.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000008 /* MimioShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioShortcuts.swift; sourceTree = "<group>"; };
-		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		95013D74551668146B34AD79 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
@@ -93,18 +89,24 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = MimioWidgetExtension.xcconfig; path = Flutter/MimioWidgetExtension.xcconfig; sourceTree = "<group>"; };
-		A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EFE1C7B93034058957492093 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
-		F07FBCFAEE94F92F8E85DD53 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MimioWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1MIMIOW0000000000000004 /* MimioWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioWidget.swift; sourceTree = "<group>"; };
 		A1MIMIOW0000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1MIMIOW0000000000000006 /* MimioWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MimioWidget.entitlements; sourceTree = "<group>"; };
 		A1MIMIOW0000000000000007 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		A1MIMIOW0000000000000008 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		A1MIMIOW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = MimioWidgetExtension.xcconfig; path = Flutter/MimioWidgetExtension.xcconfig; sourceTree = "<group>"; };
+		A1SIRI0000000000000005 /* MimioSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioSharedStorage.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000006 /* MimioTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioTaskApi.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMimioTaskIntent.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000008 /* MimioShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioShortcuts.swift; sourceTree = "<group>"; };
+		A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		EFE1C7B93034058957492093 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
+		F07FBCFAEE94F92F8E85DD53 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,20 +118,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		97C146EB1CF9000F007C117D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8EEC8C49C141BC47C3AA36E0 /* Pods_Runner.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1MIMIOW000000000000000D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				A1MIMIOW0000000000000016 /* SwiftUI.framework in Frameworks */,
 				A1MIMIOW0000000000000015 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		97C146EB1CF9000F007C117D /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8EEC8C49C141BC47C3AA36E0 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -166,6 +168,7 @@
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				B20409F8E6444890EFD5D4D3 /* Pods */,
 				F3845498BD19CC066F2E9B39 /* Frameworks */,
+				C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -200,6 +203,16 @@
 			path = Runner;
 			sourceTree = "<group>";
 		};
+		A1MIMIOW000000000000000F /* MimioWidget */ = {
+			isa = PBXGroup;
+			children = (
+				A1MIMIOW0000000000000004 /* MimioWidget.swift */,
+				A1MIMIOW0000000000000005 /* Info.plist */,
+				A1MIMIOW0000000000000006 /* MimioWidget.entitlements */,
+			);
+			path = MimioWidget;
+			sourceTree = "<group>";
+		};
 		B20409F8E6444890EFD5D4D3 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -224,16 +237,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A1MIMIOW000000000000000F /* MimioWidget */ = {
-			isa = PBXGroup;
-			children = (
-				A1MIMIOW0000000000000004 /* MimioWidget.swift */,
-				A1MIMIOW0000000000000005 /* Info.plist */,
-				A1MIMIOW0000000000000006 /* MimioWidget.entitlements */,
-			);
-			path = MimioWidget;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -255,23 +258,6 @@
 			productName = RunnerTests;
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		A1MIMIOW000000000000000B /* MimioWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A1MIMIOW0000000000000014 /* Build configuration list for PBXNativeTarget "MimioWidgetExtension" */;
-			buildPhases = (
-				A1MIMIOW000000000000000C /* Sources */,
-				A1MIMIOW000000000000000D /* Frameworks */,
-				A1MIMIOW000000000000000E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = MimioWidgetExtension;
-			productName = MimioWidgetExtension;
-			productReference = A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
 		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
@@ -298,6 +284,24 @@
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A1MIMIOW000000000000000B /* MimioWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1MIMIOW0000000000000014 /* Build configuration list for PBXNativeTarget "MimioWidgetExtension" */;
+			buildPhases = (
+				A1MIMIOW000000000000000C /* Sources */,
+				A1MIMIOW000000000000000D /* Frameworks */,
+				A1MIMIOW000000000000000E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MimioWidgetExtension;
+			productName = MimioWidgetExtension;
+			productReference = A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		97C146E61CF9000F007C117D /* Project object */ = {
@@ -358,13 +362,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW000000000000000E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		97C146EC1CF9000F007C117D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -374,6 +371,14 @@
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				A1L10N0000000000000002 /* Localizable.xcstrings in Resources */,
+				8579399C84F0B5BFE495A128 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1MIMIOW000000000000000E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,14 +505,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW000000000000000C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A1MIMIOW0000000000000001 /* MimioWidget.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -518,6 +515,14 @@
 				A1SIRI0000000000000003 /* AddMimioTaskIntent.swift in Sources */,
 				A1SIRI0000000000000004 /* MimioShortcuts.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1MIMIOW000000000000000C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1MIMIOW0000000000000001 /* MimioWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -26,47 +26,72 @@ class FocusTabView extends ConsumerWidget {
           return _NoActiveFocus(tasks: timeline?.tasks ?? [], s: s);
         }
 
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const BodyDoublingPanel(),
-              const SizedBox(height: 8),
-              FocusTimerWidget(session: session, size: 260, interactive: true),
-              const SizedBox(height: 24),
-              Text(
-                session.title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                session.isPaused ? s.paused : s.focusModeOn,
-                style: TextStyle(color: context.palette.textSecondary),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => toggleFocusPause(context, ref, session),
-                      icon: Icon(session.isActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                      label: Text(session.isActive ? s.pause : s.continueLabel),
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 120),
+          children: [
+            const BodyDoublingPanel(),
+            const SizedBox(height: 16),
+            FocusTimerWidget(session: session, size: 248, interactive: true),
+            const SizedBox(height: 24),
+            Text(
+              session.title,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: session.isPaused
+                        ? MimioColors.warning
+                        : MimioColors.success,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  session.isPaused ? s.paused : s.focusModeOn,
+                  style: TextStyle(
+                    color: context.palette.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => toggleFocusPause(context, ref, session),
+                    icon: Icon(
+                      session.isActive
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                    ),
+                    label: Text(session.isActive ? s.pause : s.continueLabel),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => finishFocusSession(context, ref, session),
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(s.finish),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MimioColors.success,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => finishFocusSession(context, ref, session),
-                      icon: const Icon(Icons.check_rounded),
-                      label: Text(s.finish),
-                      style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         );
       },
     );
@@ -82,57 +107,86 @@ class _NoActiveFocus extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeId = ref.watch(focusSessionProvider).valueOrNull?.taskId;
-    final pending = tasks.where((t) => !t.isCompleted && t.id != activeId).toList();
+    final pending = tasks
+        .where((t) => !t.isCompleted && t.id != activeId)
+        .toList();
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.self_improvement_rounded, size: 72, color: MimioColors.primary.withValues(alpha: 0.4)),
-            const SizedBox(height: 24),
-            Text(
-              s.focusModeOff,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 120),
+      children: [
+        Align(
+          child: Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 8),
-            Text(
-              s.focusModeHint,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: context.palette.textSecondary, height: 1.5),
+            child: Icon(
+              Icons.self_improvement_rounded,
+              size: 42,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => showStartFocusSheet(context, ref),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(s.startFocus),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              ),
-            ),
-            if (pending.isNotEmpty) ...[
-              const SizedBox(height: 32),
-              Text(s.quickStart, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 12),
-              ...pending.take(3).map((task) {
-                final color = MimioColors.fromHex(task.color);
-                return ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  tileColor: context.palette.surface,
-                  leading: CircleAvatar(
-                    backgroundColor: color.withValues(alpha: 0.2),
-                    child: Icon(Icons.play_arrow_rounded, color: color),
-                  ),
-                  title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => startTaskAndOpenFocus(context, ref, task.id),
-                );
-              }),
-            ],
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          s.focusModeOff,
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          s.focusModeHint,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: context.palette.textSecondary, height: 1.5),
+        ),
+        const SizedBox(height: 28),
+        ElevatedButton.icon(
+          onPressed: () => showStartFocusSheet(context, ref),
+          icon: const Icon(Icons.play_arrow_rounded),
+          label: Text(s.startFocus),
+        ),
+        if (pending.isNotEmpty) ...[
+          const SizedBox(height: 32),
+          Text(
+            s.quickStart,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          ...pending.take(3).map((task) {
+            final color = MimioColors.fromHex(task.color);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: context.palette.border),
+                ),
+                tileColor: context.palette.surface,
+                leading: CircleAvatar(
+                  backgroundColor: color.withValues(alpha: 0.14),
+                  child: Icon(Icons.play_arrow_rounded, color: color),
+                ),
+                title: Text(
+                  task.title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => startTaskAndOpenFocus(context, ref, task.id),
+              ),
+            );
+          }),
+        ],
+      ],
     );
   }
 }

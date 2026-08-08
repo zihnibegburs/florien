@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/firebase/user_profile_service.dart';
 import 'package:mimio/core/models/adhd_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,5 +61,13 @@ class AdhdPreferencesNotifier extends AsyncNotifier<AdhdPreferences> {
     final updated = fn(current);
     await ref.read(adhdSettingsStorageProvider).save(updated);
     state = AsyncData(updated);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        await ref.read(userProfileServiceProvider).patchSettings(uid, {
+          'adhdPreferences': updated.toJson(),
+        });
+      } catch (_) {}
+    }
   }
 }

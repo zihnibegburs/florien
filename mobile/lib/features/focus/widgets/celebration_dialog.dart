@@ -30,16 +30,15 @@ Future<void> showTaskCelebration(
         strings: s,
       );
     },
-    transitionBuilder: (context, animation, _, child) =>
-        MimioOverlay.softTransition(animation, child),
+    transitionBuilder: (context, animation, _, child) {
+      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+      return MimioOverlay.softTransition(animation, child);
+    },
   );
 }
 
 class _CelebrationDialog extends StatefulWidget {
-  const _CelebrationDialog({
-    required this.event,
-    required this.strings,
-  });
+  const _CelebrationDialog({required this.event, required this.strings});
 
   final CelebrationEvent event;
   final S strings;
@@ -58,6 +57,7 @@ class _CelebrationDialogState extends State<_CelebrationDialog> {
     _controller = ConfettiController(duration: const Duration(seconds: 3));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return;
       _controller.play();
     });
     _autoDismissTimer = Timer(const Duration(seconds: 8), _close);
@@ -77,32 +77,35 @@ class _CelebrationDialogState extends State<_CelebrationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final animationsDisabled =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return Material(
       type: MaterialType.transparency,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          IgnorePointer(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _controller,
-                blastDirection: pi / 2,
-                maxBlastForce: 20,
-                minBlastForce: 8,
-                emissionFrequency: 0.05,
-                numberOfParticles: 20,
-                gravity: 0.12,
-                colors: const [
-                  Color(0xFF3D9B87),
-                  Color(0xFFE07A5F),
-                  Color(0xFF6BBFB0),
-                  Color(0xFFF4C542),
-                  Color(0xFF48A67C),
-                ],
+          if (!animationsDisabled)
+            IgnorePointer(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _controller,
+                  blastDirection: pi / 2,
+                  maxBlastForce: 20,
+                  minBlastForce: 8,
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 20,
+                  gravity: 0.12,
+                  colors: const [
+                    MimioColors.primary,
+                    MimioColors.accent,
+                    MimioColors.primaryLight,
+                    MimioColors.warning,
+                    MimioColors.success,
+                  ],
+                ),
               ),
             ),
-          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -164,7 +167,9 @@ class _CelebrationCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              event.hasReward ? Icons.card_giftcard_rounded : Icons.celebration_rounded,
+              event.hasReward
+                  ? Icons.card_giftcard_rounded
+                  : Icons.celebration_rounded,
               size: 36,
               color: MimioColors.primary,
             ),
@@ -174,9 +179,9 @@ class _CelebrationCard extends StatelessWidget {
             strings.taskCompletedTitle,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: context.palette.textPrimary,
-                ),
+              fontWeight: FontWeight.w800,
+              color: context.palette.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -203,14 +208,20 @@ class _CelebrationCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFFFE66D).withValues(alpha: 0.6)),
+                border: Border.all(
+                  color: const Color(0xFFFFE66D).withValues(alpha: 0.6),
+                ),
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.emoji_events_rounded, color: Color(0xFFE6A800), size: 20),
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: Color(0xFFE6A800),
+                        size: 20,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         strings.yourReward,
@@ -228,10 +239,10 @@ class _CelebrationCard extends StatelessWidget {
                     event.reward!,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: context.palette.textPrimary,
-                          height: 1.35,
-                        ),
+                      fontWeight: FontWeight.w800,
+                      color: context.palette.textPrimary,
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ),
@@ -254,7 +265,9 @@ class _CelebrationCard extends StatelessWidget {
               onPressed: onDismiss,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               child: Text(strings.awesome),
             ),

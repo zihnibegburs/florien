@@ -3,45 +3,41 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
-/// Liquid Glass design tokens — translucent blur, specular edges, soft depth.
+/// Quiet surface tokens. Kept behind the existing API so feature screens can
+/// share one consistent, low-noise visual language.
 abstract final class LiquidGlassTokens {
-  static const double blurSigma = 28;
-  static const double blurSigmaChrome = 36;
+  static const double blurSigma = 12;
+  static const double blurSigmaChrome = 18;
 
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
   static Color tint(BuildContext context, {double? opacity}) {
     final dark = isDark(context);
-    final o = opacity ?? (dark ? 0.58 : 0.68);
+    final o = opacity ?? (dark ? 0.96 : 0.98);
     return dark
-        ? const Color(0xFF1E2A28).withValues(alpha: o)
-        : Colors.white.withValues(alpha: o);
+        ? const Color(0xFF222228).withValues(alpha: o)
+        : const Color(0xFFFFFDF9).withValues(alpha: o);
   }
 
   static Color highlight(BuildContext context) => isDark(context)
-      ? Colors.white.withValues(alpha: 0.14)
-      : Colors.white.withValues(alpha: 0.85);
+      ? Colors.white.withValues(alpha: 0.08)
+      : Colors.white.withValues(alpha: 0.75);
 
   static Color edgeShadow(BuildContext context) => isDark(context)
-      ? Colors.black.withValues(alpha: 0.35)
-      : Colors.black.withValues(alpha: 0.07);
+      ? Colors.white.withValues(alpha: 0.04)
+      : const Color(0xFFE5E1D9);
 
   static List<BoxShadow> elevation(BuildContext context) => [
-        BoxShadow(
-          color: MimioColors.primary.withValues(alpha: isDark(context) ? 0.12 : 0.06),
-          blurRadius: 28,
-          offset: const Offset(0, 10),
-        ),
-        BoxShadow(
-          color: Colors.black.withValues(alpha: isDark(context) ? 0.25 : 0.04),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withValues(alpha: isDark(context) ? 0.18 : 0.045),
+      blurRadius: 18,
+      offset: const Offset(0, 8),
+    ),
+  ];
 }
 
-/// Frosted translucent surface inspired by Apple Liquid Glass.
+/// Solid-first surface with optional, restrained translucency.
 class LiquidGlass extends StatelessWidget {
   const LiquidGlass({
     super.key,
@@ -75,10 +71,18 @@ class LiquidGlass extends StatelessWidget {
   BorderRadius _innerBorderRadius(double inset) {
     if (inset <= 0) return borderRadius;
     return BorderRadius.only(
-      topLeft: Radius.circular((borderRadius.topLeft.x - inset).clamp(0.0, double.infinity)),
-      topRight: Radius.circular((borderRadius.topRight.x - inset).clamp(0.0, double.infinity)),
-      bottomLeft: Radius.circular((borderRadius.bottomLeft.x - inset).clamp(0.0, double.infinity)),
-      bottomRight: Radius.circular((borderRadius.bottomRight.x - inset).clamp(0.0, double.infinity)),
+      topLeft: Radius.circular(
+        (borderRadius.topLeft.x - inset).clamp(0.0, double.infinity),
+      ),
+      topRight: Radius.circular(
+        (borderRadius.topRight.x - inset).clamp(0.0, double.infinity),
+      ),
+      bottomLeft: Radius.circular(
+        (borderRadius.bottomLeft.x - inset).clamp(0.0, double.infinity),
+      ),
+      bottomRight: Radius.circular(
+        (borderRadius.bottomRight.x - inset).clamp(0.0, double.infinity),
+      ),
     );
   }
 
@@ -86,7 +90,8 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final highlight = LiquidGlassTokens.highlight(context);
     final edge = LiquidGlassTokens.edgeShadow(context);
-    final tint = tintColor ?? LiquidGlassTokens.tint(context, opacity: tintOpacity);
+    final tint =
+        tintColor ?? LiquidGlassTokens.tint(context, opacity: tintOpacity);
     final shadows = boxShadow ?? LiquidGlassTokens.elevation(context);
     final innerRadius = _innerBorderRadius(borderWidth);
 
@@ -99,11 +104,7 @@ class LiquidGlass extends StatelessWidget {
             ? LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  highlight,
-                  highlight.withValues(alpha: 0.42),
-                  edge,
-                ],
+                colors: [highlight, highlight.withValues(alpha: 0.42), edge],
                 stops: const [0.0, 0.4, 1.0],
               )
             : null,
@@ -119,16 +120,25 @@ class LiquidGlass extends StatelessWidget {
               if (blur)
                 Positioned.fill(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                    filter: ImageFilter.blur(
+                      sigmaX: blurSigma,
+                      sigmaY: blurSigma,
+                    ),
                     child: const SizedBox.expand(),
                   ),
                 ),
               if (gradient != null)
                 Positioned.fill(
-                  child: DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(gradient: gradient),
+                  ),
                 ),
               Positioned.fill(
-                child: ColoredBox(color: gradient == null ? tint : tint.withValues(alpha: tintOpacity ?? 0.35)),
+                child: ColoredBox(
+                  color: gradient == null
+                      ? tint
+                      : tint.withValues(alpha: tintOpacity ?? 0.35),
+                ),
               ),
               if (borderWidth > 0)
                 Positioned(
@@ -165,7 +175,7 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
-/// Soft ambient gradient with color orbs — gives glass surfaces depth to refract.
+/// Warm, paper-like canvas with restrained brand accents.
 class MimioAmbientBackground extends StatelessWidget {
   const MimioAmbientBackground({super.key, required this.child});
 
@@ -181,28 +191,29 @@ class MimioAmbientBackground extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: dark
-                  ? const [Color(0xFF0C1211), Color(0xFF121C1A), Color(0xFF0F1816)]
-                  : const [Color(0xFFF2F9F7), Color(0xFFE6F3F0), Color(0xFFF5FAF9)],
+                  ? const [Color(0xFF17171C), Color(0xFF1B1A20)]
+                  : const [Color(0xFFF9F7F2), Color(0xFFF4F1EB)],
             ),
           ),
         ),
         Positioned(
-          top: -120,
-          right: -60,
-          child: _Orb(color: MimioColors.primary.withValues(alpha: dark ? 0.18 : 0.12), size: 320),
+          top: -170,
+          right: -130,
+          child: _Orb(
+            color: MimioColors.primary.withValues(alpha: dark ? 0.10 : 0.07),
+            size: 340,
+          ),
         ),
         Positioned(
-          top: 180,
-          left: -100,
-          child: _Orb(color: MimioColors.accent.withValues(alpha: dark ? 0.12 : 0.08), size: 260),
-        ),
-        Positioned(
-          bottom: 80,
-          right: -40,
-          child: _Orb(color: MimioColors.primaryLight.withValues(alpha: dark ? 0.1 : 0.07), size: 200),
+          bottom: -190,
+          left: -140,
+          child: _Orb(
+            color: MimioColors.warning.withValues(alpha: dark ? 0.06 : 0.05),
+            size: 360,
+          ),
         ),
         child,
       ],
@@ -218,32 +229,24 @@ class _Orb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      ),
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
 
-/// Translucent app bar chrome with backdrop blur.
+/// Calm app bar chrome that remains legible over scrolling content.
 class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const LiquidGlassAppBar({
-    super.key,
-    required this.child,
-    this.bottom,
-  });
+  const LiquidGlassAppBar({super.key, required this.child, this.bottom});
 
   final Widget child;
   final PreferredSizeWidget? bottom;
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-      );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -255,19 +258,21 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: LiquidGlassTokens.tint(context, opacity: LiquidGlassTokens.isDark(context) ? 0.5 : 0.62),
+            color: LiquidGlassTokens.tint(
+              context,
+              opacity: LiquidGlassTokens.isDark(context) ? 0.94 : 0.96,
+            ),
             border: Border(
               bottom: BorderSide(
-                color: LiquidGlassTokens.highlight(context).withValues(alpha: 0.35),
+                color: LiquidGlassTokens.highlight(
+                  context,
+                ).withValues(alpha: 0.35),
               ),
             ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              child,
-              ?bottom,
-            ],
+            children: [child, ?bottom],
           ),
         ),
       ),

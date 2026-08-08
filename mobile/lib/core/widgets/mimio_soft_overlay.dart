@@ -12,7 +12,10 @@ abstract final class MimioOverlay {
   static const slideReverseTransitionDuration = Duration(milliseconds: 300);
 
   static Widget softTransition(Animation<double> animation, Widget child) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+    );
     return FadeTransition(
       opacity: curved,
       child: ScaleTransition(
@@ -49,8 +52,10 @@ Page<T> mimioOverlayGoRoutePage<T>({
     child: child,
     transitionDuration: MimioOverlay.slideTransitionDuration,
     reverseTransitionDuration: MimioOverlay.slideReverseTransitionDuration,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-        MimioOverlay.slideUpTransition(animation, child),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+      return MimioOverlay.slideUpTransition(animation, child);
+    },
   );
 }
 
@@ -76,8 +81,10 @@ Future<T?> showMimioSoftDialog<T>({
         ),
       ),
     ),
-    transitionBuilder: (_, animation, _, child) =>
-        MimioOverlay.softTransition(animation, child),
+    transitionBuilder: (context, animation, _, child) {
+      if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+      return MimioOverlay.softTransition(animation, child);
+    },
   );
 }
 
@@ -95,8 +102,12 @@ Future<T?> pushMimioOverlayRoute<T>({
       transitionDuration: transitionDuration,
       reverseTransitionDuration: MimioOverlay.slideReverseTransitionDuration,
       pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-          MimioOverlay.slideUpTransition(animation, child),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+          return child;
+        }
+        return MimioOverlay.slideUpTransition(animation, child);
+      },
     ),
   );
 }
@@ -136,9 +147,9 @@ class MimioSoftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LiquidGlass(
-      borderRadius: BorderRadius.circular(22),
-      blur: true,
-      blurSigma: LiquidGlassTokens.blurSigmaChrome,
+      borderRadius: BorderRadius.circular(24),
+      blur: false,
+      tintOpacity: 1,
       padding: padding,
       child: child,
     );
@@ -146,10 +157,7 @@ class MimioSoftCard extends StatelessWidget {
 }
 
 class MimioSoftDialogActions extends StatelessWidget {
-  const MimioSoftDialogActions({
-    super.key,
-    required this.actions,
-  });
+  const MimioSoftDialogActions({super.key, required this.actions});
 
   final List<Widget> actions;
 

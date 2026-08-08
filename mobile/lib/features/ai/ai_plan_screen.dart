@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +5,7 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/copyable_error_banner.dart';
 import 'package:mimio/core/widgets/speech_text_field.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/features/providers.dart';
@@ -54,7 +54,10 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
         setState(() => _breakdown = result);
       } else {
         final date = ref.read(selectedDateProvider);
-        final result = await ref.read(aiRepositoryProvider).plan(text, date: date);
+        final result = await ref.read(aiRepositoryProvider).plan(
+              'Organize this brain dump into a realistic daily schedule with breaks:\n$text',
+              date: date,
+            );
         setState(() => _plan = result);
       }
     } catch (e) {
@@ -66,15 +69,6 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
   }
 
   String _friendlyError(Object e, S s) {
-    if (e is DioException) {
-      final status = e.response?.statusCode;
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
-      }
-      if (status == 401) return s.sessionExpired;
-      if (status == 403) return s.aiEndpointError;
-    }
     return s.friendlyAiError(e);
   }
 
@@ -233,21 +227,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline_rounded, color: Colors.red.shade400),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(_error!, style: TextStyle(color: Colors.red.shade700))),
-                  ],
-                ),
-              ),
+              CopyableErrorBanner(message: _error!),
             ],
             if (_plan != null) ...[
               const SizedBox(height: 24),

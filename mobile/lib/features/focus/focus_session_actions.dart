@@ -16,7 +16,12 @@ Future<void> startTaskAndOpenFocus(
   try {
     await ref.read(timelineProvider.notifier).startTask(taskId);
     ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-    if (context.mounted) context.push('/focus');
+    if (!context.mounted) return;
+    // Prefer the Focus tab; close any overlay routes (e.g. /focus).
+    final router = GoRouter.of(context);
+    if (router.state.matchedLocation != '/home') {
+      router.go('/home');
+    }
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,7 +78,8 @@ Future<void> finishFocusSession(
       return;
     }
 
-    final completed = await ref.read(timelineProvider.notifier).completeTask(session.taskId);
+    final completed =
+        await ref.read(timelineProvider.notifier).completeTask(session.taskId);
     if (!context.mounted) return;
     await handleTaskCompleted(context, ref, completed, completed);
     onDone?.call();

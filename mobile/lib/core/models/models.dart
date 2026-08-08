@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 
 enum TaskStatus { pending, inProgress, paused, completed, skipped }
 
 class AuthResponse {
+  /// Firebase ID token when available (widgets / Siri), otherwise empty.
   final String token;
   final String userId;
   final String email;
@@ -11,7 +13,7 @@ class AuthResponse {
   final String avatarColor;
 
   const AuthResponse({
-    required this.token,
+    this.token = '',
     required this.userId,
     required this.email,
     required this.displayName,
@@ -19,11 +21,11 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) => AuthResponse(
-        token: json['token'] as String,
+        token: json['token'] as String? ?? '',
         userId: json['userId'] as String,
-        email: json['email'] as String,
-        displayName: json['displayName'] as String,
-        avatarColor: json['avatarColor'] as String,
+        email: json['email'] as String? ?? '',
+        displayName: json['displayName'] as String? ?? '',
+        avatarColor: json['avatarColor'] as String? ?? '#3D9B87',
       );
 
   String get firstName {
@@ -100,18 +102,12 @@ class TaskModel {
         color: json['color'] as String,
         icon: json['icon'] as String,
         durationMinutes: json['durationMinutes'] as int,
-        scheduledAt: json['scheduledAt'] != null
-            ? DateTime.parse(json['scheduledAt'] as String)
-            : null,
+        scheduledAt: _parseDateTime(json['scheduledAt']),
         status: _parseStatus(json['status'] as String),
         sortOrder: json['sortOrder'] as int,
         isInbox: json['isInbox'] as bool,
-        startedAt: json['startedAt'] != null
-            ? DateTime.parse(json['startedAt'] as String)
-            : null,
-        completedAt: json['completedAt'] != null
-            ? DateTime.parse(json['completedAt'] as String)
-            : null,
+        startedAt: _parseDateTime(json['startedAt']),
+        completedAt: _parseDateTime(json['completedAt']),
         parentTaskId: json['parentTaskId'] as String?,
         subtasks: json['subtasks'] != null
             ? (json['subtasks'] as List)
@@ -125,6 +121,125 @@ class TaskModel {
         recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
         recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
       );
+
+  factory TaskModel.fromFirestore(String id, Map<String, dynamic> data, {List<TaskModel> subtasks = const []}) =>
+      TaskModel(
+        id: id,
+        title: data['title'] as String? ?? '',
+        description: data['description'] as String?,
+        color: data['color'] as String? ?? '#3D9B87',
+        icon: data['icon'] as String? ?? 'task',
+        durationMinutes: (data['durationMinutes'] as num?)?.toInt() ?? 30,
+        scheduledAt: _parseDateTime(data['scheduledAt']),
+        status: _parseStatus(data['status'] as String? ?? 'PENDING'),
+        sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 0,
+        isInbox: data['isInbox'] as bool? ?? false,
+        startedAt: _parseDateTime(data['startedAt']),
+        completedAt: _parseDateTime(data['completedAt']),
+        parentTaskId: data['parentTaskId'] as String?,
+        subtasks: subtasks,
+        reward: data['reward'] as String?,
+        energyLevel: EnergyLevelX.fromApiNullable(data['energyLevel'] as String?),
+        motivation: data['motivation'] as String?,
+        transitionBufferMinutes: (data['transitionBufferMinutes'] as num?)?.toInt() ?? 0,
+        recurrenceType: _parseRecurrenceType(data['recurrenceType'] as String?),
+        recurrenceSeriesId: data['recurrenceSeriesId'] as String?,
+      );
+
+  Map<String, dynamic> toFirestoreMap({bool includeId = false}) => {
+        if (includeId) 'id': id,
+        'title': title,
+        'description': description,
+        'color': color,
+        'icon': icon,
+        'durationMinutes': durationMinutes,
+        'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt!.toUtc()) : null,
+        'status': statusApiValue,
+        'sortOrder': sortOrder,
+        'isInbox': isInbox,
+        'startedAt': startedAt != null ? Timestamp.fromDate(startedAt!.toUtc()) : null,
+        'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!.toUtc()) : null,
+        'parentTaskId': parentTaskId,
+        'reward': reward,
+        'energyLevel': energyLevel?.apiValue,
+        'motivation': motivation,
+        'transitionBufferMinutes': transitionBufferMinutes,
+        'recurrenceType': _recurrenceTypeApi(recurrenceType),
+        'recurrenceSeriesId': recurrenceSeriesId,
+      };
+
+  String get statusApiValue => switch (status) {
+        TaskStatus.pending => 'PENDING',
+        TaskStatus.inProgress => 'IN_PROGRESS',
+        TaskStatus.paused => 'PAUSED',
+        TaskStatus.completed => 'COMPLETED',
+        TaskStatus.skipped => 'SKIPPED',
+      };
+
+  TaskModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? color,
+    String? icon,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+    bool clearScheduledAt = false,
+    TaskStatus? status,
+    int? sortOrder,
+    bool? isInbox,
+    DateTime? startedAt,
+    bool clearStartedAt = false,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
+    String? parentTaskId,
+    List<TaskModel>? subtasks,
+    String? reward,
+    EnergyLevel? energyLevel,
+    String? motivation,
+    int? transitionBufferMinutes,
+    RecurrenceType? recurrenceType,
+    String? recurrenceSeriesId,
+  }) =>
+      TaskModel(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        color: color ?? this.color,
+        icon: icon ?? this.icon,
+        durationMinutes: durationMinutes ?? this.durationMinutes,
+        scheduledAt: clearScheduledAt ? null : (scheduledAt ?? this.scheduledAt),
+        status: status ?? this.status,
+        sortOrder: sortOrder ?? this.sortOrder,
+        isInbox: isInbox ?? this.isInbox,
+        startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
+        completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+        parentTaskId: parentTaskId ?? this.parentTaskId,
+        subtasks: subtasks ?? this.subtasks,
+        reward: reward ?? this.reward,
+        energyLevel: energyLevel ?? this.energyLevel,
+        motivation: motivation ?? this.motivation,
+        transitionBufferMinutes: transitionBufferMinutes ?? this.transitionBufferMinutes,
+        recurrenceType: recurrenceType ?? this.recurrenceType,
+        recurrenceSeriesId: recurrenceSeriesId ?? this.recurrenceSeriesId,
+      );
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate().toLocal();
+    if (value is DateTime) return value.toLocal();
+    if (value is String) return DateTime.parse(value).toLocal();
+    return null;
+  }
+
+  static String _recurrenceTypeApi(RecurrenceType type) => switch (type) {
+        RecurrenceType.none => 'NONE',
+        RecurrenceType.daily => 'DAILY',
+        RecurrenceType.weekly => 'WEEKLY',
+        RecurrenceType.monthly => 'MONTHLY',
+        RecurrenceType.yearly => 'YEARLY',
+        RecurrenceType.custom => 'CUSTOM',
+      };
 
   static RecurrenceType _parseRecurrenceType(String? value) => switch (value) {
         'DAILY' => RecurrenceType.daily,

@@ -12,27 +12,24 @@ import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
 import 'package:mimio/features/onboarding/onboarding_screen.dart';
 import 'package:mimio/features/timeline/task_completion_helper.dart';
 import 'package:mimio/features/timeline/widgets/now_mode_view.dart';
-import 'package:mimio/features/timeline/widgets/routine_templates_sheet.dart';
-import 'package:mimio/features/timeline/widgets/schedule_warning_banner.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/focus/focus_session_actions.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
-import 'package:mimio/features/timeline/widgets/day_progress_card.dart';
 import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
+import 'package:mimio/features/timeline/widgets/inbox_section.dart';
+import 'package:mimio/features/timeline/widgets/more_tab_view.dart';
 import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
 import 'package:mimio/features/timeline/widgets/modern_bottom_bar.dart';
+import 'package:mimio/features/timeline/widgets/schedule_warning_banner.dart';
 import 'package:mimio/features/timeline/widgets/task_card.dart';
 import 'package:mimio/features/timeline/widgets/timeline_hour_grid.dart';
-import 'package:mimio/features/timeline/widgets/todo_tab_view.dart';
 import 'package:mimio/features/timeline/widgets/week_strip.dart';
-import 'package:mimio/features/web/weekly_view.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -42,8 +39,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _todoTabKey = GlobalKey<TodoTabViewState>();
-
   @override
   Widget build(BuildContext context) {
     final tab = ref.watch(homeTabProvider);
@@ -76,71 +71,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   actions: [
-                    if (tab == HomeTab.today)
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final overwhelm =
-                              ref
-                                  .watch(adhdPreferencesProvider)
-                                  .valueOrNull
-                                  ?.overwhelmMode ??
-                              false;
-                          return IconButton(
-                            icon: Icon(
-                              overwhelm
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_outlined,
-                            ),
-                            tooltip: s.overwhelmMode,
-                            onPressed: () => ref
-                                .read(adhdPreferencesProvider.notifier)
-                                .patch(
-                                  (p) => p.copyWith(
-                                    overwhelmMode: !p.overwhelmMode,
-                                  ),
-                                ),
-                          );
-                        },
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.psychology_rounded),
-                      tooltip: s.brainDump,
-                      onPressed: () => context.push('/brain-dump'),
-                    ),
-                    IconButton(
+                    IconButton.filledTonal(
                       icon: const Icon(Icons.auto_awesome_rounded),
                       tooltip: s.aiPlanner,
                       onPressed: () => context.push('/ai'),
                     ),
-                    if (tab == HomeTab.today)
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final viewMode = ref.watch(timelineViewModeProvider);
-                          return IconButton(
-                            icon: Icon(
-                              viewMode == TimelineViewMode.list
-                                  ? Icons.view_timeline_rounded
-                                  : Icons.view_list_rounded,
-                            ),
-                            tooltip: viewMode == TimelineViewMode.list
-                                ? s.hourView
-                                : s.listView,
-                            onPressed: () {
-                              ref
-                                  .read(timelineViewModeProvider.notifier)
-                                  .state = viewMode == TimelineViewMode.list
-                                  ? TimelineViewMode.grid
-                                  : TimelineViewMode.list;
-                            },
-                          );
-                        },
-                      ),
+                    const SizedBox(width: 4),
                     Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: InkWell(
                         onTap: () => context.push('/profile'),
+                        customBorder: const CircleBorder(),
                         child: CircleAvatar(
-                          radius: 18,
+                          radius: 19,
                           backgroundColor: auth != null
                               ? MimioColors.fromHex(auth.avatarColor)
                               : MimioColors.primary,
@@ -164,36 +107,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           body: IndexedStack(
             index: tab.index,
-            children: [
-              const _TodayTab(),
-              TodoTabView(key: _todoTabKey),
-              const WeeklyView(),
-              const FocusTabView(),
-              const _AchievementsTab(),
-            ],
+            children: const [_TodayTab(), FocusTabView(), MoreTabView()],
           ),
-          floatingActionButton: switch (tab) {
-            HomeTab.today => FloatingActionButton(
-              onPressed: () {
-                final date = ref.read(selectedDateProvider);
-                _showAddTask(context, ref, date);
-              },
-              elevation: 6,
-              child: const Icon(Icons.add_rounded, size: 28),
-            ),
-            HomeTab.todo => FloatingActionButton(
-              onPressed: () => _todoTabKey.currentState?.focusAddField(),
-              elevation: 6,
-              child: const Icon(Icons.add_rounded, size: 28),
-            ),
-            _ => null,
-          },
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
           bottomNavigationBar: ModernBottomBar(
             selectedIndex: tab.index,
             onSelected: (i) =>
                 ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
+            // Always pass a callback on Today; bar keeps a fixed slot so
+            // tabs never shift when switching away from Today.
+            onAdd: tab == HomeTab.today
+                ? () {
+                    final date = ref.read(selectedDateProvider);
+                    _showAddTask(context, ref, date);
+                  }
+                : null,
+            addTooltip: s.addTask,
             items: [
               ModernNavItem(
                 icon: Icons.today_outlined,
@@ -201,24 +129,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 label: s.today,
               ),
               ModernNavItem(
-                icon: Icons.checklist_outlined,
-                selectedIcon: Icons.checklist_rounded,
-                label: s.todoNav,
-              ),
-              ModernNavItem(
-                icon: Icons.calendar_view_week_outlined,
-                selectedIcon: Icons.calendar_view_week_rounded,
-                label: s.week,
-              ),
-              ModernNavItem(
                 icon: Icons.timer_outlined,
                 selectedIcon: Icons.timer_rounded,
                 label: s.focus,
               ),
               ModernNavItem(
-                icon: Icons.emoji_events_outlined,
-                selectedIcon: Icons.emoji_events_rounded,
-                label: s.achievementsNav,
+                icon: Icons.grid_view_outlined,
+                selectedIcon: Icons.grid_view_rounded,
+                label: s.more,
               ),
             ],
           ),
@@ -235,10 +153,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'd MMMM yyyy, EEEE',
         locale,
       ).format(selectedDate),
-      HomeTab.todo => s.inboxHint,
-      HomeTab.week => s.weeklyPlanSummary,
       HomeTab.focus => s.focusTimer,
-      HomeTab.achievements => s.achievementsTitle,
+      HomeTab.more => s.moreSubtitle,
     };
   }
 
@@ -299,30 +215,6 @@ class _OnboardingHostState extends ConsumerState<_OnboardingHost> {
   Widget build(BuildContext context) => widget.child;
 }
 
-class _AchievementsTab extends ConsumerWidget {
-  const _AchievementsTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(stringsProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          child: Text(
-            s.achievementsTitle,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-        ),
-        const Expanded(child: AchievementsScreen(embedded: true)),
-      ],
-    );
-  }
-}
-
 class _TodayTab extends ConsumerStatefulWidget {
   const _TodayTab();
 
@@ -362,22 +254,23 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
               final tasks = filterByEnergy(timeline.tasks, dailyEnergy);
 
               return RefreshIndicator(
-                onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
+                onRefresh: () async {
+                  await ref.read(timelineProvider.notifier).refresh();
+                  ref.invalidate(inboxProvider);
+                },
                 child: CustomScrollView(
                   slivers: [
                     if (session != null)
                       SliverToBoxAdapter(
                         child: ActiveTaskBanner(session: session),
                       ),
+                    const SliverToBoxAdapter(child: InboxSection()),
                     SliverToBoxAdapter(
-                      child: ScheduleWarningBanner(tasks: timeline.tasks),
-                    ),
-                    SliverToBoxAdapter(
-                      child: DayProgressCard(tasks: timeline.tasks),
+                      child: ScheduleWarningBanner(tasks: tasks),
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                         child: Row(
                           children: [
                             Text(
@@ -386,25 +279,48 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             const Spacer(),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.playlist_add_rounded,
-                                size: 20,
-                              ),
-                              tooltip: s.routineTemplates,
-                              onPressed: () => showRoutineTemplatesSheet(
-                                context,
-                                ref,
-                                selectedDate,
-                              ),
+                            _PlanViewButton(
+                              tooltip: s.overwhelmMode,
+                              selected: overwhelm,
+                              icon: Icons.filter_center_focus_rounded,
+                              onPressed: () => ref
+                                  .read(adhdPreferencesProvider.notifier)
+                                  .patch(
+                                    (p) => p.copyWith(
+                                      overwhelmMode: !p.overwhelmMode,
+                                    ),
+                                  ),
                             ),
-                            Text(
-                              s.taskCount(tasks.length),
-                              style: TextStyle(
-                                color: context.palette.textSecondary,
-                              ),
+                            const SizedBox(width: 4),
+                            _PlanViewButton(
+                              tooltip: viewMode == TimelineViewMode.list
+                                  ? s.hourView
+                                  : s.listView,
+                              selected: viewMode == TimelineViewMode.grid,
+                              icon: viewMode == TimelineViewMode.list
+                                  ? Icons.view_timeline_outlined
+                                  : Icons.view_agenda_outlined,
+                              onPressed: () {
+                                ref
+                                    .read(timelineViewModeProvider.notifier)
+                                    .state = viewMode == TimelineViewMode.list
+                                    ? TimelineViewMode.grid
+                                    : TimelineViewMode.list;
+                              },
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                        child: Text(
+                          s.taskCount(tasks.length),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.palette.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -626,7 +542,9 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
       onUncomplete: () => _uncompleteTask(context, ref, task),
       onDelete: (scope) =>
           ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope),
-      onFocus: session?.taskId == task.id ? () => context.push('/focus') : null,
+      onFocus: session?.taskId == task.id
+          ? () => ref.read(homeTabProvider.notifier).state = HomeTab.focus
+          : null,
     );
   }
 
@@ -635,6 +553,42 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
       context: context,
       isScrollControlled: true,
       builder: (_) => AddTaskSheet(selectedDate: date),
+    );
+  }
+}
+
+class _PlanViewButton extends StatelessWidget {
+  const _PlanViewButton({
+    required this.tooltip,
+    required this.selected,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final bool selected;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        visualDensity: VisualDensity.compact,
+        style: IconButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          backgroundColor: selected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : context.palette.surface,
+          foregroundColor: selected
+              ? Theme.of(context).colorScheme.onPrimaryContainer
+              : context.palette.textSecondary,
+          side: BorderSide(color: context.palette.border),
+        ),
+      ),
     );
   }
 }

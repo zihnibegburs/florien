@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/firebase/user_profile_service.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/achievement.dart';
 import 'package:mimio/core/storage/achievement_storage.dart';
@@ -28,6 +29,11 @@ class AchievementStatsNotifier extends AsyncNotifier<AchievementStats> {
     final updated = storage.recordTaskCompleted(current, completedAt: completedAt);
     await storage.save(userId, updated);
     state = AsyncData(updated);
+    try {
+      await ref.read(userProfileServiceProvider).patchSettings(userId, {
+        'achievements': updated.toJson(),
+      });
+    } catch (_) {}
   }
 }
 

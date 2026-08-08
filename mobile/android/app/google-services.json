@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1088818781536",
+    "project_id": "mimio-f4bb7",
+    "storage_bucket": "mimio-f4bb7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088818781536:android:63c8fe0d88bbd4c4881205",
+        "android_client_info": {
+          "package_name": "com.mimio.mimio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1088818781536-8dbqj5esh5rm49pjhlsdhrqooil7shbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCj11FqUfYkYTyd6YGP6_tARsFAZGHapdo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1088818781536-8dbqj5esh5rm49pjhlsdhrqooil7shbk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

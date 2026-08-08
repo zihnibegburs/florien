@@ -1,17 +1,27 @@
 # Mimio
 
-Tiimo tarzı görsel günlük planlayıcı — Flutter + Spring Boot + PostgreSQL + Redis.
+Tiimo tarzı görsel günlük planlayıcı — Flutter + Firebase (Auth, Firestore, Cloud Functions).
 
 ## Hızlı Başlangıç
 
 ```bash
-# 1. Veritabanlarını başlat
-docker compose up -d
+# 1. Firebase projesi oluştur (Console) ve Auth provider'ları aç:
+#    Email/Password, Google, Apple
 
-# 2. Backend
-cd backend && ./gradlew bootRun
+# 2. FlutterFire config
+cd mobile
+dart pub global activate flutterfire_cli
+flutterfire configure
+# → mobile/lib/firebase_options.dart dolar
 
-# 3. Flutter
+# 3. Firestore rules & indexes + Functions
+cd ..
+firebase deploy --only firestore:rules,firestore:indexes
+cd functions && npm install && npm run build
+firebase functions:secrets:set GROQ_API_KEY
+firebase deploy --only functions
+
+# 4. Uygulamayı çalıştır
 cd mobile && flutter run
 ```
 
@@ -19,56 +29,34 @@ cd mobile && flutter run
 
 ```
 Mimio/
-├── docs/PLAN.md          # Tiimo analizi + 10 fazlı geliştirme planı
-├── docker-compose.yml    # PostgreSQL + Redis
-├── backend/              # Spring Boot API
+├── docs/PLAN.md          # Ürün / faz planı
+├── firebase.json         # Firestore + Functions
+├── firestore.rules
+├── functions/            # AI assist (Groq) Cloud Functions
+├── backend/              # Eski Spring Boot API (deprecated)
 └── mobile/               # Flutter uygulaması
 ```
 
-## Phase 9 — Widget & Web
+## Firestore şema
 
-```bash
-# Web
-cd mobile && flutter run -d chrome
-
-# iOS widget (Xcode target kurulumu gerekir)
-open ios/Runner.xcworkspace
-# Detay: mobile/ios/WIDGET_SETUP.md
+```
+users/{uid}
+  email, displayName, avatarColor, settings{...}
+  tasks/{taskId}
+    title, scheduledAt, status, isInbox, subtasks via parentTaskId, …
 ```
 
-| Platform | Özellik |
-|----------|---------|
-| Web | Haftalık görünüm + responsive shell |
-| Android | Ana ekran widget + bildirim Live Activity |
-| iOS | Widget + Live Activity / Dynamic Island (Xcode setup) |
+## Auth
 
-## AI (Groq — Phase 6)
+- Email / Password
+- Google Sign-In
+- Sign in with Apple
 
-```bash
-# API anahtarını ayarla (birini seç)
-export GROQ_API_KEY=your-groq-api-key
+## AI (Cloud Functions)
 
-# veya yerel dosya kullan (git'e gitmez)
-cp backend/src/main/resources/application-local.yml.example \
-   backend/src/main/resources/application-local.yml
-# application-local.yml içine Groq API anahtarını yaz
-```
+| Callable | Açıklama |
+|----------|----------|
+| `assistBreakdown` | Görevi adımlara böl |
+| `assistPlan` | Doğal dilden günlük plan |
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| POST | `/api/v1/ai/breakdown` | Görevi adımlara böl |
-| POST | `/api/v1/ai/plan` | Doğal dilden günlük plan |
-
-## API (Phase 1–2)
-
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| POST | `/api/v1/auth/register` | Kayıt |
-| POST | `/api/v1/auth/login` | Giriş |
-| GET | `/api/v1/timeline?date=` | Günlük timeline |
-| GET | `/api/v1/focus/session` | Aktif odak oturumu |
-| POST | `/api/v1/tasks` | Görev oluştur |
-| POST | `/api/v1/tasks/{id}/start` | Görevi başlat |
-| POST | `/api/v1/tasks/{id}/complete` | Görevi tamamla |
-
-Detaylı faz planı için: [docs/PLAN.md](docs/PLAN.md)
+Spring Boot `backend/` klasörü artık Flutter tarafından kullanılmıyor; ileride kaldırılabilir.

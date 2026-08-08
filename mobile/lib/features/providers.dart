@@ -13,15 +13,18 @@ import 'package:mimio/core/repositories/repositories.dart';
 import 'package:mimio/core/services/calendar_import_service.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/services/google_auth_service.dart';
+import 'package:mimio/core/firebase/user_profile_service.dart';
+import 'package:mimio/core/services/social_auth_service.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/storage/achievement_storage.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
+import 'package:mimio/core/theme/mimio_theme.dart';
 
 final localFocusStorageProvider = Provider<LocalFocusStorage>((ref) => LocalFocusStorage());
 
 final googleAuthServiceProvider = Provider<GoogleAuthService>((ref) => GoogleAuthService());
+final appleAuthServiceProvider = Provider<AppleAuthService>((ref) => AppleAuthService());
 
 final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService.instance);
 
@@ -42,23 +45,50 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
             password: password,
           );
     });
+    if (state.hasValue && state.value != null) {
+      _invalidateSyncedPrefs();
+    }
   }
 
   Future<void> loginWithGoogle() async {
-    final idToken = await ref.read(googleAuthServiceProvider).signInAndGetIdToken();
-    if (idToken == null) return;
-    if (idToken.isEmpty) {
+    final social = await ref.read(googleAuthServiceProvider).signIn();
+    if (social == null) return;
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      return ref.read(authRepositoryProvider).signInWithCredential(
+            social.credential,
+            displayName: social.displayName,
+          );
+    });
+    if (state.hasValue && state.value != null) {
+      _invalidateSyncedPrefs();
+    }
+  }
+
+  Future<void> loginWithApple() async {
+    final available = await ref.read(appleAuthServiceProvider).isAvailable;
+    if (!available) {
       state = AsyncError(
-        Exception('Google sign-in failed: missing id token'),
+        Exception('Apple Sign-In is not available on this device'),
         StackTrace.current,
       );
       return;
     }
 
+    final social = await ref.read(appleAuthServiceProvider).signIn();
+    if (social == null) return;
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return ref.read(authRepositoryProvider).loginWithGoogle(idToken: idToken);
+      return ref.read(authRepositoryProvider).signInWithCredential(
+            social.credential,
+            displayName: social.displayName,
+          );
     });
+    if (state.hasValue && state.value != null) {
+      _invalidateSyncedPrefs();
+    }
   }
 
   Future<void> register(String email, String password, String displayName) async {
@@ -70,6 +100,16 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
             displayName: displayName,
           );
     });
+    if (state.hasValue && state.value != null) {
+      _invalidateSyncedPrefs();
+    }
+  }
+
+  void _invalidateSyncedPrefs() {
+    ref.invalidate(appLanguageProvider);
+    ref.invalidate(appThemeModeProvider);
+    ref.invalidate(adhdPreferencesProvider);
+    ref.invalidate(achievementStatsProvider);
   }
 
   Future<void> logout() async {
@@ -96,6 +136,17 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
           avatarColor: avatarColor,
         );
     state = AsyncData(updated);
+  }
+
+  Future<void> pushSettingsToCloud() async {
+    final userId = state.valueOrNull?.userId;
+    if (userId == null) return;
+    await ref.read(userProfileServiceProvider).pushLocalSettingsToCloud(
+          uid: userId,
+          settings: ref.read(settingsStorageProvider),
+          adhd: ref.read(adhdSettingsStorageProvider),
+          achievements: ref.read(achievementStorageProvider),
+        );
   }
 }
 

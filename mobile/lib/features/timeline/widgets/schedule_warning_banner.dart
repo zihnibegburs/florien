@@ -5,7 +5,6 @@ import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
-import 'package:mimio/features/providers.dart';
 
 class ScheduleWarningBanner extends ConsumerWidget {
   const ScheduleWarningBanner({super.key, required this.tasks});
@@ -21,13 +20,17 @@ class ScheduleWarningBanner extends ConsumerWidget {
     final first = conflicts.first;
     final message = first.isTight
         ? s.scheduleTight(first.taskA.title, first.taskB.title)
-        : s.scheduleOverlap(first.taskA.title, first.taskB.title, first.overlapMinutes);
+        : s.scheduleOverlap(
+            first.taskA.title,
+            first.taskB.title,
+            first.overlapMinutes,
+          );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
       child: LiquidGlass(
         blur: false,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         padding: const EdgeInsets.all(14),
         gradient: LinearGradient(
           colors: [
@@ -35,7 +38,7 @@ class ScheduleWarningBanner extends ConsumerWidget {
             MimioColors.warning.withValues(alpha: 0.08),
           ],
         ),
-        tintOpacity: 0.5,
+        tintOpacity: 1,
         child: Row(
           children: [
             Icon(Icons.schedule_rounded, color: MimioColors.warning, size: 20),
@@ -44,12 +47,27 @@ class ScheduleWarningBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(s.scheduleWarning, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  Text(message, style: TextStyle(fontSize: 12, color: context.palette.textSecondary)),
+                  Text(
+                    s.scheduleWarning,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.palette.textSecondary,
+                    ),
+                  ),
                   if (conflicts.length > 1)
                     Text(
                       '+${conflicts.length - 1}',
-                      style: TextStyle(fontSize: 11, color: MimioColors.warning.withValues(alpha: 0.9)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: MimioColors.warning.withValues(alpha: 0.9),
+                      ),
                     ),
                 ],
               ),

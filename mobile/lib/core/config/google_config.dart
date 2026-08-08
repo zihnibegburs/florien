@@ -1,10 +1,12 @@
+/// OAuth client IDs from Firebase project `mimio-f4bb7`.
+/// Web client = serverClientId (idToken audience for Firebase Auth).
 class GoogleConfig {
   static const webClientId =
-      '444356161269-9ukhho3o8jbtum1ht8ea9v6nungmoau3.apps.googleusercontent.com';
+      '1088818781536-8dbqj5esh5rm49pjhlsdhrqooil7shbk.apps.googleusercontent.com';
 
   static const iosClientId =
-      '444356161269-gka2bbkma5qf6mji3m5jmo9aa5bhc8bc.apps.googleusercontent.com';
+      '1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd.apps.googleusercontent.com';
 
   static const iosUrlScheme =
-      'com.googleusercontent.apps.444356161269-gka2bbkma5qf6mji3m5jmo9aa5bhc8bc';
+      'com.googleusercontent.apps.1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd';
 }

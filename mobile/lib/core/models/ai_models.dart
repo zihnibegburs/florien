@@ -11,7 +11,7 @@ class AiStepModel {
 
   factory AiStepModel.fromJson(Map<String, dynamic> json) => AiStepModel(
         title: json['title'] as String,
-        durationMinutes: json['durationMinutes'] as int,
+        durationMinutes: (json['durationMinutes'] as num).toInt(),
         color: json['color'] as String? ?? '#3D9B87',
       );
 }
@@ -30,9 +30,9 @@ class AiBreakdownModel {
   factory AiBreakdownModel.fromJson(Map<String, dynamic> json) => AiBreakdownModel(
         originalTask: json['originalTask'] as String,
         steps: (json['steps'] as List)
-            .map((s) => AiStepModel.fromJson(s as Map<String, dynamic>))
+            .map((s) => AiStepModel.fromJson(Map<String, dynamic>.from(s as Map)))
             .toList(),
-        totalMinutes: json['totalMinutes'] as int,
+        totalMinutes: (json['totalMinutes'] as num).toInt(),
       );
 }
 
@@ -51,7 +51,7 @@ class AiPlannedTaskModel {
 
   factory AiPlannedTaskModel.fromJson(Map<String, dynamic> json) => AiPlannedTaskModel(
         title: json['title'] as String,
-        durationMinutes: json['durationMinutes'] as int,
+        durationMinutes: (json['durationMinutes'] as num).toInt(),
         suggestedTime: json['suggestedTime'] as String,
         color: json['color'] as String? ?? '#3D9B87',
       );
@@ -81,8 +81,8 @@ class AiPlanModel {
         date: DateTime.parse(json['date'] as String),
         summary: json['summary'] as String,
         tasks: (json['tasks'] as List)
-            .map((t) => AiPlannedTaskModel.fromJson(t as Map<String, dynamic>))
+            .map((t) => AiPlannedTaskModel.fromJson(Map<String, dynamic>.from(t as Map)))
             .toList(),
-        totalMinutes: json['totalMinutes'] as int,
+        totalMinutes: (json['totalMinutes'] as num).toInt(),
       );
 }

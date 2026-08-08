@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
@@ -14,15 +15,20 @@ class WeekStrip extends ConsumerWidget {
     final weekAsync = ref.watch(weeklyTimelineProvider);
     final selected = ref.watch(selectedDateProvider);
     final today = DateTime.now();
+    final language = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final locale = dateLocaleFor(language);
 
     return weekAsync.when(
-      loading: () => const SizedBox(height: 88, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+      loading: () => const SizedBox(
+        height: 76,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
       error: (_, __) => const SizedBox.shrink(),
       data: (days) => SizedBox(
-        height: 88,
+        height: 76,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
           itemCount: days.length,
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
@@ -39,18 +45,16 @@ class WeekStrip extends ConsumerWidget {
               },
               child: isSelected
                   ? AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 56,
+                      duration:
+                          (MediaQuery.maybeOf(context)?.disableAnimations ??
+                              false)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      width: 52,
                       decoration: BoxDecoration(
                         color: MimioColors.primary,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: MimioColors.primary.withValues(alpha: 0.35),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: _DayPillContent(
                         day: day,
@@ -58,21 +62,23 @@ class WeekStrip extends ConsumerWidget {
                         isToday: isToday,
                         completed: completed,
                         total: total,
+                        locale: locale,
                       ),
                     )
                   : LiquidGlass(
                       blur: false,
-                      borderRadius: BorderRadius.circular(18),
-                      tintOpacity: 0.75,
-                      borderWidth: isToday ? 1.5 : 1,
+                      borderRadius: BorderRadius.circular(16),
+                      tintOpacity: 1,
+                      borderWidth: 1,
                       child: SizedBox(
-                        width: 56,
+                        width: 52,
                         child: _DayPillContent(
                           day: day,
                           isSelected: false,
                           isToday: isToday,
                           completed: completed,
                           total: total,
+                          locale: locale,
                         ),
                       ),
                     ),
@@ -94,6 +100,7 @@ class _DayPillContent extends StatelessWidget {
     required this.isToday,
     required this.completed,
     required this.total,
+    required this.locale,
   });
 
   final TimelineModel day;
@@ -101,6 +108,7 @@ class _DayPillContent extends StatelessWidget {
   final bool isToday;
   final int completed;
   final int total;
+  final String locale;
 
   @override
   Widget build(BuildContext context) {
@@ -108,43 +116,51 @@ class _DayPillContent extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          DateFormat('EEE', 'tr_TR').format(day.date).toUpperCase(),
+          DateFormat('EEE', locale).format(day.date).toUpperCase(),
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: FontWeight.w700,
             color: isSelected ? Colors.white70 : context.palette.textSecondary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           DateFormat('d').format(day.date),
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
             color: isSelected ? Colors.white : context.palette.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         if (total > 0)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(total.clamp(0, 4), (i) {
-              final done = i < completed;
-              return Container(
-                width: 5,
-                height: 5,
-                margin: const EdgeInsets.symmetric(horizontal: 1),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: done
-                      ? (isSelected ? Colors.white : MimioColors.success)
-                      : (isSelected ? Colors.white38 : MimioColors.primary.withValues(alpha: 0.3)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              width: 24,
+              height: 3,
+              child: LinearProgressIndicator(
+                value: completed / total,
+                backgroundColor: isSelected
+                    ? Colors.white30
+                    : context.palette.border,
+                valueColor: AlwaysStoppedAnimation(
+                  isSelected ? Colors.white : MimioColors.success,
                 ),
-              );
-            }),
+              ),
+            ),
           )
         else
-          const SizedBox(height: 5),
+          Container(
+            width: isToday ? 4 : 18,
+            height: isToday ? 4 : 3,
+            decoration: BoxDecoration(
+              color: isToday
+                  ? (isSelected ? Colors.white : MimioColors.primary)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
       ],
     );
   }

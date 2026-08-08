@@ -1,5 +1,6 @@
-import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/firebase/user_profile_service.dart';
 import 'package:mimio/core/models/achievement.dart';
 import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/recurrence.dart';
@@ -19,6 +20,12 @@ class AppLanguageNotifier extends AsyncNotifier<String> {
   Future<void> setLanguage(String code) async {
     await ref.read(settingsStorageProvider).setLanguage(code);
     state = AsyncData(code);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        await ref.read(userProfileServiceProvider).patchSettings(uid, {'language': code});
+      } catch (_) {}
+    }
   }
 }
 
@@ -544,11 +551,11 @@ class S {
   String get poweredByGroq => 'Powered by Groq AI';
 
   String get planPrompt => l10n(lang, _m(
-        en: 'Write or speak what\'s on your mind',
-        tr: 'Aklındakileri yaz veya sesle söyle',
-        es: 'Escribe o habla lo que tienes en mente',
-        fr: 'Écrivez ou dites ce que vous avez en tête',
-        de: 'Schreibe oder sprich, was dir durch den Kopf geht',
+        en: 'Brain dump your day — write or speak freely',
+        tr: 'Günü beyin dökümü yap — serbestçe yaz veya söyle',
+        es: 'Vuelca tu día — escribe o habla libremente',
+        fr: 'Déchargez votre journée — écrivez ou parlez librement',
+        de: 'Gedanken abladen — schreibe oder sprich frei',
       ));
   String get breakdownPrompt => l10n(lang, _m(
         en: 'Write or speak the big task',
@@ -572,11 +579,11 @@ class S {
         de: 'Z.B. „Haus putzen" → teilt in kleine Schritte',
       ));
   String get planHint => l10n(lang, _m(
-        en: 'What do you want to do today?',
-        tr: 'Bugün ne yapmak istiyorsun?',
-        es: '¿Qué quieres hacer hoy?',
-        fr: 'Que voulez-vous faire aujourd\'hui ?',
-        de: 'Was möchtest du heute tun?',
+        en: 'Pour everything out — AI will organize a schedule',
+        tr: 'Kafandaki her şeyi yaz — AI bir program oluştursun',
+        es: 'Suelta todo — la IA organizará un horario',
+        fr: 'Déversez tout — l\'IA organisera un planning',
+        de: 'Schreib alles auf — die KI erstellt einen Plan',
       ));
   String get breakdownHint => l10n(lang, _m(
         en: 'Which task should we split?',
@@ -598,6 +605,14 @@ class S {
   String get week => l10n(lang, _m(en: 'Week', tr: 'Hafta', es: 'Semana', fr: 'Semaine', de: 'Woche'));
   String get day => l10n(lang, _m(en: 'Day', tr: 'Gün', es: 'Día', fr: 'Jour', de: 'Tag'));
   String get focus => l10n(lang, _m(en: 'Focus', tr: 'Odak', es: 'Enfoque', fr: 'Focus', de: 'Fokus'));
+  String get more => l10n(lang, _m(en: 'More', tr: 'Daha fazla', es: 'Más', fr: 'Plus', de: 'Mehr'));
+  String get moreSubtitle => l10n(lang, _m(
+        en: 'Week, badges & settings',
+        tr: 'Hafta, rozetler ve ayarlar',
+        es: 'Semana, logros y ajustes',
+        fr: 'Semaine, badges et réglages',
+        de: 'Woche, Abzeichen & Einstellungen',
+      ));
   String get weeklyPlanSummary => l10n(lang, _m(
         en: 'Weekly plan summary',
         tr: 'Haftalık plan özeti',
@@ -704,6 +719,13 @@ class S {
         fr: 'Continuer avec Google',
         de: 'Mit Google fortfahren',
       ));
+  String get loginWithApple => l10n(lang, _m(
+        en: 'Continue with Apple',
+        tr: 'Apple ile devam et',
+        es: 'Continuar con Apple',
+        fr: 'Continuer avec Apple',
+        de: 'Mit Apple fortfahren',
+      ));
   String get orContinueWith => l10n(lang, _m(
         en: 'or',
         tr: 'veya',
@@ -750,25 +772,25 @@ class S {
         de: 'Sitzung abgelaufen. Bitte erneut anmelden.',
       ));
   String get aiRequestDenied => l10n(lang, _m(
-        en: 'AI request denied. Restart the backend.',
-        tr: 'AI isteği reddedildi. Backend\'i yeniden başlatın.',
-        es: 'Solicitud de IA rechazada. Reinicia el backend.',
-        fr: 'Requête IA refusée. Redémarrez le backend.',
-        de: 'KI-Anfrage abgelehnt. Backend neu starten.',
+        en: 'AI request denied. Sign in again, then retry.',
+        tr: 'AI isteği reddedildi. Tekrar giriş yapıp deneyin.',
+        es: 'Solicitud de IA rechazada. Vuelve a iniciar sesión e inténtalo.',
+        fr: 'Requête IA refusée. Reconnectez-vous puis réessayez.',
+        de: 'KI-Anfrage abgelehnt. Erneut anmelden und erneut versuchen.',
       ));
   String get aiRequestDeniedWithHint => l10n(lang, _m(
-        en: 'AI request denied. Restart the backend (./gradlew bootRun).',
-        tr: 'AI isteği reddedildi. Backend\'i yeniden başlatın (./gradlew bootRun).',
-        es: 'Solicitud de IA rechazada. Reinicia el backend (./gradlew bootRun).',
-        fr: 'Requête IA refusée. Redémarrez le backend (./gradlew bootRun).',
-        de: 'KI-Anfrage abgelehnt. Backend neu starten (./gradlew bootRun).',
+        en: 'AI denied. Check you are signed in and Cloud Functions are deployed.',
+        tr: 'AI reddedildi. Giriş yaptığınızdan ve Cloud Functions deploy edildiğinden emin olun.',
+        es: 'IA rechazada. Comprueba que has iniciado sesión y que las Functions están desplegadas.',
+        fr: 'IA refusée. Vérifiez d\'être connecté et que les Cloud Functions sont déployées.',
+        de: 'KI abgelehnt. Prüfe Login und ob Cloud Functions deployed sind.',
       ));
   String get aiEndpointError => l10n(lang, _m(
-        en: 'AI endpoint unreachable. Is the backend and ngrok running? Restart the backend.',
-        tr: 'AI endpoint erişilemedi. Backend ve ngrok çalışıyor mu? Backend\'i yeniden başlatın.',
-        es: 'Endpoint de IA inaccesible. ¿Están el backend y ngrok activos? Reinicia el backend.',
-        fr: 'Endpoint IA inaccessible. Le backend et ngrok fonctionnent-ils ? Redémarrez le backend.',
-        de: 'KI-Endpoint nicht erreichbar. Laufen Backend und ngrok? Backend neu starten.',
+        en: 'AI endpoint unreachable. Are Cloud Functions deployed?',
+        tr: 'AI endpoint erişilemedi. Cloud Functions deploy edildi mi?',
+        es: 'Endpoint de IA inaccesible. ¿Functions desplegadas?',
+        fr: 'Endpoint IA inaccessible. Functions déployées ?',
+        de: 'KI-Endpoint nicht erreichbar. Functions deployed?',
       ));
   String get groqUnavailable => l10n(lang, _m(
         en: 'AI service unavailable. Check the Groq API key.',
@@ -778,11 +800,11 @@ class S {
         de: 'KI-Dienst nicht verfügbar. Groq-API-Schlüssel prüfen.',
       ));
   String get serverUnreachable => l10n(lang, _m(
-        en: 'Could not connect to server. Is the backend running?',
-        tr: 'Sunucuya bağlanılamadı. Backend çalışıyor mu?',
-        es: 'No se pudo conectar al servidor. ¿Está el backend activo?',
-        fr: 'Impossible de se connecter au serveur. Le backend fonctionne-t-il ?',
-        de: 'Verbindung zum Server fehlgeschlagen. Läuft das Backend?',
+        en: 'Could not connect to server. Check your internet connection.',
+        tr: 'Sunucuya bağlanılamadı. İnternet bağlantını kontrol et.',
+        es: 'No se pudo conectar al servidor. Comprueba tu conexión.',
+        fr: 'Impossible de se connecter au serveur. Vérifiez votre connexion.',
+        de: 'Verbindung zum Server fehlgeschlagen. Internet prüfen.',
       ));
   String errorPrefix(Object error) => l10n(lang, _m(
         en: 'Error: $error',
@@ -1096,50 +1118,46 @@ class S {
       };
 
   String friendlyTaskActionError(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
+    if (e is FirebaseAuthException) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return sessionExpired;
       }
-      final status = e.response?.statusCode;
-      if (status == 401) return sessionExpired;
-      if (status == 404) {
-        return l10n(lang, _m(
-          en: 'Task not found.',
-          tr: 'Görev bulunamadı.',
-          es: 'Tarea no encontrada.',
-          fr: 'Tâche introuvable.',
-          de: 'Aufgabe nicht gefunden.',
-        ));
-      }
+      return e.message ?? e.code;
     }
     final msg = e.toString();
-    if (msg.contains('connection') || msg.contains('SocketException')) {
+    if (msg.contains('Task not found')) {
+      return l10n(lang, _m(
+        en: 'Task not found.',
+        tr: 'Görev bulunamadı.',
+        es: 'Tarea no encontrada.',
+        fr: 'Tâche introuvable.',
+        de: 'Aufgabe nicht gefunden.',
+      ));
+    }
+    if (msg.contains('connection') || msg.contains('SocketException') || msg.contains('network')) {
       return serverUnreachable;
     }
     return friendlyAiError(e);
   }
 
   String friendlyAiError(Object e, {bool includeBootRunHint = false}) {
-    if (e is DioException) {
-      final status = e.response?.statusCode;
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
+    if (e is FirebaseAuthException) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return sessionExpired;
       }
-      if (status == 401) return sessionExpired;
-      if (status == 403) {
-        return includeBootRunHint ? aiRequestDeniedWithHint : aiRequestDenied;
-      }
+      return e.message ?? e.code;
     }
     final msg = e.toString();
-    if (msg.contains('Groq')) return groqUnavailable;
-    if (msg.contains('connection') || msg.contains('SocketException')) {
+    if (msg.contains('unauthenticated') || msg.contains('permission-denied')) {
+      return includeBootRunHint ? aiRequestDeniedWithHint : aiRequestDenied;
+    }
+    if (msg.contains('Groq') || msg.contains('GROQ')) return groqUnavailable;
+    if (msg.contains('connection') || msg.contains('SocketException') || msg.contains('network')) {
       return serverUnreachable;
     }
     return msg
         .replaceFirst('Exception: ', '')
-        .replaceFirst('DioException [bad response]: ', '');
+        .replaceFirst('FirebaseFunctionsException: ', '');
   }
 }
 

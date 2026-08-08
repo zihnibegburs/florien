@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
@@ -6,6 +5,7 @@ import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/copyable_error_banner.dart';
 import 'package:mimio/features/providers.dart';
 
 class SubtaskBreakdownSheet extends ConsumerStatefulWidget {
@@ -74,12 +74,6 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
   }
 
   String _friendlyError(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
-      }
-    }
     return e.toString().replaceFirst('Exception: ', '');
   }
 
@@ -188,7 +182,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
             ],
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+              CopyableErrorBanner(message: _error!),
             ],
             const SizedBox(height: 20),
             SizedBox(
