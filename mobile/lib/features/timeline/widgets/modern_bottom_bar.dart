@@ -98,13 +98,13 @@ class _AddButton extends StatelessWidget {
             child: Ink(
               width: 48,
               height: 48,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: MimioColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add_rounded,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 26,
               ),
             ),

@@ -29,7 +29,7 @@ class UserProfileService {
       'displayName': displayName?.trim().isNotEmpty == true
           ? displayName!.trim()
           : (user.displayName ?? user.email?.split('@').first ?? 'User'),
-      'avatarColor': avatarColor ?? '#3D9B87',
+      'avatarColor': avatarColor ?? '#4F52B2',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
       'settings': <String, dynamic>{},
@@ -102,8 +102,9 @@ class UserProfileService {
       await adhd.saveUnlockedAchievementIds(uid, unlocked);
     }
 
-    final imported = (cloudSettings['importedCalendarEventIds'] as List?)
-        ?.map((e) => e.toString());
+    final imported = (cloudSettings['importedCalendarEventIds'] as List?)?.map(
+      (e) => e.toString(),
+    );
     if (imported != null) {
       await settings.markCalendarEventsImported(imported);
     }
@@ -140,7 +141,10 @@ class UserProfileService {
     }, SetOptions(merge: true));
   }
 
-  Future<void> patchSettings(String uid, Map<String, dynamic> settingsPatch) async {
+  Future<void> patchSettings(
+    String uid,
+    Map<String, dynamic> settingsPatch,
+  ) async {
     final updates = <String, dynamic>{
       for (final e in settingsPatch.entries) 'settings.${e.key}': e.value,
       'updatedAt': FieldValue.serverTimestamp(),

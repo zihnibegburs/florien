@@ -21,15 +21,24 @@ import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
-final localFocusStorageProvider = Provider<LocalFocusStorage>((ref) => LocalFocusStorage());
+final localFocusStorageProvider = Provider<LocalFocusStorage>(
+  (ref) => LocalFocusStorage(),
+);
 
-final googleAuthServiceProvider = Provider<GoogleAuthService>((ref) => GoogleAuthService());
-final appleAuthServiceProvider = Provider<AppleAuthService>((ref) => AppleAuthService());
+final googleAuthServiceProvider = Provider<GoogleAuthService>(
+  (ref) => GoogleAuthService(),
+);
+final appleAuthServiceProvider = Provider<AppleAuthService>(
+  (ref) => AppleAuthService(),
+);
 
-final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService.instance);
+final liveActivityServiceProvider = Provider<LiveActivityService>(
+  (ref) => LiveActivityService.instance,
+);
 
-final authStateProvider =
-    AsyncNotifierProvider<AuthNotifier, AuthResponse?>(AuthNotifier.new);
+final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(
+  AuthNotifier.new,
+);
 
 class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   @override
@@ -40,10 +49,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return ref.read(authRepositoryProvider).login(
-            email: email,
-            password: password,
-          );
+      return ref
+          .read(authRepositoryProvider)
+          .login(email: email, password: password);
     });
     if (state.hasValue && state.value != null) {
       _invalidateSyncedPrefs();
@@ -56,7 +64,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return ref.read(authRepositoryProvider).signInWithCredential(
+      return ref
+          .read(authRepositoryProvider)
+          .signInWithCredential(
             social.credential,
             displayName: social.displayName,
           );
@@ -81,7 +91,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return ref.read(authRepositoryProvider).signInWithCredential(
+      return ref
+          .read(authRepositoryProvider)
+          .signInWithCredential(
             social.credential,
             displayName: social.displayName,
           );
@@ -91,14 +103,16 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     }
   }
 
-  Future<void> register(String email, String password, String displayName) async {
+  Future<void> register(
+    String email,
+    String password,
+    String displayName,
+  ) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return ref.read(authRepositoryProvider).register(
-            email: email,
-            password: password,
-            displayName: displayName,
-          );
+      return ref
+          .read(authRepositoryProvider)
+          .register(email: email, password: password, displayName: displayName);
     });
     if (state.hasValue && state.value != null) {
       _invalidateSyncedPrefs();
@@ -119,29 +133,29 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     await ref.read(authRepositoryProvider).logout();
     if (userId != null) {
       await ref.read(achievementStorageProvider).clear(userId);
-      await ref.read(adhdSettingsStorageProvider).clearUnlockedAchievementIds(userId);
+      await ref
+          .read(adhdSettingsStorageProvider)
+          .clearUnlockedAchievementIds(userId);
     }
     state = const AsyncData(null);
   }
 
-  Future<void> updateProfile({
-    String? displayName,
-    String? avatarColor,
-  }) async {
+  Future<void> updateProfile({String? displayName, String? avatarColor}) async {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final updated = await ref.read(authRepositoryProvider).updateProfile(
-          displayName: displayName,
-          avatarColor: avatarColor,
-        );
+    final updated = await ref
+        .read(authRepositoryProvider)
+        .updateProfile(displayName: displayName, avatarColor: avatarColor);
     state = AsyncData(updated);
   }
 
   Future<void> pushSettingsToCloud() async {
     final userId = state.valueOrNull?.userId;
     if (userId == null) return;
-    await ref.read(userProfileServiceProvider).pushLocalSettingsToCloud(
+    await ref
+        .read(userProfileServiceProvider)
+        .pushLocalSettingsToCloud(
           uid: userId,
           settings: ref.read(settingsStorageProvider),
           adhd: ref.read(adhdSettingsStorageProvider),
@@ -157,7 +171,9 @@ final selectedDateProvider = StateProvider<DateTime>((ref) {
 
 enum TimelineViewMode { list, grid }
 
-final timelineViewModeProvider = StateProvider<TimelineViewMode>((ref) => TimelineViewMode.list);
+final timelineViewModeProvider = StateProvider<TimelineViewMode>(
+  (ref) => TimelineViewMode.list,
+);
 
 class CelebrationEvent {
   const CelebrationEvent({required this.taskTitle, this.reward});
@@ -184,7 +200,8 @@ Set<String> _taskIdsAffectedByDelete(
   DeleteRecurrenceScope scope,
 ) {
   final ids = <String>{task.id};
-  if (scope == DeleteRecurrenceScope.thisOccurrence || task.recurrenceSeriesId == null) {
+  if (scope == DeleteRecurrenceScope.thisOccurrence ||
+      task.recurrenceSeriesId == null) {
     return ids;
   }
 
@@ -194,7 +211,8 @@ Set<String> _taskIdsAffectedByDelete(
   void collect(List<TaskModel> tasks) {
     for (final candidate in tasks) {
       final inSeries = candidate.recurrenceSeriesId == seriesId;
-      final matchesScope = scope == DeleteRecurrenceScope.all ||
+      final matchesScope =
+          scope == DeleteRecurrenceScope.all ||
           (cutoff != null &&
               candidate.scheduledAt != null &&
               !candidate.scheduledAt!.isBefore(cutoff));
@@ -210,7 +228,9 @@ Set<String> _taskIdsAffectedByDelete(
 }
 
 final focusSessionProvider =
-    AsyncNotifierProvider<FocusSessionNotifier, FocusSessionModel?>(FocusSessionNotifier.new);
+    AsyncNotifierProvider<FocusSessionNotifier, FocusSessionModel?>(
+      FocusSessionNotifier.new,
+    );
 
 class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
   Timer? _tickTimer;
@@ -224,7 +244,9 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     _syncTickTimer();
     if (_session != null) {
       final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
-      await ref.read(liveActivityServiceProvider).syncSession(_session!, language: lang);
+      await ref
+          .read(liveActivityServiceProvider)
+          .syncSession(_session!, language: lang);
     }
     return _session?.toFocusSessionModel();
   }
@@ -238,7 +260,7 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
   Future<void> startStandalone({
     required String title,
     int durationMinutes = 25,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
   }) async {
     _session = LocalFocusSessionData.standalone(
       title: title,
@@ -259,7 +281,8 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
 
   Future<void> resume() async {
     final session = _session;
-    if (session == null || !session.isPaused || session.pausedAt == null) return;
+    if (session == null || !session.isPaused || session.pausedAt == null)
+      return;
     final pauseMs = DateTime.now().difference(session.pausedAt!).inMilliseconds;
     _session = session.copyWith(
       accumulatedPauseMs: session.accumulatedPauseMs + pauseMs,
@@ -273,7 +296,8 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     final session = _session;
     if (session == null) return;
     final total = session.durationMinutes * 60;
-    final targetElapsed = session.toFocusSessionModel().elapsedSeconds + seconds;
+    final targetElapsed =
+        session.toFocusSessionModel().elapsedSeconds + seconds;
     _applyElapsedSeconds(targetElapsed.clamp(0, total));
     await _persistAndSync();
   }
@@ -304,7 +328,9 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     if (session.pausedAt != null) {
       pauseMs += now.difference(session.pausedAt!).inMilliseconds;
     }
-    final newStartedAt = now.subtract(Duration(milliseconds: pauseMs + clamped * 1000));
+    final newStartedAt = now.subtract(
+      Duration(milliseconds: pauseMs + clamped * 1000),
+    );
     _session = session.copyWith(startedAt: newStartedAt);
     state = AsyncData(_session!.toFocusSessionModel());
   }
@@ -327,7 +353,9 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     await ref.read(localFocusStorageProvider).save(session);
     state = AsyncData(session.toFocusSessionModel());
     final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
-    await ref.read(liveActivityServiceProvider).syncSession(session, language: lang);
+    await ref
+        .read(liveActivityServiceProvider)
+        .syncSession(session, language: lang);
     ref.invalidate(timelineProvider);
   }
 
@@ -343,8 +371,9 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
   }
 }
 
-final timelineProvider =
-    AsyncNotifierProvider<TimelineNotifier, TimelineModel>(TimelineNotifier.new);
+final timelineProvider = AsyncNotifierProvider<TimelineNotifier, TimelineModel>(
+  TimelineNotifier.new,
+);
 
 class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   @override
@@ -383,7 +412,11 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     try {
       final session = ref.read(focusSessionProvider).valueOrNull;
       final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
-      await WidgetSyncService.syncTimeline(timeline, session: session, language: lang);
+      await WidgetSyncService.syncTimeline(
+        timeline,
+        session: session,
+        language: lang,
+      );
     } catch (e) {
       debugPrint('Platform sync skipped: $e');
     }
@@ -394,7 +427,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     String? description,
     String? icon,
     int durationMinutes = 30,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
@@ -406,7 +439,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     int transitionBufferMinutes = 0,
   }) async {
     final taskIcon = icon ?? TaskIcons.inferName(title);
-    final task = await ref.read(taskRepositoryProvider).createTask(
+    final task = await ref
+        .read(taskRepositoryProvider)
+        .createTask(
           title: title,
           description: description,
           durationMinutes: durationMinutes,
@@ -436,7 +471,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
 
     final importedIds = <String>[];
     for (final event in events) {
-      await ref.read(taskRepositoryProvider).createTask(
+      await ref
+          .read(taskRepositoryProvider)
+          .createTask(
             title: event.title,
             description: event.description,
             durationMinutes: event.durationMinutes,
@@ -446,7 +483,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
       importedIds.add(event.id);
     }
 
-    await ref.read(settingsStorageProvider).markCalendarEventsImported(importedIds);
+    await ref
+        .read(settingsStorageProvider)
+        .markCalendarEventsImported(importedIds);
     await refresh(showLoading: false);
     return importedIds.length;
   }
@@ -454,11 +493,13 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   Future<void> createTaskWithSubtasks({
     required String title,
     required DateTime scheduledAt,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
     required List<({String title, int durationMinutes, String color})> subtasks,
     bool autoStart = false,
   }) async {
-    final task = await ref.read(taskRepositoryProvider).createTaskWithSubtasks(
+    final task = await ref
+        .read(taskRepositoryProvider)
+        .createTaskWithSubtasks(
           title: title,
           scheduledAt: scheduledAt,
           color: color,
@@ -466,7 +507,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           subtasks: subtasks,
         );
     if (autoStart) {
-      final firstSubtask = task.subtasks.isNotEmpty ? task.subtasks.first : task;
+      final firstSubtask = task.subtasks.isNotEmpty
+          ? task.subtasks.first
+          : task;
       await ref.read(focusSessionProvider.notifier).startWithTask(firstSubtask);
     }
     await refresh(showLoading: false);
@@ -486,7 +529,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     int? transitionBufferMinutes,
     bool? isInbox,
   }) async {
-    final task = await ref.read(taskRepositoryProvider).updateTask(
+    final task = await ref
+        .read(taskRepositoryProvider)
+        .updateTask(
           id: id,
           title: title,
           description: description,
@@ -504,7 +549,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     if (reminders != null) {
       await _scheduleReminders(task, reminders);
     } else if (scheduledAt != null) {
-      final existing = await ref.read(notificationServiceProvider).loadReminderSettings(id);
+      final existing = await ref
+          .read(notificationServiceProvider)
+          .loadReminderSettings(id);
       if (existing.hasAny) {
         await _scheduleReminders(task, existing);
       }
@@ -515,10 +562,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     required String parentId,
     required List<({String title, int durationMinutes, String color})> subtasks,
   }) async {
-    await ref.read(taskRepositoryProvider).addSubtasksToTask(
-          parentId: parentId,
-          subtasks: subtasks,
-        );
+    await ref
+        .read(taskRepositoryProvider)
+        .addSubtasksToTask(parentId: parentId, subtasks: subtasks);
     await refresh(showLoading: false);
   }
 
@@ -563,9 +609,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     await _refreshAfterAction();
 
     if (task != null) {
-      await ref.read(achievementStatsProvider.notifier).recordTaskCompleted(
-            completedAt: DateTime.now(),
-          );
+      await ref
+          .read(achievementStatsProvider.notifier)
+          .recordTaskCompleted(completedAt: DateTime.now());
     }
 
     return completed;
@@ -598,15 +644,22 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     await refresh(showLoading: false);
   }
 
-  Future<void> _scheduleReminders(TaskModel task, TaskReminderSettings reminders) async {
+  Future<void> _scheduleReminders(
+    TaskModel task,
+    TaskReminderSettings reminders,
+  ) async {
     if (!reminders.hasAny) {
       await ref.read(notificationServiceProvider).cancelTaskReminders(task.id);
       return;
     }
     final s = ref.read(stringsProvider);
-    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ?? const AdhdPreferences();
+    final prefs =
+        ref.read(adhdPreferencesProvider).valueOrNull ??
+        const AdhdPreferences();
     await ref.read(notificationServiceProvider).requestPermission();
-    await ref.read(notificationServiceProvider).scheduleTaskReminders(
+    await ref
+        .read(notificationServiceProvider)
+        .scheduleTaskReminders(
           task,
           settings: reminders,
           titlePrefix: s.taskReminderTitle,
@@ -620,16 +673,20 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   }
 }
 
-final weeklyTimelineProvider =
-    FutureProvider<List<TimelineModel>>((ref) async {
+final weeklyTimelineProvider = FutureProvider<List<TimelineModel>>((ref) async {
   final selected = ref.watch(selectedDateProvider);
   final monday = selected.subtract(Duration(days: selected.weekday - 1));
   final repo = ref.read(taskRepositoryProvider);
-  final futures = List.generate(7, (i) => repo.getTimeline(monday.add(Duration(days: i))));
+  final futures = List.generate(
+    7,
+    (i) => repo.getTimeline(monday.add(Duration(days: i))),
+  );
   return Future.wait(futures);
 });
 
-final inboxProvider = AsyncNotifierProvider<InboxNotifier, List<TaskModel>>(InboxNotifier.new);
+final inboxProvider = AsyncNotifierProvider<InboxNotifier, List<TaskModel>>(
+  InboxNotifier.new,
+);
 
 class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
   @override
@@ -643,18 +700,22 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => ref.read(taskRepositoryProvider).getInbox());
+    state = await AsyncValue.guard(
+      () => ref.read(taskRepositoryProvider).getInbox(),
+    );
   }
 
   Future<void> addToInbox({
     required String title,
     int durationMinutes = 30,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
     String? icon,
     EnergyLevel? energyLevel,
     String? motivation,
   }) async {
-    await ref.read(taskRepositoryProvider).createTask(
+    await ref
+        .read(taskRepositoryProvider)
+        .createTask(
           title: title,
           durationMinutes: durationMinutes,
           color: color,

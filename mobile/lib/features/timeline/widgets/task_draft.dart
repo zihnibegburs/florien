@@ -16,7 +16,7 @@ class TaskDraft {
     this.transitionBuffer = 0,
     this.remind5Min = false,
     this.duration = 30,
-    this.selectedColor = '#3D9B87',
+    this.selectedColor = '#4F52B2',
     this.time,
     this.recurrence = const RecurrenceSelection(),
     this.splitIntoSubtasks = false,
@@ -78,7 +78,9 @@ class TaskDraft {
       splitIntoSubtasks: splitIntoSubtasks ?? this.splitIntoSubtasks,
       remind10Min: remind10Min ?? this.remind10Min,
       remind1Min: remind1Min ?? this.remind1Min,
-      previewSteps: clearPreviewSteps ? null : (previewSteps ?? this.previewSteps),
+      previewSteps: clearPreviewSteps
+          ? null
+          : (previewSteps ?? this.previewSteps),
       reward: reward ?? this.reward,
       motivation: motivation ?? this.motivation,
     );
@@ -118,12 +120,20 @@ Future<void> submitTaskDraft({
       steps = result.steps;
     }
 
-    await ref.read(timelineProvider.notifier).createTaskWithSubtasks(
+    await ref
+        .read(timelineProvider.notifier)
+        .createTaskWithSubtasks(
           title: title,
           scheduledAt: draft.scheduledAt(selectedDate),
           color: draft.selectedColor,
           subtasks: steps
-              .map((s) => (title: s.title, durationMinutes: s.durationMinutes, color: s.color))
+              .map(
+                (s) => (
+                  title: s.title,
+                  durationMinutes: s.durationMinutes,
+                  color: s.color,
+                ),
+              )
               .toList(),
         );
     return;
@@ -132,11 +142,16 @@ Future<void> submitTaskDraft({
   var duration = draft.duration;
   if (draft.useAiDuration) {
     final result = await ref.read(aiRepositoryProvider).breakdown(title);
-    duration = result.steps.fold<int>(0, (sum, step) => sum + step.durationMinutes);
+    duration = result.steps.fold<int>(
+      0,
+      (sum, step) => sum + step.durationMinutes,
+    );
     if (duration <= 0) duration = 30;
   }
 
-  await ref.read(timelineProvider.notifier).createTask(
+  await ref
+      .read(timelineProvider.notifier)
+      .createTask(
         title: title,
         durationMinutes: duration,
         color: draft.selectedColor,
@@ -146,7 +161,9 @@ Future<void> submitTaskDraft({
         reward: draft.reward.trim().isEmpty ? null : draft.reward.trim(),
         reminders: reminders,
         energyLevel: draft.energyLevel,
-        motivation: draft.motivation.trim().isEmpty ? null : draft.motivation.trim(),
+        motivation: draft.motivation.trim().isEmpty
+            ? null
+            : draft.motivation.trim(),
         transitionBufferMinutes: draft.transitionBuffer,
       );
 }

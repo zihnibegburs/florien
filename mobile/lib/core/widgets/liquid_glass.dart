@@ -6,33 +6,26 @@ import 'package:mimio/core/theme/mimio_theme.dart';
 /// Quiet surface tokens. Kept behind the existing API so feature screens can
 /// share one consistent, low-noise visual language.
 abstract final class LiquidGlassTokens {
-  static const double blurSigma = 12;
-  static const double blurSigmaChrome = 18;
+  static const double blurSigma = 10;
+  static const double blurSigmaChrome = 12;
 
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
   static Color tint(BuildContext context, {double? opacity}) {
-    final dark = isDark(context);
-    final o = opacity ?? (dark ? 0.96 : 0.98);
-    return dark
-        ? const Color(0xFF222228).withValues(alpha: o)
-        : const Color(0xFFFFFDF9).withValues(alpha: o);
+    final o = opacity ?? 1;
+    return context.palette.surface.withValues(alpha: o);
   }
 
-  static Color highlight(BuildContext context) => isDark(context)
-      ? Colors.white.withValues(alpha: 0.08)
-      : Colors.white.withValues(alpha: 0.75);
+  static Color highlight(BuildContext context) => context.palette.border;
 
-  static Color edgeShadow(BuildContext context) => isDark(context)
-      ? Colors.white.withValues(alpha: 0.04)
-      : const Color(0xFFE5E1D9);
+  static Color edgeShadow(BuildContext context) => context.palette.border;
 
   static List<BoxShadow> elevation(BuildContext context) => [
     BoxShadow(
-      color: Colors.black.withValues(alpha: isDark(context) ? 0.18 : 0.045),
-      blurRadius: 18,
-      offset: const Offset(0, 8),
+      color: Colors.black.withValues(alpha: isDark(context) ? 0.14 : 0.04),
+      blurRadius: 14,
+      offset: const Offset(0, 5),
     ),
   ];
 }
@@ -45,7 +38,7 @@ class LiquidGlass extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(20)),
     this.padding,
     this.margin,
-    this.blur = true,
+    this.blur = false,
     this.blurSigma = LiquidGlassTokens.blurSigma,
     this.tintColor,
     this.tintOpacity,
@@ -88,7 +81,6 @@ class LiquidGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final highlight = LiquidGlassTokens.highlight(context);
     final edge = LiquidGlassTokens.edgeShadow(context);
     final tint =
         tintColor ?? LiquidGlassTokens.tint(context, opacity: tintOpacity);
@@ -99,15 +91,7 @@ class LiquidGlass extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: borderRadius,
         boxShadow: shadows,
-        // Gradient padding trick — per-side Border() ignores borderRadius and leaves square corners.
-        gradient: borderWidth > 0
-            ? LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [highlight, highlight.withValues(alpha: 0.42), edge],
-                stops: const [0.0, 0.4, 1.0],
-              )
-            : null,
+        color: borderWidth > 0 ? edge : null,
       ),
       child: Padding(
         padding: EdgeInsets.all(borderWidth),
@@ -140,24 +124,6 @@ class LiquidGlass extends StatelessWidget {
                       : tint.withValues(alpha: tintOpacity ?? 0.35),
                 ),
               ),
-              if (borderWidth > 0)
-                Positioned(
-                  top: 0,
-                  left: 12,
-                  right: 12,
-                  height: 1,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          highlight.withValues(alpha: 0.55),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               if (padding != null)
                 Padding(padding: padding!, child: child)
               else
@@ -175,7 +141,7 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
-/// Warm, paper-like canvas with restrained brand accents.
+/// A quiet, neutral canvas that lets content carry the hierarchy.
 class MimioAmbientBackground extends StatelessWidget {
   const MimioAmbientBackground({super.key, required this.child});
 
@@ -183,57 +149,7 @@ class MimioAmbientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = LiquidGlassTokens.isDark(context);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: dark
-                  ? const [Color(0xFF17171C), Color(0xFF1B1A20)]
-                  : const [Color(0xFFF9F7F2), Color(0xFFF4F1EB)],
-            ),
-          ),
-        ),
-        Positioned(
-          top: -170,
-          right: -130,
-          child: _Orb(
-            color: MimioColors.primary.withValues(alpha: dark ? 0.10 : 0.07),
-            size: 340,
-          ),
-        ),
-        Positioned(
-          bottom: -190,
-          left: -140,
-          child: _Orb(
-            color: MimioColors.warning.withValues(alpha: dark ? 0.06 : 0.05),
-            size: 360,
-          ),
-        ),
-        child,
-      ],
-    );
-  }
-}
-
-class _Orb extends StatelessWidget {
-  const _Orb({required this.color, required this.size});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    );
+    return ColoredBox(color: context.palette.background, child: child);
   }
 }
 
@@ -250,32 +166,12 @@ class LiquidGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: LiquidGlassTokens.blurSigmaChrome,
-          sigmaY: LiquidGlassTokens.blurSigmaChrome,
-        ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: LiquidGlassTokens.tint(
-              context,
-              opacity: LiquidGlassTokens.isDark(context) ? 0.94 : 0.96,
-            ),
-            border: Border(
-              bottom: BorderSide(
-                color: LiquidGlassTokens.highlight(
-                  context,
-                ).withValues(alpha: 0.35),
-              ),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [child, ?bottom],
-          ),
-        ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.palette.background,
+        border: Border(bottom: BorderSide(color: context.palette.border)),
       ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [child, ?bottom]),
     );
   }
 }

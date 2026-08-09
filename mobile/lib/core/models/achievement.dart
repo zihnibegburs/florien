@@ -23,7 +23,8 @@ class AchievementDefinition {
   final int Function(AchievementStats stats) progressOf;
 
   bool isUnlocked(AchievementStats stats) => progressOf(stats) >= target;
-  double progress(AchievementStats stats) => (progressOf(stats) / target).clamp(0.0, 1.0);
+  double progress(AchievementStats stats) =>
+      (progressOf(stats) / target).clamp(0.0, 1.0);
 
   String unlockKey(AchievementStats stats) =>
       scope == AchievementScope.weekly ? '${key}_${stats.weekKey}' : key;
@@ -47,18 +48,20 @@ class AchievementStats {
   }) {
     return AchievementStats(
       tasksCompleted: tasksCompleted ?? this.tasksCompleted,
-      tasksCompletedThisWeek: tasksCompletedThisWeek ?? this.tasksCompletedThisWeek,
+      tasksCompletedThisWeek:
+          tasksCompletedThisWeek ?? this.tasksCompletedThisWeek,
       weekKey: weekKey ?? this.weekKey,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'tasksCompleted': tasksCompleted,
-        'tasksCompletedThisWeek': tasksCompletedThisWeek,
-        'weekKey': weekKey,
-      };
+    'tasksCompleted': tasksCompleted,
+    'tasksCompletedThisWeek': tasksCompletedThisWeek,
+    'weekKey': weekKey,
+  };
 
-  factory AchievementStats.fromJson(Map<String, dynamic> json) => AchievementStats(
+  factory AchievementStats.fromJson(Map<String, dynamic> json) =>
+      AchievementStats(
         tasksCompleted: json['tasksCompleted'] as int? ?? 0,
         tasksCompletedThisWeek: json['tasksCompletedThisWeek'] as int? ?? 0,
         weekKey: json['weekKey'] as String?,
@@ -85,14 +88,16 @@ const _achievementIcons = [
   Icons.thumb_up_rounded,
 ];
 
-final _achievementColors = MimioColors.taskColors.map(MimioColors.fromHex).toList();
+final _achievementColors = MimioColors.taskColors
+    .map(MimioColors.fromHex)
+    .toList();
 
 const weeklyAchievementDefinitions = [
   AchievementDefinition(
     key: 'weekly_1',
     scope: AchievementScope.weekly,
     icon: Icons.wb_sunny_rounded,
-    color: Color(0xFF3D9B87),
+    color: Color(0xFF4F52B2),
     target: 1,
     progressOf: _weeklyTasksCompleted,
   ),
@@ -143,4 +148,5 @@ final achievementDefinitions = [
 ];
 
 int _tasksCompleted(AchievementStats stats) => stats.tasksCompleted;
-int _weeklyTasksCompleted(AchievementStats stats) => stats.tasksCompletedThisWeek;
+int _weeklyTasksCompleted(AchievementStats stats) =>
+    stats.tasksCompletedThisWeek;

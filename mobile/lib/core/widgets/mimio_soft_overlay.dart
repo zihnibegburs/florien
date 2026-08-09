@@ -196,7 +196,7 @@ class MimioSoftTextButton extends StatelessWidget {
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         foregroundColor: destructive
-            ? MimioColors.accent.withValues(alpha: 0.9)
+            ? context.palette.error
             : context.palette.textSecondary,
         textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),

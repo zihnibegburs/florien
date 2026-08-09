@@ -21,12 +21,12 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) => AuthResponse(
-        token: json['token'] as String? ?? '',
-        userId: json['userId'] as String,
-        email: json['email'] as String? ?? '',
-        displayName: json['displayName'] as String? ?? '',
-        avatarColor: json['avatarColor'] as String? ?? '#3D9B87',
-      );
+    token: json['token'] as String? ?? '',
+    userId: json['userId'] as String,
+    email: json['email'] as String? ?? '',
+    displayName: json['displayName'] as String? ?? '',
+    avatarColor: json['avatarColor'] as String? ?? '#4F52B2',
+  );
 
   String get firstName {
     final trimmed = displayName.trim();
@@ -40,14 +40,13 @@ class AuthResponse {
     String? email,
     String? displayName,
     String? avatarColor,
-  }) =>
-      AuthResponse(
-        token: token ?? this.token,
-        userId: userId ?? this.userId,
-        email: email ?? this.email,
-        displayName: displayName ?? this.displayName,
-        avatarColor: avatarColor ?? this.avatarColor,
-      );
+  }) => AuthResponse(
+    token: token ?? this.token,
+    userId: userId ?? this.userId,
+    email: email ?? this.email,
+    displayName: displayName ?? this.displayName,
+    avatarColor: avatarColor ?? this.avatarColor,
+  );
 }
 
 class TaskModel {
@@ -96,85 +95,95 @@ class TaskModel {
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        description: json['description'] as String?,
-        color: json['color'] as String,
-        icon: json['icon'] as String,
-        durationMinutes: json['durationMinutes'] as int,
-        scheduledAt: _parseDateTime(json['scheduledAt']),
-        status: _parseStatus(json['status'] as String),
-        sortOrder: json['sortOrder'] as int,
-        isInbox: json['isInbox'] as bool,
-        startedAt: _parseDateTime(json['startedAt']),
-        completedAt: _parseDateTime(json['completedAt']),
-        parentTaskId: json['parentTaskId'] as String?,
-        subtasks: json['subtasks'] != null
-            ? (json['subtasks'] as List)
-                .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
-                .toList()
-            : const [],
-        reward: json['reward'] as String?,
-        energyLevel: EnergyLevelX.fromApiNullable(json['energyLevel'] as String?),
-        motivation: json['motivation'] as String?,
-        transitionBufferMinutes: json['transitionBufferMinutes'] as int? ?? 0,
-        recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
-        recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
-      );
+    id: json['id'] as String,
+    title: json['title'] as String,
+    description: json['description'] as String?,
+    color: json['color'] as String,
+    icon: json['icon'] as String,
+    durationMinutes: json['durationMinutes'] as int,
+    scheduledAt: _parseDateTime(json['scheduledAt']),
+    status: _parseStatus(json['status'] as String),
+    sortOrder: json['sortOrder'] as int,
+    isInbox: json['isInbox'] as bool,
+    startedAt: _parseDateTime(json['startedAt']),
+    completedAt: _parseDateTime(json['completedAt']),
+    parentTaskId: json['parentTaskId'] as String?,
+    subtasks: json['subtasks'] != null
+        ? (json['subtasks'] as List)
+              .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
+              .toList()
+        : const [],
+    reward: json['reward'] as String?,
+    energyLevel: EnergyLevelX.fromApiNullable(json['energyLevel'] as String?),
+    motivation: json['motivation'] as String?,
+    transitionBufferMinutes: json['transitionBufferMinutes'] as int? ?? 0,
+    recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
+    recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
+  );
 
-  factory TaskModel.fromFirestore(String id, Map<String, dynamic> data, {List<TaskModel> subtasks = const []}) =>
-      TaskModel(
-        id: id,
-        title: data['title'] as String? ?? '',
-        description: data['description'] as String?,
-        color: data['color'] as String? ?? '#3D9B87',
-        icon: data['icon'] as String? ?? 'task',
-        durationMinutes: (data['durationMinutes'] as num?)?.toInt() ?? 30,
-        scheduledAt: _parseDateTime(data['scheduledAt']),
-        status: _parseStatus(data['status'] as String? ?? 'PENDING'),
-        sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 0,
-        isInbox: data['isInbox'] as bool? ?? false,
-        startedAt: _parseDateTime(data['startedAt']),
-        completedAt: _parseDateTime(data['completedAt']),
-        parentTaskId: data['parentTaskId'] as String?,
-        subtasks: subtasks,
-        reward: data['reward'] as String?,
-        energyLevel: EnergyLevelX.fromApiNullable(data['energyLevel'] as String?),
-        motivation: data['motivation'] as String?,
-        transitionBufferMinutes: (data['transitionBufferMinutes'] as num?)?.toInt() ?? 0,
-        recurrenceType: _parseRecurrenceType(data['recurrenceType'] as String?),
-        recurrenceSeriesId: data['recurrenceSeriesId'] as String?,
-      );
+  factory TaskModel.fromFirestore(
+    String id,
+    Map<String, dynamic> data, {
+    List<TaskModel> subtasks = const [],
+  }) => TaskModel(
+    id: id,
+    title: data['title'] as String? ?? '',
+    description: data['description'] as String?,
+    color: data['color'] as String? ?? '#4F52B2',
+    icon: data['icon'] as String? ?? 'task',
+    durationMinutes: (data['durationMinutes'] as num?)?.toInt() ?? 30,
+    scheduledAt: _parseDateTime(data['scheduledAt']),
+    status: _parseStatus(data['status'] as String? ?? 'PENDING'),
+    sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 0,
+    isInbox: data['isInbox'] as bool? ?? false,
+    startedAt: _parseDateTime(data['startedAt']),
+    completedAt: _parseDateTime(data['completedAt']),
+    parentTaskId: data['parentTaskId'] as String?,
+    subtasks: subtasks,
+    reward: data['reward'] as String?,
+    energyLevel: EnergyLevelX.fromApiNullable(data['energyLevel'] as String?),
+    motivation: data['motivation'] as String?,
+    transitionBufferMinutes:
+        (data['transitionBufferMinutes'] as num?)?.toInt() ?? 0,
+    recurrenceType: _parseRecurrenceType(data['recurrenceType'] as String?),
+    recurrenceSeriesId: data['recurrenceSeriesId'] as String?,
+  );
 
   Map<String, dynamic> toFirestoreMap({bool includeId = false}) => {
-        if (includeId) 'id': id,
-        'title': title,
-        'description': description,
-        'color': color,
-        'icon': icon,
-        'durationMinutes': durationMinutes,
-        'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt!.toUtc()) : null,
-        'status': statusApiValue,
-        'sortOrder': sortOrder,
-        'isInbox': isInbox,
-        'startedAt': startedAt != null ? Timestamp.fromDate(startedAt!.toUtc()) : null,
-        'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!.toUtc()) : null,
-        'parentTaskId': parentTaskId,
-        'reward': reward,
-        'energyLevel': energyLevel?.apiValue,
-        'motivation': motivation,
-        'transitionBufferMinutes': transitionBufferMinutes,
-        'recurrenceType': _recurrenceTypeApi(recurrenceType),
-        'recurrenceSeriesId': recurrenceSeriesId,
-      };
+    if (includeId) 'id': id,
+    'title': title,
+    'description': description,
+    'color': color,
+    'icon': icon,
+    'durationMinutes': durationMinutes,
+    'scheduledAt': scheduledAt != null
+        ? Timestamp.fromDate(scheduledAt!.toUtc())
+        : null,
+    'status': statusApiValue,
+    'sortOrder': sortOrder,
+    'isInbox': isInbox,
+    'startedAt': startedAt != null
+        ? Timestamp.fromDate(startedAt!.toUtc())
+        : null,
+    'completedAt': completedAt != null
+        ? Timestamp.fromDate(completedAt!.toUtc())
+        : null,
+    'parentTaskId': parentTaskId,
+    'reward': reward,
+    'energyLevel': energyLevel?.apiValue,
+    'motivation': motivation,
+    'transitionBufferMinutes': transitionBufferMinutes,
+    'recurrenceType': _recurrenceTypeApi(recurrenceType),
+    'recurrenceSeriesId': recurrenceSeriesId,
+  };
 
   String get statusApiValue => switch (status) {
-        TaskStatus.pending => 'PENDING',
-        TaskStatus.inProgress => 'IN_PROGRESS',
-        TaskStatus.paused => 'PAUSED',
-        TaskStatus.completed => 'COMPLETED',
-        TaskStatus.skipped => 'SKIPPED',
-      };
+    TaskStatus.pending => 'PENDING',
+    TaskStatus.inProgress => 'IN_PROGRESS',
+    TaskStatus.paused => 'PAUSED',
+    TaskStatus.completed => 'COMPLETED',
+    TaskStatus.skipped => 'SKIPPED',
+  };
 
   TaskModel copyWith({
     String? id,
@@ -200,29 +209,29 @@ class TaskModel {
     int? transitionBufferMinutes,
     RecurrenceType? recurrenceType,
     String? recurrenceSeriesId,
-  }) =>
-      TaskModel(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        description: description ?? this.description,
-        color: color ?? this.color,
-        icon: icon ?? this.icon,
-        durationMinutes: durationMinutes ?? this.durationMinutes,
-        scheduledAt: clearScheduledAt ? null : (scheduledAt ?? this.scheduledAt),
-        status: status ?? this.status,
-        sortOrder: sortOrder ?? this.sortOrder,
-        isInbox: isInbox ?? this.isInbox,
-        startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
-        completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
-        parentTaskId: parentTaskId ?? this.parentTaskId,
-        subtasks: subtasks ?? this.subtasks,
-        reward: reward ?? this.reward,
-        energyLevel: energyLevel ?? this.energyLevel,
-        motivation: motivation ?? this.motivation,
-        transitionBufferMinutes: transitionBufferMinutes ?? this.transitionBufferMinutes,
-        recurrenceType: recurrenceType ?? this.recurrenceType,
-        recurrenceSeriesId: recurrenceSeriesId ?? this.recurrenceSeriesId,
-      );
+  }) => TaskModel(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    color: color ?? this.color,
+    icon: icon ?? this.icon,
+    durationMinutes: durationMinutes ?? this.durationMinutes,
+    scheduledAt: clearScheduledAt ? null : (scheduledAt ?? this.scheduledAt),
+    status: status ?? this.status,
+    sortOrder: sortOrder ?? this.sortOrder,
+    isInbox: isInbox ?? this.isInbox,
+    startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
+    completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+    parentTaskId: parentTaskId ?? this.parentTaskId,
+    subtasks: subtasks ?? this.subtasks,
+    reward: reward ?? this.reward,
+    energyLevel: energyLevel ?? this.energyLevel,
+    motivation: motivation ?? this.motivation,
+    transitionBufferMinutes:
+        transitionBufferMinutes ?? this.transitionBufferMinutes,
+    recurrenceType: recurrenceType ?? this.recurrenceType,
+    recurrenceSeriesId: recurrenceSeriesId ?? this.recurrenceSeriesId,
+  );
 
   static DateTime? _parseDateTime(dynamic value) {
     if (value == null) return null;
@@ -233,31 +242,31 @@ class TaskModel {
   }
 
   static String _recurrenceTypeApi(RecurrenceType type) => switch (type) {
-        RecurrenceType.none => 'NONE',
-        RecurrenceType.daily => 'DAILY',
-        RecurrenceType.weekly => 'WEEKLY',
-        RecurrenceType.monthly => 'MONTHLY',
-        RecurrenceType.yearly => 'YEARLY',
-        RecurrenceType.custom => 'CUSTOM',
-      };
+    RecurrenceType.none => 'NONE',
+    RecurrenceType.daily => 'DAILY',
+    RecurrenceType.weekly => 'WEEKLY',
+    RecurrenceType.monthly => 'MONTHLY',
+    RecurrenceType.yearly => 'YEARLY',
+    RecurrenceType.custom => 'CUSTOM',
+  };
 
   static RecurrenceType _parseRecurrenceType(String? value) => switch (value) {
-        'DAILY' => RecurrenceType.daily,
-        'WEEKLY' => RecurrenceType.weekly,
-        'MONTHLY' => RecurrenceType.monthly,
-        'YEARLY' => RecurrenceType.yearly,
-        'CUSTOM' => RecurrenceType.custom,
-        _ => RecurrenceType.none,
-      };
+    'DAILY' => RecurrenceType.daily,
+    'WEEKLY' => RecurrenceType.weekly,
+    'MONTHLY' => RecurrenceType.monthly,
+    'YEARLY' => RecurrenceType.yearly,
+    'CUSTOM' => RecurrenceType.custom,
+    _ => RecurrenceType.none,
+  };
 
   static TaskStatus _parseStatus(String status) => switch (status) {
-        'PENDING' => TaskStatus.pending,
-        'IN_PROGRESS' => TaskStatus.inProgress,
-        'PAUSED' => TaskStatus.paused,
-        'COMPLETED' => TaskStatus.completed,
-        'SKIPPED' => TaskStatus.skipped,
-        _ => TaskStatus.pending,
-      };
+    'PENDING' => TaskStatus.pending,
+    'IN_PROGRESS' => TaskStatus.inProgress,
+    'PAUSED' => TaskStatus.paused,
+    'COMPLETED' => TaskStatus.completed,
+    'SKIPPED' => TaskStatus.skipped,
+    _ => TaskStatus.pending,
+  };
 
   bool get isActive => status == TaskStatus.inProgress;
   bool get isCompleted => status == TaskStatus.completed;
@@ -271,7 +280,9 @@ class TaskModel {
 
   DateTime get endTime {
     final start = scheduledAt ?? DateTime.now();
-    return start.add(Duration(minutes: durationMinutes + transitionBufferMinutes));
+    return start.add(
+      Duration(minutes: durationMinutes + transitionBufferMinutes),
+    );
   }
 
   DateTime get taskEndTime {
@@ -292,14 +303,14 @@ class TimelineModel {
   });
 
   factory TimelineModel.fromJson(Map<String, dynamic> json) => TimelineModel(
-        date: DateTime.parse(json['date'] as String),
-        tasks: (json['tasks'] as List)
-            .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
-            .toList(),
-        activeTask: json['activeTask'] != null
-            ? TaskModel.fromJson(json['activeTask'] as Map<String, dynamic>)
-            : null,
-      );
+    date: DateTime.parse(json['date'] as String),
+    tasks: (json['tasks'] as List)
+        .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
+        .toList(),
+    activeTask: json['activeTask'] != null
+        ? TaskModel.fromJson(json['activeTask'] as Map<String, dynamic>)
+        : null,
+  );
 }
 
 class FocusSessionModel {
@@ -327,7 +338,8 @@ class FocusSessionModel {
     required this.progressPercent,
   });
 
-  factory FocusSessionModel.fromJson(Map<String, dynamic> json) => FocusSessionModel(
+  factory FocusSessionModel.fromJson(Map<String, dynamic> json) =>
+      FocusSessionModel(
         taskId: json['taskId'] as String,
         title: json['title'] as String,
         color: json['color'] as String,

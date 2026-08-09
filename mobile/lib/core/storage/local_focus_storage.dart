@@ -28,17 +28,17 @@ class LocalFocusSessionData {
   factory LocalFocusSessionData.standalone({
     required String title,
     int durationMinutes = 25,
-    String color = '#3D9B87',
-  }) =>
-      LocalFocusSessionData(
-        taskId: FocusSessionModel.standaloneTaskId,
-        title: title,
-        color: color,
-        durationMinutes: durationMinutes,
-        startedAt: DateTime.now(),
-      );
+    String color = '#4F52B2',
+  }) => LocalFocusSessionData(
+    taskId: FocusSessionModel.standaloneTaskId,
+    title: title,
+    color: color,
+    durationMinutes: durationMinutes,
+    startedAt: DateTime.now(),
+  );
 
-  factory LocalFocusSessionData.fromTask(TaskModel task) => LocalFocusSessionData(
+  factory LocalFocusSessionData.fromTask(TaskModel task) =>
+      LocalFocusSessionData(
         taskId: task.id,
         title: task.title,
         color: task.color,
@@ -46,25 +46,28 @@ class LocalFocusSessionData {
         startedAt: DateTime.now(),
       );
 
-  factory LocalFocusSessionData.fromJson(Map<String, dynamic> json) => LocalFocusSessionData(
+  factory LocalFocusSessionData.fromJson(Map<String, dynamic> json) =>
+      LocalFocusSessionData(
         taskId: json['taskId'] as String,
         title: json['title'] as String,
         color: json['color'] as String,
         durationMinutes: json['durationMinutes'] as int,
         startedAt: DateTime.parse(json['startedAt'] as String),
         accumulatedPauseMs: json['accumulatedPauseMs'] as int? ?? 0,
-        pausedAt: json['pausedAt'] != null ? DateTime.parse(json['pausedAt'] as String) : null,
+        pausedAt: json['pausedAt'] != null
+            ? DateTime.parse(json['pausedAt'] as String)
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
-        'taskId': taskId,
-        'title': title,
-        'color': color,
-        'durationMinutes': durationMinutes,
-        'startedAt': startedAt.toIso8601String(),
-        'accumulatedPauseMs': accumulatedPauseMs,
-        if (pausedAt != null) 'pausedAt': pausedAt!.toIso8601String(),
-      };
+    'taskId': taskId,
+    'title': title,
+    'color': color,
+    'durationMinutes': durationMinutes,
+    'startedAt': startedAt.toIso8601String(),
+    'accumulatedPauseMs': accumulatedPauseMs,
+    if (pausedAt != null) 'pausedAt': pausedAt!.toIso8601String(),
+  };
 
   LocalFocusSessionData copyWith({
     String? taskId,
@@ -75,16 +78,15 @@ class LocalFocusSessionData {
     int? accumulatedPauseMs,
     DateTime? pausedAt,
     bool clearPausedAt = false,
-  }) =>
-      LocalFocusSessionData(
-        taskId: taskId ?? this.taskId,
-        title: title ?? this.title,
-        color: color ?? this.color,
-        durationMinutes: durationMinutes ?? this.durationMinutes,
-        startedAt: startedAt ?? this.startedAt,
-        accumulatedPauseMs: accumulatedPauseMs ?? this.accumulatedPauseMs,
-        pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
-      );
+  }) => LocalFocusSessionData(
+    taskId: taskId ?? this.taskId,
+    title: title ?? this.title,
+    color: color ?? this.color,
+    durationMinutes: durationMinutes ?? this.durationMinutes,
+    startedAt: startedAt ?? this.startedAt,
+    accumulatedPauseMs: accumulatedPauseMs ?? this.accumulatedPauseMs,
+    pausedAt: clearPausedAt ? null : (pausedAt ?? this.pausedAt),
+  );
 
   DateTime get timerEndDate {
     final totalMs = durationMinutes * 60 * 1000;
@@ -101,8 +103,13 @@ class LocalFocusSessionData {
     final elapsedMs = current.difference(startedAt).inMilliseconds - pauseMs;
     final elapsedSeconds = elapsedMs ~/ 1000;
     final clampedElapsed = elapsedSeconds.clamp(0, totalSeconds);
-    final remainingSeconds = (totalSeconds - clampedElapsed).clamp(0, totalSeconds);
-    final progress = totalSeconds > 0 ? (clampedElapsed * 100.0 / totalSeconds) : 0.0;
+    final remainingSeconds = (totalSeconds - clampedElapsed).clamp(
+      0,
+      totalSeconds,
+    );
+    final progress = totalSeconds > 0
+        ? (clampedElapsed * 100.0 / totalSeconds)
+        : 0.0;
 
     return FocusSessionModel(
       taskId: taskId,
@@ -126,7 +133,9 @@ class LocalFocusStorage {
     final raw = prefs.getString(_sessionKey);
     if (raw == null || raw.isEmpty) return null;
     try {
-      return LocalFocusSessionData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return LocalFocusSessionData.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       await clear();
       return null;

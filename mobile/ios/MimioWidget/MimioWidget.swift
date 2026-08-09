@@ -130,7 +130,7 @@ private struct MimioLiveActivityData {
         taskTitle = sharedDefault.string(forKey: key("taskTitle")) ?? "Mimio"
         remaining = sharedDefault.string(forKey: key("remaining")) ?? "--:--"
         statusLabel = sharedDefault.string(forKey: key("statusLabel")) ?? "Mimio"
-        let colorHex = sharedDefault.string(forKey: key("color")) ?? "#3D9B87"
+        let colorHex = sharedDefault.string(forKey: key("color")) ?? "#4F52B2"
         accentColor = Color(hex: colorHex)
         isPaused = sharedDefault.integer(forKey: key("paused")) == 1
 

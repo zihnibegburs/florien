@@ -20,11 +20,11 @@ class AuthRepository {
     required SettingsStorage settings,
     required AdhdSettingsStorage adhd,
     required AchievementStorage achievements,
-  })  : _auth = auth,
-        _profiles = profiles,
-        _settings = settings,
-        _adhd = adhd,
-        _achievements = achievements;
+  }) : _auth = auth,
+       _profiles = profiles,
+       _settings = settings,
+       _adhd = adhd,
+       _achievements = achievements;
 
   final FirebaseAuth _auth;
   final UserProfileService _profiles;
@@ -144,10 +144,10 @@ class AuthRepository {
       displayName: displayNameOverride?.trim().isNotEmpty == true
           ? displayNameOverride!.trim()
           : (profile?['displayName'] as String? ??
-              user.displayName ??
-              user.email?.split('@').first ??
-              'User'),
-      avatarColor: profile?['avatarColor'] as String? ?? '#3D9B87',
+                user.displayName ??
+                user.email?.split('@').first ??
+                'User'),
+      avatarColor: profile?['avatarColor'] as String? ?? '#4F52B2',
     );
   }
 
@@ -190,7 +190,9 @@ class TaskRepository {
         .where('isInbox', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .get();
-    return snap.docs.map((d) => TaskModel.fromFirestore(d.id, d.data())).toList();
+    return snap.docs
+        .map((d) => TaskModel.fromFirestore(d.id, d.data()))
+        .toList();
   }
 
   Future<TaskModel> scheduleFromInbox(String id, DateTime scheduledAt) async {
@@ -214,7 +216,10 @@ class TaskRepository {
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     final snap = await _tasks
-        .where('scheduledAt', isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart))
+        .where(
+          'scheduledAt',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart),
+        )
         .where('scheduledAt', isLessThan: Timestamp.fromDate(dayEnd))
         .orderBy('scheduledAt')
         .get();
@@ -229,8 +234,13 @@ class TaskRepository {
     if (parentIds.isNotEmpty) {
       // Firestore whereIn is limited to 30; chunk if needed.
       for (var i = 0; i < parentIds.length; i += 30) {
-        final chunk = parentIds.sublist(i, i + 30 > parentIds.length ? parentIds.length : i + 30);
-        final subSnap = await _tasks.where('parentTaskId', whereIn: chunk).get();
+        final chunk = parentIds.sublist(
+          i,
+          i + 30 > parentIds.length ? parentIds.length : i + 30,
+        );
+        final subSnap = await _tasks
+            .where('parentTaskId', whereIn: chunk)
+            .get();
         for (final d in subSnap.docs) {
           final task = TaskModel.fromFirestore(d.id, d.data());
           final parentId = task.parentTaskId!;
@@ -252,8 +262,12 @@ class TaskRepository {
         .limit(5)
         .get();
     if (activeSnap.docs.isNotEmpty) {
-      final inProgress = activeSnap.docs.where((d) => d.data()['status'] == 'IN_PROGRESS');
-      final doc = inProgress.isNotEmpty ? inProgress.first : activeSnap.docs.first;
+      final inProgress = activeSnap.docs.where(
+        (d) => d.data()['status'] == 'IN_PROGRESS',
+      );
+      final doc = inProgress.isNotEmpty
+          ? inProgress.first
+          : activeSnap.docs.first;
       activeTask = TaskModel.fromFirestore(doc.id, doc.data());
     }
 
@@ -263,7 +277,7 @@ class TaskRepository {
   Future<TaskModel> createTask({
     required String title,
     String? description,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
     String icon = 'task',
     int durationMinutes = 30,
     DateTime? scheduledAt,
@@ -282,7 +296,9 @@ class TaskRepository {
       'color': color,
       'icon': icon,
       'durationMinutes': durationMinutes,
-      'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt.toUtc()) : null,
+      'scheduledAt': scheduledAt != null
+          ? Timestamp.fromDate(scheduledAt.toUtc())
+          : null,
       'status': 'PENDING',
       'sortOrder': 0,
       'isInbox': isInbox,
@@ -387,11 +403,14 @@ class TaskRepository {
   Future<TaskModel> createTaskWithSubtasks({
     required String title,
     required DateTime scheduledAt,
-    String color = '#3D9B87',
+    String color = '#4F52B2',
     String icon = 'task',
     required List<({String title, int durationMinutes, String color})> subtasks,
   }) async {
-    final totalDuration = subtasks.fold<int>(0, (sum, s) => sum + s.durationMinutes);
+    final totalDuration = subtasks.fold<int>(
+      0,
+      (sum, s) => sum + s.durationMinutes,
+    );
     final parentRef = _tasks.doc();
     await parentRef.set({
       'title': title.trim(),
@@ -453,7 +472,11 @@ class TaskRepository {
     }
 
     final parentSnap = await parentRef.get();
-    return TaskModel.fromFirestore(parentRef.id, parentSnap.data()!, subtasks: createdSubs);
+    return TaskModel.fromFirestore(
+      parentRef.id,
+      parentSnap.data()!,
+      subtasks: createdSubs,
+    );
   }
 
   Future<TaskModel> updateTask({
@@ -475,11 +498,13 @@ class TaskRepository {
       if (description != null) 'description': description,
       if (color != null) 'color': color,
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
-      if (scheduledAt != null) 'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      if (scheduledAt != null)
+        'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
       if (reward != null) 'reward': _normalizeText(reward) ?? '',
       if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
       if (motivation != null) 'motivation': _normalizeText(motivation) ?? '',
-      if (transitionBufferMinutes != null) 'transitionBufferMinutes': transitionBufferMinutes,
+      if (transitionBufferMinutes != null)
+        'transitionBufferMinutes': transitionBufferMinutes,
       if (isInbox != null) 'isInbox': isInbox,
     };
     await _tasks.doc(id).update(patch);
@@ -500,12 +525,18 @@ class TaskRepository {
       throw StateError('Cannot add subtasks to a subtask');
     }
 
-    final existing = await _tasks.where('parentTaskId', isEqualTo: parentId).limit(1).get();
+    final existing = await _tasks
+        .where('parentTaskId', isEqualTo: parentId)
+        .limit(1)
+        .get();
     if (existing.docs.isNotEmpty) {
       throw StateError('Task already has subtasks');
     }
 
-    final totalDuration = subtasks.fold<int>(0, (sum, s) => sum + s.durationMinutes);
+    final totalDuration = subtasks.fold<int>(
+      0,
+      (sum, s) => sum + s.durationMinutes,
+    );
     await parentRef.update({
       'durationMinutes': totalDuration,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -541,17 +572,20 @@ class TaskRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       };
       await childRef.set(data);
-      createdSubs.add(TaskModel.fromFirestore(childRef.id, {
-        ...data,
-        'scheduledAt': current,
-      }));
+      createdSubs.add(
+        TaskModel.fromFirestore(childRef.id, {...data, 'scheduledAt': current}),
+      );
       if (current != null) {
         current = current.add(Duration(minutes: sub.durationMinutes));
       }
     }
 
     final refreshed = await parentRef.get();
-    return TaskModel.fromFirestore(parentId, refreshed.data()!, subtasks: createdSubs);
+    return TaskModel.fromFirestore(
+      parentId,
+      refreshed.data()!,
+      subtasks: createdSubs,
+    );
   }
 
   Future<TaskModel> startTask(String id) async {
@@ -575,7 +609,8 @@ class TaskRepository {
 
     batch.update(ref, {
       'status': 'IN_PROGRESS',
-      if (task.status != TaskStatus.paused) 'startedAt': Timestamp.fromDate(DateTime.now().toUtc()),
+      if (task.status != TaskStatus.paused)
+        'startedAt': Timestamp.fromDate(DateTime.now().toUtc()),
       'updatedAt': FieldValue.serverTimestamp(),
     });
     await batch.commit();
@@ -606,7 +641,9 @@ class TaskRepository {
     });
 
     if (task.parentTaskId != null) {
-      final siblings = await _tasks.where('parentTaskId', isEqualTo: task.parentTaskId).get();
+      final siblings = await _tasks
+          .where('parentTaskId', isEqualTo: task.parentTaskId)
+          .get();
       final allDone = siblings.docs.every((d) {
         if (d.id == id) return true;
         return d.data()['status'] == 'COMPLETED';
@@ -672,7 +709,9 @@ class TaskRepository {
 
     QuerySnapshot<Map<String, dynamic>> toDelete;
     if (scope == DeleteRecurrenceScope.all) {
-      toDelete = await _tasks.where('recurrenceSeriesId', isEqualTo: seriesId).get();
+      toDelete = await _tasks
+          .where('recurrenceSeriesId', isEqualTo: seriesId)
+          .get();
     } else {
       final cutoff = task.scheduledAt?.toUtc();
       if (cutoff == null) {
@@ -681,7 +720,10 @@ class TaskRepository {
       }
       toDelete = await _tasks
           .where('recurrenceSeriesId', isEqualTo: seriesId)
-          .where('scheduledAt', isGreaterThanOrEqualTo: Timestamp.fromDate(cutoff))
+          .where(
+            'scheduledAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(cutoff),
+          )
           .get();
     }
 
@@ -695,7 +737,9 @@ class TaskRepository {
     }
 
     for (final doc in toDelete.docs) {
-      final children = await _tasks.where('parentTaskId', isEqualTo: doc.id).get();
+      final children = await _tasks
+          .where('parentTaskId', isEqualTo: doc.id)
+          .get();
       for (final child in children.docs) {
         batch.delete(child.reference);
         ops++;

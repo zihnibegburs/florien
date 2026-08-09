@@ -10,10 +10,10 @@ class AiStepModel {
   });
 
   factory AiStepModel.fromJson(Map<String, dynamic> json) => AiStepModel(
-        title: json['title'] as String,
-        durationMinutes: (json['durationMinutes'] as num).toInt(),
-        color: json['color'] as String? ?? '#3D9B87',
-      );
+    title: json['title'] as String,
+    durationMinutes: (json['durationMinutes'] as num).toInt(),
+    color: json['color'] as String? ?? '#4F52B2',
+  );
 }
 
 class AiBreakdownModel {
@@ -27,10 +27,13 @@ class AiBreakdownModel {
     required this.totalMinutes,
   });
 
-  factory AiBreakdownModel.fromJson(Map<String, dynamic> json) => AiBreakdownModel(
+  factory AiBreakdownModel.fromJson(Map<String, dynamic> json) =>
+      AiBreakdownModel(
         originalTask: json['originalTask'] as String,
         steps: (json['steps'] as List)
-            .map((s) => AiStepModel.fromJson(Map<String, dynamic>.from(s as Map)))
+            .map(
+              (s) => AiStepModel.fromJson(Map<String, dynamic>.from(s as Map)),
+            )
             .toList(),
         totalMinutes: (json['totalMinutes'] as num).toInt(),
       );
@@ -49,11 +52,12 @@ class AiPlannedTaskModel {
     required this.color,
   });
 
-  factory AiPlannedTaskModel.fromJson(Map<String, dynamic> json) => AiPlannedTaskModel(
+  factory AiPlannedTaskModel.fromJson(Map<String, dynamic> json) =>
+      AiPlannedTaskModel(
         title: json['title'] as String,
         durationMinutes: (json['durationMinutes'] as num).toInt(),
         suggestedTime: json['suggestedTime'] as String,
-        color: json['color'] as String? ?? '#3D9B87',
+        color: json['color'] as String? ?? '#4F52B2',
       );
 
   DateTime scheduledAt(DateTime date) {
@@ -78,11 +82,14 @@ class AiPlanModel {
   });
 
   factory AiPlanModel.fromJson(Map<String, dynamic> json) => AiPlanModel(
-        date: DateTime.parse(json['date'] as String),
-        summary: json['summary'] as String,
-        tasks: (json['tasks'] as List)
-            .map((t) => AiPlannedTaskModel.fromJson(Map<String, dynamic>.from(t as Map)))
-            .toList(),
-        totalMinutes: (json['totalMinutes'] as num).toInt(),
-      );
+    date: DateTime.parse(json['date'] as String),
+    summary: json['summary'] as String,
+    tasks: (json['tasks'] as List)
+        .map(
+          (t) =>
+              AiPlannedTaskModel.fromJson(Map<String, dynamic>.from(t as Map)),
+        )
+        .toList(),
+    totalMinutes: (json['totalMinutes'] as num).toInt(),
+  );
 }

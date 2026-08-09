@@ -23,32 +23,21 @@ class DayProgressCard extends ConsumerWidget {
       borderRadius: BorderRadius.circular(24),
       blur: false,
       padding: const EdgeInsets.all(16),
-      gradient: LinearGradient(
-        colors: [
-          MimioColors.primary.withValues(alpha: 0.16),
-          MimioColors.primaryLight.withValues(alpha: 0.1),
-        ],
-      ),
-      tintOpacity: 0.42,
+      tintColor: context.palette.surface,
+      tintOpacity: 1,
       child: Row(
         children: [
-          SizedBox(
-            width: 52,
-            height: 52,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: progress,
-                  strokeWidth: 5,
-                  backgroundColor: MimioColors.primary.withValues(alpha: 0.15),
-                  color: MimioColors.primary,
-                ),
-                Text(
-                  total == 0 ? '—' : '${(progress * 100).round()}%',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                ),
-              ],
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: context.palette.primaryMuted,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              progress >= 1 ? Icons.done_all_rounded : Icons.today_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              size: 22,
             ),
           ),
           const SizedBox(width: 16),
@@ -58,20 +47,37 @@ class DayProgressCard extends ConsumerWidget {
               children: [
                 Text(
                   total == 0 ? s.dayEmpty : s.tasksCompleted(completed, total),
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   active > 0
                       ? s.oneTaskActive
                       : total == 0
-                          ? s.addFirstTaskHint
-                          : s.tasksRemaining(total - completed),
-                  style: TextStyle(color: context.palette.textSecondary, fontSize: 13),
+                      ? s.addFirstTaskHint
+                      : s.tasksRemaining(total - completed),
+                  style: TextStyle(
+                    color: context.palette.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    color: Theme.of(context).colorScheme.primary,
+                    backgroundColor: context.palette.surfaceMuted,
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 12),
           if (active > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -82,9 +88,29 @@ class DayProgressCard extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.play_arrow_rounded, size: 16, color: MimioColors.success),
-                  Text(s.active, style: const TextStyle(color: MimioColors.success, fontWeight: FontWeight.w700, fontSize: 12)),
+                  const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 16,
+                    color: MimioColors.success,
+                  ),
+                  Text(
+                    s.active,
+                    style: const TextStyle(
+                      color: MimioColors.success,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
+              ),
+            )
+          else
+            Text(
+              total == 0 ? '—' : '${(progress * 100).round()}%',
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
             ),
         ],
