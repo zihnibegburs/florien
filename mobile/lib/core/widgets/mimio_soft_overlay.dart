@@ -69,6 +69,9 @@ Future<T?> showMimioSoftDialog<T>({
   return showGeneralDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
+    barrierLabel: barrierDismissible
+        ? MaterialLocalizations.of(context).modalBarrierDismissLabel
+        : null,
     barrierColor: MimioOverlay.barrierColor,
     useRootNavigator: useRootNavigator,
     transitionDuration: MimioOverlay.transitionDuration,
