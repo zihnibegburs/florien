@@ -1,11 +1,6 @@
 name: Mobile iOS
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "mobile/**"
-      - ".github/workflows/mobile-ios.yml"
   pull_request:
     paths:
       - "mobile/**"
