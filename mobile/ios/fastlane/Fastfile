@@ -72,10 +72,10 @@ platform :ios do
 
       import_params = {
         certificate_path: certificate_path,
-        certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD")
+        certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD"),
+        keychain_name: ENV.fetch("MATCH_KEYCHAIN_NAME", "login.keychain-db")
       }
-      if ENV["MATCH_KEYCHAIN_NAME"].to_s.strip != ""
-        import_params[:keychain_name] = ENV["MATCH_KEYCHAIN_NAME"]
+      if ENV["MATCH_KEYCHAIN_PASSWORD"].to_s.strip != ""
         import_params[:keychain_password] = ENV["MATCH_KEYCHAIN_PASSWORD"]
       end
       import_certificate(import_params)
