@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/features/focus/widgets/break_timer_sheet.dart';
-import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
-import 'package:mimio/features/focus/widgets/reward_timer_sheet.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/features/focus/widgets/break_timer_sheet.dart';
+import 'package:florien/features/focus/widgets/celebration_dialog.dart';
+import 'package:florien/features/focus/widgets/reward_timer_sheet.dart';
+import 'package:florien/features/providers.dart';
 
 Future<void> handleTaskCompleted(
   BuildContext context,

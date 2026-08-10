@@ -1,6 +1,6 @@
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/foundation.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 class CalendarImportEvent {
   const CalendarImportEvent({
@@ -173,4 +173,4 @@ class CalendarImportService {
   }
 }
 
-String colorForCalendarIndex(int index) => MimioColors.taskColors[index % MimioColors.taskColors.length];
+String colorForCalendarIndex(int index) => FlorienColors.taskColors[index % FlorienColors.taskColors.length];

@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/firebase/firebase_providers.dart';
-import 'package:mimio/core/firebase/user_profile_service.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/platform/siri_sync_service.dart';
-import 'package:mimio/core/storage/achievement_storage.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
-import 'package:mimio/core/utils/recurrence_generator.dart';
-import 'package:mimio/firebase_options.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/firebase/user_profile_service.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/platform/siri_sync_service.dart';
+import 'package:florien/core/storage/achievement_storage.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/utils/recurrence_generator.dart';
+import 'package:florien/firebase_options.dart';
 
 class AuthRepository {
   AuthRepository({

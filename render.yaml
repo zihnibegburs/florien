@@ -1,8 +1,8 @@
-# Render Blueprint — Mimio full stack
+# Render Blueprint — Florien full stack
 # Dashboard: New → Blueprint → bu repo'yu seç
 services:
   - type: web
-    name: mimio-api
+    name: florien-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -13,25 +13,25 @@ services:
         value: prod
       - key: DB_HOST
         fromDatabase:
-          name: mimio-db
+          name: florien-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: mimio-db
+          name: florien-db
           property: port
       - key: DB_NAME
         fromDatabase:
-          name: mimio-db
+          name: florien-db
           property: database
       - key: DB_USER
         fromDatabase:
-          name: mimio-db
+          name: florien-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: mimio-db
+          name: florien-db
           property: password
-      - key: MIMIO_JWT_SECRET
+      - key: FLORIEN_JWT_SECRET
         generateValue: true
       - key: GROQ_API_KEY
         sync: false
@@ -39,7 +39,7 @@ services:
         sync: false
 
   - type: web
-    name: mimio-web
+    name: florien-web
     runtime: static
     buildCommand: bash mobile/scripts/render-build.sh
     staticPublishPath: mobile/build/web
@@ -51,11 +51,11 @@ services:
       - key: API_HOST
         fromService:
           type: web
-          name: mimio-api
+          name: florien-api
           property: host
 
 databases:
-  - name: mimio-db
-    databaseName: mimio
-    user: mimio
+  - name: florien-db
+    databaseName: florien
+    user: florien
     plan: free

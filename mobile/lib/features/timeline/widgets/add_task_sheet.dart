@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/core/widgets/speech_text_field.dart';
-import 'package:mimio/features/timeline/widgets/add_task_detail_screen.dart';
-import 'package:mimio/features/timeline/widgets/task_draft.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/core/widgets/speech_text_field.dart';
+import 'package:florien/features/timeline/widgets/add_task_detail_screen.dart';
+import 'package:florien/features/timeline/widgets/task_draft.dart';
 
 class AddTaskSheet extends ConsumerStatefulWidget {
   const AddTaskSheet({super.key, required this.selectedDate});
@@ -62,7 +62,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   }
 
   Future<void> _openDetails() async {
-    final created = await pushMimioOverlayRoute<bool>(
+    final created = await pushFlorienOverlayRoute<bool>(
       context: context,
       builder: (_) => AddTaskDetailScreen(
         selectedDate: widget.selectedDate,

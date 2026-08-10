@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 class TimelineHourGrid extends ConsumerWidget {
   const TimelineHourGrid({
@@ -111,7 +111,7 @@ class _TaskBlock extends StatelessWidget {
 
     final top = (startMinutes / 60) * TimelineHourGrid._hourHeight;
     final height = (task.durationMinutes / 60) * TimelineHourGrid._hourHeight;
-    final color = MimioColors.fromHex(task.color);
+    final color = FlorienColors.fromHex(task.color);
     final timeFormat = DateFormat('HH:mm');
 
     return Positioned(

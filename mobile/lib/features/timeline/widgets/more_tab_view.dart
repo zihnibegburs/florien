@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/features/web/weekly_view.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/achievements/achievements_screen.dart';
+import 'package:florien/features/web/weekly_view.dart';
 
 class MoreTabView extends ConsumerWidget {
   const MoreTabView({super.key});
@@ -103,7 +103,7 @@ class _MoreTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: MimioColors.primary),
+        leading: Icon(icon, color: FlorienColors.primary),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: subtitle != null
             ? Text(subtitle!, style: const TextStyle(fontSize: 12))

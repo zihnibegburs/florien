@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
 
 class ModernNavItem {
   const ModernNavItem({

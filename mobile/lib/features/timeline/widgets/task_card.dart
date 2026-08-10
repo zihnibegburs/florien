@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/features/providers.dart';
 
 typedef SubtaskAction = void Function(TaskModel subtask);
 
@@ -47,7 +47,7 @@ class TaskCard extends ConsumerWidget {
     final isFocused = session?.taskId == task.id;
     final isActive = isFocused && (session?.isActive ?? false);
     final isPaused = isFocused && (session?.isPaused ?? false);
-    final color = MimioColors.fromHex(task.color);
+    final color = FlorienColors.fromHex(task.color);
     final timeFormat = DateFormat('HH:mm');
     final startTime = task.scheduledAt != null
         ? timeFormat.format(task.scheduledAt!.toLocal())
@@ -134,7 +134,7 @@ class TaskCard extends ConsumerWidget {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: MimioColors.warning
+                                            color: FlorienColors.warning
                                                 .withValues(alpha: 0.12),
                                             borderRadius: BorderRadius.circular(
                                               6,
@@ -145,7 +145,7 @@ class TaskCard extends ConsumerWidget {
                                             style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: MimioColors.warning,
+                                              color: FlorienColors.warning,
                                             ),
                                           ),
                                         ),
@@ -158,7 +158,7 @@ class TaskCard extends ConsumerWidget {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: MimioColors.primary
+                                            color: FlorienColors.primary
                                                 .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                               6,
@@ -172,7 +172,7 @@ class TaskCard extends ConsumerWidget {
                                             style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: MimioColors.primary,
+                                              color: FlorienColors.primary,
                                             ),
                                           ),
                                         ),
@@ -380,7 +380,7 @@ class _SubtaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subColor = MimioColors.fromHex(subtask.color);
+    final subColor = FlorienColors.fromHex(subtask.color);
     final isFocused = focusSession?.taskId == subtask.id;
     final isActive = isFocused && (focusSession?.isActive ?? false);
     final isPaused = isFocused && (focusSession?.isPaused ?? false);
@@ -455,19 +455,19 @@ class _SubtaskRow extends StatelessWidget {
           if (isActive || isPaused) ...[
             _MiniAction(
               icon: Icons.pause_rounded,
-              color: MimioColors.warning,
+              color: FlorienColors.warning,
               onTap: onPause,
             ),
             const SizedBox(width: 4),
             _MiniAction(
               icon: Icons.close_rounded,
-              color: MimioColors.accent,
+              color: FlorienColors.accent,
               onTap: onCancel,
             ),
             const SizedBox(width: 4),
             _MiniAction(
               icon: Icons.check_rounded,
-              color: MimioColors.success,
+              color: FlorienColors.success,
               onTap: onComplete,
             ),
           ] else if (!subtask.isCompleted && !isFocused) ...[
@@ -510,7 +510,7 @@ class _CompletionRadio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isCompleted
-        ? MimioColors.success
+        ? FlorienColors.success
         : accentColor.withValues(alpha: 0.5);
 
     return Material(
@@ -528,7 +528,7 @@ class _CompletionRadio extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isCompleted ? MimioColors.success : Colors.transparent,
+                  color: isCompleted ? FlorienColors.success : Colors.transparent,
                   border: Border.all(color: borderColor, width: 1.8),
                 ),
                 child: isCompleted
@@ -598,7 +598,7 @@ class _ActiveControls extends StatelessWidget {
             icon: const Icon(Icons.pause_rounded, size: 18),
             label: Text(pauseLabel),
             style: ElevatedButton.styleFrom(
-              backgroundColor: MimioColors.warning,
+              backgroundColor: FlorienColors.warning,
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
@@ -610,7 +610,7 @@ class _ActiveControls extends StatelessWidget {
             icon: const Icon(Icons.close_rounded, size: 18),
             label: Text(cancelLabel),
             style: ElevatedButton.styleFrom(
-              backgroundColor: MimioColors.accent,
+              backgroundColor: FlorienColors.accent,
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
@@ -622,7 +622,7 @@ class _ActiveControls extends StatelessWidget {
             icon: const Icon(Icons.check_rounded, size: 18),
             label: Text(finishLabel),
             style: ElevatedButton.styleFrom(
-              backgroundColor: MimioColors.success,
+              backgroundColor: FlorienColors.success,
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),

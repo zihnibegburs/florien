@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/focus/focus_session_actions.dart';
-import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
-import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
-import 'package:mimio/features/focus/widgets/start_focus_sheet.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/focus/focus_session_actions.dart';
+import 'package:florien/features/focus/widgets/focus_timer_widget.dart';
+import 'package:florien/features/focus/widgets/celebration_dialog.dart';
+import 'package:florien/features/focus/widgets/start_focus_sheet.dart';
+import 'package:florien/features/providers.dart';
 
 class FocusScreen extends ConsumerWidget {
   const FocusScreen({super.key});
@@ -17,8 +17,8 @@ class FocusScreen extends ConsumerWidget {
     final sessionAsync = ref.watch(focusSessionProvider);
     final s = ref.watch(stringsProvider);
     final color = sessionAsync.valueOrNull != null
-        ? MimioColors.fromHex(sessionAsync.value!.color)
-        : MimioColors.primary;
+        ? FlorienColors.fromHex(sessionAsync.value!.color)
+        : FlorienColors.primary;
 
     return Scaffold(
       backgroundColor: context.palette.background,
@@ -153,7 +153,7 @@ class FocusScreen extends ConsumerWidget {
                         icon: const Icon(Icons.check_rounded),
                         label: Text(session.isStandalone ? s.finish : s.complete),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: MimioColors.success,
+                          backgroundColor: FlorienColors.success,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),

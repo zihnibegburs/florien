@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/home_tab.dart';
 
 /// Tam haftalık görünüm — mobilde liste, webde kompakt satır.
 class WeeklyView extends ConsumerWidget {
@@ -94,10 +94,10 @@ class _DayColumn extends StatelessWidget {
         margin: expanded ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.all(expanded ? 16 : 12),
         decoration: BoxDecoration(
-          color: isSelected ? MimioColors.primary.withValues(alpha: 0.06) : context.palette.surface,
+          color: isSelected ? FlorienColors.primary.withValues(alpha: 0.06) : context.palette.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? MimioColors.primary : context.palette.border,
+            color: isSelected ? FlorienColors.primary : context.palette.border,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -115,7 +115,7 @@ class _DayColumn extends StatelessWidget {
                         style: TextStyle(
                           fontSize: expanded ? 16 : 11,
                           fontWeight: FontWeight.w700,
-                          color: isSelected ? MimioColors.primary : context.palette.textSecondary,
+                          color: isSelected ? FlorienColors.primary : context.palette.textSecondary,
                         ),
                       ),
                       Text(
@@ -123,7 +123,7 @@ class _DayColumn extends StatelessWidget {
                         style: TextStyle(
                           fontSize: expanded ? 14 : 22,
                           fontWeight: FontWeight.w800,
-                          color: isSelected ? MimioColors.primary : context.palette.textPrimary,
+                          color: isSelected ? FlorienColors.primary : context.palette.textPrimary,
                         ),
                       ),
                     ],
@@ -133,7 +133,7 @@ class _DayColumn extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: MimioColors.primary.withValues(alpha: 0.12),
+                      color: FlorienColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -141,7 +141,7 @@ class _DayColumn extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: MimioColors.primary,
+                        color: FlorienColors.primary,
                       ),
                     ),
                   ),
@@ -149,7 +149,7 @@ class _DayColumn extends StatelessWidget {
             ),
             if (expanded) const SizedBox(height: 12),
             ...day.tasks.take(expanded ? 8 : 4).map((task) {
-              final color = MimioColors.fromHex(task.color);
+              final color = FlorienColors.fromHex(task.color);
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

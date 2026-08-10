@@ -1,28 +1,28 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mimio-postgres
+    container_name: florien-postgres
     environment:
-      POSTGRES_DB: mimio
-      POSTGRES_USER: mimio
-      POSTGRES_PASSWORD: mimio_secret
+      POSTGRES_DB: florien
+      POSTGRES_USER: florien
+      POSTGRES_PASSWORD: florien_secret
     ports:
       - "5432:5432"
     volumes:
-      - mimio_pg_data:/var/lib/postgresql/data
+      - florien_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mimio -d mimio"]
+      test: ["CMD-SHELL", "pg_isready -U florien -d florien"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: mimio-redis
+    container_name: florien-redis
     ports:
       - "6380:6379"
     volumes:
-      - mimio_redis_data:/data
+      - florien_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -30,5 +30,5 @@ services:
       retries: 5
 
 volumes:
-  mimio_pg_data:
-  mimio_redis_data:
+  florien_pg_data:
+  florien_redis_data:

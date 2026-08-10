@@ -1,7 +1,5 @@
-// File generated manually as a scaffold.
-// Replace values by running from `mobile/`:
-//   flutterfire configure
-// Or paste values from Firebase Console → Project settings.
+// Temporary scaffold for the Florien migration.
+// Replace this file by running `flutterfire configure` from `mobile/`.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -34,48 +32,40 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDxNWwy1prByBH0UmoNEAhaQrbvNPgVTmE',
-    appId: '1:1088818781536:web:9f8b3766ecb68125881205',
-    messagingSenderId: '1088818781536',
-    projectId: 'mimio-f4bb7',
-    authDomain: 'mimio-f4bb7.firebaseapp.com',
-    storageBucket: 'mimio-f4bb7.firebasestorage.app',
-    measurementId: 'G-RC0LDCCBDS',
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCj11FqUfYkYTyd6YGP6_tARsFAZGHapdo',
-    appId: '1:1088818781536:android:63c8fe0d88bbd4c4881205',
-    messagingSenderId: '1088818781536',
-    projectId: 'mimio-f4bb7',
-    storageBucket: 'mimio-f4bb7.firebasestorage.app',
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
   );
+
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCBgemxkFi8AIV1iE66rNQbGygJtrsB8-Q',
-    appId: '1:1088818781536:ios:7b12914714200fde881205',
-    messagingSenderId: '1088818781536',
-    projectId: 'mimio-f4bb7',
-    storageBucket: 'mimio-f4bb7.firebasestorage.app',
-    iosClientId: '1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd.apps.googleusercontent.com',
-    iosBundleId: 'com.mimio.mimio',
+    apiKey: 'AIzaSyBvUCWe9wiNeCd-xpv8q35jJkCCyTd-53s',
+    appId: '1:293921233420:ios:79a12ddbc3416233d9ec29',
+    messagingSenderId: '293921233420',
+    projectId: 'florien-74ad8',
+    storageBucket: 'florien-74ad8.firebasestorage.app',
+    iosClientId: '293921233420-anm1urgeau6o5sdfksnbnuto8n6io35g.apps.googleusercontent.com',
+    iosBundleId: 'com.florien.app',
   );
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCBgemxkFi8AIV1iE66rNQbGygJtrsB8-Q',
-    appId: '1:1088818781536:ios:7b12914714200fde881205',
-    messagingSenderId: '1088818781536',
-    projectId: 'mimio-f4bb7',
-    storageBucket: 'mimio-f4bb7.firebasestorage.app',
-    iosClientId: '1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd.apps.googleusercontent.com',
-    iosBundleId: 'com.mimio.mimio',
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    iosBundleId: 'com.florien.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDxNWwy1prByBH0UmoNEAhaQrbvNPgVTmE',
-    appId: '1:1088818781536:web:3377a23237fc7b04881205',
-    messagingSenderId: '1088818781536',
-    projectId: 'mimio-f4bb7',
-    authDomain: 'mimio-f4bb7.firebaseapp.com',
-    storageBucket: 'mimio-f4bb7.firebasestorage.app',
-    measurementId: 'G-WVP5BKGBRJ',
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
   );
 }

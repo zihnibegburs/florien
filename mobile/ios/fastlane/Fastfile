@@ -1,0 +1,159 @@
+require "shellwords"
+require "tempfile"
+
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.florien.app"
+WIDGET_IDENTIFIER = "com.florien.app.FlorienWidget"
+
+SIGNING_TARGETS = [
+  {
+    target: "Runner",
+    bundle_id: APP_IDENTIFIER,
+    path_env: "IOS_PROVISIONING_PROFILE_PATH"
+  },
+  {
+    target: "FlorienWidgetExtension",
+    bundle_id: WIDGET_IDENTIFIER,
+    path_env: "IOS_WIDGET_PROVISIONING_PROFILE_PATH"
+  }
+].freeze
+
+def profile_name_from_path(path)
+  decoded = Tempfile.new(["provision", ".plist"])
+  begin
+    decoded.write(`security cms -D -i #{path.shellescape}`)
+    decoded.flush
+    `plutil -extract Name raw #{decoded.path.shellescape}`.strip
+  ensure
+    decoded.close!
+  end
+end
+
+platform :ios do
+  desc "Build Florien and upload it to TestFlight"
+  lane :beta do
+    setup_ci if ENV["CI"]
+
+    team_id = ENV.fetch("APPLE_TEAM_ID").strip
+    UI.user_error!("APPLE_TEAM_ID must be a 10-character Apple Team ID") unless team_id.match?(/\A[A-Z0-9]{10}\z/)
+
+    key_id = ENV.fetch("APP_STORE_CONNECT_KEY_ID").strip
+    issuer_id = ENV.fetch("APP_STORE_CONNECT_ISSUER_ID").strip
+    key_filepath = ENV["APP_STORE_CONNECT_API_KEY_PATH"].to_s.strip
+    if key_filepath.empty?
+      key_filepath = File.expand_path(
+        "~/.appstoreconnect/private_keys/AuthKey_#{key_id}.p8"
+      )
+    end
+
+    UI.user_error!("APP_STORE_CONNECT_KEY_ID must be 10 characters") unless key_id.match?(/\A[A-Z0-9]{10}\z/)
+    UI.user_error!("APP_STORE_CONNECT_ISSUER_ID must be a UUID") unless issuer_id.match?(/\A[0-9a-fA-F-]{36}\z/)
+    UI.user_error!("App Store Connect API key not found: #{key_filepath}") unless File.exist?(key_filepath)
+
+    api_key = app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_filepath,
+      in_house: false
+    )
+
+    latest_build = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      initial_build_number: 0
+    )
+    build_number = latest_build.to_i + 1
+    UI.success("Build number #{build_number} (latest TestFlight build: #{latest_build})")
+
+    certificate_path = ENV["IOS_DIST_CERTIFICATE_PATH"].to_s.strip
+    unless certificate_path.empty?
+      UI.user_error!("Distribution certificate not found: #{certificate_path}") unless File.exist?(certificate_path)
+
+      import_params = {
+        certificate_path: certificate_path,
+        certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD")
+      }
+      if ENV["MATCH_KEYCHAIN_NAME"].to_s.strip != ""
+        import_params[:keychain_name] = ENV["MATCH_KEYCHAIN_NAME"]
+        import_params[:keychain_password] = ENV["MATCH_KEYCHAIN_PASSWORD"]
+      end
+      import_certificate(import_params)
+    end
+
+    profile_map = {}
+    SIGNING_TARGETS.each do |entry|
+      profile_path = ENV.fetch(entry[:path_env])
+      UI.user_error!("Provisioning profile not found: #{profile_path}") unless File.exist?(profile_path)
+
+      install_provisioning_profile(path: profile_path)
+      profile_name = profile_name_from_path(profile_path)
+      UI.user_error!("Could not read profile name from #{profile_path}") if profile_name.empty?
+
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "Runner.xcodeproj",
+        team_id: team_id,
+        targets: [entry[:target]],
+        code_sign_identity: "Apple Distribution",
+        bundle_identifier: entry[:bundle_id],
+        profile_name: profile_name
+      )
+
+      profile_map[entry[:bundle_id]] = profile_name
+      UI.message("Signing #{entry[:target]} with #{profile_name}")
+    end
+
+    profiles_xml = profile_map.map do |bundle_id, name|
+      "            <key>#{bundle_id}</key>\n            <string>#{name}</string>"
+    end.join("\n")
+
+    export_options = File.expand_path("ExportOptions.plist", __dir__)
+    File.write(
+      export_options,
+      <<~PLIST
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>method</key>
+          <string>app-store-connect</string>
+          <key>teamID</key>
+          <string>#{team_id}</string>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>signingCertificate</key>
+          <string>Apple Distribution</string>
+          <key>provisioningProfiles</key>
+          <dict>
+#{profiles_xml}
+          </dict>
+        </dict>
+        </plist>
+      PLIST
+    )
+
+    Dir.chdir("..") do
+      sh("flutter", "pub", "get")
+      sh(
+        "flutter",
+        "build",
+        "ipa",
+        "--release",
+        "--build-number=#{build_number}",
+        "--export-options-plist=#{export_options}"
+      )
+    end
+
+    ipa_path = Dir[File.expand_path("../../build/ios/ipa/*.ipa", __dir__)].max_by { |file| File.mtime(file) }
+    UI.user_error!("IPA not found under build/ios/ipa") if ipa_path.nil?
+
+    upload_to_testflight(
+      ipa: ipa_path,
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+  end
+end

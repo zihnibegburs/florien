@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/focus/focus_session_actions.dart';
-import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
-import 'package:mimio/features/focus/widgets/body_doubling_panel.dart';
-import 'package:mimio/features/focus/widgets/start_focus_sheet.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/focus/focus_session_actions.dart';
+import 'package:florien/features/focus/widgets/focus_timer_widget.dart';
+import 'package:florien/features/focus/widgets/body_doubling_panel.dart';
+import 'package:florien/features/focus/widgets/start_focus_sheet.dart';
+import 'package:florien/features/providers.dart';
 
 class FocusTabView extends ConsumerWidget {
   const FocusTabView({super.key});
@@ -50,8 +50,8 @@ class FocusTabView extends ConsumerWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: session.isPaused
-                        ? MimioColors.warning
-                        : MimioColors.success,
+                        ? FlorienColors.warning
+                        : FlorienColors.success,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -85,7 +85,7 @@ class FocusTabView extends ConsumerWidget {
                     icon: const Icon(Icons.check_rounded),
                     label: Text(s.finish),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: MimioColors.success,
+                      backgroundColor: FlorienColors.success,
                     ),
                   ),
                 ),
@@ -159,7 +159,7 @@ class _NoActiveFocus extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           ...pending.take(3).map((task) {
-            final color = MimioColors.fromHex(task.color);
+            final color = FlorienColors.fromHex(task.color);
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: ListTile(

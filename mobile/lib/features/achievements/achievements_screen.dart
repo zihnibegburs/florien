@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/firebase/user_profile_service.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/storage/achievement_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/firebase/user_profile_service.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/storage/achievement_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
 
 final achievementStatsProvider =
     AsyncNotifierProvider<AchievementStatsNotifier, AchievementStats>(AchievementStatsNotifier.new);
@@ -93,14 +93,14 @@ class _AchievementsBody extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    MimioColors.primary.withValues(alpha: 0.16),
-                    MimioColors.primaryLight.withValues(alpha: 0.1),
+                    FlorienColors.primary.withValues(alpha: 0.16),
+                    FlorienColors.primaryLight.withValues(alpha: 0.1),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: MimioColors.primary.withValues(alpha: 0.2)),
+                border: Border.all(color: FlorienColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -113,10 +113,10 @@ class _AchievementsBody extends StatelessWidget {
                         CircularProgressIndicator(
                           value: progress,
                           strokeWidth: 6,
-                          backgroundColor: MimioColors.primary.withValues(alpha: 0.15),
-                          color: MimioColors.primary,
+                          backgroundColor: FlorienColors.primary.withValues(alpha: 0.15),
+                          color: FlorienColors.primary,
                         ),
-                        const Icon(Icons.emoji_events_rounded, color: MimioColors.primary, size: 28),
+                        const Icon(Icons.emoji_events_rounded, color: FlorienColors.primary, size: 28),
                       ],
                     ),
                   ),
@@ -244,7 +244,7 @@ class _StatTile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 20, color: MimioColors.primary),
+          Icon(icon, size: 20, color: FlorienColors.primary),
           const SizedBox(height: 8),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 2),
@@ -358,7 +358,7 @@ class _AchievementCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 5,
-                backgroundColor: MimioColors.primary.withValues(alpha: 0.1),
+                backgroundColor: FlorienColors.primary.withValues(alpha: 0.1),
                 color: achievement.color,
               ),
             ),

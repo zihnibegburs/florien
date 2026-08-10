@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 enum AchievementScope { weekly, allTime }
 
@@ -88,8 +88,8 @@ const _achievementIcons = [
   Icons.thumb_up_rounded,
 ];
 
-final _achievementColors = MimioColors.taskColors
-    .map(MimioColors.fromHex)
+final _achievementColors = FlorienColors.taskColors
+    .map(FlorienColors.fromHex)
     .toList();
 
 const weeklyAchievementDefinitions = [

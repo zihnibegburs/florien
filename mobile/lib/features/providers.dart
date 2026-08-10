@@ -2,24 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/platform/live_activity_service.dart';
-import 'package:mimio/core/platform/notification_service.dart';
-import 'package:mimio/core/platform/widget_sync_service.dart';
-import 'package:mimio/core/repositories/repositories.dart';
-import 'package:mimio/core/services/calendar_import_service.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/firebase/user_profile_service.dart';
-import 'package:mimio/core/services/social_auth_service.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/storage/achievement_storage.dart';
-import 'package:mimio/core/storage/local_focus_storage.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/platform/live_activity_service.dart';
+import 'package:florien/core/platform/notification_service.dart';
+import 'package:florien/core/platform/widget_sync_service.dart';
+import 'package:florien/core/repositories/repositories.dart';
+import 'package:florien/core/services/calendar_import_service.dart';
+import 'package:florien/features/achievements/achievements_screen.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/firebase/user_profile_service.dart';
+import 'package:florien/core/services/social_auth_service.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/storage/achievement_storage.dart';
+import 'package:florien/core/storage/local_focus_storage.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 final localFocusStorageProvider = Provider<LocalFocusStorage>(
   (ref) => LocalFocusStorage(),

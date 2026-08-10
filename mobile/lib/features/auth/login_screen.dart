@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_logo.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_logo.dart';
+import 'package:florien/features/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -86,11 +86,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(child: MimioLogo()),
+                    const Center(child: FlorienLogo()),
                     const SizedBox(height: 20),
                     Center(
                       child: Text(
-                        'Mimio',
+                        'Florien',
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),

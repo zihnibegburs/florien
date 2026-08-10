@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/widgets/edit_task_sheet.dart';
 
 class TodoItem extends ConsumerWidget {
   const TodoItem({super.key, required this.task});
@@ -17,7 +17,7 @@ class TodoItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    final color = MimioColors.fromHex(task.color);
+    final color = FlorienColors.fromHex(task.color);
 
     return LiquidGlass(
       margin: const EdgeInsets.only(bottom: 8),
@@ -39,7 +39,7 @@ class TodoItem extends ConsumerWidget {
           task.title,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        onTap: () => showMimioBottomSheet(
+        onTap: () => showFlorienBottomSheet(
           context: context,
           isScrollControlled: true,
           builder: (_) =>
@@ -58,7 +58,7 @@ class TodoItem extends ConsumerWidget {
               icon: const Icon(
                 Icons.check_rounded,
                 size: 20,
-                color: MimioColors.success,
+                color: FlorienColors.success,
               ),
               onPressed: () => _complete(context, ref),
             ),

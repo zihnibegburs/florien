@@ -1,13 +1,13 @@
 spring:
   application:
-    name: mimio-backend
+    name: florien-backend
   config:
     import: optional:classpath:application-local.yml
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mimio
-    username: mimio
-    password: mimio_secret
+    url: jdbc:postgresql://localhost:5432/florien
+    username: florien
+    password: florien_secret
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -35,9 +35,9 @@ spring:
 server:
   port: ${PORT:8080}
 
-mimio:
+florien:
   jwt:
-    secret: mimio-dev-secret-key-change-in-production-min-256-bits-long!!
+    secret: florien-dev-secret-key-change-in-production-min-256-bits-long!!
     expiration-ms: 86400000
   google:
     client-id: ${GOOGLE_CLIENT_ID:444356161269-9ukhho3o8jbtum1ht8ea9v6nungmoau3.apps.googleusercontent.com}
@@ -49,4 +49,4 @@ mimio:
 
 logging:
   level:
-    com.mimio: DEBUG
+    com.florien: DEBUG

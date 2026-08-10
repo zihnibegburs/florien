@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/repositories/ai_repository.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/copyable_error_banner.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/repositories/ai_repository.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/copyable_error_banner.dart';
+import 'package:florien/features/providers.dart';
 
 class SubtaskBreakdownSheet extends ConsumerStatefulWidget {
   const SubtaskBreakdownSheet({
@@ -111,7 +111,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary),
+                const Icon(Icons.auto_awesome_rounded, color: FlorienColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -131,7 +131,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: MimioColors.fromHex(widget.task.color).withValues(alpha: 0.08),
+                color: FlorienColors.fromHex(widget.task.color).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(widget.task.title, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -157,7 +157,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: MimioColors.fromHex(e.value.color).withValues(alpha: 0.08),
+                      color: FlorienColors.fromHex(e.value.color).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -173,7 +173,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: MimioColors.fromHex(e.value.color),
+                            color: FlorienColors.fromHex(e.value.color),
                           ),
                         ),
                       ],

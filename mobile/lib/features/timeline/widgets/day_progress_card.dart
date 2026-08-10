@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
 
 class DayProgressCard extends ConsumerWidget {
   const DayProgressCard({super.key, required this.tasks});
@@ -82,7 +82,7 @@ class DayProgressCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: MimioColors.success.withValues(alpha: 0.15),
+                color: FlorienColors.success.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -91,12 +91,12 @@ class DayProgressCard extends ConsumerWidget {
                   const Icon(
                     Icons.play_arrow_rounded,
                     size: 16,
-                    color: MimioColors.success,
+                    color: FlorienColors.success,
                   ),
                   Text(
                     s.active,
                     style: const TextStyle(
-                      color: MimioColors.success,
+                      color: FlorienColors.success,
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),

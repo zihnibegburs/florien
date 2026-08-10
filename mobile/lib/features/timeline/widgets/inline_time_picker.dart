@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 class InlineTimePicker extends ConsumerStatefulWidget {
   const InlineTimePicker({
@@ -114,7 +114,7 @@ class _InlineTimePickerState extends ConsumerState<InlineTimePicker> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                const Icon(Icons.access_time_rounded, color: MimioColors.primary),
+                const Icon(Icons.access_time_rounded, color: FlorienColors.primary),
                 const SizedBox(width: 12),
                 Text(
                   widget.value.format(context),
@@ -135,7 +135,7 @@ class _InlineTimePickerState extends ConsumerState<InlineTimePicker> {
                     final rounded = quickSlots.first;
                     widget.onChanged(rounded);
                   },
-                  backgroundColor: MimioColors.primary.withValues(alpha: 0.12),
+                  backgroundColor: FlorienColors.primary.withValues(alpha: 0.12),
                   side: BorderSide.none,
                 ),
                 ...quickSlots.map((slot) {
@@ -144,10 +144,10 @@ class _InlineTimePickerState extends ConsumerState<InlineTimePicker> {
                     label: Text(_formatChip(context, slot)),
                     onPressed: () => widget.onChanged(slot),
                     backgroundColor: selected
-                        ? MimioColors.primary.withValues(alpha: 0.2)
+                        ? FlorienColors.primary.withValues(alpha: 0.2)
                         : context.palette.background,
                     side: BorderSide(
-                      color: selected ? MimioColors.primary : context.palette.border,
+                      color: selected ? FlorienColors.primary : context.palette.border,
                     ),
                   );
                 }),

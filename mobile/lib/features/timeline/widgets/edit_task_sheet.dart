@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/platform/notification_service.dart';
-import 'package:mimio/core/repositories/ai_repository.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
-import 'package:mimio/features/timeline/widgets/inline_time_picker.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/platform/notification_service.dart';
+import 'package:florien/core/repositories/ai_repository.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/widgets/delete_task_dialog.dart';
+import 'package:florien/features/timeline/widgets/inline_time_picker.dart';
 
 class EditTaskSheet extends ConsumerStatefulWidget {
   const EditTaskSheet({
@@ -275,7 +275,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                 controller: _rewardController,
                 decoration: InputDecoration(
                   hintText: s.rewardHint,
-                  prefixIcon: const Icon(Icons.card_giftcard_rounded, color: MimioColors.primary),
+                  prefixIcon: const Icon(Icons.card_giftcard_rounded, color: FlorienColors.primary),
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
@@ -292,7 +292,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                     label: Text(s.minutesShort(min)),
                     selected: selected,
                     onSelected: (_) => setState(() => _duration = min),
-                    selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                    selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                   );
                 }).toList(),
               ),
@@ -308,7 +308,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                     label: Text(s.minutesShort(min)),
                     selected: selected,
                     onSelected: (_) => setState(() => _duration = min),
-                    selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                    selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                   );
                 }).toList(),
               ),
@@ -338,7 +338,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                             label: Text(s.minutesShort(min)),
                             selected: selected,
                             onSelected: (_) => setState(() => _subtaskDurations[sub.id] = min),
-                            selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                            selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                           );
                         }).toList(),
                       ),
@@ -377,8 +377,8 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: MimioColors.taskColors.map((hex) {
-                final color = MimioColors.fromHex(hex);
+              children: FlorienColors.taskColors.map((hex) {
+                final color = FlorienColors.fromHex(hex);
                 final selected = _selectedColor == hex;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedColor = hex),
@@ -401,7 +401,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary, size: 20),
+                  const Icon(Icons.auto_awesome_rounded, color: FlorienColors.primary, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     s.aiBreakdown,
@@ -435,7 +435,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                       margin: const EdgeInsets.only(bottom: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: MimioColors.fromHex(e.value.color).withValues(alpha: 0.08),
+                        color: FlorienColors.fromHex(e.value.color).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -451,7 +451,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: MimioColors.fromHex(e.value.color),
+                              color: FlorienColors.fromHex(e.value.color),
                             ),
                           ),
                         ],

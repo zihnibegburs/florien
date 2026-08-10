@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mimio</string>
+	<string>Florien</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>mimio</string>
+	<string>florien</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -49,22 +49,12 @@
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
 	<true/>
-	<key>GIDClientID</key>
-	<string>1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd.apps.googleusercontent.com</string>
-	<key>GIDServerClientID</key>
-	<string>1088818781536-8dbqj5esh5rm49pjhlsdhrqooil7shbk.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>mimio</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.1088818781536-6epk3ova7ji3shma956ds91iq81rcqsd</string>
+				<string>florien</string>
 			</array>
 		</dict>
 	</array>

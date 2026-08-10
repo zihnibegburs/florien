@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:mimio/core/platform/widget_sync_service.dart';
+import 'package:florien/core/platform/widget_sync_service.dart';
 
 class SiriSyncService {
   static const authTokenKey = 'auth_token';

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/core/repositories/ai_repository.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/copyable_error_banner.dart';
-import 'package:mimio/core/widgets/speech_text_field.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/core/repositories/ai_repository.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/copyable_error_banner.dart';
+import 'package:florien/core/widgets/speech_text_field.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/home_tab.dart';
 
 enum AiMode { breakdown, plan }
 
@@ -238,7 +238,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               ..._plan!.tasks.map((t) => _TaskResultTile(
                     title: t.title,
                     subtitle: '${t.suggestedTime} · ${s.minutesShort(t.durationMinutes)}',
-                    color: MimioColors.fromHex(t.color),
+                    color: FlorienColors.fromHex(t.color),
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -251,7 +251,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                       )
                     : const Icon(Icons.calendar_today_rounded),
                 label: Text(_applying ? s.saving : s.addPlanToDay),
-                style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
+                style: ElevatedButton.styleFrom(backgroundColor: FlorienColors.success),
               ),
             ],
             if (_breakdown != null) ...[
@@ -263,7 +263,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               ..._breakdown!.steps.asMap().entries.map((e) => _TaskResultTile(
                     title: '${e.key + 1}. ${e.value.title}',
                     subtitle: s.minutesShort(e.value.durationMinutes),
-                    color: MimioColors.fromHex(e.value.color),
+                    color: FlorienColors.fromHex(e.value.color),
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -276,7 +276,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                       )
                     : const Icon(Icons.add_task_rounded),
                 label: Text(_applying ? s.saving : s.addTaskAndSteps),
-                style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
+                style: ElevatedButton.styleFrom(backgroundColor: FlorienColors.success),
               ),
             ],
             const SizedBox(height: 12),
@@ -314,7 +314,7 @@ class _ModeChip extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? MimioColors.primary : Colors.transparent,
+            color: selected ? FlorienColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -349,7 +349,7 @@ class _ResultHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [MimioColors.primary.withValues(alpha: 0.15), MimioColors.primaryLight.withValues(alpha: 0.1)],
+          colors: [FlorienColors.primary.withValues(alpha: 0.15), FlorienColors.primaryLight.withValues(alpha: 0.1)],
         ),
         borderRadius: BorderRadius.circular(16),
       ),

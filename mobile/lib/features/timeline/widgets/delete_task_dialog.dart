@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
 
 Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
   required BuildContext context,
@@ -11,9 +11,9 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
   required TaskModel task,
 }) {
   if (!task.isRecurring) {
-    return showMimioSoftDialog<DeleteRecurrenceScope>(
+    return showFlorienSoftDialog<DeleteRecurrenceScope>(
       context: context,
-      builder: (dialogCtx) => MimioSoftCard(
+      builder: (dialogCtx) => FlorienSoftCard(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -36,13 +36,13 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
               ),
             ),
             const SizedBox(height: 14),
-            MimioSoftDialogActions(
+            FlorienSoftDialogActions(
               actions: [
-                MimioSoftTextButton(
+                FlorienSoftTextButton(
                   label: s.cancel,
                   onPressed: () => Navigator.pop(dialogCtx),
                 ),
-                MimioSoftTextButton(
+                FlorienSoftTextButton(
                   label: s.delete,
                   destructive: true,
                   onPressed: () =>
@@ -56,10 +56,10 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
     );
   }
 
-  return showMimioSoftDialog<DeleteRecurrenceScope>(
+  return showFlorienSoftDialog<DeleteRecurrenceScope>(
     context: context,
     maxWidth: 320,
-    builder: (dialogCtx) => MimioSoftCard(
+    builder: (dialogCtx) => FlorienSoftCard(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,7 +98,7 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
           const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
-            child: MimioSoftTextButton(
+            child: FlorienSoftTextButton(
               label: s.cancel,
               onPressed: () => Navigator.pop(dialogCtx),
             ),
@@ -135,7 +135,7 @@ class _ScopeOption extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: destructive
-                  ? MimioColors.accent.withValues(alpha: 0.9)
+                  ? FlorienColors.accent.withValues(alpha: 0.9)
                   : context.palette.textPrimary,
             ),
           ),

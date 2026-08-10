@@ -42,31 +42,31 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fügt Mimio eine neue Aufgabe hinzu."
+            "value" : "Fügt Florien eine neue Aufgabe hinzu."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adds a new task to Mimio."
+            "value" : "Adds a new task to Florien."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añade una nueva tarea a Mimio."
+            "value" : "Añade una nueva tarea a Florien."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajoute une nouvelle tâche à Mimio."
+            "value" : "Ajoute une nouvelle tâche à Florien."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mimio'ya yeni bir görev ekler."
+            "value" : "Florien'ya yeni bir görev ekler."
           }
         }
       }
@@ -284,21 +284,21 @@
     "api.error.not_authenticated" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please log in to Mimio first." } },
-        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Önce Mimio'da oturum açman gerekiyor." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Primero inicia sesión en Mimio." } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Connectez-vous d'abord à Mimio." } },
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bitte melde dich zuerst bei Mimio an." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please log in to Florien first." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Önce Florien'da oturum açman gerekiyor." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Primero inicia sesión en Florien." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Connectez-vous d'abord à Florien." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bitte melde dich zuerst bei Florien an." } }
       }
     },
     "api.error.invalid_configuration" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mimio configuration is missing. Open the app once." } },
-        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mimio yapılandırması eksik. Uygulamayı bir kez aç." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Falta la configuración de Mimio. Abre la app una vez." } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Configuration Mimio manquante. Ouvrez l'app une fois." } },
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Mimio-Konfiguration fehlt. Öffne die App einmal." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Florien configuration is missing. Open the app once." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Florien yapılandırması eksik. Uygulamayı bir kez aç." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Falta la configuración de Florien. Abre la app una vez." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Configuration Florien manquante. Ouvrez l'app une fois." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Florien-Konfiguration fehlt. Öffne die App einmal." } }
       }
     },
     "api.error.network" : {

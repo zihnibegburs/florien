@@ -1,5 +1,5 @@
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 List<RoutineTemplate> routineTemplatesFor(String lang) {
   final isTr = lang == 'tr';
@@ -8,29 +8,29 @@ List<RoutineTemplate> routineTemplatesFor(String lang) {
       id: 'morning',
       name: isTr ? 'Sabah rutini' : 'Morning routine',
       icon: 'free_breakfast',
-      color: MimioColors.taskColors[2],
+      color: FlorienColors.taskColors[2],
       steps: [
         RoutineTemplateStep(
           title: isTr ? 'Yataktan kalk' : 'Get out of bed',
           durationMinutes: 5,
-          color: MimioColors.taskColors[2],
+          color: FlorienColors.taskColors[2],
           icon: 'bedtime',
         ),
         RoutineTemplateStep(
           title: isTr ? 'Yüzünü yıka' : 'Wash face',
           durationMinutes: 5,
-          color: MimioColors.taskColors[4],
+          color: FlorienColors.taskColors[4],
         ),
         RoutineTemplateStep(
           title: isTr ? 'Kahvaltı' : 'Breakfast',
           durationMinutes: 20,
-          color: MimioColors.taskColors[1],
+          color: FlorienColors.taskColors[1],
           icon: 'free_breakfast',
         ),
         RoutineTemplateStep(
           title: isTr ? 'Güne hazırlık' : 'Plan the day',
           durationMinutes: 10,
-          color: MimioColors.taskColors[0],
+          color: FlorienColors.taskColors[0],
           icon: 'lightbulb',
         ),
       ],
@@ -39,24 +39,24 @@ List<RoutineTemplate> routineTemplatesFor(String lang) {
       id: 'work_start',
       name: isTr ? 'İşe başlama' : 'Work start',
       icon: 'work',
-      color: MimioColors.taskColors[0],
+      color: FlorienColors.taskColors[0],
       steps: [
         RoutineTemplateStep(
           title: isTr ? 'Masa düzeni' : 'Tidy desk',
           durationMinutes: 5,
-          color: MimioColors.taskColors[3],
+          color: FlorienColors.taskColors[3],
           icon: 'cleaning',
         ),
         RoutineTemplateStep(
           title: isTr ? 'E-postaları kontrol et' : 'Check emails',
           durationMinutes: 15,
-          color: MimioColors.taskColors[0],
+          color: FlorienColors.taskColors[0],
           icon: 'email',
         ),
         RoutineTemplateStep(
           title: isTr ? 'En önemli görev' : 'Top priority task',
           durationMinutes: 45,
-          color: MimioColors.taskColors[0],
+          color: FlorienColors.taskColors[0],
           icon: 'timer',
         ),
       ],
@@ -65,27 +65,27 @@ List<RoutineTemplate> routineTemplatesFor(String lang) {
       id: 'bedtime',
       name: isTr ? 'Uyku hazırlığı' : 'Bedtime prep',
       icon: 'bedtime',
-      color: MimioColors.taskColors[5],
+      color: FlorienColors.taskColors[5],
       steps: [
         RoutineTemplateStep(
           title: isTr ? 'Ekranları kapat' : 'Screen off',
           durationMinutes: 5,
-          color: MimioColors.taskColors[5],
+          color: FlorienColors.taskColors[5],
         ),
         RoutineTemplateStep(
           title: isTr ? 'Diş fırçala' : 'Brush teeth',
           durationMinutes: 5,
-          color: MimioColors.taskColors[4],
+          color: FlorienColors.taskColors[4],
         ),
         RoutineTemplateStep(
           title: isTr ? 'Yarını planla' : 'Plan tomorrow',
           durationMinutes: 10,
-          color: MimioColors.taskColors[0],
+          color: FlorienColors.taskColors[0],
         ),
         RoutineTemplateStep(
           title: isTr ? 'Rahatlama' : 'Wind down',
           durationMinutes: 15,
-          color: MimioColors.taskColors[5],
+          color: FlorienColors.taskColors[5],
           icon: 'self_improvement',
         ),
       ],

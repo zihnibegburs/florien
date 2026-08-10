@@ -14,11 +14,11 @@ spring:
 
 logging:
   level:
-    com.mimio: INFO
+    com.florien: INFO
     root: WARN
 
-mimio:
+florien:
   jwt:
-    secret: ${MIMIO_JWT_SECRET}
+    secret: ${FLORIEN_JWT_SECRET}
   groq:
     api-key: ${GROQ_API_KEY:}

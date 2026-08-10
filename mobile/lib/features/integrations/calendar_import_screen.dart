@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/services/calendar_import_service.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/services/calendar_import_service.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/home_tab.dart';
 
 final calendarImportServiceProvider = Provider<CalendarImportService>((ref) => CalendarImportService());
 
@@ -251,7 +251,7 @@ class _CalendarImportScreenState extends ConsumerState<CalendarImportScreen> {
                 },
                 title: Text(calendar.name ?? calendar.accountName ?? id),
                 subtitle: calendar.accountName != null ? Text(calendar.accountName!) : null,
-                secondary: const Icon(Icons.calendar_month_rounded, color: MimioColors.primary),
+                secondary: const Icon(Icons.calendar_month_rounded, color: FlorienColors.primary),
               ),
             );
           }),
@@ -338,7 +338,7 @@ class _CalendarImportScreenState extends ConsumerState<CalendarImportScreen> {
                   width: 10,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: MimioColors.fromHex(event.color),
+                    color: FlorienColors.fromHex(event.color),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -376,8 +376,8 @@ class _RangeChip extends StatelessWidget {
       label: Text(label),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: MimioColors.primary.withValues(alpha: 0.15),
-      checkmarkColor: MimioColors.primary,
+      selectedColor: FlorienColors.primary.withValues(alpha: 0.15),
+      checkmarkColor: FlorienColors.primary,
     );
   }
 }

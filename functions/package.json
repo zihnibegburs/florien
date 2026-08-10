@@ -1,6 +1,6 @@
 {
-  "name": "mimio-functions",
-  "description": "Mimio Cloud Functions — AI assist via Groq",
+  "name": "florien-functions",
+  "description": "Florien Cloud Functions — AI assist via Groq",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",

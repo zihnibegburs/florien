@@ -4,11 +4,11 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/providers.dart';
 
 Future<void> showTaskCelebration(
   WidgetRef ref,
@@ -22,8 +22,8 @@ Future<void> showTaskCelebration(
     context: navigator.context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: MimioOverlay.barrierColor,
-    transitionDuration: MimioOverlay.transitionDuration,
+    barrierColor: FlorienOverlay.barrierColor,
+    transitionDuration: FlorienOverlay.transitionDuration,
     pageBuilder: (_, __, ___) {
       return _CelebrationDialog(
         event: CelebrationEvent(taskTitle: task.title, reward: task.reward),
@@ -32,7 +32,7 @@ Future<void> showTaskCelebration(
     },
     transitionBuilder: (context, animation, _, child) {
       if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
-      return MimioOverlay.softTransition(animation, child);
+      return FlorienOverlay.softTransition(animation, child);
     },
   );
 }
@@ -97,11 +97,11 @@ class _CelebrationDialogState extends State<_CelebrationDialog> {
                   numberOfParticles: 20,
                   gravity: 0.12,
                   colors: const [
-                    MimioColors.primary,
-                    MimioColors.accent,
-                    MimioColors.primaryLight,
-                    MimioColors.warning,
-                    MimioColors.success,
+                    FlorienColors.primary,
+                    FlorienColors.accent,
+                    FlorienColors.primaryLight,
+                    FlorienColors.warning,
+                    FlorienColors.success,
                   ],
                 ),
               ),
@@ -143,7 +143,7 @@ class _CelebrationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: MimioColors.primary.withValues(alpha: 0.18),
+            color: FlorienColors.primary.withValues(alpha: 0.18),
             blurRadius: 40,
             offset: const Offset(0, 16),
           ),
@@ -158,8 +158,8 @@ class _CelebrationCard extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  MimioColors.primary.withValues(alpha: 0.15),
-                  MimioColors.primaryLight.withValues(alpha: 0.25),
+                  FlorienColors.primary.withValues(alpha: 0.15),
+                  FlorienColors.primaryLight.withValues(alpha: 0.25),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -171,7 +171,7 @@ class _CelebrationCard extends StatelessWidget {
                   ? Icons.card_giftcard_rounded
                   : Icons.celebration_rounded,
               size: 36,
-              color: MimioColors.primary,
+              color: FlorienColors.primary,
             ),
           ),
           const SizedBox(height: 20),

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.mimio" "\0"
-            VALUE "FileDescription", "mimio" "\0"
+            VALUE "CompanyName", "com.florien" "\0"
+            VALUE "FileDescription", "florien" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "mimio" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.mimio. All rights reserved." "\0"
-            VALUE "OriginalFilename", "mimio.exe" "\0"
-            VALUE "ProductName", "mimio" "\0"
+            VALUE "InternalName", "florien" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.florien. All rights reserved." "\0"
+            VALUE "OriginalFilename", "florien.exe" "\0"
+            VALUE "ProductName", "florien" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

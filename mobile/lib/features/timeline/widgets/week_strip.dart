@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/features/providers.dart';
 
 class WeekStrip extends ConsumerWidget {
   const WeekStrip({super.key});
@@ -53,7 +53,7 @@ class WeekStrip extends ConsumerWidget {
                       curve: Curves.easeOutCubic,
                       width: 52,
                       decoration: BoxDecoration(
-                        color: MimioColors.primary,
+                        color: FlorienColors.primary,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: _DayPillContent(
@@ -145,7 +145,7 @@ class _DayPillContent extends StatelessWidget {
                     ? Colors.white30
                     : context.palette.border,
                 valueColor: AlwaysStoppedAnimation(
-                  isSelected ? Colors.white : MimioColors.success,
+                  isSelected ? Colors.white : FlorienColors.success,
                 ),
               ),
             ),
@@ -156,7 +156,7 @@ class _DayPillContent extends StatelessWidget {
             height: isToday ? 4 : 3,
             decoration: BoxDecoration(
               color: isToday
-                  ? (isSelected ? Colors.white : MimioColors.primary)
+                  ? (isSelected ? Colors.white : FlorienColors.primary)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(3),
             ),

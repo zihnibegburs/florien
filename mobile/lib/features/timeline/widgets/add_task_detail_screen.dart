@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/data/routine_templates.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/repositories/ai_repository.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/speech_text_field.dart';
-import 'package:mimio/features/timeline/widgets/inline_time_picker.dart';
-import 'package:mimio/features/timeline/widgets/recurrence_picker.dart';
-import 'package:mimio/features/timeline/widgets/task_draft.dart';
+import 'package:florien/core/data/routine_templates.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/repositories/ai_repository.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/speech_text_field.dart';
+import 'package:florien/features/timeline/widgets/inline_time_picker.dart';
+import 'package:florien/features/timeline/widgets/recurrence_picker.dart';
+import 'package:florien/features/timeline/widgets/task_draft.dart';
 
 class AddTaskDetailScreen extends ConsumerStatefulWidget {
   const AddTaskDetailScreen({
@@ -224,7 +224,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
                 s.splitIntoStepsHint,
                 style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
               ),
-              secondary: const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary),
+              secondary: const Icon(Icons.auto_awesome_rounded, color: FlorienColors.primary),
               value: _splitIntoSubtasks,
               onChanged: (v) => setState(() {
                 _splitIntoSubtasks = v;
@@ -254,7 +254,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: MimioColors.fromHex(e.value.color).withValues(alpha: 0.08),
+                      color: FlorienColors.fromHex(e.value.color).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -270,7 +270,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: MimioColors.fromHex(e.value.color),
+                            color: FlorienColors.fromHex(e.value.color),
                           ),
                         ),
                       ],
@@ -291,7 +291,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
               controller: _rewardController,
               decoration: InputDecoration(
                 hintText: s.rewardHint,
-                prefixIcon: const Icon(Icons.card_giftcard_rounded, color: MimioColors.primary),
+                prefixIcon: const Icon(Icons.card_giftcard_rounded, color: FlorienColors.primary),
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -309,7 +309,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
                   label: Text(s.aiDuration),
                   selected: _useAiDuration,
                   onSelected: (_) => setState(() => _useAiDuration = true),
-                  selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                  selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                 ),
                 ...[15, 30, 45, 60, 90].map((min) {
                   final selected = !_useAiDuration && _duration == min;
@@ -320,7 +320,7 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
                       _useAiDuration = false;
                       _duration = min;
                     }),
-                    selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                    selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                   );
                 }),
               ],
@@ -371,8 +371,8 @@ class _AddTaskDetailScreenState extends ConsumerState<AddTaskDetailScreen> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: MimioColors.taskColors.map((hex) {
-              final color = MimioColors.fromHex(hex);
+            children: FlorienColors.taskColors.map((hex) {
+              final color = FlorienColors.fromHex(hex);
               final selected = _selectedColor == hex;
               return GestureDetector(
                 onTap: () => setState(() => _selectedColor = hex),

@@ -1,0 +1,151 @@
+name: Mobile iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ios.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ios.yml"
+  workflow_dispatch:
+    inputs:
+      deploy_testflight:
+        description: "Upload the next build to TestFlight"
+        type: boolean
+        default: false
+
+concurrency:
+  group: mobile-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Flutter test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+  deploy-testflight:
+    name: TestFlight deploy
+    needs: test
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.deploy_testflight == true
+    runs-on: macos-latest
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+      IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
+      IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+      IOS_WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_WIDGET_PROVISIONING_PROFILE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify credentials
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in \
+            APPLE_TEAM_ID \
+            APP_STORE_CONNECT_KEY_ID \
+            APP_STORE_CONNECT_ISSUER_ID \
+            APP_STORE_CONNECT_API_KEY \
+            IOS_DIST_CERTIFICATE_BASE64 \
+            IOS_DIST_CERTIFICATE_PASSWORD \
+            IOS_PROVISIONING_PROFILE_BASE64 \
+            IOS_WIDGET_PROVISIONING_PROFILE_BASE64
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing repository secret: $name"
+              missing=1
+            fi
+          done
+
+          if ! [[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]]; then
+            echo "::error::APPLE_TEAM_ID must be a 10-character Apple Team ID"
+            missing=1
+          fi
+          if ! [[ "$APP_STORE_CONNECT_KEY_ID" =~ ^[A-Z0-9]{10}$ ]]; then
+            echo "::error::APP_STORE_CONNECT_KEY_ID must be 10 characters"
+            missing=1
+          fi
+          if ! [[ "$APP_STORE_CONNECT_ISSUER_ID" =~ ^[0-9a-fA-F-]{36}$ ]]; then
+            echo "::error::APP_STORE_CONNECT_ISSUER_ID must be the Issuer UUID"
+            missing=1
+          fi
+          exit "$missing"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: mobile/ios
+
+      - name: Install Flutter and CocoaPods dependencies
+        run: |
+          set -euo pipefail
+          cd mobile
+          flutter pub get
+          cd ios
+          bundle exec pod install
+
+      - name: Decode App Store Connect and signing files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          output_dir = Path(os.environ["RUNNER_TEMP"]) / "florien-signing"
+          output_dir.mkdir(parents=True, exist_ok=True)
+
+          files = {
+              "APP_STORE_CONNECT_API_KEY": output_dir / f"AuthKey_{os.environ['APP_STORE_CONNECT_KEY_ID']}.p8",
+              "IOS_DIST_CERTIFICATE_BASE64": output_dir / "distribution.p12",
+              "IOS_PROVISIONING_PROFILE_BASE64": output_dir / "app.mobileprovision",
+              "IOS_WIDGET_PROVISIONING_PROFILE_BASE64": output_dir / "widget.mobileprovision",
+          }
+
+          for secret_name, path in files.items():
+              value = "".join(os.environ[secret_name].split())
+              path.write_bytes(base64.b64decode(value))
+              path.chmod(0o600)
+              print(f"Decoded {secret_name} -> {path.name}")
+
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"APP_STORE_CONNECT_API_KEY_PATH={files['APP_STORE_CONNECT_API_KEY']}\n")
+              env.write(f"IOS_DIST_CERTIFICATE_PATH={files['IOS_DIST_CERTIFICATE_BASE64']}\n")
+              env.write(f"IOS_PROVISIONING_PROFILE_PATH={files['IOS_PROVISIONING_PROFILE_BASE64']}\n")
+              env.write(f"IOS_WIDGET_PROVISIONING_PROFILE_PATH={files['IOS_WIDGET_PROVISIONING_PROFILE_BASE64']}\n")
+          PY
+
+      - name: Deploy to TestFlight
+        working-directory: mobile/ios
+        run: bundle exec fastlane beta

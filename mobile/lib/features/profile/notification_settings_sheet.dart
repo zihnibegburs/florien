@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 Future<void> showNotificationSettingsSheet(BuildContext context, WidgetRef ref) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     isScrollControlled: true,
     builder: (_) => const _NotificationSettingsSheet(),

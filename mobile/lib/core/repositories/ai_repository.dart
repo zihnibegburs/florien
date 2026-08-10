@@ -1,8 +1,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/firebase/firebase_providers.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/firebase_options.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/firebase_options.dart';
 
 class AiRepository {
   AiRepository(this._functions);

@@ -1,4 +1,4 @@
-# Mimio
+# Florien
 
 Tiimo tarzı görsel günlük planlayıcı — Flutter + Firebase (Auth, Firestore, Cloud Functions).
 
@@ -28,7 +28,7 @@ cd mobile && flutter run
 ## Proje Yapısı
 
 ```
-Mimio/
+Florien/
 ├── docs/PLAN.md          # Ürün / faz planı
 ├── firebase.json         # Firestore + Functions
 ├── firestore.rules

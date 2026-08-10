@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
 
 class WeeklyRetrospectiveScreen extends ConsumerWidget {
   const WeeklyRetrospectiveScreen({super.key});
@@ -49,7 +49,7 @@ class WeeklyRetrospectiveScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [MimioColors.primary.withValues(alpha: 0.15), MimioColors.primaryLight.withValues(alpha: 0.1)],
+                    colors: [FlorienColors.primary.withValues(alpha: 0.15), FlorienColors.primaryLight.withValues(alpha: 0.1)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                 ),

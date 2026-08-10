@@ -1,4 +1,4 @@
-import 'package:mimio/core/models/recurrence.dart';
+import 'package:florien/core/models/recurrence.dart';
 
 class RecurrenceGenerator {
   RecurrenceGenerator._();

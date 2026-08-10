@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/widgets/todo_item.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/widgets/todo_item.dart';
 
 /// Compact unscheduled-task list embedded in Today.
 class InboxSection extends ConsumerStatefulWidget {
@@ -80,7 +80,7 @@ class _InboxSectionState extends ConsumerState<InboxSection> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: MimioColors.primary.withValues(alpha: 0.12),
+                        color: FlorienColors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -88,7 +88,7 @@ class _InboxSectionState extends ConsumerState<InboxSection> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: MimioColors.primary,
+                          color: FlorienColors.primary,
                         ),
                       ),
                     ),

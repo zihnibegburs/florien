@@ -1,5 +1,5 @@
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/models.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/models.dart';
 
 class ScheduleConflict {
   const ScheduleConflict({

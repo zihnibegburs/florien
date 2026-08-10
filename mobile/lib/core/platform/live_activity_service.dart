@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:live_activities/live_activities.dart';
-import 'package:mimio/core/config/platform_config.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/storage/local_focus_storage.dart';
+import 'package:florien/core/config/platform_config.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/storage/local_focus_storage.dart';
 
 class LiveActivityService {
   LiveActivityService._();
@@ -18,7 +18,7 @@ class LiveActivityService {
     try {
       await _plugin.init(
         appGroupId: PlatformConfig.appGroupId,
-        urlScheme: 'mimio',
+        urlScheme: 'florien',
         requestAndroidNotificationPermission: true,
       );
       _initialized = true;
@@ -63,7 +63,7 @@ class LiveActivityService {
       await _plugin.createOrUpdateActivity(
         data.taskId,
         payload,
-        activityTag: 'mimio_focus',
+        activityTag: 'florien_focus',
         removeWhenAppIsKilled: false,
       );
       _activeTaskId = data.taskId;
@@ -77,7 +77,7 @@ class LiveActivityService {
   Future<void> endActivity() async {
     if (!_initialized || _activeTaskId == null) return;
     try {
-      await _plugin.endActivity(_activeTaskId!, activityTag: 'mimio_focus');
+      await _plugin.endActivity(_activeTaskId!, activityTag: 'florien_focus');
     } on PlatformException catch (e) {
       debugPrint('Live Activity end skipped: ${e.message}');
     } catch (e) {

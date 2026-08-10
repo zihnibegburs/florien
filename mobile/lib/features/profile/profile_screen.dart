@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/features/profile/focus_blocking_sheet.dart';
-import 'package:mimio/features/profile/notification_settings_sheet.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/features/profile/focus_blocking_sheet.dart';
+import 'package:florien/features/profile/notification_settings_sheet.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/achievements/achievements_screen.dart';
+import 'package:florien/features/providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -81,7 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final avatarColor = MimioColors.fromHex(_editing ? (_selectedColor ?? auth.avatarColor) : auth.avatarColor);
+    final avatarColor = FlorienColors.fromHex(_editing ? (_selectedColor ?? auth.avatarColor) : auth.avatarColor);
 
     return Scaffold(
       backgroundColor: context.palette.background,
@@ -158,8 +158,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: MimioColors.taskColors.map((hex) {
-                      final color = MimioColors.fromHex(hex);
+                    children: FlorienColors.taskColors.map((hex) {
+                      final color = FlorienColors.fromHex(hex);
                       final selected = (_selectedColor ?? auth.avatarColor) == hex;
                       return GestureDetector(
                         onTap: () => setState(() => _selectedColor = hex),
@@ -211,10 +211,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: MimioColors.primary.withValues(alpha: 0.12),
+                  color: FlorienColors.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.emoji_events_rounded, color: MimioColors.primary),
+                child: const Icon(Icons.emoji_events_rounded, color: FlorienColors.primary),
               ),
               title: Text(s.achievementsTitle),
               subtitle: Text(s.achievementsProfileSubtitle, style: const TextStyle(fontSize: 12)),
@@ -224,7 +224,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: MimioColors.primary.withValues(alpha: 0.12),
+                      color: FlorienColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -232,7 +232,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
-                        color: MimioColors.primary,
+                        color: FlorienColors.primary,
                       ),
                     ),
                   ),
@@ -251,7 +251,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               border: Border.all(color: palette.border),
             ),
             child: ListTile(
-              leading: const Icon(Icons.calendar_month_rounded, color: MimioColors.primary),
+              leading: const Icon(Icons.calendar_month_rounded, color: FlorienColors.primary),
               title: Text(s.calendarImport),
               subtitle: Text(s.calendarImportSubtitle, style: const TextStyle(fontSize: 12)),
               trailing: const Icon(Icons.chevron_right_rounded),
@@ -269,7 +269,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.bolt_rounded, color: MimioColors.primary),
+                  leading: const Icon(Icons.bolt_rounded, color: FlorienColors.primary),
                   title: Text(s.dailyEnergy),
                   trailing: DropdownButton<EnergyLevel?>(
                     value: ref.watch(adhdPreferencesProvider).valueOrNull?.dailyEnergyLevel,

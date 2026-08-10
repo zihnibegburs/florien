@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:mimio/core/models/models.dart';
+import 'package:florien/core/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalFocusSessionData {

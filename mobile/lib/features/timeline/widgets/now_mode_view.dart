@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/utils/schedule_utils.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/utils/schedule_utils.dart';
+import 'package:florien/features/providers.dart';
 
 class NowModeView extends ConsumerWidget {
   const NowModeView({
@@ -43,7 +43,7 @@ class NowModeView extends ConsumerWidget {
             label: s.nowLabel,
             task: current,
             s: s,
-            accent: MimioColors.primary,
+            accent: FlorienColors.primary,
             onTap: current != null ? () => onTaskTap(current!) : null,
             onStart: current != null ? () => onStart(current!) : null,
             onComplete: current != null ? () => onComplete(current!) : null,
@@ -53,7 +53,7 @@ class NowModeView extends ConsumerWidget {
             label: s.upNext,
             task: next,
             s: s,
-            accent: MimioColors.primaryLight,
+            accent: FlorienColors.primaryLight,
             onTap: next != null ? () => onTaskTap(next!) : null,
             onStart: next != null ? () => onStart(next!) : null,
             onComplete: next != null ? () => onComplete(next!) : null,
@@ -152,7 +152,7 @@ class _NowCard extends StatelessWidget {
                           onPressed: onComplete,
                           icon: const Icon(Icons.check_rounded),
                           label: Text(s.complete),
-                          style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
+                          style: ElevatedButton.styleFrom(backgroundColor: FlorienColors.success),
                         ),
                       ),
                     ],

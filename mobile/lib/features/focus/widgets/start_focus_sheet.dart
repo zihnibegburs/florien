@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/providers.dart';
 
 Future<void> showStartFocusSheet(BuildContext context, WidgetRef ref) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     isScrollControlled: true,
     builder: (_) => const _StartFocusSheet(),
@@ -100,7 +100,7 @@ class _StartFocusSheetState extends ConsumerState<_StartFocusSheet> {
                   label: Text(s.minutesShort(min)),
                   selected: selected,
                   onSelected: (_) => setState(() => _duration = min),
-                  selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                  selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                 );
               }).toList(),
             ),

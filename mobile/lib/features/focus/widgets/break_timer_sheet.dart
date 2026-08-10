@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 Future<void> showBreakTimerSheet(BuildContext context, S s, {required int minutes, VoidCallback? onDone}) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     isScrollControlled: true,
     isDismissible: false,
@@ -67,13 +67,13 @@ class _BreakTimerSheetState extends State<_BreakTimerSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.self_improvement_rounded, size: 48, color: MimioColors.primary.withValues(alpha: 0.7)),
+          Icon(Icons.self_improvement_rounded, size: 48, color: FlorienColors.primary.withValues(alpha: 0.7)),
           const SizedBox(height: 16),
           Text(widget.s.breakTime, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(widget.s.breakHint, textAlign: TextAlign.center, style: TextStyle(color: context.palette.textSecondary)),
           const SizedBox(height: 24),
-          Text(_formatted, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: MimioColors.primary)),
+          Text(_formatted, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: FlorienColors.primary)),
           const SizedBox(height: 24),
           TextButton(onPressed: () => Navigator.pop(context), child: Text(widget.s.skipBreak)),
         ],

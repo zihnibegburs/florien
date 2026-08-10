@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -122,12 +122,12 @@ class _SpeechTextFieldState extends ConsumerState<SpeechTextField> {
                   decoration: BoxDecoration(
                     color: _isListening
                         ? Colors.red.shade50
-                        : MimioColors.primary.withValues(alpha: 0.1),
+                        : FlorienColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                    color: _isListening ? Colors.red.shade400 : MimioColors.primary,
+                    color: _isListening ? Colors.red.shade400 : FlorienColors.primary,
                   ),
                 ),
               )

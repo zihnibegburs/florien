@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/config/platform_config.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
+import 'package:florien/core/config/platform_config.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
 
 class WidgetSyncService {
   static const _activeTitle = 'active_task_title';
@@ -78,7 +78,7 @@ class WidgetSyncService {
         await HomeWidget.saveWidgetData<String>(_nextTime, time);
       } else {
         title = s.noPlanWidget;
-        subtitle = 'Mimio · $dateLabel';
+        subtitle = 'Florien · $dateLabel';
       }
 
       await HomeWidget.saveWidgetData<String>(_subtitle, subtitle);

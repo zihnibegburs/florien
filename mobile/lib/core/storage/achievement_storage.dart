@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/models/achievement.dart';
+import 'package:florien/core/models/achievement.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AchievementStorage {

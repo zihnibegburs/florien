@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_logo.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_logo.dart';
+import 'package:florien/features/providers.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key, this.themeOnly = false});
@@ -116,7 +116,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       1 => Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const MimioLogo(size: 72),
+            const FlorienLogo(size: 72),
             const SizedBox(height: 24),
             Text(s.onboardingWelcome, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),

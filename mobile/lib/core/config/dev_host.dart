@@ -1,8 +1,8 @@
 /// Tam API URL — yerel backend veya ngrok için.
-/// Production: https://mimio-api.onrender.com/api/v1
+/// Production: https://florien-api.onrender.com/api/v1
 /// Yerel geliştirme için `null` bırakıp `devLanHost` kullanın.
 const String? devApiBaseUrl =
-    'https://mimio-api.onrender.com/api/v1';
+    'https://florien-api.onrender.com/api/v1';
 
 /// Mac'inizin yerel ağ IP'si — aynı Wi‑Fi'de fiziksel telefon için.
 /// ngrok kullanırken `null` bırakın.

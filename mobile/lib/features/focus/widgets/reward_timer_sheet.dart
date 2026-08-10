@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 Future<void> showRewardTimerSheet(BuildContext context, S s, {required String reward, required int minutes}) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     isScrollControlled: true,
     builder: (_) => _RewardTimerSheet(reward: reward, minutes: minutes, s: s),
@@ -73,7 +73,7 @@ class _RewardTimerSheetState extends State<_RewardTimerSheet> {
           Text(widget.reward, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
           if (_running) ...[
             const SizedBox(height: 20),
-            Text(_formatted, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: MimioColors.primary)),
+            Text(_formatted, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: FlorienColors.primary)),
           ],
           const SizedBox(height: 20),
           SizedBox(

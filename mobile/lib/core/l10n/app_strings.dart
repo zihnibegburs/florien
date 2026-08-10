@@ -1,11 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/firebase/user_profile_service.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/firebase/user_profile_service.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 const supportedLanguageCodes = ['en', 'tr', 'es', 'fr', 'de'];
 
@@ -89,11 +89,11 @@ class S {
   String get calendarImport =>
       l10n(lang, _m(en: 'Import from calendar', tr: 'Takvimden aktar', es: 'Importar del calendario', fr: 'Importer du calendrier', de: 'Aus Kalender importieren'));
   String get calendarImportSubtitle => l10n(lang, _m(
-        en: 'Turn calendar events into Mimio tasks for your daily plan.',
+        en: 'Turn calendar events into Florien tasks for your daily plan.',
         tr: 'Takvim etkinliklerini günlük planına görev olarak ekle.',
-        es: 'Convierte eventos del calendario en tareas de Mimio.',
-        fr: 'Transformez les événements du calendrier en tâches Mimio.',
-        de: 'Kalendertermine als Mimio-Aufgaben in deinen Tagesplan übernehmen.',
+        es: 'Convierte eventos del calendario en tareas de Florien.',
+        fr: 'Transformez les événements du calendrier en tâches Florien.',
+        de: 'Kalendertermine als Florien-Aufgaben in deinen Tagesplan übernehmen.',
       ));
   String get calendarImportTitle =>
       l10n(lang, _m(en: 'Calendar import', tr: 'Takvim aktarma', es: 'Importar calendario', fr: 'Import calendrier', de: 'Kalenderimport'));
@@ -1056,7 +1056,7 @@ class S {
         fr: '$tasks tâches · $perfect super jours · pic : $peak',
         de: '$tasks Aufgaben · $perfect starke Tage · Fokus-Spitze: $peak',
       ));
-  String get onboardingWelcome => l10n(lang, _m(en: 'Welcome to Mimio', tr: 'Mimio\'ya hoş geldin', es: 'Bienvenido a Mimio', fr: 'Bienvenue sur Mimio', de: 'Willkommen bei Mimio'));
+  String get onboardingWelcome => l10n(lang, _m(en: 'Welcome to Florien', tr: 'Florien\'ya hoş geldin', es: 'Bienvenido a Florien', fr: 'Bienvenue sur Florien', de: 'Willkommen bei Florien'));
   String get onboardingSubtitle => l10n(lang, _m(
         en: 'A gentle planner built for neurodivergent minds',
         tr: 'Nöroçeşitli zihinler için nazik bir planlayıcı',

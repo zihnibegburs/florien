@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/config/platform_config.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/web/weekly_view.dart';
+import 'package:florien/core/config/platform_config.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/web/weekly_view.dart';
 
 class WebShell extends ConsumerWidget {
   const WebShell({super.key, required this.child});
@@ -33,14 +33,14 @@ class WebShell extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: MimioColors.primary,
+                      color: FlorienColors.primary,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.schedule_rounded, color: Colors.white),
                   ),
                   const SizedBox(width: 12, height: 12),
                   if (MediaQuery.sizeOf(context).width > 1100)
-                    const Text('Mimio', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                    const Text('Florien', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
                 ],
               ),
             ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
 
 class FocusTimerWidget extends ConsumerStatefulWidget {
   const FocusTimerWidget({
@@ -102,7 +102,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: MimioColors.warning.withValues(alpha: 0.12),
+                color: FlorienColors.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -110,7 +110,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MimioColors.warning,
+                  color: FlorienColors.warning,
                   letterSpacing: 0.8,
                 ),
               ),

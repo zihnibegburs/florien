@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/data/routine_templates.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/utils/task_icons.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/data/routine_templates.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/providers.dart';
 
 Future<void> showRoutineTemplatesSheet(BuildContext context, WidgetRef ref, DateTime date) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     builder: (_) => _RoutineTemplatesSheet(selectedDate: date),
   );
@@ -40,8 +40,8 @@ class _RoutineTemplatesSheet extends ConsumerWidget {
           const SizedBox(height: 16),
           ...templates.map((t) => ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: MimioColors.fromHex(t.color).withValues(alpha: 0.15),
-                  child: Icon(TaskIcons.fromName(t.icon), color: MimioColors.fromHex(t.color)),
+                  backgroundColor: FlorienColors.fromHex(t.color).withValues(alpha: 0.15),
+                  child: Icon(TaskIcons.fromName(t.icon), color: FlorienColors.fromHex(t.color)),
                 ),
                 title: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${t.steps.length} steps'),

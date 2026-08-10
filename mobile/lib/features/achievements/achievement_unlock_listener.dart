@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/achievements/achievements_screen.dart';
+import 'package:florien/features/providers.dart';
 
 class AchievementUnlockListener extends ConsumerStatefulWidget {
   const AchievementUnlockListener({super.key, required this.child});
@@ -60,9 +60,9 @@ class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockLis
 
   void _showUnlock(AchievementDefinition def) {
     final s = ref.read(stringsProvider);
-    showMimioSoftDialog(
+    showFlorienSoftDialog(
       context: context,
-      builder: (dialogCtx) => MimioSoftCard(
+      builder: (dialogCtx) => FlorienSoftCard(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -90,7 +90,7 @@ class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockLis
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: MimioSoftTextButton(
+              child: FlorienSoftTextButton(
                 label: s.awesome,
                 onPressed: () => Navigator.pop(dialogCtx),
               ),

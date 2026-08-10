@@ -1,4 +1,4 @@
-mimio:
+florien:
   groq:
     api-key: your-groq-api-key-here
   google:

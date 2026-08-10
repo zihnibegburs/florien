@@ -2,34 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
-import 'package:mimio/features/onboarding/onboarding_screen.dart';
-import 'package:mimio/features/timeline/task_completion_helper.dart';
-import 'package:mimio/features/timeline/widgets/now_mode_view.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
-import 'package:mimio/core/utils/schedule_utils.dart';
-import 'package:mimio/features/focus/focus_session_actions.dart';
-import 'package:mimio/features/focus/focus_tab_view.dart';
-import 'package:mimio/features/focus/widgets/active_task_banner.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
-import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
-import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
-import 'package:mimio/features/timeline/widgets/inbox_section.dart';
-import 'package:mimio/features/timeline/widgets/more_tab_view.dart';
-import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
-import 'package:mimio/features/timeline/widgets/modern_bottom_bar.dart';
-import 'package:mimio/features/timeline/widgets/schedule_warning_banner.dart';
-import 'package:mimio/features/timeline/widgets/task_card.dart';
-import 'package:mimio/features/timeline/widgets/timeline_hour_grid.dart';
-import 'package:mimio/features/timeline/widgets/week_strip.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/achievements/achievement_unlock_listener.dart';
+import 'package:florien/features/onboarding/onboarding_screen.dart';
+import 'package:florien/features/timeline/task_completion_helper.dart';
+import 'package:florien/features/timeline/widgets/now_mode_view.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/utils/schedule_utils.dart';
+import 'package:florien/features/focus/focus_session_actions.dart';
+import 'package:florien/features/focus/focus_tab_view.dart';
+import 'package:florien/features/focus/widgets/active_task_banner.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/timeline/home_tab.dart';
+import 'package:florien/features/timeline/widgets/add_task_sheet.dart';
+import 'package:florien/features/timeline/widgets/delete_task_dialog.dart';
+import 'package:florien/features/timeline/widgets/inbox_section.dart';
+import 'package:florien/features/timeline/widgets/more_tab_view.dart';
+import 'package:florien/features/timeline/widgets/task_action_sheet.dart';
+import 'package:florien/features/timeline/widgets/modern_bottom_bar.dart';
+import 'package:florien/features/timeline/widgets/schedule_warning_banner.dart';
+import 'package:florien/features/timeline/widgets/task_card.dart';
+import 'package:florien/features/timeline/widgets/timeline_hour_grid.dart';
+import 'package:florien/features/timeline/widgets/week_strip.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -85,8 +85,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: CircleAvatar(
                           radius: 19,
                           backgroundColor: auth != null
-                              ? MimioColors.fromHex(auth.avatarColor)
-                              : MimioColors.primary,
+                              ? FlorienColors.fromHex(auth.avatarColor)
+                              : FlorienColors.primary,
                           child: Text(
                             (auth?.displayName.isNotEmpty ?? false)
                                 ? auth!.displayName[0].toUpperCase()
@@ -159,7 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {
-    showMimioBottomSheet(
+    showFlorienBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => AddTaskSheet(selectedDate: date),
@@ -199,12 +199,12 @@ class _OnboardingHostState extends ConsumerState<_OnboardingHost> {
     if (!mounted) return;
 
     if (!prefs.onboardingCompleted) {
-      await pushMimioOverlayRoute(
+      await pushFlorienOverlayRoute(
         context: context,
         builder: (_) => const OnboardingScreen(),
       );
     } else if (!hasTheme) {
-      await pushMimioOverlayRoute(
+      await pushFlorienOverlayRoute(
         context: context,
         builder: (_) => const OnboardingScreen(themeOnly: true),
       );
@@ -549,7 +549,7 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
   }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {
-    showMimioBottomSheet(
+    showFlorienBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => AddTaskSheet(selectedDate: date),
@@ -652,13 +652,13 @@ class _EmptyTimeline extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: MimioColors.primary.withValues(alpha: 0.1),
+                color: FlorienColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.wb_sunny_rounded,
                 size: 44,
-                color: MimioColors.primary.withValues(alpha: 0.7),
+                color: FlorienColors.primary.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 24),
@@ -692,14 +692,14 @@ class _EmptyTimeline extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        MimioColors.primary,
-                        MimioColors.primary.withValues(alpha: 0.85),
+                        FlorienColors.primary,
+                        FlorienColors.primary.withValues(alpha: 0.85),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: MimioColors.primary.withValues(alpha: 0.3),
+                        color: FlorienColors.primary.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),

@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 /// Quiet surface tokens. Kept behind the existing API so feature screens can
 /// share one consistent, low-noise visual language.
@@ -142,8 +142,8 @@ class LiquidGlass extends StatelessWidget {
 }
 
 /// A quiet, neutral canvas that lets content carry the hierarchy.
-class MimioAmbientBackground extends StatelessWidget {
-  const MimioAmbientBackground({super.key, required this.child});
+class FlorienAmbientBackground extends StatelessWidget {
+  const FlorienAmbientBackground({super.key, required this.child});
 
   final Widget child;
 

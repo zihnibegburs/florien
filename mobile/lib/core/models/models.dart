@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/recurrence.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/recurrence.dart';
 
 enum TaskStatus { pending, inProgress, paused, completed, skipped }
 

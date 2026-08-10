@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/firebase/firebase_providers.dart';
-import 'package:mimio/core/models/achievement.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/storage/achievement_storage.dart';
-import 'package:mimio/core/storage/adhd_settings_storage.dart';
-import 'package:mimio/core/storage/settings_storage.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/models/achievement.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/storage/achievement_storage.dart';
+import 'package:florien/core/storage/adhd_settings_storage.dart';
+import 'package:florien/core/storage/settings_storage.dart';
 
 /// Syncs language, theme, ADHD prefs, and achievements to `users/{uid}.settings`.
 class UserProfileService {

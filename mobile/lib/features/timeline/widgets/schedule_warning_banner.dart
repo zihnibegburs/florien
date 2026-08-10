@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/utils/schedule_utils.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/utils/schedule_utils.dart';
 
 class ScheduleWarningBanner extends ConsumerWidget {
   const ScheduleWarningBanner({super.key, required this.tasks});
@@ -34,14 +34,14 @@ class ScheduleWarningBanner extends ConsumerWidget {
         padding: const EdgeInsets.all(14),
         gradient: LinearGradient(
           colors: [
-            MimioColors.warning.withValues(alpha: 0.18),
-            MimioColors.warning.withValues(alpha: 0.08),
+            FlorienColors.warning.withValues(alpha: 0.18),
+            FlorienColors.warning.withValues(alpha: 0.08),
           ],
         ),
         tintOpacity: 1,
         child: Row(
           children: [
-            Icon(Icons.schedule_rounded, color: MimioColors.warning, size: 20),
+            Icon(Icons.schedule_rounded, color: FlorienColors.warning, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -66,7 +66,7 @@ class ScheduleWarningBanner extends ConsumerWidget {
                       '+${conflicts.length - 1}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: MimioColors.warning.withValues(alpha: 0.9),
+                        color: FlorienColors.warning.withValues(alpha: 0.9),
                       ),
                     ),
                 ],

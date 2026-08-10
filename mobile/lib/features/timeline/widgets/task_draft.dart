@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/models/adhd_models.dart';
-import 'package:mimio/core/models/ai_models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/platform/notification_service.dart';
-import 'package:mimio/core/repositories/ai_repository.dart';
-import 'package:mimio/features/providers.dart';
+import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/ai_models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/platform/notification_service.dart';
+import 'package:florien/core/repositories/ai_repository.dart';
+import 'package:florien/features/providers.dart';
 
 class TaskDraft {
   const TaskDraft({

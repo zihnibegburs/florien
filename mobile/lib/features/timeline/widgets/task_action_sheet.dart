@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
-import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
-import 'package:mimio/features/timeline/widgets/subtask_breakdown_sheet.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/timeline/widgets/delete_task_dialog.dart';
+import 'package:florien/features/timeline/widgets/edit_task_sheet.dart';
+import 'package:florien/features/timeline/widgets/subtask_breakdown_sheet.dart';
 
 void showTaskActionSheet({
   required BuildContext context,
@@ -30,7 +30,7 @@ void showTaskActionSheet({
   final isSubtask = task.parentTaskId != null;
   final canBreakdown = !isSubtask && !task.hasSubtasks && !task.isCompleted;
 
-  showMimioBottomSheet(
+  showFlorienBottomSheet(
     context: context,
     builder: (ctx) => Container(
       decoration: BoxDecoration(
@@ -58,7 +58,7 @@ void showTaskActionSheet({
                     width: 4,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: MimioColors.fromHex(task.color),
+                      color: FlorienColors.fromHex(task.color),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -93,7 +93,7 @@ void showTaskActionSheet({
               _ActionTile(
                 icon: Icons.play_arrow_rounded,
                 label: s.startTask,
-                color: MimioColors.fromHex(task.color),
+                color: FlorienColors.fromHex(task.color),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await onStart();
@@ -104,7 +104,7 @@ void showTaskActionSheet({
                 _ActionTile(
                   icon: Icons.timer_rounded,
                   label: s.goToFocus,
-                  color: MimioColors.primary,
+                  color: FlorienColors.primary,
                   onTap: () {
                     Navigator.pop(ctx);
                     onFocus();
@@ -114,7 +114,7 @@ void showTaskActionSheet({
                 _ActionTile(
                   icon: Icons.pause_rounded,
                   label: s.pause,
-                  color: MimioColors.warning,
+                  color: FlorienColors.warning,
                   onTap: () async {
                     Navigator.pop(ctx);
                     await onPause();
@@ -124,7 +124,7 @@ void showTaskActionSheet({
                 _ActionTile(
                   icon: Icons.play_arrow_rounded,
                   label: s.resume,
-                  color: MimioColors.fromHex(task.color),
+                  color: FlorienColors.fromHex(task.color),
                   onTap: () async {
                     Navigator.pop(ctx);
                     await onPause();
@@ -135,7 +135,7 @@ void showTaskActionSheet({
               _ActionTile(
                 icon: Icons.check_rounded,
                 label: s.complete,
-                color: MimioColors.success,
+                color: FlorienColors.success,
                 onTap: () async {
                   Navigator.pop(ctx);
                   await onComplete();
@@ -145,7 +145,7 @@ void showTaskActionSheet({
               _ActionTile(
                 icon: Icons.undo_rounded,
                 label: s.undoComplete,
-                color: MimioColors.warning,
+                color: FlorienColors.warning,
                 onTap: () async {
                   Navigator.pop(ctx);
                   await onUncomplete();
@@ -156,7 +156,7 @@ void showTaskActionSheet({
               label: s.edit,
               onTap: () {
                 Navigator.pop(ctx);
-                showMimioBottomSheet(
+                showFlorienBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   builder: (_) => EditTaskSheet(
@@ -171,10 +171,10 @@ void showTaskActionSheet({
               _ActionTile(
                 icon: Icons.auto_awesome_rounded,
                 label: s.splitSubtasks,
-                color: MimioColors.primary,
+                color: FlorienColors.primary,
                 onTap: () {
                   Navigator.pop(ctx);
-                  showMimioBottomSheet(
+                  showFlorienBottomSheet(
                     context: context,
                     isScrollControlled: true,
                     builder: (_) => SubtaskBreakdownSheet(

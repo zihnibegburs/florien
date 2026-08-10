@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/recurrence.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/core/theme/florien_theme.dart';
 
 class RecurrencePicker extends ConsumerWidget {
   const RecurrencePicker({
@@ -35,7 +35,7 @@ class RecurrencePicker extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.repeat_rounded, color: MimioColors.primary),
+                const Icon(Icons.repeat_rounded, color: FlorienColors.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -68,7 +68,7 @@ class RecurrencePicker extends ConsumerWidget {
                       label: Text(s.recurrenceUnitLabel(unit)),
                       selected: selected,
                       onSelected: (_) => onChanged(value.copyWith(unit: unit)),
-                      selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                      selectedColor: FlorienColors.primary.withValues(alpha: 0.2),
                     );
                   }).toList(),
                 ),
@@ -81,7 +81,7 @@ class RecurrencePicker extends ConsumerWidget {
   }
 
   Future<void> _showOptions(BuildContext context, S s) async {
-    final selected = await showMimioBottomSheet<RecurrenceType>(
+    final selected = await showFlorienBottomSheet<RecurrenceType>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -115,17 +115,17 @@ class RecurrencePicker extends ConsumerWidget {
               (type) => ListTile(
                 leading: Icon(
                   _iconFor(type),
-                  color: value.type == type ? MimioColors.primary : context.palette.textSecondary,
+                  color: value.type == type ? FlorienColors.primary : context.palette.textSecondary,
                 ),
                 title: Text(
                   s.recurrenceTypeLabel(type),
                   style: TextStyle(
                     fontWeight: value.type == type ? FontWeight.w700 : FontWeight.w500,
-                    color: value.type == type ? MimioColors.primary : null,
+                    color: value.type == type ? FlorienColors.primary : null,
                   ),
                 ),
                 trailing: value.type == type
-                    ? const Icon(Icons.check_rounded, color: MimioColors.primary)
+                    ? const Icon(Icons.check_rounded, color: FlorienColors.primary)
                     : null,
                 onTap: () => Navigator.pop(context, type),
               ),

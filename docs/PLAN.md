@@ -1,4 +1,4 @@
-# Mimio — Tiimo Benzeri Görsel Planlayıcı
+# Florien — Tiimo Benzeri Görsel Planlayıcı
 
 > Nörodivergent kullanıcılar (ADHD, Otizm) ve görsel planlama ihtiyacı olan herkes için Tiimo tarzı bir uygulama.
 
@@ -37,7 +37,7 @@
 
 ---
 
-## Mimio Teknoloji Stack
+## Florien Teknoloji Stack
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐

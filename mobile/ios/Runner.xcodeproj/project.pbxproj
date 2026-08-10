@@ -17,14 +17,14 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
-		A1MIMIOW0000000000000001 /* MimioWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000004 /* MimioWidget.swift */; };
-		A1MIMIOW0000000000000002 /* MimioWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		A1MIMIOW0000000000000015 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000007 /* WidgetKit.framework */; };
-		A1MIMIOW0000000000000016 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1MIMIOW0000000000000008 /* SwiftUI.framework */; };
-		A1SIRI0000000000000001 /* MimioSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* MimioSharedStorage.swift */; };
-		A1SIRI0000000000000002 /* MimioTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* MimioTaskApi.swift */; };
-		A1SIRI0000000000000003 /* AddMimioTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */; };
-		A1SIRI0000000000000004 /* MimioShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* MimioShortcuts.swift */; };
+		A1FLORIENW0000000000000001 /* FlorienWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000004 /* FlorienWidget.swift */; };
+		A1FLORIENW0000000000000002 /* FlorienWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000003 /* FlorienWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1FLORIENW0000000000000015 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000007 /* WidgetKit.framework */; };
+		A1FLORIENW0000000000000016 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000008 /* SwiftUI.framework */; };
+		A1SIRI0000000000000001 /* FlorienSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* FlorienSharedStorage.swift */; };
+		A1SIRI0000000000000002 /* FlorienTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* FlorienTaskApi.swift */; };
+		A1SIRI0000000000000003 /* AddFlorienTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */; };
+		A1SIRI0000000000000004 /* FlorienShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* FlorienShortcuts.swift */; };
 		D84D71E2C470CF85FDD9AB84 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
 
@@ -36,12 +36,12 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
-		A1MIMIOW000000000000000A /* PBXContainerItemProxy */ = {
+		A1FLORIENW000000000000000A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = A1MIMIOW000000000000000B;
-			remoteInfo = MimioWidgetExtension;
+			remoteGlobalIDString = A1FLORIENW000000000000000B;
+			remoteInfo = FlorienWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -56,13 +56,13 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW0000000000000009 /* Embed Foundation Extensions */ = {
+		A1FLORIENW0000000000000009 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				A1MIMIOW0000000000000002 /* MimioWidgetExtension.appex in Embed Foundation Extensions */,
+				A1FLORIENW0000000000000002 /* FlorienWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -90,18 +90,18 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MimioWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1MIMIOW0000000000000004 /* MimioWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioWidget.swift; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000006 /* MimioWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MimioWidget.entitlements; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000007 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		A1MIMIOW0000000000000008 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		A1MIMIOW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
-		A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = MimioWidgetExtension.xcconfig; path = Flutter/MimioWidgetExtension.xcconfig; sourceTree = "<group>"; };
-		A1SIRI0000000000000005 /* MimioSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioSharedStorage.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000006 /* MimioTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioTaskApi.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMimioTaskIntent.swift; sourceTree = "<group>"; };
-		A1SIRI0000000000000008 /* MimioShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimioShortcuts.swift; sourceTree = "<group>"; };
+		A1FLORIENW0000000000000003 /* FlorienWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FlorienWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1FLORIENW0000000000000004 /* FlorienWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienWidget.swift; sourceTree = "<group>"; };
+		A1FLORIENW0000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1FLORIENW0000000000000006 /* FlorienWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FlorienWidget.entitlements; sourceTree = "<group>"; };
+		A1FLORIENW0000000000000007 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		A1FLORIENW0000000000000008 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		A1FLORIENW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtension.xcconfig; path = Flutter/FlorienWidgetExtension.xcconfig; sourceTree = "<group>"; };
+		A1SIRI0000000000000005 /* FlorienSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienSharedStorage.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000006 /* FlorienTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienTaskApi.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFlorienTaskIntent.swift; sourceTree = "<group>"; };
+		A1SIRI0000000000000008 /* FlorienShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienShortcuts.swift; sourceTree = "<group>"; };
 		A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -126,12 +126,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW000000000000000D /* Frameworks */ = {
+		A1FLORIENW000000000000000D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1MIMIOW0000000000000016 /* SwiftUI.framework in Frameworks */,
-				A1MIMIOW0000000000000015 /* WidgetKit.framework in Frameworks */,
+				A1FLORIENW0000000000000016 /* SwiftUI.framework in Frameworks */,
+				A1FLORIENW0000000000000015 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -153,7 +153,7 @@
 				9740EEB21CF90195004384FC /* Debug.xcconfig */,
 				7AFA3C8E1D35360C0083082E /* Release.xcconfig */,
 				9740EEB31CF90195004384FC /* Generated.xcconfig */,
-				A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */,
+				A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */,
 			);
 			name = Flutter;
 			sourceTree = "<group>";
@@ -163,7 +163,7 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
-				A1MIMIOW000000000000000F /* MimioWidget */,
+				A1FLORIENW000000000000000F /* FlorienWidget */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				B20409F8E6444890EFD5D4D3 /* Pods */,
@@ -177,7 +177,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
-				A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */,
+				A1FLORIENW0000000000000003 /* FlorienWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -185,7 +185,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				A1MIMIOW0000000000000017 /* Runner.entitlements */,
+				A1FLORIENW0000000000000017 /* Runner.entitlements */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -193,24 +193,24 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
-				A1SIRI0000000000000005 /* MimioSharedStorage.swift */,
-				A1SIRI0000000000000006 /* MimioTaskApi.swift */,
-				A1SIRI0000000000000007 /* AddMimioTaskIntent.swift */,
-				A1SIRI0000000000000008 /* MimioShortcuts.swift */,
+				A1SIRI0000000000000005 /* FlorienSharedStorage.swift */,
+				A1SIRI0000000000000006 /* FlorienTaskApi.swift */,
+				A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */,
+				A1SIRI0000000000000008 /* FlorienShortcuts.swift */,
 				A1L10N0000000000000001 /* Localizable.xcstrings */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
 		};
-		A1MIMIOW000000000000000F /* MimioWidget */ = {
+		A1FLORIENW000000000000000F /* FlorienWidget */ = {
 			isa = PBXGroup;
 			children = (
-				A1MIMIOW0000000000000004 /* MimioWidget.swift */,
-				A1MIMIOW0000000000000005 /* Info.plist */,
-				A1MIMIOW0000000000000006 /* MimioWidget.entitlements */,
+				A1FLORIENW0000000000000004 /* FlorienWidget.swift */,
+				A1FLORIENW0000000000000005 /* Info.plist */,
+				A1FLORIENW0000000000000006 /* FlorienWidget.entitlements */,
 			);
-			path = MimioWidget;
+			path = FlorienWidget;
 			sourceTree = "<group>";
 		};
 		B20409F8E6444890EFD5D4D3 /* Pods */ = {
@@ -229,8 +229,8 @@
 		F3845498BD19CC066F2E9B39 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A1MIMIOW0000000000000007 /* WidgetKit.framework */,
-				A1MIMIOW0000000000000008 /* SwiftUI.framework */,
+				A1FLORIENW0000000000000007 /* WidgetKit.framework */,
+				A1FLORIENW0000000000000008 /* SwiftUI.framework */,
 				A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */,
 				B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */,
 			);
@@ -268,7 +268,7 @@
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
-				A1MIMIOW0000000000000009 /* Embed Foundation Extensions */,
+				A1FLORIENW0000000000000009 /* Embed Foundation Extensions */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				161B450C78765B0DD29A327E /* [CP] Embed Pods Frameworks */,
@@ -277,28 +277,28 @@
 			buildRules = (
 			);
 			dependencies = (
-				A1MIMIOW0000000000000010 /* PBXTargetDependency */,
+				A1FLORIENW0000000000000010 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A1MIMIOW000000000000000B /* MimioWidgetExtension */ = {
+		A1FLORIENW000000000000000B /* FlorienWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1MIMIOW0000000000000014 /* Build configuration list for PBXNativeTarget "MimioWidgetExtension" */;
+			buildConfigurationList = A1FLORIENW0000000000000014 /* Build configuration list for PBXNativeTarget "FlorienWidgetExtension" */;
 			buildPhases = (
-				A1MIMIOW000000000000000C /* Sources */,
-				A1MIMIOW000000000000000D /* Frameworks */,
-				A1MIMIOW000000000000000E /* Resources */,
+				A1FLORIENW000000000000000C /* Sources */,
+				A1FLORIENW000000000000000D /* Frameworks */,
+				A1FLORIENW000000000000000E /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = MimioWidgetExtension;
-			productName = MimioWidgetExtension;
-			productReference = A1MIMIOW0000000000000003 /* MimioWidgetExtension.appex */;
+			name = FlorienWidgetExtension;
+			productName = FlorienWidgetExtension;
+			productReference = A1FLORIENW0000000000000003 /* FlorienWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -324,7 +324,7 @@
 							};
 						};
 					};
-					A1MIMIOW000000000000000B = {
+					A1FLORIENW000000000000000B = {
 						CreatedOnToolsVersion = 16.2;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
@@ -349,7 +349,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
-				A1MIMIOW000000000000000B /* MimioWidgetExtension */,
+				A1FLORIENW000000000000000B /* FlorienWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -375,7 +375,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW000000000000000E /* Resources */ = {
+		A1FLORIENW000000000000000E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -510,19 +510,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
-				A1SIRI0000000000000001 /* MimioSharedStorage.swift in Sources */,
-				A1SIRI0000000000000002 /* MimioTaskApi.swift in Sources */,
-				A1SIRI0000000000000003 /* AddMimioTaskIntent.swift in Sources */,
-				A1SIRI0000000000000004 /* MimioShortcuts.swift in Sources */,
+				A1SIRI0000000000000001 /* FlorienSharedStorage.swift in Sources */,
+				A1SIRI0000000000000002 /* FlorienTaskApi.swift in Sources */,
+				A1SIRI0000000000000003 /* AddFlorienTaskIntent.swift in Sources */,
+				A1SIRI0000000000000004 /* FlorienShortcuts.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1MIMIOW000000000000000C /* Sources */ = {
+		A1FLORIENW000000000000000C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1MIMIOW0000000000000001 /* MimioWidget.swift in Sources */,
+				A1FLORIENW0000000000000001 /* FlorienWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,10 +534,10 @@
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
 		};
-		A1MIMIOW0000000000000010 /* PBXTargetDependency */ = {
+		A1FLORIENW0000000000000010 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A1MIMIOW000000000000000B /* MimioWidgetExtension */;
-			targetProxy = A1MIMIOW000000000000000A /* PBXContainerItemProxy */;
+			target = A1FLORIENW000000000000000B /* FlorienWidgetExtension */;
+			targetProxy = A1FLORIENW000000000000000A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -621,14 +621,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -645,7 +645,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -663,7 +663,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -679,7 +679,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
@@ -805,14 +805,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -829,14 +829,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -844,9 +844,9 @@
 			};
 			name = Release;
 		};
-		A1MIMIOW0000000000000011 /* Debug */ = {
+		A1FLORIENW0000000000000011 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */;
+			baseConfigurationReference = A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -854,14 +854,14 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = MimioWidget/MimioWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FlorienWidget/FlorienWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = MimioWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MimioWidget;
+				INFOPLIST_FILE = FlorienWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FlorienWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -870,7 +870,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.MimioWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.FlorienWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -881,9 +881,9 @@
 			};
 			name = Debug;
 		};
-		A1MIMIOW0000000000000012 /* Release */ = {
+		A1FLORIENW0000000000000012 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */;
+			baseConfigurationReference = A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -891,14 +891,14 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = MimioWidget/MimioWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FlorienWidget/FlorienWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = MimioWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MimioWidget;
+				INFOPLIST_FILE = FlorienWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FlorienWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -907,7 +907,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.MimioWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.FlorienWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -916,9 +916,9 @@
 			};
 			name = Release;
 		};
-		A1MIMIOW0000000000000013 /* Profile */ = {
+		A1FLORIENW0000000000000013 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A1MIMIOW0000000000000018 /* MimioWidgetExtension.xcconfig */;
+			baseConfigurationReference = A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */;
 			buildSettings = {
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -926,14 +926,14 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = MimioWidget/MimioWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FlorienWidget/FlorienWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = A2UB4KL245;
+				DEVELOPMENT_TEAM = 65V5D6DTQ2;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = MimioWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MimioWidget;
+				INFOPLIST_FILE = FlorienWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FlorienWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -942,7 +942,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mimio.mimio.MimioWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.florien.app.FlorienWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -984,12 +984,12 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1MIMIOW0000000000000014 /* Build configuration list for PBXNativeTarget "MimioWidgetExtension" */ = {
+		A1FLORIENW0000000000000014 /* Build configuration list for PBXNativeTarget "FlorienWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A1MIMIOW0000000000000011 /* Debug */,
-				A1MIMIOW0000000000000012 /* Release */,
-				A1MIMIOW0000000000000013 /* Profile */,
+				A1FLORIENW0000000000000011 /* Debug */,
+				A1FLORIENW0000000000000012 /* Release */,
+				A1FLORIENW0000000000000013 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

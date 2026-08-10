@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/features/focus/widgets/focus_timer_widget.dart';
+import 'package:florien/features/timeline/home_tab.dart';
 
 class ActiveTaskBanner extends ConsumerWidget {
   const ActiveTaskBanner({super.key, required this.session});
@@ -15,7 +15,7 @@ class ActiveTaskBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
-    final color = MimioColors.fromHex(session.color);
+    final color = FlorienColors.fromHex(session.color);
 
     return GestureDetector(
       onTap: () => ref.read(homeTabProvider.notifier).state = HomeTab.focus,

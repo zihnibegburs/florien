@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 Future<void> showFocusBlockingSheet(BuildContext context, WidgetRef ref) {
-  return showMimioBottomSheet(
+  return showFlorienBottomSheet(
     context: context,
     builder: (_) => const _FocusBlockingSheet(),
   );
@@ -38,7 +38,7 @@ class _FocusBlockingSheet extends ConsumerWidget {
             child: OutlinedButton.icon(
               onPressed: () async {
                 try {
-                  await const MethodChannel('com.mimio/settings').invokeMethod('openFocusSettings');
+                  await const MethodChannel('com.florien/settings').invokeMethod('openFocusSettings');
                 } catch (_) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

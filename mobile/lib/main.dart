@@ -9,27 +9,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:live_activities/models/url_scheme_data.dart';
-import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/platform/live_activity_service.dart';
-import 'package:mimio/core/platform/notification_service.dart';
-import 'package:mimio/core/platform/siri_sync_service.dart';
-import 'package:mimio/core/platform/widget_sync_service.dart';
-import 'package:mimio/core/theme/mimio_theme.dart';
-import 'package:mimio/core/widgets/liquid_glass.dart';
-import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
-import 'package:mimio/features/auth/login_screen.dart';
-import 'package:mimio/features/auth/register_screen.dart';
-import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/ai/ai_plan_screen.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
-import 'package:mimio/features/weekly/weekly_retrospective_screen.dart';
-import 'package:mimio/features/integrations/calendar_import_screen.dart';
-import 'package:mimio/features/focus/focus_screen.dart';
-import 'package:mimio/features/profile/profile_screen.dart';
-import 'package:mimio/features/timeline/home_screen.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
-import 'package:mimio/features/web/web_shell.dart';
-import 'package:mimio/firebase_options.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/platform/live_activity_service.dart';
+import 'package:florien/core/platform/notification_service.dart';
+import 'package:florien/core/platform/siri_sync_service.dart';
+import 'package:florien/core/platform/widget_sync_service.dart';
+import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/core/widgets/florien_soft_overlay.dart';
+import 'package:florien/features/auth/login_screen.dart';
+import 'package:florien/features/auth/register_screen.dart';
+import 'package:florien/features/providers.dart';
+import 'package:florien/features/ai/ai_plan_screen.dart';
+import 'package:florien/features/achievements/achievements_screen.dart';
+import 'package:florien/features/weekly/weekly_retrospective_screen.dart';
+import 'package:florien/features/integrations/calendar_import_screen.dart';
+import 'package:florien/features/focus/focus_screen.dart';
+import 'package:florien/features/profile/profile_screen.dart';
+import 'package:florien/features/timeline/home_screen.dart';
+import 'package:florien/features/timeline/home_tab.dart';
+import 'package:florien/features/web/web_shell.dart';
+import 'package:florien/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,11 +54,11 @@ void main() async {
     token = await FirebaseAuth.instance.currentUser?.getIdToken();
   }
   await SiriSyncService.syncCredentials(token: token);
-  runApp(const ProviderScope(child: MimioApp()));
+  runApp(const ProviderScope(child: FlorienApp()));
 }
 
-class MimioApp extends ConsumerWidget {
-  const MimioApp({super.key});
+class FlorienApp extends ConsumerWidget {
+  const FlorienApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,13 +68,13 @@ class MimioApp extends ConsumerWidget {
 
     return LiveActivityDeepLinkListener(
       child: MaterialApp.router(
-        title: 'Mimio',
-        theme: MimioTheme.light,
-        darkTheme: MimioTheme.dark,
+        title: 'Florien',
+        theme: FlorienTheme.light,
+        darkTheme: FlorienTheme.dark,
         themeMode: themeMode,
         locale: Locale(lang),
         routerConfig: router,
-        builder: (context, child) => MimioAmbientBackground(
+        builder: (context, child) => FlorienAmbientBackground(
           child: child ?? const SizedBox.shrink(),
         ),
         debugShowCheckedModeBanner: false,
@@ -146,23 +146,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/focus',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const FocusScreen()),
+        pageBuilder: (context, state) => florienOverlayGoRoutePage(state: state, child: const FocusScreen()),
       ),
       GoRoute(
         path: '/ai',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const AiPlanScreen()),
+        pageBuilder: (context, state) => florienOverlayGoRoutePage(state: state, child: const AiPlanScreen()),
       ),
       GoRoute(
         path: '/profile',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const ProfileScreen()),
+        pageBuilder: (context, state) => florienOverlayGoRoutePage(state: state, child: const ProfileScreen()),
       ),
       GoRoute(
         path: '/calendar-import',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const CalendarImportScreen()),
+        pageBuilder: (context, state) => florienOverlayGoRoutePage(state: state, child: const CalendarImportScreen()),
       ),
       GoRoute(
         path: '/achievements',
-        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const AchievementsScreen()),
+        pageBuilder: (context, state) => florienOverlayGoRoutePage(state: state, child: const AchievementsScreen()),
       ),
       GoRoute(
         path: '/brain-dump',
@@ -171,7 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/weekly-retro',
         pageBuilder: (context, state) =>
-            mimioOverlayGoRoutePage(state: state, child: const WeeklyRetrospectiveScreen()),
+            florienOverlayGoRoutePage(state: state, child: const WeeklyRetrospectiveScreen()),
       ),
     ],
   );
