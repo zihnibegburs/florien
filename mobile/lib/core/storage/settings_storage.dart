@@ -50,10 +50,13 @@ class SettingsStorage {
   Future<void> markCalendarEventsImported(Iterable<String> ids) async {
     if (ids.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getStringList(_importedCalendarEventsKey)?.toSet() ?? {};
+    final current =
+        prefs.getStringList(_importedCalendarEventsKey)?.toSet() ?? {};
     current.addAll(ids);
     await prefs.setStringList(_importedCalendarEventsKey, current.toList());
   }
 }
 
-final settingsStorageProvider = Provider<SettingsStorage>((ref) => SettingsStorage());
+final settingsStorageProvider = Provider<SettingsStorage>(
+  (ref) => SettingsStorage(),
+);

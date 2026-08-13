@@ -51,7 +51,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '293921233420',
     projectId: 'florien-74ad8',
     storageBucket: 'florien-74ad8.firebasestorage.app',
-    iosClientId: '293921233420-anm1urgeau6o5sdfksnbnuto8n6io35g.apps.googleusercontent.com',
+    iosClientId:
+        '293921233420-anm1urgeau6o5sdfksnbnuto8n6io35g.apps.googleusercontent.com',
     iosBundleId: 'com.florien.app',
   );
   static const FirebaseOptions macos = FirebaseOptions(

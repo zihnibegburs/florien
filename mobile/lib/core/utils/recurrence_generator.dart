@@ -23,18 +23,22 @@ class RecurrenceGenerator {
     return occurrences;
   }
 
-  static int _maxOccurrences(RecurrenceType type, int interval, RecurrenceUnit? unit) {
+  static int _maxOccurrences(
+    RecurrenceType type,
+    int interval,
+    RecurrenceUnit? unit,
+  ) {
     return switch (type) {
       RecurrenceType.daily => 89,
       RecurrenceType.weekly => 51,
       RecurrenceType.monthly => 11,
       RecurrenceType.yearly => 4,
       RecurrenceType.custom => switch (unit) {
-          RecurrenceUnit.days => (89 / interval).floor().clamp(1, 89),
-          RecurrenceUnit.weeks => (51 / interval).floor().clamp(1, 51),
-          RecurrenceUnit.months => (11 / interval).floor().clamp(1, 11),
-          null => 0,
-        },
+        RecurrenceUnit.days => (89 / interval).floor().clamp(1, 89),
+        RecurrenceUnit.weeks => (51 / interval).floor().clamp(1, 51),
+        RecurrenceUnit.months => (11 / interval).floor().clamp(1, 11),
+        null => 0,
+      },
       RecurrenceType.none => 0,
     };
   }
@@ -49,6 +53,25 @@ class RecurrenceGenerator {
       RecurrenceType.daily => current.add(Duration(days: interval)),
       RecurrenceType.weekly => current.add(Duration(days: 7 * interval)),
       RecurrenceType.monthly => DateTime.utc(
+        current.year,
+        current.month + interval,
+        current.day,
+        current.hour,
+        current.minute,
+        current.second,
+      ),
+      RecurrenceType.yearly => DateTime.utc(
+        current.year + interval,
+        current.month,
+        current.day,
+        current.hour,
+        current.minute,
+        current.second,
+      ),
+      RecurrenceType.custom => switch (unit) {
+        RecurrenceUnit.days => current.add(Duration(days: interval)),
+        RecurrenceUnit.weeks => current.add(Duration(days: 7 * interval)),
+        RecurrenceUnit.months => DateTime.utc(
           current.year,
           current.month + interval,
           current.day,
@@ -56,27 +79,8 @@ class RecurrenceGenerator {
           current.minute,
           current.second,
         ),
-      RecurrenceType.yearly => DateTime.utc(
-          current.year + interval,
-          current.month,
-          current.day,
-          current.hour,
-          current.minute,
-          current.second,
-        ),
-      RecurrenceType.custom => switch (unit) {
-          RecurrenceUnit.days => current.add(Duration(days: interval)),
-          RecurrenceUnit.weeks => current.add(Duration(days: 7 * interval)),
-          RecurrenceUnit.months => DateTime.utc(
-              current.year,
-              current.month + interval,
-              current.day,
-              current.hour,
-              current.minute,
-              current.second,
-            ),
-          null => current,
-        },
+        null => current,
+      },
       RecurrenceType.none => current,
     };
   }

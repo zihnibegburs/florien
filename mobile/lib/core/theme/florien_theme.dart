@@ -11,19 +11,19 @@ import 'package:florien/core/storage/settings_storage.dart';
 /// long planning sessions calm while the indigo remains recognisable in both
 /// light and dark modes.
 class FlorienColors {
-  static const primary = Color(0xFF4F52B2);
-  static const primaryLight = Color(0xFF7C7FE0);
-  static const accent = Color(0xFFE06F4F);
+  static const primary = Color(0xFF6C5CE7);
+  static const primaryLight = Color(0xFFA99CFF);
+  static const accent = Color(0xFFF07178);
   static const success = Color(0xFF059669);
   static const warning = Color(0xFFD97706);
   static const error = Color(0xFFDC2626);
 
   // Light semantic defaults (prefer [FlorienPalette] via context in widgets).
-  static const background = Color(0xFFF8F9FB);
+  static const background = Color(0xFFF7F6FA);
   static const surface = Color(0xFFFFFFFF);
   static const textPrimary = Color(0xFF111827);
   static const textSecondary = Color(0xFF6B7280);
-  static const border = Color(0xFFE5E7EB);
+  static const border = Color(0xFFE7E3ED);
 
   static const taskColors = [
     '#4F52B2',
@@ -60,7 +60,7 @@ abstract final class FlorienRadius {
   static const double sm = 12;
   static const double md = 16;
   static const double lg = 20;
-  static const double xl = 24;
+  static const double xl = 26;
 }
 
 @immutable
@@ -86,24 +86,24 @@ class FlorienPalette extends ThemeExtension<FlorienPalette> {
   final Color error;
 
   static const light = FlorienPalette(
-    background: Color(0xFFF8F9FB),
+    background: Color(0xFFF7F6FA),
     surface: Color(0xFFFFFFFF),
-    surfaceMuted: Color(0xFFF1F3F6),
-    primaryMuted: Color(0xFFEEF0FF),
-    textPrimary: Color(0xFF111827),
-    textSecondary: Color(0xFF6B7280),
-    border: Color(0xFFE5E7EB),
+    surfaceMuted: Color(0xFFF0EDF5),
+    primaryMuted: Color(0xFFEDE9FF),
+    textPrimary: Color(0xFF201D29),
+    textSecondary: Color(0xFF777181),
+    border: Color(0xFFE6E1EC),
     error: Color(0xFFDC2626),
   );
 
   static const dark = FlorienPalette(
-    background: Color(0xFF0F1117),
-    surface: Color(0xFF1A1D27),
-    surfaceMuted: Color(0xFF252A36),
-    primaryMuted: Color(0xFF2A2D5C),
-    textPrimary: Color(0xFFF3F4F6),
-    textSecondary: Color(0xFF9CA3AF),
-    border: Color(0xFF2D3340),
+    background: Color(0xFF0F0E13),
+    surface: Color(0xFF19171F),
+    surfaceMuted: Color(0xFF25222C),
+    primaryMuted: Color(0xFF312A55),
+    textPrimary: Color(0xFFF6F3FA),
+    textSecondary: Color(0xFFA9A2B2),
+    border: Color(0xFF373240),
     error: Color(0xFFF87171),
   );
 
@@ -202,8 +202,8 @@ class FlorienTheme {
 
   static ThemeData _build(Brightness brightness, FlorienPalette palette) {
     final isDark = brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFAEB0FF) : FlorienColors.primary;
-    final onPrimary = isDark ? const Color(0xFF0F1117) : Colors.white;
+    final primary = isDark ? const Color(0xFFB7ACFF) : FlorienColors.primary;
+    final onPrimary = isDark ? const Color(0xFF18132D) : Colors.white;
     final baseTextTheme = GoogleFonts.manropeTextTheme(
       ThemeData(brightness: brightness).textTheme,
     ).apply(bodyColor: palette.textPrimary, displayColor: palette.textPrimary);
@@ -239,23 +239,30 @@ class FlorienTheme {
       dividerColor: palette.border,
       textTheme: baseTextTheme.copyWith(
         displaySmall: baseTextTheme.displaySmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
+          fontSize: 30,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.4,
         ),
         headlineLarge: baseTextTheme.headlineLarge?.copyWith(
+          fontSize: 30,
           fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
+          letterSpacing: -0.8,
         ),
         headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.4,
         ),
         titleLarge: baseTextTheme.titleLarge?.copyWith(
+          fontSize: 20,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
         ),
-        bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.45),
-        bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.45),
+        titleMedium: baseTextTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.35),
+        bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.35),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: palette.background,
@@ -263,8 +270,9 @@ class FlorienTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        toolbarHeight: 58,
         titleTextStyle: GoogleFonts.manrope(
-          fontSize: 20,
+          fontSize: 19,
           fontWeight: FontWeight.w700,
           color: palette.textPrimary,
         ),
@@ -273,6 +281,10 @@ class FlorienTheme {
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        showDragHandle: true,
+        dragHandleColor: palette.border,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(FlorienRadius.xl),
@@ -284,11 +296,12 @@ class FlorienTheme {
         surfaceTintColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FlorienRadius.xl),
+          side: BorderSide(color: palette.border),
+          borderRadius: BorderRadius.circular(FlorienRadius.lg),
         ),
         titleTextStyle: GoogleFonts.manrope(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
           color: palette.textPrimary,
         ),
         contentTextStyle: GoogleFonts.manrope(
@@ -311,7 +324,7 @@ class FlorienTheme {
         hintStyle: TextStyle(color: palette.textSecondary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.md),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: palette.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.md),
@@ -322,8 +335,8 @@ class FlorienTheme {
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          horizontal: 14,
+          vertical: 13,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -332,29 +345,47 @@ class FlorienTheme {
           foregroundColor: onPrimary,
           disabledBackgroundColor: palette.border,
           disabledForegroundColor: palette.textSecondary,
-          minimumSize: const Size(48, 52),
+          minimumSize: const Size(44, 44),
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(FlorienRadius.md),
           ),
           textStyle: GoogleFonts.manrope(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
+          disabledBackgroundColor: palette.border,
+          disabledForegroundColor: palette.textSecondary,
+          minimumSize: const Size(44, 44),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(FlorienRadius.md),
+          ),
+          textStyle: GoogleFonts.manrope(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: palette.textPrimary,
-          minimumSize: const Size(48, 52),
+          minimumSize: const Size(44, 44),
           side: BorderSide(color: palette.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(FlorienRadius.md),
           ),
           textStyle: GoogleFonts.manrope(
             fontSize: 15,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -362,16 +393,16 @@ class FlorienTheme {
         style: TextButton.styleFrom(
           foregroundColor: primary,
           minimumSize: const Size(44, 44),
-          textStyle: GoogleFonts.manrope(fontWeight: FontWeight.w700),
+          textStyle: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
       ),
       listTileTheme: ListTileThemeData(
         tileColor: palette.surface,
         iconColor: palette.textPrimary,
         textColor: palette.textPrimary,
-        minTileHeight: 56,
+        minTileHeight: 48,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
         ),
       ),
       cardTheme: CardThemeData(
@@ -389,9 +420,10 @@ class FlorienTheme {
         selectedColor: palette.primaryMuted,
         side: BorderSide(color: palette.border),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(FlorienRadius.sm),
+          borderRadius: BorderRadius.circular(FlorienRadius.xs),
         ),
         labelStyle: TextStyle(color: palette.textPrimary),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -428,19 +460,52 @@ class FlorienTheme {
         circularTrackColor: palette.surfaceMuted,
       ),
       iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(foregroundColor: palette.textPrimary),
+        style: IconButton.styleFrom(
+          foregroundColor: palette.textPrimary,
+          backgroundColor: Colors.transparent,
+          minimumSize: const Size(40, 40),
+          padding: const EdgeInsets.all(8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: palette.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: palette.border),
+          borderRadius: BorderRadius.circular(FlorienRadius.md),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: palette.surface,
         indicatorColor: palette.primaryMuted,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        height: 64,
         labelTextStyle: WidgetStatePropertyAll(
           GoogleFonts.manrope(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
       dropdownMenuTheme: DropdownMenuThemeData(
         textStyle: TextStyle(color: palette.textPrimary),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: palette.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: palette.border),
+          borderRadius: BorderRadius.circular(FlorienRadius.lg),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: palette.surface,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: palette.border),
+          borderRadius: BorderRadius.circular(FlorienRadius.lg),
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: isDark ? palette.surface : palette.textPrimary,

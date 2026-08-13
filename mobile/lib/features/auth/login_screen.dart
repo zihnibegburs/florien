@@ -34,7 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/home');
+      context.go('/todo');
     }
   }
 
@@ -43,7 +43,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/home');
+      context.go('/todo');
     }
   }
 
@@ -52,7 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/home');
+      context.go('/todo');
     }
   }
 

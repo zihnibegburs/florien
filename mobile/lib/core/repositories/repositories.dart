@@ -6,10 +6,6 @@ import 'package:florien/core/firebase/user_profile_service.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
-import 'package:florien/core/platform/siri_sync_service.dart';
-import 'package:florien/core/storage/achievement_storage.dart';
-import 'package:florien/core/storage/adhd_settings_storage.dart';
-import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
 import 'package:florien/firebase_options.dart';
 
@@ -17,20 +13,11 @@ class AuthRepository {
   AuthRepository({
     required FirebaseAuth auth,
     required UserProfileService profiles,
-    required SettingsStorage settings,
-    required AdhdSettingsStorage adhd,
-    required AchievementStorage achievements,
   }) : _auth = auth,
-       _profiles = profiles,
-       _settings = settings,
-       _adhd = adhd,
-       _achievements = achievements;
+       _profiles = profiles;
 
   final FirebaseAuth _auth;
   final UserProfileService _profiles;
-  final SettingsStorage _settings;
-  final AdhdSettingsStorage _adhd;
-  final AchievementStorage _achievements;
 
   void _ensureConfigured() {
     if (!DefaultFirebaseOptions.isConfigured) {
@@ -54,7 +41,6 @@ class AuthRepository {
     final user = cred.user!;
     await user.updateDisplayName(displayName.trim());
     await _profiles.ensureUserDocument(user: user, displayName: displayName);
-    await _syncAfterSignIn(user);
     return authResponseFromUser(user, displayNameOverride: displayName.trim());
   }
 
@@ -69,7 +55,6 @@ class AuthRepository {
     );
     final user = cred.user!;
     await _profiles.ensureUserDocument(user: user);
-    await _syncAfterSignIn(user);
     return authResponseFromUser(user);
   }
 
@@ -86,7 +71,6 @@ class AuthRepository {
       await user.updateDisplayName(displayName.trim());
     }
     await _profiles.ensureUserDocument(user: user, displayName: displayName);
-    await _syncAfterSignIn(user);
     return authResponseFromUser(user, displayNameOverride: displayName);
   }
 
@@ -97,18 +81,15 @@ class AuthRepository {
     try {
       await user.getIdToken();
       await _profiles.ensureUserDocument(user: user);
-      await _syncAfterSignIn(user);
       return authResponseFromUser(user);
     } catch (_) {
       await _auth.signOut();
-      await SiriSyncService.syncCredentials();
       return null;
     }
   }
 
   Future<void> logout() async {
     await _auth.signOut();
-    await SiriSyncService.syncCredentials();
   }
 
   Future<AuthResponse> updateProfile({
@@ -135,7 +116,6 @@ class AuthRepository {
   }) async {
     final profile = await _profiles.loadProfile(user.uid);
     final token = await user.getIdToken() ?? '';
-    await SiriSyncService.syncCredentials(token: token);
 
     return AuthResponse(
       token: token,
@@ -150,24 +130,12 @@ class AuthRepository {
       avatarColor: profile?['avatarColor'] as String? ?? '#4F52B2',
     );
   }
-
-  Future<void> _syncAfterSignIn(User user) async {
-    await _profiles.syncSettingsFromCloud(
-      uid: user.uid,
-      settings: _settings,
-      adhd: _adhd,
-      achievements: _achievements,
-    );
-  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     auth: ref.watch(firebaseAuthProvider),
     profiles: ref.watch(userProfileServiceProvider),
-    settings: ref.watch(settingsStorageProvider),
-    adhd: ref.watch(adhdSettingsStorageProvider),
-    achievements: ref.watch(achievementStorageProvider),
   );
 });
 
@@ -190,12 +158,42 @@ class TaskRepository {
         .where('isInbox', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .get();
-    return snap.docs
+    final parents = snap.docs
         .map((d) => TaskModel.fromFirestore(d.id, d.data()))
+        .toList();
+    if (parents.isEmpty) return const [];
+
+    final subtasksByParent = <String, List<TaskModel>>{};
+    final parentIds = parents.map((task) => task.id).toList();
+    for (var index = 0; index < parentIds.length; index += 30) {
+      final end = index + 30 > parentIds.length ? parentIds.length : index + 30;
+      final subtaskSnapshot = await _tasks
+          .where('parentTaskId', whereIn: parentIds.sublist(index, end))
+          .get();
+      for (final document in subtaskSnapshot.docs) {
+        final subtask = TaskModel.fromFirestore(document.id, document.data());
+        final parentId = subtask.parentTaskId;
+        if (parentId == null) continue;
+        subtasksByParent.putIfAbsent(parentId, () => []).add(subtask);
+      }
+    }
+    for (final subtasks in subtasksByParent.values) {
+      subtasks.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+
+    return parents
+        .map(
+          (task) =>
+              task.copyWith(subtasks: subtasksByParent[task.id] ?? const []),
+        )
         .toList();
   }
 
-  Future<TaskModel> scheduleFromInbox(String id, DateTime scheduledAt) async {
+  Future<TaskModel> scheduleFromInbox(
+    String id,
+    DateTime scheduledAt, {
+    DayPeriod dayPeriod = DayPeriod.anytime,
+  }) async {
     final ref = _tasks.doc(id);
     final snap = await ref.get();
     if (!snap.exists) throw StateError('Task not found');
@@ -205,6 +203,26 @@ class TaskRepository {
     await ref.update({
       'isInbox': false,
       'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      'dayPeriod': _dayPeriodValue(dayPeriod),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    final updated = await ref.get();
+    return TaskModel.fromFirestore(id, updated.data()!);
+  }
+
+  Future<TaskModel> moveToInbox(String id) async {
+    final ref = _tasks.doc(id);
+    final snapshot = await ref.get();
+    if (!snapshot.exists) throw StateError('Task not found');
+    await ref.update({
+      'isInbox': true,
+      'scheduledAt': null,
+      'dayPeriod': 'ANYTIME',
+      'priority': 'NONE',
+      'todoListId': null,
+      'status': 'PENDING',
+      'startedAt': null,
+      'completedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
     final updated = await ref.get();
@@ -212,7 +230,7 @@ class TaskRepository {
   }
 
   Future<TimelineModel> getTimeline(DateTime date) async {
-    final dayStart = DateTime.utc(date.year, date.month, date.day);
+    final dayStart = DateTime(date.year, date.month, date.day).toUtc();
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     final snap = await _tasks
@@ -287,6 +305,9 @@ class TaskRepository {
     EnergyLevel? energyLevel,
     String? motivation,
     int transitionBufferMinutes = 0,
+    TaskPriority priority = TaskPriority.none,
+    DayPeriod dayPeriod = DayPeriod.anytime,
+    String? todoListId,
   }) async {
     final ref = _tasks.doc();
     final now = FieldValue.serverTimestamp();
@@ -313,6 +334,9 @@ class TaskRepository {
       'recurrenceInterval': recurrence.interval,
       'recurrenceUnit': recurrence.apiUnit(),
       'recurrenceSeriesId': null,
+      'priority': _priorityValue(priority),
+      'dayPeriod': _dayPeriodValue(dayPeriod),
+      'todoListId': todoListId,
       'createdAt': now,
       'updatedAt': now,
     };
@@ -334,6 +358,8 @@ class TaskRepository {
         energyLevel: energyLevel?.apiValue,
         motivation: _normalizeText(motivation),
         transitionBufferMinutes: transitionBufferMinutes,
+        priority: priority,
+        dayPeriod: dayPeriod,
       );
     }
 
@@ -354,6 +380,8 @@ class TaskRepository {
     String? energyLevel,
     String? motivation,
     required int transitionBufferMinutes,
+    required TaskPriority priority,
+    required DayPeriod dayPeriod,
   }) async {
     final occurrences = RecurrenceGenerator.generateOccurrences(
       start: start.toUtc(),
@@ -387,6 +415,8 @@ class TaskRepository {
         'recurrenceInterval': 1,
         'recurrenceUnit': null,
         'recurrenceSeriesId': templateId,
+        'priority': _priorityValue(priority),
+        'dayPeriod': _dayPeriodValue(dayPeriod),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -409,7 +439,7 @@ class TaskRepository {
   }) async {
     final totalDuration = subtasks.fold<int>(
       0,
-      (sum, s) => sum + s.durationMinutes,
+      (total, step) => total + step.durationMinutes,
     );
     final parentRef = _tasks.doc();
     await parentRef.set({
@@ -483,6 +513,7 @@ class TaskRepository {
     required String id,
     String? title,
     String? description,
+    bool clearDescription = false,
     String? color,
     int? durationMinutes,
     DateTime? scheduledAt,
@@ -491,11 +522,16 @@ class TaskRepository {
     String? motivation,
     int? transitionBufferMinutes,
     bool? isInbox,
+    TaskPriority? priority,
+    DayPeriod? dayPeriod,
+    String? todoListId,
+    bool clearTodoListId = false,
   }) async {
     final patch = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
       if (title != null) 'title': title.trim(),
       if (description != null) 'description': description,
+      if (clearDescription) 'description': null,
       if (color != null) 'color': color,
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (scheduledAt != null)
@@ -506,12 +542,30 @@ class TaskRepository {
       if (transitionBufferMinutes != null)
         'transitionBufferMinutes': transitionBufferMinutes,
       if (isInbox != null) 'isInbox': isInbox,
+      if (priority != null) 'priority': _priorityValue(priority),
+      if (dayPeriod != null) 'dayPeriod': _dayPeriodValue(dayPeriod),
+      if (todoListId != null) 'todoListId': todoListId,
+      if (clearTodoListId) 'todoListId': null,
     };
     await _tasks.doc(id).update(patch);
     final snap = await _tasks.doc(id).get();
     if (!snap.exists) throw StateError('Task not found');
     return TaskModel.fromFirestore(id, snap.data()!);
   }
+
+  String _priorityValue(TaskPriority priority) => switch (priority) {
+    TaskPriority.high => 'HIGH',
+    TaskPriority.medium => 'MEDIUM',
+    TaskPriority.low => 'LOW',
+    TaskPriority.none => 'NONE',
+  };
+
+  String _dayPeriodValue(DayPeriod period) => switch (period) {
+    DayPeriod.anytime => 'ANYTIME',
+    DayPeriod.morning => 'MORNING',
+    DayPeriod.daytime => 'DAYTIME',
+    DayPeriod.evening => 'EVENING',
+  };
 
   Future<TaskModel> addSubtasksToTask({
     required String parentId,
@@ -535,7 +589,7 @@ class TaskRepository {
 
     final totalDuration = subtasks.fold<int>(
       0,
-      (sum, s) => sum + s.durationMinutes,
+      (total, step) => total + step.durationMinutes,
     );
     await parentRef.update({
       'durationMinutes': totalDuration,
@@ -586,6 +640,85 @@ class TaskRepository {
       refreshed.data()!,
       subtasks: createdSubs,
     );
+  }
+
+  Future<void> replaceSubtasks({
+    required String parentId,
+    required List<String> titles,
+  }) async {
+    final parentRef = _tasks.doc(parentId);
+    final parentSnapshot = await parentRef.get();
+    if (!parentSnapshot.exists) throw StateError('Task not found');
+    final parent = TaskModel.fromFirestore(parentId, parentSnapshot.data()!);
+    if (parent.parentTaskId != null) {
+      throw StateError('Cannot edit subtasks of a subtask');
+    }
+
+    final existingSnapshot = await _tasks
+        .where('parentTaskId', isEqualTo: parentId)
+        .get();
+    final existing = [...existingSnapshot.docs]
+      ..sort(
+        (a, b) => ((a.data()['sortOrder'] as num?)?.toInt() ?? 0).compareTo(
+          (b.data()['sortOrder'] as num?)?.toInt() ?? 0,
+        ),
+      );
+    final batch = _db.batch();
+    var scheduledAt = parent.scheduledAt?.toUtc();
+
+    for (var index = 0; index < titles.length; index++) {
+      final title = titles[index].trim();
+      if (index < existing.length) {
+        final document = existing[index];
+        batch.update(document.reference, {
+          'title': title,
+          'sortOrder': index,
+          if (scheduledAt != null)
+            'scheduledAt': Timestamp.fromDate(scheduledAt),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        final duration =
+            (document.data()['durationMinutes'] as num?)?.toInt() ?? 5;
+        if (scheduledAt != null) {
+          scheduledAt = scheduledAt.add(Duration(minutes: duration));
+        }
+      } else {
+        final childRef = _tasks.doc();
+        batch.set(childRef, {
+          'title': title,
+          'description': null,
+          'color': parent.color,
+          'icon': parent.icon,
+          'durationMinutes': 5,
+          'scheduledAt': scheduledAt == null
+              ? null
+              : Timestamp.fromDate(scheduledAt),
+          'status': 'PENDING',
+          'sortOrder': index,
+          'isInbox': false,
+          'startedAt': null,
+          'completedAt': null,
+          'parentTaskId': parentId,
+          'reward': null,
+          'energyLevel': null,
+          'motivation': null,
+          'transitionBufferMinutes': 0,
+          'recurrenceType': 'NONE',
+          'recurrenceInterval': 1,
+          'recurrenceUnit': null,
+          'recurrenceSeriesId': null,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        if (scheduledAt != null) {
+          scheduledAt = scheduledAt.add(const Duration(minutes: 5));
+        }
+      }
+    }
+    for (var index = titles.length; index < existing.length; index++) {
+      batch.delete(existing[index].reference);
+    }
+    await batch.commit();
   }
 
   Future<TaskModel> startTask(String id) async {
@@ -672,6 +805,7 @@ class TaskRepository {
 
     await ref.update({
       'status': 'PENDING',
+      'priority': 'NONE',
       'completedAt': null,
       'startedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),

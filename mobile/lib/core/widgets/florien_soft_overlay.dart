@@ -150,7 +150,7 @@ class FlorienSoftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LiquidGlass(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(FlorienRadius.lg),
       blur: false,
       tintOpacity: 1,
       padding: padding,

@@ -21,13 +21,7 @@ abstract final class LiquidGlassTokens {
 
   static Color edgeShadow(BuildContext context) => context.palette.border;
 
-  static List<BoxShadow> elevation(BuildContext context) => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: isDark(context) ? 0.14 : 0.04),
-      blurRadius: 14,
-      offset: const Offset(0, 5),
-    ),
-  ];
+  static List<BoxShadow> elevation(BuildContext context) => const [];
 }
 
 /// Solid-first surface with optional, restrained translucency.
@@ -35,7 +29,9 @@ class LiquidGlass extends StatelessWidget {
   const LiquidGlass({
     super.key,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(20)),
+    this.borderRadius = const BorderRadius.all(
+      Radius.circular(FlorienRadius.lg),
+    ),
     this.padding,
     this.margin,
     this.blur = false,

@@ -69,46 +69,52 @@ class AdhdPreferences {
     bool? streakReminders,
     bool? dailySummary,
     int? rewardTimerMinutes,
-  }) =>
-      AdhdPreferences(
-        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-        overwhelmMode: overwhelmMode ?? this.overwhelmMode,
-        preferListView: preferListView ?? this.preferListView,
-        defaultRemind10Min: defaultRemind10Min ?? this.defaultRemind10Min,
-        defaultRemind5Min: defaultRemind5Min ?? this.defaultRemind5Min,
-        defaultRemind1Min: defaultRemind1Min ?? this.defaultRemind1Min,
-        transitionAlerts: transitionAlerts ?? this.transitionAlerts,
-        breakAfterFocus: breakAfterFocus ?? this.breakAfterFocus,
-        breakDurationMinutes: breakDurationMinutes ?? this.breakDurationMinutes,
-        bodyDoublingEnabled: bodyDoublingEnabled ?? this.bodyDoublingEnabled,
-        dailyEnergyLevel: clearDailyEnergy ? null : (dailyEnergyLevel ?? this.dailyEnergyLevel),
-        quietHoursStart: clearQuietHours ? null : (quietHoursStart ?? this.quietHoursStart),
-        quietHoursEnd: clearQuietHours ? null : (quietHoursEnd ?? this.quietHoursEnd),
-        streakReminders: streakReminders ?? this.streakReminders,
-        dailySummary: dailySummary ?? this.dailySummary,
-        rewardTimerMinutes: rewardTimerMinutes ?? this.rewardTimerMinutes,
-      );
+  }) => AdhdPreferences(
+    onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    overwhelmMode: overwhelmMode ?? this.overwhelmMode,
+    preferListView: preferListView ?? this.preferListView,
+    defaultRemind10Min: defaultRemind10Min ?? this.defaultRemind10Min,
+    defaultRemind5Min: defaultRemind5Min ?? this.defaultRemind5Min,
+    defaultRemind1Min: defaultRemind1Min ?? this.defaultRemind1Min,
+    transitionAlerts: transitionAlerts ?? this.transitionAlerts,
+    breakAfterFocus: breakAfterFocus ?? this.breakAfterFocus,
+    breakDurationMinutes: breakDurationMinutes ?? this.breakDurationMinutes,
+    bodyDoublingEnabled: bodyDoublingEnabled ?? this.bodyDoublingEnabled,
+    dailyEnergyLevel: clearDailyEnergy
+        ? null
+        : (dailyEnergyLevel ?? this.dailyEnergyLevel),
+    quietHoursStart: clearQuietHours
+        ? null
+        : (quietHoursStart ?? this.quietHoursStart),
+    quietHoursEnd: clearQuietHours
+        ? null
+        : (quietHoursEnd ?? this.quietHoursEnd),
+    streakReminders: streakReminders ?? this.streakReminders,
+    dailySummary: dailySummary ?? this.dailySummary,
+    rewardTimerMinutes: rewardTimerMinutes ?? this.rewardTimerMinutes,
+  );
 
   Map<String, dynamic> toJson() => {
-        'onboardingCompleted': onboardingCompleted,
-        'overwhelmMode': overwhelmMode,
-        'preferListView': preferListView,
-        'defaultRemind10Min': defaultRemind10Min,
-        'defaultRemind5Min': defaultRemind5Min,
-        'defaultRemind1Min': defaultRemind1Min,
-        'transitionAlerts': transitionAlerts,
-        'breakAfterFocus': breakAfterFocus,
-        'breakDurationMinutes': breakDurationMinutes,
-        'bodyDoublingEnabled': bodyDoublingEnabled,
-        'dailyEnergyLevel': dailyEnergyLevel?.name,
-        'quietHoursStart': quietHoursStart,
-        'quietHoursEnd': quietHoursEnd,
-        'streakReminders': streakReminders,
-        'dailySummary': dailySummary,
-        'rewardTimerMinutes': rewardTimerMinutes,
-      };
+    'onboardingCompleted': onboardingCompleted,
+    'overwhelmMode': overwhelmMode,
+    'preferListView': preferListView,
+    'defaultRemind10Min': defaultRemind10Min,
+    'defaultRemind5Min': defaultRemind5Min,
+    'defaultRemind1Min': defaultRemind1Min,
+    'transitionAlerts': transitionAlerts,
+    'breakAfterFocus': breakAfterFocus,
+    'breakDurationMinutes': breakDurationMinutes,
+    'bodyDoublingEnabled': bodyDoublingEnabled,
+    'dailyEnergyLevel': dailyEnergyLevel?.name,
+    'quietHoursStart': quietHoursStart,
+    'quietHoursEnd': quietHoursEnd,
+    'streakReminders': streakReminders,
+    'dailySummary': dailySummary,
+    'rewardTimerMinutes': rewardTimerMinutes,
+  };
 
-  factory AdhdPreferences.fromJson(Map<String, dynamic> json) => AdhdPreferences(
+  factory AdhdPreferences.fromJson(Map<String, dynamic> json) =>
+      AdhdPreferences(
         onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
         overwhelmMode: json['overwhelmMode'] as bool? ?? false,
         preferListView: json['preferListView'] as bool? ?? true,

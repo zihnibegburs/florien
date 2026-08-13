@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 class TaskIcons {
+  static const defaultName = 'task';
+  static const defaultIcon = Icons.task_alt_rounded;
+
   static const _keywordMap = <String, String>{
     'okul': 'school',
     'ödev': 'school',
@@ -128,9 +131,8 @@ class TaskIcons {
   }
 
   static IconData iconForTask({required String title, required String icon}) {
-    final name = icon == 'task' ? inferName(title) : icon;
-    return _iconData[name] ?? Icons.task_alt_rounded;
+    return defaultIcon;
   }
 
-  static IconData fromName(String name) => _iconData[name] ?? Icons.task_alt_rounded;
+  static IconData fromName(String name) => _iconData[name] ?? defaultIcon;
 }

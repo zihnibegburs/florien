@@ -33,7 +33,15 @@ end
 platform :ios do
   desc "Build Florien and upload it to TestFlight"
   lane :beta do
-    setup_ci if ENV["CI"]
+    # `update_code_signing_settings` is required for the distribution archive,
+    # but it edits project.pbxproj in place. Keep development signing in the
+    # project as the source of truth so a later Xcode Run never tries to
+    # install an App Store/TestFlight profile on a connected device.
+    project_path = File.expand_path("../Runner.xcodeproj/project.pbxproj", __dir__)
+    original_project = File.binread(project_path)
+
+    begin
+      setup_ci if ENV["CI"]
 
     team_id = ENV.fetch("APPLE_TEAM_ID").strip
     UI.user_error!("APPLE_TEAM_ID must be a 10-character Apple Team ID") unless team_id.match?(/\A[A-Z0-9]{10}\z/)
@@ -155,5 +163,9 @@ platform :ios do
       distribute_external: false,
       notify_external_testers: false
     )
+    ensure
+      File.binwrite(project_path, original_project)
+      UI.message("Restored automatic development signing for Xcode Run.")
+    end
   end
 end

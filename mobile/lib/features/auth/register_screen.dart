@@ -28,13 +28,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authStateProvider.notifier).register(
+    await ref
+        .read(authStateProvider.notifier)
+        .register(
           _emailController.text.trim(),
           _passwordController.text,
           _nameController.text.trim(),
         );
-    if (mounted && ref.read(authStateProvider).hasValue && ref.read(authStateProvider).value != null) {
-      context.go('/home');
+    if (mounted &&
+        ref.read(authStateProvider).hasValue &&
+        ref.read(authStateProvider).value != null) {
+      context.go('/todo');
     }
   }
 
@@ -47,7 +51,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (next.hasError && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.error.toString().replaceFirst('Exception: ', '')),
+            content: Text(
+              next.error.toString().replaceFirst('Exception: ', ''),
+            ),
             backgroundColor: Colors.red.shade400,
           ),
         );
@@ -72,15 +78,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(
                   s.createAccount,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   s.registerSubtitle,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: context.palette.textSecondary,
-                      ),
+                    color: context.palette.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 32),
                 Text(s.yourName, style: Theme.of(context).textTheme.labelLarge),
@@ -88,7 +94,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(hintText: s.yourName),
-                  validator: (v) => v == null || v.length < 2 ? s.nameMin2 : null,
+                  validator: (v) =>
+                      v == null || v.length < 2 ? s.nameMin2 : null,
                 ),
                 const SizedBox(height: 20),
                 Text(s.email, style: Theme.of(context).textTheme.labelLarge),
@@ -96,8 +103,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(hintText: 'ornek@email.com'),
-                  validator: (v) => v == null || !v.contains('@') ? s.validEmail : null,
+                  decoration: const InputDecoration(
+                    hintText: 'ornek@email.com',
+                  ),
+                  validator: (v) =>
+                      v == null || !v.contains('@') ? s.validEmail : null,
                 ),
                 const SizedBox(height: 20),
                 Text(s.password, style: Theme.of(context).textTheme.labelLarge),
@@ -106,7 +116,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(hintText: s.passwordMin6),
-                  validator: (v) => v == null || v.length < 6 ? s.passwordMin6 : null,
+                  validator: (v) =>
+                      v == null || v.length < 6 ? s.passwordMin6 : null,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -117,7 +128,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(s.register),
                   ),

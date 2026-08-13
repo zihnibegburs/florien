@@ -4,6 +4,14 @@ import 'package:florien/core/models/recurrence.dart';
 
 enum TaskStatus { pending, inProgress, paused, completed, skipped }
 
+/// Priority is used by the standalone To-do list. Older tasks safely default
+/// to [none] when the field is absent in Firestore.
+enum TaskPriority { high, medium, low, none }
+
+/// Daily planner section. Tasks without this field remain compatible and are
+/// shown in the catch-all [anytime] section.
+enum DayPeriod { anytime, morning, daytime, evening }
+
 class AuthResponse {
   /// Firebase ID token when available (widgets / Siri), otherwise empty.
   final String token;
@@ -70,6 +78,11 @@ class TaskModel {
   final int transitionBufferMinutes;
   final RecurrenceType recurrenceType;
   final String? recurrenceSeriesId;
+  final TaskPriority priority;
+  final DayPeriod dayPeriod;
+
+  /// `null` means the built-in To-do list; custom lists use their local id.
+  final String? todoListId;
 
   const TaskModel({
     required this.id,
@@ -92,6 +105,9 @@ class TaskModel {
     this.transitionBufferMinutes = 0,
     this.recurrenceType = RecurrenceType.none,
     this.recurrenceSeriesId,
+    this.priority = TaskPriority.none,
+    this.dayPeriod = DayPeriod.anytime,
+    this.todoListId,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
@@ -99,7 +115,7 @@ class TaskModel {
     title: json['title'] as String,
     description: json['description'] as String?,
     color: json['color'] as String,
-    icon: json['icon'] as String,
+    icon: json['icon'] as String? ?? 'task',
     durationMinutes: json['durationMinutes'] as int,
     scheduledAt: _parseDateTime(json['scheduledAt']),
     status: _parseStatus(json['status'] as String),
@@ -119,6 +135,9 @@ class TaskModel {
     transitionBufferMinutes: json['transitionBufferMinutes'] as int? ?? 0,
     recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
     recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
+    priority: _parsePriority(json['priority'] as String?),
+    dayPeriod: _parseDayPeriod(json['dayPeriod'] as String?),
+    todoListId: json['todoListId'] as String?,
   );
 
   factory TaskModel.fromFirestore(
@@ -147,6 +166,9 @@ class TaskModel {
         (data['transitionBufferMinutes'] as num?)?.toInt() ?? 0,
     recurrenceType: _parseRecurrenceType(data['recurrenceType'] as String?),
     recurrenceSeriesId: data['recurrenceSeriesId'] as String?,
+    priority: _parsePriority(data['priority'] as String?),
+    dayPeriod: _parseDayPeriod(data['dayPeriod'] as String?),
+    todoListId: data['todoListId'] as String?,
   );
 
   Map<String, dynamic> toFirestoreMap({bool includeId = false}) => {
@@ -175,6 +197,9 @@ class TaskModel {
     'transitionBufferMinutes': transitionBufferMinutes,
     'recurrenceType': _recurrenceTypeApi(recurrenceType),
     'recurrenceSeriesId': recurrenceSeriesId,
+    'priority': priorityApiValue,
+    'dayPeriod': dayPeriodApiValue,
+    'todoListId': todoListId,
   };
 
   String get statusApiValue => switch (status) {
@@ -183,6 +208,20 @@ class TaskModel {
     TaskStatus.paused => 'PAUSED',
     TaskStatus.completed => 'COMPLETED',
     TaskStatus.skipped => 'SKIPPED',
+  };
+
+  String get priorityApiValue => switch (priority) {
+    TaskPriority.high => 'HIGH',
+    TaskPriority.medium => 'MEDIUM',
+    TaskPriority.low => 'LOW',
+    TaskPriority.none => 'NONE',
+  };
+
+  String get dayPeriodApiValue => switch (dayPeriod) {
+    DayPeriod.anytime => 'ANYTIME',
+    DayPeriod.morning => 'MORNING',
+    DayPeriod.daytime => 'DAYTIME',
+    DayPeriod.evening => 'EVENING',
   };
 
   TaskModel copyWith({
@@ -209,6 +248,10 @@ class TaskModel {
     int? transitionBufferMinutes,
     RecurrenceType? recurrenceType,
     String? recurrenceSeriesId,
+    TaskPriority? priority,
+    DayPeriod? dayPeriod,
+    String? todoListId,
+    bool clearTodoListId = false,
   }) => TaskModel(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -231,6 +274,9 @@ class TaskModel {
         transitionBufferMinutes ?? this.transitionBufferMinutes,
     recurrenceType: recurrenceType ?? this.recurrenceType,
     recurrenceSeriesId: recurrenceSeriesId ?? this.recurrenceSeriesId,
+    priority: priority ?? this.priority,
+    dayPeriod: dayPeriod ?? this.dayPeriod,
+    todoListId: clearTodoListId ? null : (todoListId ?? this.todoListId),
   );
 
   static DateTime? _parseDateTime(dynamic value) {
@@ -266,6 +312,20 @@ class TaskModel {
     'COMPLETED' => TaskStatus.completed,
     'SKIPPED' => TaskStatus.skipped,
     _ => TaskStatus.pending,
+  };
+
+  static TaskPriority _parsePriority(String? value) => switch (value) {
+    'HIGH' => TaskPriority.high,
+    'MEDIUM' => TaskPriority.medium,
+    'LOW' => TaskPriority.low,
+    _ => TaskPriority.none,
+  };
+
+  static DayPeriod _parseDayPeriod(String? value) => switch (value) {
+    'MORNING' => DayPeriod.morning,
+    'DAYTIME' => DayPeriod.daytime,
+    'EVENING' => DayPeriod.evening,
+    _ => DayPeriod.anytime,
   };
 
   bool get isActive => status == TaskStatus.inProgress;
