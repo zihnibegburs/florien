@@ -189,6 +189,37 @@ class TaskRepository {
         .toList();
   }
 
+  Future<CompletionCounts> getCompletionCounts(DateTime now) async {
+    final localNow = now.toLocal();
+    final today = DateTime(localNow.year, localNow.month, localNow.day);
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final snapshot = await _tasks
+        .where(
+          'completedAt',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart.toUtc()),
+        )
+        .get();
+
+    var todayCount = 0;
+    var weekCount = 0;
+    for (final document in snapshot.docs) {
+      final data = document.data();
+      if (data['parentTaskId'] != null || data['status'] != 'COMPLETED') {
+        continue;
+      }
+      final value = data['completedAt'];
+      final completedAt = switch (value) {
+        Timestamp timestamp => timestamp.toDate().toLocal(),
+        DateTime date => date.toLocal(),
+        _ => null,
+      };
+      if (completedAt == null) continue;
+      weekCount++;
+      if (!completedAt.isBefore(today)) todayCount++;
+    }
+    return CompletionCounts(today: todayCount, thisWeek: weekCount);
+  }
+
   Future<TaskModel> scheduleFromInbox(
     String id,
     DateTime scheduledAt, {
@@ -210,7 +241,7 @@ class TaskRepository {
     return TaskModel.fromFirestore(id, updated.data()!);
   }
 
-  Future<TaskModel> moveToInbox(String id) async {
+  Future<TaskModel> moveToInbox(String id, {String? todoListId}) async {
     final ref = _tasks.doc(id);
     final snapshot = await ref.get();
     if (!snapshot.exists) throw StateError('Task not found');
@@ -219,7 +250,7 @@ class TaskRepository {
       'scheduledAt': null,
       'dayPeriod': 'ANYTIME',
       'priority': 'NONE',
-      'todoListId': null,
+      'todoListId': todoListId,
       'status': 'PENDING',
       'startedAt': null,
       'completedAt': null,
@@ -299,6 +330,8 @@ class TaskRepository {
     String icon = 'task',
     int durationMinutes = 30,
     DateTime? scheduledAt,
+    DateTime? alarmAt,
+    bool isTimed = false,
     bool isInbox = false,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
@@ -320,6 +353,8 @@ class TaskRepository {
       'scheduledAt': scheduledAt != null
           ? Timestamp.fromDate(scheduledAt.toUtc())
           : null,
+      'alarmAt': alarmAt != null ? Timestamp.fromDate(alarmAt.toUtc()) : null,
+      'isTimed': isTimed,
       'status': 'PENDING',
       'sortOrder': 0,
       'isInbox': isInbox,
@@ -353,6 +388,8 @@ class TaskRepository {
         icon: icon,
         durationMinutes: durationMinutes,
         start: scheduledAt,
+        alarmAt: alarmAt,
+        isTimed: isTimed,
         recurrence: recurrence,
         reward: _normalizeText(reward),
         energyLevel: energyLevel?.apiValue,
@@ -375,6 +412,8 @@ class TaskRepository {
     required String icon,
     required int durationMinutes,
     required DateTime start,
+    DateTime? alarmAt,
+    required bool isTimed,
     required RecurrenceSelection recurrence,
     String? reward,
     String? energyLevel,
@@ -401,6 +440,12 @@ class TaskRepository {
         'icon': icon,
         'durationMinutes': durationMinutes,
         'scheduledAt': Timestamp.fromDate(occurrence),
+        'alarmAt': alarmAt == null
+            ? null
+            : Timestamp.fromDate(
+                _alarmForOccurrence(alarmAt, occurrence).toUtc(),
+              ),
+        'isTimed': isTimed,
         'status': 'PENDING',
         'sortOrder': 0,
         'isInbox': false,
@@ -517,6 +562,10 @@ class TaskRepository {
     String? color,
     int? durationMinutes,
     DateTime? scheduledAt,
+    DateTime? alarmAt,
+    bool clearAlarmAt = false,
+    bool? isTimed,
+    RecurrenceSelection? recurrence,
     String? reward,
     EnergyLevel? energyLevel,
     String? motivation,
@@ -536,6 +585,10 @@ class TaskRepository {
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (scheduledAt != null)
         'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      if (alarmAt != null) 'alarmAt': Timestamp.fromDate(alarmAt.toUtc()),
+      if (clearAlarmAt) 'alarmAt': null,
+      if (isTimed != null) 'isTimed': isTimed,
+      if (recurrence != null) ...recurrence.toApiJson(),
       if (reward != null) 'reward': _normalizeText(reward) ?? '',
       if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
       if (motivation != null) 'motivation': _normalizeText(motivation) ?? '',
@@ -551,6 +604,18 @@ class TaskRepository {
     final snap = await _tasks.doc(id).get();
     if (!snap.exists) throw StateError('Task not found');
     return TaskModel.fromFirestore(id, snap.data()!);
+  }
+
+  DateTime _alarmForOccurrence(DateTime alarmAt, DateTime occurrence) {
+    final localAlarm = alarmAt.toLocal();
+    final localOccurrence = occurrence.toLocal();
+    return DateTime(
+      localOccurrence.year,
+      localOccurrence.month,
+      localOccurrence.day,
+      localAlarm.hour,
+      localAlarm.minute,
+    );
   }
 
   String _priorityValue(TaskPriority priority) => switch (priority) {

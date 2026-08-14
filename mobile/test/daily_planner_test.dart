@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,17 @@ class _EmptyInboxNotifier extends InboxNotifier {
 class _EmptyListsNotifier extends TodoListsNotifier {
   @override
   Future<List<TodoListDefinition>> build() async => const [];
+}
+
+class _AvailableListsNotifier extends TodoListsNotifier {
+  @override
+  Future<List<TodoListDefinition>> build() async => const [
+    TodoListDefinition(
+      id: 'work-list',
+      name: 'İşlerim',
+      description: 'İş görevleri',
+    ),
+  ];
 }
 
 void main() {
@@ -78,7 +90,431 @@ void main() {
     expect(find.text('Tarih'), findsOneWidget);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Yinelemek'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-time')), findsNothing);
+
+    await tester.tap(find.text('Alarm'));
+    await tester.pumpAndSettle();
+    final alarmTime = find.descendant(
+      of: find.byKey(const ValueKey('daily-alarm-time')),
+      matching: find.textContaining(RegExp(r'^\d{2}:\d{2}$')),
+    );
+    expect(alarmTime, findsOneWidget);
   });
+
+  test('daily alarm defaults to the next half or full hour', () {
+    expect(
+      nextDailyAlarmSlot(DateTime(2026, 8, 14, 1, 12)),
+      DateTime(2026, 8, 14, 1, 30),
+    );
+    expect(
+      nextDailyAlarmSlot(DateTime(2026, 8, 14, 1, 51)),
+      DateTime(2026, 8, 14, 2),
+    );
+    expect(
+      nextDailyAlarmSlot(DateTime(2026, 8, 14, 1, 30)),
+      DateTime(2026, 8, 14, 2),
+    );
+    expect(
+      nextDailyAlarmSlot(DateTime(2026, 8, 14, 23, 45)),
+      DateTime(2026, 8, 15),
+    );
+  });
+
+  test(
+    'scheduled progress selects the earliest overlapping task for today',
+    () {
+      final now = DateTime(2026, 8, 14, 10, 30);
+      final ended = TaskModel(
+        id: 'ended',
+        title: 'Biten',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 20,
+        scheduledAt: DateTime(2026, 8, 14, 9),
+        status: TaskStatus.pending,
+        sortOrder: 0,
+        isInbox: false,
+        isTimed: true,
+      );
+      final first = TaskModel(
+        id: 'first',
+        title: 'Önce başlayan',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 60,
+        scheduledAt: DateTime(2026, 8, 14, 10),
+        status: TaskStatus.pending,
+        sortOrder: 1,
+        isInbox: false,
+        isTimed: true,
+      );
+      final second = TaskModel(
+        id: 'second',
+        title: 'Sonra başlayan',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 60,
+        scheduledAt: DateTime(2026, 8, 14, 10, 15),
+        status: TaskStatus.pending,
+        sortOrder: 2,
+        isInbox: false,
+        isTimed: true,
+      );
+
+      expect(
+        activeScheduledTaskAt(
+          tasks: [second, ended, first],
+          selectedDate: now,
+          now: now,
+        )?.id,
+        first.id,
+      );
+      expect(scheduledTaskProgressAt(first, now), closeTo(.5, .001));
+      expect(
+        activeScheduledTaskAt(
+          tasks: [second, first],
+          selectedDate: now,
+          now: DateTime(2026, 8, 14, 11, 5),
+        )?.id,
+        second.id,
+      );
+      expect(
+        activeScheduledTaskAt(
+          tasks: [first],
+          selectedDate: DateTime(2026, 8, 13),
+          now: now,
+        ),
+        isNull,
+      );
+    },
+  );
+
+  testWidgets('Yapılacaklar choice switches to the shared todo quick add', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          todoListsProvider.overrideWith(_AvailableListsNotifier.new),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('daily-quick-title')),
+      'Raporu hazırla',
+    );
+    await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-todo-choice')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('todo-quick-title')), findsOneWidget);
+    expect(find.text('Ne yapman gerekiyor?'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('todo-quick-title')))
+          .controller!
+          .text,
+      'Raporu hazırla',
+    );
+    expect(find.byKey(const ValueKey('todo-quick-list')), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-quick-duration')), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-quick-details')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('todo-quick-list')));
+    await tester.pumpAndSettle();
+    expect(find.text('Liste seç'), findsOneWidget);
+    expect(find.text('To-do'), findsWidgets);
+    expect(find.text('İşlerim'), findsOneWidget);
+    await tester.tap(find.text('İşlerim'));
+    await tester.pumpAndSettle();
+    expect(find.text('İşlerim'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('todo-quick-duration')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('30 dk'));
+    await tester.pumpAndSettle();
+    expect(find.text('30 DK'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('todo-quick-details')));
+    await tester.pumpAndSettle();
+    expect(find.text('Görev ekle'), findsOneWidget);
+    expect(find.text('Liste'), findsOneWidget);
+    expect(find.text('Süre'), findsOneWidget);
+  });
+
+  testWidgets('timed daily task exposes a five minute start and end range', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Görev ekle'), findsOneWidget);
+    expect(find.text('Zamanında'), findsOneWidget);
+    expect(find.text('Başlar'), findsOneWidget);
+    expect(find.text('Biter'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-start-date')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-end-date')), findsOneWidget);
+
+    final startTimeText = tester.widgetList<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('daily-start-time')),
+        matching: find.byType(Text),
+      ),
+    );
+    final startTime = startTimeText.single.data!;
+    expect(int.parse(startTime.split(':').last) % 5, 0);
+
+    await tester.tap(find.byKey(const ValueKey('daily-start-time')));
+    await tester.pumpAndSettle();
+    final picker = tester.widget<CupertinoDatePicker>(
+      find.byKey(const ValueKey('daily-five-minute-picker')),
+    );
+    expect(picker.minuteInterval, 5);
+  });
+
+  testWidgets('daily grouping switches between list and timeline views', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final today = DateTime.now();
+    final timedStart = DateTime(
+      today.year,
+      today.month,
+      today.day,
+      today.hour <= 21 ? today.hour + 2 : today.hour - 2,
+    );
+    final timedEnd = timedStart.add(const Duration(minutes: 30));
+    String clockLabel(DateTime value) =>
+        '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
+    final tasks = [
+      TaskModel(
+        id: 'timed-task',
+        title: 'Saatli görüşme',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 30,
+        scheduledAt: timedStart,
+        status: TaskStatus.pending,
+        sortOrder: 0,
+        isInbox: false,
+        isTimed: true,
+        dayPeriod: DayPeriod.morning,
+      ),
+      TaskModel(
+        id: 'anytime-task',
+        title: 'Saati olmayan görev',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 15,
+        scheduledAt: DateTime(today.year, today.month, today.day, 8),
+        status: TaskStatus.pending,
+        sortOrder: 1,
+        isInbox: false,
+        dayPeriod: DayPeriod.morning,
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: tasks),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-list-view')), findsOneWidget);
+    expect(
+      find.text('${clockLabel(timedStart)} → ${clockLabel(timedEnd)}'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('Günlük seçenekleri'));
+    await tester.pumpAndSettle();
+    expect(find.text('Görevleri yeniden zamanlama'), findsOneWidget);
+    expect(find.text('Rutinleri keşfedin'), findsOneWidget);
+    expect(find.text('Günlük modu'), findsOneWidget);
+    expect(find.text('Gruplama seçenekleri'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
+    await tester.pump();
+    expect(find.text('Görevleri yeniden zamanlama'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-grouping-submenu')),
+      findsOneWidget,
+    );
+    expect(find.text('Liste'), findsOneWidget);
+    expect(find.text('Zaman çizelgesi'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-timeline-view')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('daily-timeline-anytime')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('daily-timeline-anytime')),
+        matching: find.text('Saati olmayan görev'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('timeline-task-timed-task')),
+      findsOneWidget,
+    );
+    expect(find.text(clockLabel(timedStart)), findsOneWidget);
+    expect(find.text(clockLabel(timedEnd)), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Günlük seçenekleri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-grouping-list')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-list-view')), findsOneWidget);
+  });
+
+  testWidgets(
+    'overlapping scheduled cards stay ordered with one progress ring',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final now = DateTime.now();
+      final first = TaskModel(
+        id: 'overlap-first',
+        title: 'İlk başlayan',
+        color: '#EAA4C4',
+        icon: 'task',
+        durationMinutes: 120,
+        scheduledAt: now.subtract(const Duration(minutes: 30)),
+        status: TaskStatus.pending,
+        sortOrder: 1,
+        isInbox: false,
+        isTimed: true,
+      );
+      final second = TaskModel(
+        id: 'overlap-second',
+        title: 'İkinci başlayan',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 120,
+        scheduledAt: now.subtract(const Duration(minutes: 10)),
+        status: TaskStatus.pending,
+        sortOrder: 0,
+        isInbox: false,
+        isTimed: true,
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dailyTimelineProvider.overrideWith(
+              (ref, date) async =>
+                  TimelineModel(date: date, tasks: [second, first]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: FlorienTheme.light,
+            home: const Scaffold(body: DailyPlannerTab()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('daily-task-progress-overlap-first')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('daily-task-progress-overlap-second')),
+        findsNothing,
+      );
+      final listStatus = tester.widget<Text>(
+        find.byKey(const ValueKey('daily-task-status-overlap-first')),
+      );
+      expect(listStatus.data, matches(RegExp(r'^\d+:\d{2}:\d{2}$')));
+
+      await tester.tap(find.byTooltip('Günlük seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PLANLANDI (2)'), findsOneWidget);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('timeline-task-overlap-first')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('timeline-task-overlap-second')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey('daily-task-progress-overlap-first')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('daily-task-progress-overlap-second')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('timeline-task-status-overlap-first')),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('daily destination is between todo and focus', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));
@@ -109,7 +545,74 @@ void main() {
     expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
   });
 
-  testWidgets('daily task opens actions and only delete removes it', (
+  testWidgets('date selector hides on task scroll and snaps back on reverse', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final tasks = List.generate(
+      12,
+      (index) => TaskModel(
+        id: 'scroll-task-$index',
+        title: 'Odak görevi $index',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 15,
+        scheduledAt: DateTime.now(),
+        status: TaskStatus.pending,
+        sortOrder: index,
+        isInbox: false,
+        dayPeriod: DayPeriod.daytime,
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: tasks),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final appBar = tester.widget<SliverAppBar>(
+      find.byKey(const ValueKey('daily-floating-date-header')),
+    );
+    expect(appBar.floating, isTrue);
+    expect(appBar.snap, isTrue);
+    expect(appBar.pinned, isFalse);
+    final header = find.byKey(const ValueKey('daily-date-header'));
+    expect(tester.getTopLeft(header).dy, greaterThanOrEqualTo(0));
+
+    await tester.drag(
+      find.byKey(const ValueKey('daily-planner-page')),
+      const Offset(0, -520),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-floating-date-header')),
+      findsNothing,
+    );
+    expect(header, findsNothing);
+
+    await tester.drag(
+      find.byKey(const ValueKey('daily-planner-page')),
+      const Offset(0, 72),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-floating-date-header')),
+      findsOneWidget,
+    );
+    expect(header, findsOneWidget);
+  });
+
+  testWidgets('daily task copy opens a prefilled detailed creation page', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));
@@ -159,9 +662,22 @@ void main() {
     expect(find.text('Görevi sil'), findsOneWidget);
 
     await tester.tap(find.text('Bir kopya oluştur'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(deleted, isFalse);
-    expect(find.text('Görevi sil'), findsOneWidget);
+    expect(find.text('Görev ekle'), findsOneWidget);
+    expect(find.text('Günün saati'), findsOneWidget);
+    expect(find.text('Tarih'), findsOneWidget);
+    expect(find.text('Süre'), findsOneWidget);
+    expect(find.text('Sırada ne var?'), findsNothing);
+    final copyTitle = tester.widget<TextField>(
+      find.byKey(const ValueKey('daily-detail-title')),
+    );
+    expect(copyTitle.controller?.text, '${task.title} (Kopya)');
+
+    await tester.tap(find.byTooltip('Kapat'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Görevi sil'));
     await tester.pumpAndSettle();
@@ -210,12 +726,151 @@ void main() {
     expect(find.text(completed.title), findsOneWidget);
   });
 
-  testWidgets('daily task action moves the task to default todo', (
+  testWidgets('daily task edit opens prefilled and updates the same task', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    DailyTaskEditInput? savedInput;
+    final task = TaskModel(
+      id: 'editable-daily-task',
+      title: 'Eski günlük görev',
+      description: 'Eski not',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 30,
+      scheduledAt: DateTime(2026, 8, 14, 13),
+      alarmAt: DateTime(2026, 8, 14, 12, 30),
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      dayPeriod: DayPeriod.daytime,
+      subtasks: const [
+        TaskModel(
+          id: 'editable-subtask',
+          title: 'İlk adım',
+          color: '#6C5CE7',
+          icon: 'task',
+          durationMinutes: 5,
+          status: TaskStatus.pending,
+          sortOrder: 0,
+          isInbox: false,
+          parentTaskId: 'editable-daily-task',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: [task]),
+          ),
+          dailyTaskUpdaterProvider.overrideWithValue((
+            updatedTask,
+            input,
+          ) async {
+            expect(updatedTask.id, task.id);
+            savedInput = input;
+          }),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Görevi düzenle'));
+    await tester.pumpAndSettle();
+
+    final title = tester.widget<TextField>(
+      find.byKey(const ValueKey('daily-detail-title')),
+    );
+    expect(title.controller?.text, task.title);
+    expect(find.text(task.description!), findsOneWidget);
+    expect(find.text('İlk adım'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('daily-detail-title')),
+      'Güncellenen günlük görev',
+    );
+    await tester.tap(find.byTooltip('Kaydet'));
+    await tester.pumpAndSettle();
+
+    expect(savedInput?.title, 'Güncellenen günlük görev');
+    expect(savedInput?.description, 'Eski not');
+    expect(savedInput?.durationMinutes, 30);
+    expect(savedInput?.period, DayPeriod.daytime);
+    expect(savedInput?.alarmAt, DateTime(2026, 8, 14, 12, 30));
+    expect(savedInput?.subtasks, ['İlk adım']);
+  });
+
+  testWidgets('manually completing a daily task opens its count page', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    String? completedTaskId;
+    final task = TaskModel(
+      id: 'manual-daily-completion',
+      title: 'Elle tamamlanacak görev',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 15,
+      scheduledAt: DateTime.now(),
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      dayPeriod: DayPeriod.morning,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: [task]),
+          ),
+          dailyTaskCompleterProvider.overrideWithValue((taskId) async {
+            completedTaskId = taskId;
+            return const CompletionCounts(today: 2, thisWeek: 5);
+          }),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final taskTile = find.ancestor(
+      of: find.text(task.title),
+      matching: find.byType(ListTile),
+    );
+    await tester.tap(
+      find.descendant(
+        of: taskTile,
+        matching: find.byIcon(Icons.circle_outlined),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(completedTaskId, task.id);
+    expect(
+      find.byKey(const ValueKey('completion-celebration-page')),
+      findsOneWidget,
+    );
+    expect(find.text('Bugün\n2 görev tamamladınız 🎉'), findsOneWidget);
+  });
+
+  testWidgets('daily task asks for a todo list before moving', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     String? movedTaskId;
+    String? movedListId;
     final task = TaskModel(
       id: 'move-to-todo-task',
       title: 'To-do listesine taşınacak',
@@ -234,8 +889,10 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: [task]),
           ),
-          dailyMoveToTodoProvider.overrideWithValue((id) async {
+          todoListsProvider.overrideWith(_AvailableListsNotifier.new),
+          dailyMoveToTodoProvider.overrideWithValue((id, listId) async {
             movedTaskId = id;
+            movedListId = listId;
           }),
         ],
         child: MaterialApp(
@@ -251,7 +908,162 @@ void main() {
     await tester.tap(find.text('Yapılacaklara taşı'));
     await tester.pumpAndSettle();
 
+    expect(movedTaskId, isNull);
+    expect(
+      find.byKey(const ValueKey('daily-move-to-todo-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('To-do'), findsOneWidget);
+    expect(find.text('İşlerim'), findsOneWidget);
+
+    await tester.tap(find.text('İşlerim'));
+    await tester.pumpAndSettle();
     expect(movedTaskId, task.id);
+    expect(movedListId, 'work-list');
     expect(find.text('Yapılacaklara taşı'), findsNothing);
+
+    movedTaskId = null;
+    movedListId = 'not-null';
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yapılacaklara taşı'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('To-do'));
+    await tester.pumpAndSettle();
+    expect(movedTaskId, task.id);
+    expect(movedListId, isNull);
+  });
+
+  testWidgets('daily task can be rescheduled while keeping its group', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    TaskModel? rescheduledTask;
+    DateTime? rescheduledDate;
+    final taskDate = DateTime(2026, 8, 14);
+    final task = TaskModel(
+      id: 'reschedule-task',
+      title: 'Yeniden planlanacak',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 20,
+      scheduledAt: taskDate,
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      dayPeriod: DayPeriod.morning,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: [task]),
+          ),
+          dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+            rescheduledTask = task;
+            rescheduledDate = date;
+          }),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yeniden planla'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-reschedule-sheet')),
+      findsOneWidget,
+    );
+    final customDate = DateTime(2026, 9, 3);
+    tester
+        .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
+        .onDateChanged(customDate);
+    await tester.pump();
+    await tester.tap(find.byTooltip('Tarihi onayla'));
+    await tester.pumpAndSettle();
+
+    expect(rescheduledTask?.id, task.id);
+    expect(rescheduledTask?.dayPeriod, DayPeriod.morning);
+    expect(rescheduledDate, customDate);
+
+    rescheduledDate = null;
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yeniden planla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Bugün ('));
+    await tester.pumpAndSettle();
+    final today = DateTime.now();
+    expect(rescheduledDate?.year, today.year);
+    expect(rescheduledDate?.month, today.month);
+    expect(rescheduledDate?.day, today.day);
+
+    rescheduledDate = null;
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yeniden planla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Gelecek hafta'));
+    await tester.pumpAndSettle();
+
+    expect(rescheduledDate, taskDate.add(const Duration(days: 7)));
+  });
+
+  testWidgets('tomorrow action reschedules into the same group', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    DateTime? rescheduledDate;
+    DayPeriod? rescheduledPeriod;
+    final today = DateTime.now();
+    final task = TaskModel(
+      id: 'tomorrow-task',
+      title: 'Yarına taşınacak',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 15,
+      scheduledAt: today,
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      dayPeriod: DayPeriod.evening,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: [task]),
+          ),
+          dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+            rescheduledDate = date;
+            rescheduledPeriod = task.dayPeriod;
+          }),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(task.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yarın için yeniden planla'));
+    await tester.pumpAndSettle();
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    expect(rescheduledDate?.year, tomorrow.year);
+    expect(rescheduledDate?.month, tomorrow.month);
+    expect(rescheduledDate?.day, tomorrow.day);
+    expect(rescheduledPeriod, DayPeriod.evening);
   });
 }

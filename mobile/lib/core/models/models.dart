@@ -70,6 +70,8 @@ class TaskModel {
   final bool isInbox;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final DateTime? alarmAt;
+  final bool isTimed;
   final String? parentTaskId;
   final List<TaskModel> subtasks;
   final String? reward;
@@ -97,6 +99,8 @@ class TaskModel {
     required this.isInbox,
     this.startedAt,
     this.completedAt,
+    this.alarmAt,
+    this.isTimed = false,
     this.parentTaskId,
     this.subtasks = const [],
     this.reward,
@@ -123,6 +127,8 @@ class TaskModel {
     isInbox: json['isInbox'] as bool,
     startedAt: _parseDateTime(json['startedAt']),
     completedAt: _parseDateTime(json['completedAt']),
+    alarmAt: _parseDateTime(json['alarmAt']),
+    isTimed: json['isTimed'] as bool? ?? false,
     parentTaskId: json['parentTaskId'] as String?,
     subtasks: json['subtasks'] != null
         ? (json['subtasks'] as List)
@@ -157,6 +163,8 @@ class TaskModel {
     isInbox: data['isInbox'] as bool? ?? false,
     startedAt: _parseDateTime(data['startedAt']),
     completedAt: _parseDateTime(data['completedAt']),
+    alarmAt: _parseDateTime(data['alarmAt']),
+    isTimed: data['isTimed'] as bool? ?? false,
     parentTaskId: data['parentTaskId'] as String?,
     subtasks: subtasks,
     reward: data['reward'] as String?,
@@ -190,6 +198,8 @@ class TaskModel {
     'completedAt': completedAt != null
         ? Timestamp.fromDate(completedAt!.toUtc())
         : null,
+    'alarmAt': alarmAt != null ? Timestamp.fromDate(alarmAt!.toUtc()) : null,
+    'isTimed': isTimed,
     'parentTaskId': parentTaskId,
     'reward': reward,
     'energyLevel': energyLevel?.apiValue,
@@ -240,6 +250,9 @@ class TaskModel {
     bool clearStartedAt = false,
     DateTime? completedAt,
     bool clearCompletedAt = false,
+    DateTime? alarmAt,
+    bool clearAlarmAt = false,
+    bool? isTimed,
     String? parentTaskId,
     List<TaskModel>? subtasks,
     String? reward,
@@ -265,6 +278,8 @@ class TaskModel {
     isInbox: isInbox ?? this.isInbox,
     startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
     completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+    alarmAt: clearAlarmAt ? null : (alarmAt ?? this.alarmAt),
+    isTimed: isTimed ?? this.isTimed,
     parentTaskId: parentTaskId ?? this.parentTaskId,
     subtasks: subtasks ?? this.subtasks,
     reward: reward ?? this.reward,
@@ -371,6 +386,13 @@ class TimelineModel {
         ? TaskModel.fromJson(json['activeTask'] as Map<String, dynamic>)
         : null,
   );
+}
+
+class CompletionCounts {
+  const CompletionCounts({required this.today, required this.thisWeek});
+
+  final int today;
+  final int thisWeek;
 }
 
 class FocusSessionModel {

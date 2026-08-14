@@ -6,7 +6,40 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
+
+Future<void> showTodoQuickAdd({
+  required BuildContext context,
+  required WidgetRef ref,
+  TaskPriority initialPriority = TaskPriority.none,
+  String? todoListId,
+  String initialTitle = '',
+}) async {
+  final lists = await ref.read(todoListsProvider.future);
+  if (!context.mounted) return;
+  final details = await showFlorienBottomSheet<_TodoQuickDraft>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => _AddTodoDialog(
+      initialPriority: initialPriority,
+      todoListId: todoListId,
+      lists: lists,
+      initialTitle: initialTitle,
+    ),
+  );
+  if (details != null && context.mounted) {
+    await pushFlorienOverlayRoute<bool>(
+      context: context,
+      builder: (_) => TodoDetailScreen(
+        initialTitle: details.title,
+        initialDuration: details.duration,
+        priority: details.priority,
+        todoListId: details.todoListId,
+      ),
+    );
+  }
+}
 
 class TodoListTab extends ConsumerStatefulWidget {
   const TodoListTab({super.key});
@@ -186,27 +219,12 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
   }
 
   Future<void> _showAdd(TaskPriority initialPriority) async {
-    final lists = ref.read(todoListsProvider).valueOrNull ?? const [];
-    final details = await showFlorienBottomSheet<_TodoQuickDraft>(
+    await showTodoQuickAdd(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => _AddTodoDialog(
-        initialPriority: initialPriority,
-        todoListId: _selectedListId,
-        lists: lists,
-      ),
+      ref: ref,
+      initialPriority: initialPriority,
+      todoListId: _selectedListId,
     );
-    if (details != null && mounted) {
-      await pushFlorienOverlayRoute<bool>(
-        context: context,
-        builder: (_) => TodoDetailScreen(
-          initialTitle: details.title,
-          initialDuration: details.duration,
-          priority: details.priority,
-          todoListId: details.todoListId,
-        ),
-      );
-    }
   }
 
   Future<void> _moveTaskToSection(
@@ -666,18 +684,20 @@ class _AddTodoDialog extends ConsumerStatefulWidget {
     required this.initialPriority,
     required this.todoListId,
     required this.lists,
+    this.initialTitle = '',
   });
 
   final TaskPriority initialPriority;
   final String? todoListId;
   final List<TodoListDefinition> lists;
+  final String initialTitle;
 
   @override
   ConsumerState<_AddTodoDialog> createState() => _AddTodoDialogState();
 }
 
 class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
-  final _controller = TextEditingController();
+  late final _controller = TextEditingController(text: widget.initialTitle);
   late final TaskPriority _priority = widget.initialPriority;
   bool _isSaving = false;
   int _duration = 15;
@@ -762,6 +782,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               ),
               const SizedBox(height: 12),
               TextField(
+                key: const ValueKey('todo-quick-title'),
                 controller: _controller,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
@@ -778,18 +799,21 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               Row(
                 children: [
                   _QuickOptionChip(
+                    key: const ValueKey('todo-quick-list'),
                     icon: Icons.format_list_bulleted_rounded,
                     label: _listName,
                     onTap: _pickList,
                   ),
                   const SizedBox(width: 8),
                   _QuickOptionChip(
+                    key: const ValueKey('todo-quick-duration'),
                     icon: Icons.timer_outlined,
                     label: _durationLabel(_duration).toUpperCase(),
                     onTap: _pickDuration,
                   ),
                   const Spacer(),
                   _QuickOptionChip(
+                    key: const ValueKey('todo-quick-details'),
                     icon: Icons.more_horiz_rounded,
                     label: '',
                     onTap: () => Navigator.pop(
@@ -932,6 +956,7 @@ String _durationLabel(int minutes) => switch (minutes) {
 
 class _QuickOptionChip extends StatelessWidget {
   const _QuickOptionChip({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -1463,6 +1488,9 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       await notifier.uncompleteTask(target.id);
     } else {
       await notifier.completeTask(target.id);
+      final counts = await ref.read(manualCompletionSummaryProvider)(target.id);
+      if (!mounted) return;
+      await showCompletionCelebration(context, counts);
     }
   }
 

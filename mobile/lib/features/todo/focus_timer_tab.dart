@@ -14,12 +14,14 @@ class FocusTimerTab extends StatefulWidget {
     this.resetSignal = 0,
     this.onTaskProgressChanged,
     this.onTaskCompleted,
+    this.onSessionClosed,
   });
 
   final FocusTaskLaunch? launchRequest;
   final int resetSignal;
   final ValueChanged<ActiveFocusTask?>? onTaskProgressChanged;
   final Future<void> Function(String taskId)? onTaskCompleted;
+  final VoidCallback? onSessionClosed;
 
   @override
   State<FocusTimerTab> createState() => _FocusTimerTabState();
@@ -40,6 +42,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
   String _taskIcon = TaskIcons.defaultName;
   String _taskColor = '#6C5CE7';
   bool _taskCompletionRequested = false;
+  bool _automaticTask = false;
 
   @override
   void initState() {
@@ -62,10 +65,14 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       return;
     }
     final request = widget.launchRequest;
-    if (request != null && !identical(request, oldWidget.launchRequest)) {
+    if (request != null && !_sameLaunch(request, oldWidget.launchRequest)) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _startTaskFocus(request),
       );
+    } else if (request == null && oldWidget.launchRequest?.automatic == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _closeSession();
+      });
     }
   }
 
@@ -100,7 +107,9 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
         setState(() => _remainingSeconds = 0);
         _publishTaskProgress();
         final taskId = _taskId;
-        if (taskId != null) unawaited(_markTaskCompleted(taskId));
+        if (taskId != null && !_automaticTask) {
+          unawaited(_markTaskCompleted(taskId));
+        }
         if (_alarmEnabled) {
           unawaited(SystemSound.play(SystemSoundType.alert));
           unawaited(HapticFeedback.heavyImpact());
@@ -126,28 +135,57 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       _taskIcon = TaskIcons.defaultName;
       _taskColor = '#6C5CE7';
       _taskCompletionRequested = false;
+      _automaticTask = false;
     });
     widget.onTaskProgressChanged?.call(null);
+    widget.onSessionClosed?.call();
   }
 
   void _startTaskFocus(FocusTaskLaunch request) {
     if (!mounted) return;
     _timer?.cancel();
     final duration = request.durationMinutes.clamp(1, 24 * 60);
+    final now = DateTime.now();
+    final scheduledEnd = request.endsAt;
+    final scheduledStart = request.startedAt;
+    final automaticRemaining = scheduledEnd?.difference(now).inSeconds;
+    if (request.automatic &&
+        (scheduledStart == null ||
+            scheduledEnd == null ||
+            automaticRemaining == null ||
+            automaticRemaining <= 0)) {
+      _closeSession();
+      return;
+    }
     setState(() {
       _selectedMinutes = duration;
-      _remainingSeconds = duration * 60;
-      _sessionTotalSeconds = _remainingSeconds;
-      _sessionStartedAt = null;
-      _plannedEndAt = null;
+      _remainingSeconds = request.automatic
+          ? automaticRemaining!
+          : duration * 60;
+      _sessionTotalSeconds = request.automatic
+          ? scheduledEnd!.difference(scheduledStart!).inSeconds
+          : _remainingSeconds;
+      _sessionStartedAt = request.automatic ? scheduledStart : null;
+      _plannedEndAt = request.automatic ? scheduledEnd : null;
       _taskId = request.taskId;
       _taskTitle = request.title;
       _taskIcon = request.icon;
       _taskColor = request.color;
       _taskCompletionRequested = false;
+      _automaticTask = request.automatic;
     });
     _toggleTimer();
   }
+
+  bool _sameLaunch(FocusTaskLaunch? a, FocusTaskLaunch? b) =>
+      a?.taskId == b?.taskId &&
+      a?.title == b?.title &&
+      a?.durationMinutes == b?.durationMinutes &&
+      a?.icon == b?.icon &&
+      a?.color == b?.color &&
+      a?.startedAt == b?.startedAt &&
+      a?.endsAt == b?.endsAt &&
+      a?.automatic == b?.automatic;
 
   void _addMinute() {
     final elapsedSeconds = math.max(

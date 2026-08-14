@@ -91,6 +91,9 @@ void main() {
         overrides: [
           inboxProvider.overrideWith(_CompletionInboxNotifier.new),
           todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
+          manualCompletionSummaryProvider.overrideWithValue(
+            (_) async => const CompletionCounts(today: 3, thisWeek: 7),
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -110,6 +113,17 @@ void main() {
     );
 
     await tester.tap(completionButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('completion-celebration-page')),
+      findsOneWidget,
+    );
+    expect(find.text('Bugün\n3 görev tamamladınız 🎉'), findsOneWidget);
+    await tester.tap(find.text('Bu hafta'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bu hafta\n7 görev tamamladınız 🎉'), findsOneWidget);
+    await tester.tap(find.byTooltip('Kapat'));
     await tester.pumpAndSettle();
 
     expect(find.text('Deneme görevi'), findsOneWidget);

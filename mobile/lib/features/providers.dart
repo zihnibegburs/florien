@@ -4,6 +4,7 @@ import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/repositories/repositories.dart';
 import 'package:florien/core/services/social_auth_service.dart';
+import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
@@ -14,6 +15,10 @@ final googleAuthServiceProvider = Provider<GoogleAuthService>(
 
 final appleAuthServiceProvider = Provider<AppleAuthService>(
   (ref) => AppleAuthService(),
+);
+
+final taskAlarmServiceProvider = Provider<TaskAlarmService>(
+  (ref) => TaskAlarmService(),
 );
 
 final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(
@@ -136,19 +141,20 @@ final dailyDeleteTaskProvider = Provider<Future<void> Function(String)>((ref) {
   return (id) => repository.deleteTask(id);
 });
 
-final dailyMoveToTodoProvider = Provider<Future<void> Function(String)>((ref) {
-  final repository = ref.watch(taskRepositoryProvider);
-  return (id) async {
-    await repository.moveToInbox(id);
-    if (ref.read(activeFocusTaskProvider)?.taskId == id) {
-      ref.read(activeFocusTaskProvider.notifier).state = null;
-      ref.read(focusTaskLaunchProvider.notifier).state = null;
-      ref.read(focusTimerResetSignalProvider.notifier).state++;
-    }
-    ref.invalidate(inboxProvider);
-    ref.invalidate(dailyTimelineProvider);
-  };
-});
+final dailyMoveToTodoProvider =
+    Provider<Future<void> Function(String, String?)>((ref) {
+      final repository = ref.watch(taskRepositoryProvider);
+      return (id, todoListId) async {
+        await repository.moveToInbox(id, todoListId: todoListId);
+        if (ref.read(activeFocusTaskProvider)?.taskId == id) {
+          ref.read(activeFocusTaskProvider.notifier).state = null;
+          ref.read(focusTaskLaunchProvider.notifier).state = null;
+          ref.read(focusTimerResetSignalProvider.notifier).state++;
+        }
+        ref.invalidate(inboxProvider);
+        ref.invalidate(dailyTimelineProvider);
+      };
+    });
 
 class FocusTaskLaunch {
   const FocusTaskLaunch({
@@ -157,6 +163,9 @@ class FocusTaskLaunch {
     required this.durationMinutes,
     required this.icon,
     required this.color,
+    this.startedAt,
+    this.endsAt,
+    this.automatic = false,
   });
 
   final String taskId;
@@ -164,6 +173,9 @@ class FocusTaskLaunch {
   final int durationMinutes;
   final String icon;
   final String color;
+  final DateTime? startedAt;
+  final DateTime? endsAt;
+  final bool automatic;
 }
 
 final focusTaskLaunchProvider = StateProvider<FocusTaskLaunch?>((ref) => null);
@@ -190,6 +202,33 @@ class ActiveFocusTask {
 final activeFocusTaskProvider = StateProvider<ActiveFocusTask?>((ref) => null);
 
 final focusTimerResetSignalProvider = StateProvider<int>((ref) => 0);
+
+final completionCountsProvider = FutureProvider.autoDispose<CompletionCounts>((
+  ref,
+) async {
+  try {
+    return await ref
+        .read(taskRepositoryProvider)
+        .getCompletionCounts(DateTime.now());
+  } catch (_) {
+    // The task that opened this page has just completed, so one is the safe
+    // minimum while an offline count cannot be loaded.
+    return const CompletionCounts(today: 1, thisWeek: 1);
+  }
+});
+
+final manualCompletionSummaryProvider =
+    Provider<Future<CompletionCounts> Function(String)>((ref) {
+      return (taskId) async {
+        if (ref.read(activeFocusTaskProvider)?.taskId == taskId) {
+          ref.read(activeFocusTaskProvider.notifier).state = null;
+          ref.read(focusTaskLaunchProvider.notifier).state = null;
+          ref.read(focusTimerResetSignalProvider.notifier).state++;
+        }
+        ref.invalidate(completionCountsProvider);
+        return ref.read(completionCountsProvider.future);
+      };
+    });
 
 DayPeriod dayPeriodForLocalTime(DateTime localTime) {
   final hour = localTime.toLocal().hour;
@@ -227,6 +266,9 @@ final completeFocusedTaskProvider = Provider<Future<void> Function(String)>((
     await repository.completeTask(taskId);
     if (ref.read(activeFocusTaskProvider)?.taskId == taskId) {
       ref.read(activeFocusTaskProvider.notifier).state = null;
+    }
+    if (ref.read(focusTaskLaunchProvider)?.taskId == taskId) {
+      ref.read(focusTaskLaunchProvider.notifier).state = null;
     }
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);

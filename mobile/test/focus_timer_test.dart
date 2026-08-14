@@ -78,6 +78,41 @@ void main() {
     expect(find.byKey(const ValueKey('timer-setup')), findsOneWidget);
   });
 
+  testWidgets('automatic scheduled focus uses its remaining range', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    String? completedTaskId;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          body: FocusTimerTab(
+            launchRequest: FocusTaskLaunch(
+              taskId: 'automatic-task',
+              title: 'Planlı odak',
+              durationMinutes: 30,
+              icon: 'task',
+              color: '#6C5CE7',
+              startedAt: now.subtract(const Duration(minutes: 10)),
+              endsAt: now.add(const Duration(minutes: 20)),
+              automatic: true,
+            ),
+            onTaskCompleted: (taskId) async => completedTaskId = taskId,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+    expect(find.text('Planlı odak'), findsOneWidget);
+    expect(find.text('30:00'), findsNothing);
+    expect(completedTaskId, isNull);
+  });
+
   testWidgets('setup dial defaults to 5 and selects every minute', (
     tester,
   ) async {

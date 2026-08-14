@@ -100,6 +100,56 @@ void main() {
       find.byKey(ValueKey('daily-task-progress-${dailyTask.id}')),
       findsOneWidget,
     );
+    final status = tester.widget<Text>(
+      find.byKey(ValueKey('daily-task-status-${dailyTask.id}')),
+    );
+    expect(status.data, matches(RegExp(r'^\d{2}:\d{2}$')));
+    expect(status.data, isNot('30 dk'));
+  });
+
+  testWidgets('focus tab shows the earliest active scheduled task', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final first = TaskModel(
+      id: 'scheduled-focus-first',
+      title: 'Önce başlayan plan',
+      color: '#EAA4C4',
+      icon: 'task',
+      durationMinutes: 40,
+      scheduledAt: now.subtract(const Duration(minutes: 10)),
+      status: TaskStatus.pending,
+      sortOrder: 1,
+      isInbox: false,
+      isTimed: true,
+      dayPeriod: DayPeriod.morning,
+    );
+    final second = TaskModel(
+      id: 'scheduled-focus-second',
+      title: 'Sonra başlayan plan',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 40,
+      scheduledAt: now.subtract(const Duration(minutes: 5)),
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      isTimed: true,
+      dayPeriod: DayPeriod.morning,
+    );
+    await _pumpHome(
+      tester,
+      inboxOverride: _EmptyInboxNotifier.new,
+      dailyTasks: [second, first],
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Odaklan'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+    expect(find.text(first.title), findsOneWidget);
+    expect(find.text(second.title), findsNothing);
   });
 }
 
