@@ -6,6 +6,7 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 
 class TodoDetailScreen extends ConsumerStatefulWidget {
   const TodoDetailScreen({
@@ -167,7 +168,8 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               hintText: 'Görev başlığı',
               prefixIcon: ValueListenableBuilder(
                 valueListenable: _taskIcon,
-                builder: (_, result, __) => Icon(result.icon),
+                builder: (_, result, __) =>
+                    TaskIconBadge.forResult(result, size: 34),
               ),
             ),
           ),

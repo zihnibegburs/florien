@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 
 typedef ReviewTaskRescheduler =
     Future<void> Function(TaskModel task, DateTime date);
@@ -409,7 +409,6 @@ class _ReviewTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = FlorienColors.fromHex(task.color);
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 9, 8),
       decoration: BoxDecoration(
@@ -419,15 +418,7 @@ class _ReviewTaskCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 17,
-            backgroundColor: color.withValues(alpha: .2),
-            child: Icon(
-              TaskIcons.iconForTask(title: task.title, icon: task.icon),
-              color: color,
-              size: 17,
-            ),
-          ),
+          TaskIconBadge.forTask(icon: task.icon, size: 34),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

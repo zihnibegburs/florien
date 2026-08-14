@@ -514,7 +514,7 @@ CATEGORY_ACTIONS: dict[str, list[str]] = {
     ],
     "car_repair": [
         "take the broken car to a mechanic",
-        "replace the broken car headlight",
+        "araba tamiri yaptır",
         "fix the damaged car door",
         "have the flat tire repaired",
         "get a quote for the vehicle repair",

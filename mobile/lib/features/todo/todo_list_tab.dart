@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
 
@@ -812,7 +812,8 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                   border: InputBorder.none,
                   prefixIcon: ValueListenableBuilder(
                     valueListenable: _taskIcon,
-                    builder: (_, result, __) => Icon(result.icon),
+                    builder: (_, result, __) =>
+                        TaskIconBadge.forResult(result, size: 34),
                   ),
                 ),
               ),
@@ -1255,14 +1256,7 @@ class _TodoDragPreview extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: color.withValues(alpha: .18),
-            child: Icon(
-              TaskIcons.iconForTask(title: task.title, icon: task.icon),
-              color: color,
-            ),
-          ),
+          TaskIconBadge.forTask(icon: task.icon, size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1390,15 +1384,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
               dense: true,
               visualDensity: const VisualDensity(vertical: -3),
               contentPadding: const EdgeInsets.fromLTRB(10, 2, 6, 2),
-              leading: CircleAvatar(
-                radius: 15,
-                backgroundColor: color.withValues(alpha: .18),
-                child: Icon(
-                  TaskIcons.iconForTask(title: task.title, icon: task.icon),
-                  color: color,
-                  size: 16,
-                ),
-              ),
+              leading: TaskIconBadge.forTask(icon: task.icon, size: 32),
               title: Text(
                 task.title,
                 maxLines: 1,
@@ -1696,15 +1682,7 @@ class _TodoSubtaskRow extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: parentColor.withValues(alpha: .12),
-            child: Icon(
-              TaskIcons.iconForTask(title: subtask.title, icon: subtask.icon),
-              size: 16,
-              color: parentColor,
-            ),
-          ),
+          TaskIconBadge.forTask(icon: subtask.icon, size: 32),
           const SizedBox(width: 11),
           Expanded(
             child: Text(

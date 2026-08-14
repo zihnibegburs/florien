@@ -102,6 +102,7 @@ struct FlorienWidget: Widget {
 
 // MARK: - Live Activities
 
+@available(iOS 16.1, *)
 struct LiveActivitiesAppAttributes: ActivityAttributes, Identifiable {
     public typealias LiveDeliveryData = ContentState
 
@@ -110,12 +111,14 @@ struct LiveActivitiesAppAttributes: ActivityAttributes, Identifiable {
     var id = UUID()
 }
 
+@available(iOS 16.1, *)
 extension LiveActivitiesAppAttributes {
     func prefixedKey(_ key: String) -> String {
         "\(id)_\(key)"
     }
 }
 
+@available(iOS 16.1, *)
 private struct FlorienLiveActivityData {
     let taskTitle: String
     let remaining: String

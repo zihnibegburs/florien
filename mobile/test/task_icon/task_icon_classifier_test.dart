@@ -24,7 +24,7 @@ class _FakeEmbeddingService implements TaskEmbeddingService {
     calls++;
     final delay = delayForText?.call(text);
     if (delay != null) await Future<void>.delayed(delay);
-    return Float32List.fromList([text.contains('groceries') ? 2 : 1]);
+    return Float32List.fromList([text.contains('second') ? 2 : 1]);
   }
 }
 
@@ -54,9 +54,8 @@ class _HysteresisEmbeddingService implements TaskEmbeddingService {
   Future<void> initialize() async {}
 
   @override
-  Future<Float32List> embed(String text) async => Float32List.fromList([
-    text == 'gift' ? 1 : (text == 'slightly groceries' ? 2 : 3),
-  ]);
+  Future<Float32List> embed(String text) async =>
+      Float32List.fromList([text == 'alpha' ? 1 : (text == 'beta' ? 2 : 3)]);
 }
 
 class _HysteresisIndex implements CategorySimilarityIndex {
@@ -81,6 +80,17 @@ class _HysteresisIndex implements CategorySimilarityIndex {
       };
 }
 
+class _LowConfidenceIndex implements CategorySimilarityIndex {
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  List<TaskIconCandidate> score(Float32List embedding) => const [
+    TaskIconCandidate(category: TaskCategory.other, confidence: .11),
+    TaskIconCandidate(category: TaskCategory.gift, confidence: .09),
+  ];
+}
+
 TaskIconClassifier _classifier(
   _FakeEmbeddingService embeddings, {
   TaskIconClassifierConfig config = const TaskIconClassifierConfig(),
@@ -90,11 +100,14 @@ TaskIconClassifier _classifier(
   config: config,
 );
 
+RealtimeTaskIconController _controller(TaskIconClassifier classifier) =>
+    RealtimeTaskIconController(classifier: classifier, debounce: Duration.zero);
+
 void main() {
   test('returns semantic category, parent and confidence', () async {
     final classifier = _classifier(_FakeEmbeddingService());
 
-    final result = await classifier.classify('Buy mom a gift');
+    final result = await classifier.classify('alpha unique prototype title');
 
     expect(result.category, TaskCategory.gift);
     expect(result.parentCategory, TaskParentCategory.shopping);
@@ -106,11 +119,26 @@ void main() {
     final embeddings = _FakeEmbeddingService();
     final classifier = _classifier(embeddings);
 
-    await classifier.classify('Buy mom a gift');
-    await classifier.classify('Buy groceries');
-    await classifier.classify('Buy mom a gift');
+    await classifier.classify('alpha unique prototype title');
+    await classifier.classify('second unique prototype title');
+    await classifier.classify('alpha unique prototype title');
 
     expect(embeddings.calls, 2);
+  });
+
+  test('short titles take the best guess without a margin', () async {
+    final classifier = _classifier(
+      _FakeEmbeddingService(),
+      config: const TaskIconClassifierConfig(
+        minimumConfidence: .95,
+        minimumConfidenceMargin: .5,
+        shortTextMinimumConfidence: .08,
+      ),
+    );
+
+    final result = await classifier.classify('alpha');
+
+    expect(result.category, TaskCategory.gift);
   });
 
   test('falls back when confidence margin is ambiguous', () async {
@@ -119,7 +147,9 @@ void main() {
       config: const TaskIconClassifierConfig(minimumConfidenceMargin: .25),
     );
 
-    final result = await classifier.classify('Talk to John');
+    final result = await classifier.classify(
+      'alpha unique prototype title after quarterly briefing session',
+    );
 
     expect(result.category, TaskCategory.other);
   });
@@ -128,17 +158,15 @@ void main() {
     'latest input wins when async classifications finish out of order',
     () async {
       final embeddings = _FakeEmbeddingService(
-        delayForText: (text) => text.contains('groceries')
+        delayForText: (text) => text.contains('second')
             ? const Duration(milliseconds: 1)
             : const Duration(milliseconds: 30),
       );
-      final controller = RealtimeTaskIconController(
-        classifier: _classifier(embeddings),
-      );
+      final controller = _controller(_classifier(embeddings));
       addTearDown(controller.dispose);
 
-      final older = controller.onTaskChanged('Buy gift');
-      final newer = controller.onTaskChanged('Buy groceries');
+      final older = controller.onTaskChanged('alpha unique prototype title');
+      final newer = controller.onTaskChanged('second unique prototype title');
       await Future.wait([older, newer]);
 
       expect(controller.value.category, TaskCategory.groceries);
@@ -152,17 +180,34 @@ void main() {
         embeddingService: _HysteresisEmbeddingService(),
         similarityIndex: _HysteresisIndex(),
       );
-      final controller = RealtimeTaskIconController(classifier: classifier);
+      final controller = _controller(classifier);
       addTearDown(controller.dispose);
 
-      await controller.onTaskChanged('gift');
+      await controller.onTaskChanged('alpha');
       expect(controller.value.category, TaskCategory.gift);
 
-      await controller.onTaskChanged('slightly groceries');
+      await controller.onTaskChanged('beta');
       expect(controller.value.category, TaskCategory.gift);
 
-      await controller.onTaskChanged('strong groceries');
+      await controller.onTaskChanged('gamma');
       expect(controller.value.category, TaskCategory.groceries);
     },
   );
+
+  test('keeps the previous icon when the next title is unconfident', () async {
+    final classifier = TaskIconClassifier(
+      embeddingService: _FakeEmbeddingService(),
+      similarityIndex: _LowConfidenceIndex(),
+    );
+    final controller = _controller(classifier);
+    addTearDown(controller.dispose);
+
+    await controller.onTaskChanged('Morning run');
+    expect(controller.value.category, TaskCategory.running);
+
+    await controller.onTaskChanged(
+      'zzz unknown fragment without any strong semantic signal in the wording',
+    );
+    expect(controller.value.category, TaskCategory.running);
+  });
 }

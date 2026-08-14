@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
@@ -277,9 +276,5 @@ void _expectActiveTaskFocus(
   expect(activeTitle.data, title);
   expect(find.text(remaining), findsOneWidget);
   expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
-  final icon = tester.widget<Icon>(
-    find.byKey(const ValueKey('active-focus-task-icon')),
-  );
-  expect(icon.icon, TaskIcons.defaultIcon);
-  expect(icon.size, 112);
+  expect(find.byKey(const ValueKey('active-focus-task-icon')), findsOneWidget);
 }

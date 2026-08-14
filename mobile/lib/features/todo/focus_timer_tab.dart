@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/providers.dart';
 
 class FocusTimerTab extends StatefulWidget {
@@ -758,19 +759,20 @@ class _ActiveTimerState extends State<_ActiveTimer>
                     widget.taskColor,
                   ).withValues(alpha: .18),
           ),
-          child: Icon(
-            widget.taskIcon == null
-                ? Icons.hourglass_bottom_rounded
-                : TaskIcons.iconForTask(
-                    title: widget.title,
-                    icon: widget.taskIcon!,
-                  ),
-            key: const ValueKey('active-focus-task-icon'),
-            size: widget.taskIcon == null ? 94 : 112,
-            color: widget.taskIcon == null
-                ? const Color(0xFF9A6037)
-                : FlorienColors.fromHex(widget.taskColor),
-          ),
+          child: widget.taskIcon == null
+              ? Icon(
+                  Icons.hourglass_bottom_rounded,
+                  key: const ValueKey('active-focus-task-icon'),
+                  size: 94,
+                  color: const Color(0xFF9A6037),
+                )
+              : TaskIconBadge.forTask(
+                  icon: widget.taskIcon!,
+                  size: 148,
+                  iconSize: 112,
+                  circular: true,
+                  iconKey: const ValueKey('active-focus-task-icon'),
+                ),
         ),
       ),
       const SizedBox(height: 28),

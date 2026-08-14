@@ -10,8 +10,8 @@ class TaskIconClassifierConfig {
     this.topExamplesPerCategory = 3,
     this.minimumConfidence = .47,
     this.minimumConfidenceMargin = .05,
-    this.shortTextConfidenceBoost = .055,
-    this.shortTextCodePointLimit = 4,
+    this.shortTextMinimumConfidence = .08,
+    this.shortTextCodePointLimit = 48,
     this.switchMargin = .045,
     this.cacheCapacity = 128,
     this.debugCandidateCount = 5,
@@ -26,7 +26,9 @@ class TaskIconClassifierConfig {
   final int topExamplesPerCategory;
   final double minimumConfidence;
   final double minimumConfidenceMargin;
-  final double shortTextConfidenceBoost;
+
+  /// Floor for everyday titles. Best-guess is enough; accuracy can be coarse.
+  final double shortTextMinimumConfidence;
   final int shortTextCodePointLimit;
   final double switchMargin;
   final int cacheCapacity;

@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:florien/features/task_icon/data/category_embedding_index.dart';
+import 'package:florien/features/task_icon/data/task_icon_lexicon.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/domain/task_icon_result.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_mapper.dart';
@@ -46,6 +47,18 @@ class TaskIconClassifier {
   }) async {
     final normalizedText = text.trim();
     if (normalizedText.isEmpty) return fallback();
+
+    final lexicalCategory = TaskIconLexicon.match(normalizedText);
+    if (lexicalCategory != null) {
+      return _resultFor(
+        lexicalCategory,
+        confidence: 1,
+        secondBestConfidence: 0,
+      );
+    }
+
+    if (normalizedText.runes.length < 3) return fallback();
+
     final cacheKey = normalizedText;
     final cached = _cache.remove(cacheKey);
     if (cached != null) {
@@ -53,57 +66,86 @@ class TaskIconClassifier {
       return includeDebugCandidates ? cached : _withoutCandidates(cached);
     }
 
-    await initialize();
-    final embedding = await _embeddingService.embed(normalizedText);
-    final candidates = _similarityIndex.score(embedding);
-    final best = candidates.first;
+    try {
+      await initialize();
+      final embedding = await _embeddingService.embed(normalizedText);
+      final candidates = _similarityIndex.score(embedding);
+      final chosen = _pick(normalizedText, candidates);
+      final result = chosen;
+      _cache[cacheKey] = result;
+      while (_cache.length > config.cacheCapacity) {
+        _cache.remove(_cache.keys.first);
+      }
+      return includeDebugCandidates ? result : _withoutCandidates(result);
+    } catch (error, stackTrace) {
+      debugPrint('Task icon classify failed: $error\n$stackTrace');
+      return fallback();
+    }
+  }
+
+  TaskIconResult _pick(String text, List<TaskIconCandidate> candidates) {
+    final best = _bestReal(candidates) ?? candidates.first;
     final second = candidates.length > 1
         ? candidates[1]
         : const TaskIconCandidate(category: TaskCategory.other, confidence: -1);
-    final shortTextBoost =
-        normalizedText.runes.length <= config.shortTextCodePointLimit
-        ? config.shortTextConfidenceBoost
-        : 0.0;
-    final isConfident =
+    final short = text.runes.length <= config.shortTextCodePointLimit;
+    final minScore = short
+        ? config.shortTextMinimumConfidence
+        : config.minimumConfidence;
+    final needsMargin = !short;
+    final accepts =
         best.category != TaskCategory.other &&
-        best.confidence >= config.minimumConfidence + shortTextBoost &&
-        best.confidence - second.confidence >= config.minimumConfidenceMargin;
-    final result = isConfident
-        ? TaskIconResult(
-            category: best.category,
-            parentCategory: best.category.parent,
-            icon: TaskIconMapper.iconFor(best.category),
-            confidence: best.confidence,
-            secondBestConfidence: second.confidence,
-            topCandidates: List.unmodifiable(
-              candidates.take(config.debugCandidateCount),
-            ),
-          )
-        : fallback(
-            confidence: best.confidence,
-            secondBestConfidence: second.confidence,
-            topCandidates: candidates,
-          );
-    _cache[cacheKey] = result;
-    while (_cache.length > config.cacheCapacity) {
-      _cache.remove(_cache.keys.first);
+        best.confidence >= minScore &&
+        (!needsMargin ||
+            best.confidence - second.confidence >=
+                config.minimumConfidenceMargin);
+    if (!accepts) {
+      return fallback(
+        confidence: best.confidence,
+        secondBestConfidence: second.confidence,
+        topCandidates: candidates,
+      );
     }
-    return includeDebugCandidates ? result : _withoutCandidates(result);
+    return _resultFor(
+      best.category,
+      confidence: best.confidence,
+      secondBestConfidence: second.confidence,
+      topCandidates: candidates,
+    );
   }
 
-  TaskIconResult fallback({
-    double confidence = 0,
-    double secondBestConfidence = 0,
+  TaskIconCandidate? _bestReal(List<TaskIconCandidate> candidates) {
+    for (final candidate in candidates) {
+      if (candidate.category != TaskCategory.other) return candidate;
+    }
+    return null;
+  }
+
+  TaskIconResult _resultFor(
+    TaskCategory category, {
+    required double confidence,
+    required double secondBestConfidence,
     List<TaskIconCandidate> topCandidates = const [],
   }) => TaskIconResult(
-    category: TaskCategory.other,
-    parentCategory: TaskParentCategory.other,
-    icon: TaskIconMapper.fallback,
+    category: category,
+    parentCategory: category.parent,
+    icon: TaskIconMapper.iconFor(category),
     confidence: confidence,
     secondBestConfidence: secondBestConfidence,
     topCandidates: List.unmodifiable(
       topCandidates.take(config.debugCandidateCount),
     ),
+  );
+
+  TaskIconResult fallback({
+    double confidence = 0,
+    double secondBestConfidence = 0,
+    List<TaskIconCandidate> topCandidates = const [],
+  }) => _resultFor(
+    TaskCategory.other,
+    confidence: confidence,
+    secondBestConfidence: secondBestConfidence,
+    topCandidates: topCandidates,
   );
 
   TaskIconResult _withoutCandidates(TaskIconResult value) => TaskIconResult(

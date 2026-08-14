@@ -114,6 +114,8 @@ enum TaskCategory {
   pet,
   entertainment,
   appointment,
+
+  /// Neutral fallback when classification is not confident (`general`).
   other,
 }
 

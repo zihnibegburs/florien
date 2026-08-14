@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_icon_park/flutter_icon_park.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:florien/core/firebase/user_profile_service.dart';
@@ -207,33 +208,41 @@ class FlorienTheme {
     final baseTextTheme = GoogleFonts.manropeTextTheme(
       ThemeData(brightness: brightness).textTheme,
     ).apply(bodyColor: palette.textPrimary, displayColor: palette.textPrimary);
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: brightness,
+          surface: palette.surface,
+          primary: primary,
+          secondary: FlorienColors.accent,
+          error: palette.error,
+          onSurface: palette.textPrimary,
+        ).copyWith(
+          onPrimary: onPrimary,
+          primaryContainer: palette.primaryMuted,
+          onPrimaryContainer: isDark
+              ? const Color(0xFFD9DAFF)
+              : FlorienColors.primary,
+          surfaceContainer: palette.surfaceMuted,
+          surfaceContainerHighest: palette.surfaceMuted,
+          outline: palette.border,
+          outlineVariant: palette.border,
+        );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      extensions: [palette],
-      colorScheme:
-          ColorScheme.fromSeed(
-            seedColor: primary,
-            brightness: brightness,
-            surface: palette.surface,
-            primary: primary,
-            secondary: FlorienColors.accent,
-            error: palette.error,
-            onSurface: palette.textPrimary,
-          ).copyWith(
-            onPrimary: onPrimary,
-            primaryContainer: palette.primaryMuted,
-            onPrimaryContainer: isDark
-                ? const Color(0xFFD9DAFF)
-                : FlorienColors.primary,
-            surfaceContainer: palette.surfaceMuted,
-            surfaceContainerHighest: palette.surfaceMuted,
-            outline: palette.border,
-            outlineVariant: palette.border,
-          ),
+      extensions: [
+        palette,
+        IconParkTheme.fromColorScheme(
+          colorScheme,
+          defaultTheme: IconParkThemeType.multiColor,
+          strokeWidth: 3,
+        ),
+      ],
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: palette.background,
       cardColor: palette.surface,
       dividerColor: palette.border,

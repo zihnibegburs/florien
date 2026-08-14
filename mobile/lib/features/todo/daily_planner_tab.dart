@@ -13,6 +13,7 @@ import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
@@ -1546,15 +1547,7 @@ class _DailyDragPreview extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: color.withValues(alpha: .16),
-            child: Icon(
-              TaskIcons.iconForTask(title: task.title, icon: task.icon),
-              color: color,
-              size: 17,
-            ),
-          ),
+          TaskIconBadge.forTask(icon: task.icon, size: 34),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
@@ -2049,11 +2042,11 @@ class _DailyTaskIcon extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: dimension / 2 - 4,
-          backgroundColor: color.withValues(alpha: .16),
-          child: Icon(
-            TaskIcons.iconForTask(title: task.title, icon: task.icon),
-            color: color,
-            size: dimension * .45,
+          backgroundColor: Colors.transparent,
+          child: TaskIconBadge.forTask(
+            icon: task.icon,
+            size: dimension - 8,
+            circular: true,
           ),
         ),
         if (progress != null)
@@ -2375,7 +2368,8 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                   border: InputBorder.none,
                   prefixIcon: ValueListenableBuilder(
                     valueListenable: _taskIcon,
-                    builder: (_, result, __) => Icon(result.icon),
+                    builder: (_, result, __) =>
+                        TaskIconBadge.forResult(result, size: 34),
                   ),
                 ),
               ),
@@ -2637,7 +2631,8 @@ class _DailyTaskDetailScreenState
             hintText: 'Görev başlığı',
             prefixIcon: ValueListenableBuilder(
               valueListenable: _taskIcon,
-              builder: (_, result, __) => Icon(result.icon),
+              builder: (_, result, __) =>
+                  TaskIconBadge.forResult(result, size: 34),
             ),
           ),
         ),
