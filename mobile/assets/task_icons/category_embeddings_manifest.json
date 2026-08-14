@@ -1,0 +1,612 @@
+{
+  "format": "TIE1",
+  "version": 1,
+  "dimensions": 128,
+  "total_examples": 1000,
+  "examples_per_category": 10,
+  "model_sha256": "5524ce3dbca2f7de77d30396e9d7ef317681ba05d9b0c1f0fa029048bd3894e6",
+  "examples_sha256": "7abbfc2185470a8dc4bbfcd32b4799032fe940f47e9dd5eee357a811a8fee2b5",
+  "embeddings_sha256": "992bdca3928d7013a6a35b25018e33ccef5cddd187528e99046a17e4c97f2a09",
+  "categories": [
+    {
+      "name": "work",
+      "parent": "work",
+      "offset": 0,
+      "count": 10
+    },
+    {
+      "name": "meeting",
+      "parent": "work",
+      "offset": 10,
+      "count": 10
+    },
+    {
+      "name": "presentation",
+      "parent": "work",
+      "offset": 20,
+      "count": 10
+    },
+    {
+      "name": "email",
+      "parent": "work",
+      "offset": 30,
+      "count": 10
+    },
+    {
+      "name": "phone_call",
+      "parent": "work",
+      "offset": 40,
+      "count": 10
+    },
+    {
+      "name": "project",
+      "parent": "work",
+      "offset": 50,
+      "count": 10
+    },
+    {
+      "name": "deadline",
+      "parent": "work",
+      "offset": 60,
+      "count": 10
+    },
+    {
+      "name": "coding",
+      "parent": "work",
+      "offset": 70,
+      "count": 10
+    },
+    {
+      "name": "bug_fix",
+      "parent": "work",
+      "offset": 80,
+      "count": 10
+    },
+    {
+      "name": "research",
+      "parent": "work",
+      "offset": 90,
+      "count": 10
+    },
+    {
+      "name": "study",
+      "parent": "education",
+      "offset": 100,
+      "count": 10
+    },
+    {
+      "name": "homework",
+      "parent": "education",
+      "offset": 110,
+      "count": 10
+    },
+    {
+      "name": "exam",
+      "parent": "education",
+      "offset": 120,
+      "count": 10
+    },
+    {
+      "name": "reading",
+      "parent": "education",
+      "offset": 130,
+      "count": 10
+    },
+    {
+      "name": "writing",
+      "parent": "education",
+      "offset": 140,
+      "count": 10
+    },
+    {
+      "name": "note_taking",
+      "parent": "education",
+      "offset": 150,
+      "count": 10
+    },
+    {
+      "name": "language_learning",
+      "parent": "education",
+      "offset": 160,
+      "count": 10
+    },
+    {
+      "name": "school",
+      "parent": "education",
+      "offset": 170,
+      "count": 10
+    },
+    {
+      "name": "childcare",
+      "parent": "education",
+      "offset": 180,
+      "count": 10
+    },
+    {
+      "name": "sleep",
+      "parent": "education",
+      "offset": 190,
+      "count": 10
+    },
+    {
+      "name": "shopping",
+      "parent": "shopping",
+      "offset": 200,
+      "count": 10
+    },
+    {
+      "name": "groceries",
+      "parent": "shopping",
+      "offset": 210,
+      "count": 10
+    },
+    {
+      "name": "clothes_shopping",
+      "parent": "shopping",
+      "offset": 220,
+      "count": 10
+    },
+    {
+      "name": "electronics_shopping",
+      "parent": "shopping",
+      "offset": 230,
+      "count": 10
+    },
+    {
+      "name": "online_order",
+      "parent": "shopping",
+      "offset": 240,
+      "count": 10
+    },
+    {
+      "name": "gift",
+      "parent": "shopping",
+      "offset": 250,
+      "count": 10
+    },
+    {
+      "name": "birthday",
+      "parent": "shopping",
+      "offset": 260,
+      "count": 10
+    },
+    {
+      "name": "return_item",
+      "parent": "shopping",
+      "offset": 270,
+      "count": 10
+    },
+    {
+      "name": "pickup",
+      "parent": "shopping",
+      "offset": 280,
+      "count": 10
+    },
+    {
+      "name": "delivery",
+      "parent": "shopping",
+      "offset": 290,
+      "count": 10
+    },
+    {
+      "name": "cooking",
+      "parent": "food",
+      "offset": 300,
+      "count": 10
+    },
+    {
+      "name": "breakfast",
+      "parent": "food",
+      "offset": 310,
+      "count": 10
+    },
+    {
+      "name": "lunch",
+      "parent": "food",
+      "offset": 320,
+      "count": 10
+    },
+    {
+      "name": "dinner",
+      "parent": "food",
+      "offset": 330,
+      "count": 10
+    },
+    {
+      "name": "restaurant",
+      "parent": "food",
+      "offset": 340,
+      "count": 10
+    },
+    {
+      "name": "coffee",
+      "parent": "food",
+      "offset": 350,
+      "count": 10
+    },
+    {
+      "name": "food_order",
+      "parent": "food",
+      "offset": 360,
+      "count": 10
+    },
+    {
+      "name": "meal_prep",
+      "parent": "food",
+      "offset": 370,
+      "count": 10
+    },
+    {
+      "name": "baking",
+      "parent": "food",
+      "offset": 380,
+      "count": 10
+    },
+    {
+      "name": "drinks",
+      "parent": "food",
+      "offset": 390,
+      "count": 10
+    },
+    {
+      "name": "health",
+      "parent": "health",
+      "offset": 400,
+      "count": 10
+    },
+    {
+      "name": "doctor",
+      "parent": "health",
+      "offset": 410,
+      "count": 10
+    },
+    {
+      "name": "dentist",
+      "parent": "health",
+      "offset": 420,
+      "count": 10
+    },
+    {
+      "name": "medicine",
+      "parent": "health",
+      "offset": 430,
+      "count": 10
+    },
+    {
+      "name": "pharmacy",
+      "parent": "health",
+      "offset": 440,
+      "count": 10
+    },
+    {
+      "name": "hospital",
+      "parent": "health",
+      "offset": 450,
+      "count": 10
+    },
+    {
+      "name": "therapy",
+      "parent": "health",
+      "offset": 460,
+      "count": 10
+    },
+    {
+      "name": "checkup",
+      "parent": "health",
+      "offset": 470,
+      "count": 10
+    },
+    {
+      "name": "vaccination",
+      "parent": "health",
+      "offset": 480,
+      "count": 10
+    },
+    {
+      "name": "medical_test",
+      "parent": "health",
+      "offset": 490,
+      "count": 10
+    },
+    {
+      "name": "meditation",
+      "parent": "fitness",
+      "offset": 500,
+      "count": 10
+    },
+    {
+      "name": "gym",
+      "parent": "fitness",
+      "offset": 510,
+      "count": 10
+    },
+    {
+      "name": "running",
+      "parent": "fitness",
+      "offset": 520,
+      "count": 10
+    },
+    {
+      "name": "walking",
+      "parent": "fitness",
+      "offset": 530,
+      "count": 10
+    },
+    {
+      "name": "cycling",
+      "parent": "fitness",
+      "offset": 540,
+      "count": 10
+    },
+    {
+      "name": "swimming",
+      "parent": "fitness",
+      "offset": 550,
+      "count": 10
+    },
+    {
+      "name": "yoga",
+      "parent": "fitness",
+      "offset": 560,
+      "count": 10
+    },
+    {
+      "name": "workout",
+      "parent": "fitness",
+      "offset": 570,
+      "count": 10
+    },
+    {
+      "name": "sport",
+      "parent": "fitness",
+      "offset": 580,
+      "count": 10
+    },
+    {
+      "name": "stretching",
+      "parent": "fitness",
+      "offset": 590,
+      "count": 10
+    },
+    {
+      "name": "travel",
+      "parent": "travel",
+      "offset": 600,
+      "count": 10
+    },
+    {
+      "name": "flight",
+      "parent": "travel",
+      "offset": 610,
+      "count": 10
+    },
+    {
+      "name": "hotel",
+      "parent": "travel",
+      "offset": 620,
+      "count": 10
+    },
+    {
+      "name": "vacation",
+      "parent": "travel",
+      "offset": 630,
+      "count": 10
+    },
+    {
+      "name": "luggage",
+      "parent": "travel",
+      "offset": 640,
+      "count": 10
+    },
+    {
+      "name": "passport",
+      "parent": "travel",
+      "offset": 650,
+      "count": 10
+    },
+    {
+      "name": "visa",
+      "parent": "travel",
+      "offset": 660,
+      "count": 10
+    },
+    {
+      "name": "trip_planning",
+      "parent": "travel",
+      "offset": 670,
+      "count": 10
+    },
+    {
+      "name": "sightseeing",
+      "parent": "travel",
+      "offset": 680,
+      "count": 10
+    },
+    {
+      "name": "reservation",
+      "parent": "travel",
+      "offset": 690,
+      "count": 10
+    },
+    {
+      "name": "car",
+      "parent": "transportation",
+      "offset": 700,
+      "count": 10
+    },
+    {
+      "name": "car_maintenance",
+      "parent": "transportation",
+      "offset": 710,
+      "count": 10
+    },
+    {
+      "name": "car_repair",
+      "parent": "transportation",
+      "offset": 720,
+      "count": 10
+    },
+    {
+      "name": "fuel",
+      "parent": "transportation",
+      "offset": 730,
+      "count": 10
+    },
+    {
+      "name": "car_wash",
+      "parent": "transportation",
+      "offset": 740,
+      "count": 10
+    },
+    {
+      "name": "parking",
+      "parent": "transportation",
+      "offset": 750,
+      "count": 10
+    },
+    {
+      "name": "public_transport",
+      "parent": "transportation",
+      "offset": 760,
+      "count": 10
+    },
+    {
+      "name": "taxi",
+      "parent": "transportation",
+      "offset": 770,
+      "count": 10
+    },
+    {
+      "name": "train",
+      "parent": "transportation",
+      "offset": 780,
+      "count": 10
+    },
+    {
+      "name": "driving",
+      "parent": "transportation",
+      "offset": 790,
+      "count": 10
+    },
+    {
+      "name": "home",
+      "parent": "home",
+      "offset": 800,
+      "count": 10
+    },
+    {
+      "name": "cleaning",
+      "parent": "home",
+      "offset": 810,
+      "count": 10
+    },
+    {
+      "name": "laundry",
+      "parent": "home",
+      "offset": 820,
+      "count": 10
+    },
+    {
+      "name": "dishes",
+      "parent": "home",
+      "offset": 830,
+      "count": 10
+    },
+    {
+      "name": "home_repair",
+      "parent": "home",
+      "offset": 840,
+      "count": 10
+    },
+    {
+      "name": "gardening",
+      "parent": "home",
+      "offset": 850,
+      "count": 10
+    },
+    {
+      "name": "furniture",
+      "parent": "home",
+      "offset": 860,
+      "count": 10
+    },
+    {
+      "name": "moving",
+      "parent": "home",
+      "offset": 870,
+      "count": 10
+    },
+    {
+      "name": "organizing",
+      "parent": "home",
+      "offset": 880,
+      "count": 10
+    },
+    {
+      "name": "bills",
+      "parent": "home",
+      "offset": 890,
+      "count": 10
+    },
+    {
+      "name": "finance",
+      "parent": "finance",
+      "offset": 900,
+      "count": 10
+    },
+    {
+      "name": "payment",
+      "parent": "finance",
+      "offset": 910,
+      "count": 10
+    },
+    {
+      "name": "banking",
+      "parent": "finance",
+      "offset": 920,
+      "count": 10
+    },
+    {
+      "name": "subscription",
+      "parent": "finance",
+      "offset": 930,
+      "count": 10
+    },
+    {
+      "name": "family",
+      "parent": "relationships",
+      "offset": 940,
+      "count": 10
+    },
+    {
+      "name": "friends",
+      "parent": "relationships",
+      "offset": 950,
+      "count": 10
+    },
+    {
+      "name": "pet",
+      "parent": "relationships",
+      "offset": 960,
+      "count": 10
+    },
+    {
+      "name": "entertainment",
+      "parent": "lifestyle",
+      "offset": 970,
+      "count": 10
+    },
+    {
+      "name": "appointment",
+      "parent": "lifestyle",
+      "offset": 980,
+      "count": 10
+    },
+    {
+      "name": "other",
+      "parent": "other",
+      "offset": 990,
+      "count": 10
+    }
+  ]
+}

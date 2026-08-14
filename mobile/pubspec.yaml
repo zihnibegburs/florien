@@ -29,6 +29,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
   device_calendar: ^4.3.3
+  flutter_onnxruntime: ^1.8.3
 
 dev_dependencies:
   flutter_test:
@@ -39,3 +40,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/app_icon.png
+    - assets/task_icons/

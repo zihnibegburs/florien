@@ -366,6 +366,23 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
     required String? todoListId,
     String? description,
     List<String> subtasks = const [],
+  }) => addDetailedWithIcon(
+    title: title,
+    durationMinutes: durationMinutes,
+    priority: priority,
+    todoListId: todoListId,
+    description: description,
+    subtasks: subtasks,
+  );
+
+  Future<void> addDetailedWithIcon({
+    required String title,
+    required int durationMinutes,
+    required TaskPriority priority,
+    required String? todoListId,
+    String? icon,
+    String? description,
+    List<String> subtasks = const [],
   }) async {
     final task = await addToInbox(
       title: title,
@@ -373,6 +390,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
       durationMinutes: durationMinutes,
       priority: priority,
       todoListId: todoListId,
+      icon: icon,
     );
     if (subtasks.isNotEmpty) {
       await ref
@@ -398,6 +416,25 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
     required String? todoListId,
     String? description,
     List<String> subtasks = const [],
+  }) => updateDetailedWithIcon(
+    id: id,
+    title: title,
+    durationMinutes: durationMinutes,
+    priority: priority,
+    todoListId: todoListId,
+    description: description,
+    subtasks: subtasks,
+  );
+
+  Future<void> updateDetailedWithIcon({
+    required String id,
+    required String title,
+    required int durationMinutes,
+    required TaskPriority priority,
+    required String? todoListId,
+    String? icon,
+    String? description,
+    List<String> subtasks = const [],
   }) async {
     final repository = ref.read(taskRepositoryProvider);
     await repository.updateTask(
@@ -405,6 +442,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
       title: title,
       description: description,
       clearDescription: description == null,
+      icon: icon,
       durationMinutes: durationMinutes,
       priority: priority,
       todoListId: todoListId,

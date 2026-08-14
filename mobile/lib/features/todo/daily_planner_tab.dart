@@ -11,6 +11,8 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
@@ -34,6 +36,7 @@ class DailyTaskEditInput {
     required this.recurrence,
     required this.alarmAt,
     required this.subtasks,
+    required this.icon,
   });
 
   final String title;
@@ -47,6 +50,7 @@ class DailyTaskEditInput {
   final RecurrenceSelection recurrence;
   final DateTime? alarmAt;
   final List<String> subtasks;
+  final String icon;
 }
 
 typedef DailyTaskUpdater =
@@ -68,6 +72,7 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       title: input.title,
       description: input.description.trim().isEmpty ? null : input.description,
       clearDescription: input.description.trim().isEmpty,
+      icon: input.icon,
       durationMinutes: durationMinutes,
       scheduledAt: scheduledAt,
       alarmAt: input.alarmAt,
@@ -1925,6 +1930,7 @@ class _DailyTaskCard extends ConsumerWidget {
             recurrence: draft.recurrence,
             alarmAt: draft.alarmAt,
             subtasks: draft.subtasks,
+            icon: draft.icon,
           ),
         ),
       ),
@@ -2287,10 +2293,22 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
   late bool _isTimed = widget.initialDraft.isTimed;
   late DateTime? _startsAt = widget.initialDraft.startsAt;
   late DateTime? _endsAt = widget.initialDraft.endsAt;
+  late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
+    initialCategory: widget.initialDraft.icon,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDraft.title.trim().isNotEmpty) {
+      _taskIcon.onTaskChanged(widget.initialDraft.title);
+    }
+  }
 
   @override
   void dispose() {
     _title.dispose();
+    _taskIcon.dispose();
     super.dispose();
   }
 
@@ -2302,11 +2320,14 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
         startsAt: _startsAt,
         endsAt: _endsAt,
         recurrence: RecurrenceSelection(type: _recurrence),
+        icon: _taskIcon.value.category.storageName,
         openDetails: details,
       );
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_title.text.trim().isEmpty) return;
+    await _taskIcon.onTaskChanged(_title.text.trim());
+    if (!mounted) return;
     Navigator.pop(context, _draft(details: false));
   }
 
@@ -2343,14 +2364,19 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
               TextField(
                 key: const ValueKey('daily-quick-title'),
                 controller: _title,
+                onChanged: _taskIcon.onTaskChanged,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 textCapitalization: TextCapitalization.sentences,
                 onSubmitted: (_) => _submit(),
                 style: Theme.of(context).textTheme.titleLarge,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Sırada ne var?',
                   border: InputBorder.none,
+                  prefixIcon: ValueListenableBuilder(
+                    valueListenable: _taskIcon,
+                    builder: (_, result, __) => Icon(result.icon),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2499,12 +2525,24 @@ class _DailyTaskDetailScreenState
   );
   late final List<String> _subtasks = [...widget.initialDraft.subtasks];
   bool _saving = false;
+  late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
+    initialCategory: widget.initialDraft.icon,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDraft.title.trim().isNotEmpty) {
+      _taskIcon.onTaskChanged(widget.initialDraft.title);
+    }
+  }
 
   @override
   void dispose() {
     _title.dispose();
     _notes.dispose();
     _subtask.dispose();
+    _taskIcon.dispose();
     super.dispose();
   }
 
@@ -2512,6 +2550,7 @@ class _DailyTaskDetailScreenState
     if (_title.text.trim().isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
+      await _taskIcon.onTaskChanged(_title.text.trim());
       final taskDate = _isTimed ? _dateOnly(_startsAt) : _date;
       final taskPeriod = _isTimed ? dayPeriodForLocalTime(_startsAt) : _period;
       final draft = widget.initialDraft.copyWith(
@@ -2529,6 +2568,7 @@ class _DailyTaskDetailScreenState
         recurrence: RecurrenceSelection(type: _recurrence),
         alarmAt: _alarm ? _alarmDateTime(taskDate, _alarmTime) : null,
         clearAlarmAt: !_alarm,
+        icon: _taskIcon.value.category.storageName,
         subtasks: _subtasks,
         openDetails: false,
       );
@@ -2589,12 +2629,16 @@ class _DailyTaskDetailScreenState
         TextField(
           key: const ValueKey('daily-detail-title'),
           controller: _title,
+          onChanged: _taskIcon.onTaskChanged,
           autofocus: _title.text.trim().isEmpty,
           textCapitalization: TextCapitalization.sentences,
           style: Theme.of(context).textTheme.titleLarge,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Görev başlığı',
-            prefixIcon: Icon(Icons.edit_rounded),
+            prefixIcon: ValueListenableBuilder(
+              valueListenable: _taskIcon,
+              builder: (_, result, __) => Icon(result.icon),
+            ),
           ),
         ),
         const SizedBox(height: 14),

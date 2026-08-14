@@ -560,6 +560,7 @@ class TaskRepository {
     String? description,
     bool clearDescription = false,
     String? color,
+    String? icon,
     int? durationMinutes,
     DateTime? scheduledAt,
     DateTime? alarmAt,
@@ -582,6 +583,7 @@ class TaskRepository {
       if (description != null) 'description': description,
       if (clearDescription) 'description': null,
       if (color != null) 'color': color,
+      if (icon != null) 'icon': icon,
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (scheduledAt != null)
         'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),

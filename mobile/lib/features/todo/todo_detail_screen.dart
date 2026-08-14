@@ -4,6 +4,8 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 
 class TodoDetailScreen extends ConsumerStatefulWidget {
   const TodoDetailScreen({
@@ -15,6 +17,7 @@ class TodoDetailScreen extends ConsumerStatefulWidget {
     this.taskId,
     this.initialDescription = '',
     this.initialSubtasks = const [],
+    this.initialIcon = 'other',
   });
 
   final String initialTitle;
@@ -24,6 +27,7 @@ class TodoDetailScreen extends ConsumerStatefulWidget {
   final String? todoListId;
   final String initialDescription;
   final List<String> initialSubtasks;
+  final String initialIcon;
 
   bool get isEditing => taskId != null;
 
@@ -40,12 +44,24 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
   late TaskPriority _priority = widget.priority;
   late String? _todoListId = widget.todoListId;
   bool _saving = false;
+  late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
+    initialCategory: widget.initialIcon,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTitle.trim().isNotEmpty) {
+      _taskIcon.onTaskChanged(widget.initialTitle);
+    }
+  }
 
   @override
   void dispose() {
     _title.dispose();
     _notes.dispose();
     _subtask.dispose();
+    _taskIcon.dispose();
     super.dispose();
   }
 
@@ -63,12 +79,13 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     if (title.isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
+      await _taskIcon.onTaskChanged(title);
       final notifier = ref.read(inboxProvider.notifier);
       final description = _notes.text.trim().isEmpty
           ? null
           : _notes.text.trim();
       if (widget.taskId case final taskId?) {
-        await notifier.updateDetailed(
+        await notifier.updateDetailedWithIcon(
           id: taskId,
           title: title,
           description: description,
@@ -76,15 +93,17 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           priority: _priority,
           todoListId: _todoListId,
           subtasks: _subtasks,
+          icon: _taskIcon.value.category.storageName,
         );
       } else {
-        await notifier.addDetailed(
+        await notifier.addDetailedWithIcon(
           title: title,
           description: description,
           durationMinutes: _duration,
           priority: _priority,
           todoListId: _todoListId,
           subtasks: _subtasks,
+          icon: _taskIcon.value.category.storageName,
         );
       }
       if (mounted) Navigator.pop(context, true);
@@ -140,12 +159,16 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
         children: [
           TextField(
             controller: _title,
+            onChanged: _taskIcon.onTaskChanged,
             autofocus: widget.initialTitle.trim().isEmpty,
             textCapitalization: TextCapitalization.sentences,
             style: Theme.of(context).textTheme.titleLarge,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Görev başlığı',
-              prefixIcon: Icon(Icons.edit_rounded),
+              prefixIcon: ValueListenableBuilder(
+                valueListenable: _taskIcon,
+                builder: (_, result, __) => Icon(result.icon),
+              ),
             ),
           ),
           const SizedBox(height: 14),

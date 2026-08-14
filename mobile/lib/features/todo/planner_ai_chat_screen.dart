@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 
 class PlannerAiChatScreen extends ConsumerStatefulWidget {
   const PlannerAiChatScreen({super.key});
@@ -90,11 +92,16 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     setState(() => message.decision = _ProposalDecision.saving);
     try {
       for (final task in message.tasks) {
+        final classification = await TaskIconClassifier.instance.classify(
+          task.title,
+          includeDebugCandidates: false,
+        );
         await ref
             .read(inboxProvider.notifier)
             .addToInbox(
               title: task.title,
               durationMinutes: task.durationMinutes,
+              icon: classification.category.storageName,
             );
       }
       if (!mounted) return;

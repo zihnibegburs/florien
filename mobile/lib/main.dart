@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:florien/core/widgets/liquid_glass.dart';
 import 'package:florien/features/auth/login_screen.dart';
 import 'package:florien/features/auth/register_screen.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
 
@@ -19,6 +22,13 @@ Future<void> main() async {
     );
   }
   runApp(const ProviderScope(child: FlorienApp()));
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(
+      TaskIconClassifier.instance.initialize().onError((error, stackTrace) {
+        debugPrint('Task icon classifier warm-up failed: $error');
+      }),
+    );
+  });
 }
 
 class FlorienApp extends ConsumerWidget {

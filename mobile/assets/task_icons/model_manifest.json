@@ -1,0 +1,12 @@
+{
+  "model": "setu4993/LEALLA-small",
+  "revision": "cf79e3610690ff9d66b8695bc6d298f10973b845",
+  "license": "Apache-2.0",
+  "embedding_dimensions": 128,
+  "max_sequence_length": 48,
+  "model_bytes": 70532539,
+  "model_sha256": "5524ce3dbca2f7de77d30396e9d7ef317681ba05d9b0c1f0fa029048bd3894e6",
+  "vocabulary_bytes": 5220781,
+  "vocabulary_sha256": "7453247caa2cf23116c1da332bec0cc1c9ef896b7803591a62ad2007b7a33c33",
+  "minimum_reference_cosine": 0.9949575662612915
+}

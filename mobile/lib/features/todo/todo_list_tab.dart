@@ -6,6 +6,8 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
 
@@ -36,6 +38,7 @@ Future<void> showTodoQuickAdd({
         initialDuration: details.duration,
         priority: details.priority,
         todoListId: details.todoListId,
+        initialIcon: details.icon,
       ),
     );
   }
@@ -702,6 +705,16 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   bool _isSaving = false;
   int _duration = 15;
   late String? _todoListId = widget.todoListId;
+  late final RealtimeTaskIconController _taskIcon =
+      RealtimeTaskIconController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTitle.trim().isNotEmpty) {
+      _taskIcon.onTaskChanged(widget.initialTitle);
+    }
+  }
 
   String get _listName {
     if (_todoListId == null) return 'To-do';
@@ -714,6 +727,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   @override
   void dispose() {
     _controller.dispose();
+    _taskIcon.dispose();
     super.dispose();
   }
 
@@ -728,6 +742,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
 
     setState(() => _isSaving = true);
     try {
+      await _taskIcon.onTaskChanged(title);
       await ref
           .read(inboxProvider.notifier)
           .addToInbox(
@@ -735,6 +750,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
             priority: _priority,
             todoListId: _todoListId,
             durationMinutes: _duration,
+            icon: _taskIcon.value.category.storageName,
           );
       if (mounted) _close();
     } finally {
@@ -784,15 +800,20 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               TextField(
                 key: const ValueKey('todo-quick-title'),
                 controller: _controller,
+                onChanged: _taskIcon.onTaskChanged,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _create(),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Ne yapman gerekiyor?',
                   border: InputBorder.none,
+                  prefixIcon: ValueListenableBuilder(
+                    valueListenable: _taskIcon,
+                    builder: (_, result, __) => Icon(result.icon),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -823,6 +844,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                         duration: _duration,
                         priority: _priority,
                         todoListId: _todoListId,
+                        icon: _taskIcon.value.category.storageName,
                       ),
                     ),
                   ),
@@ -939,12 +961,14 @@ class _TodoQuickDraft {
     required this.duration,
     required this.priority,
     required this.todoListId,
+    required this.icon,
   });
 
   final String title;
   final int duration;
   final TaskPriority priority;
   final String? todoListId;
+  final String icon;
 }
 
 String _durationLabel(int minutes) => switch (minutes) {
@@ -1562,6 +1586,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
             initialDuration: task.durationMinutes,
             priority: task.priority,
             todoListId: task.todoListId,
+            initialIcon: task.icon,
           ),
         );
       case _TaskMenuAction.moveToList:
@@ -1591,6 +1616,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
             initialDuration: task.durationMinutes,
             priority: task.priority,
             todoListId: task.todoListId,
+            initialIcon: task.icon,
           ),
         );
       case _TaskMenuAction.delete:

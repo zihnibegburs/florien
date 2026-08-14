@@ -1,93 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/presentation/task_icon_mapper.dart';
 
 class TaskIcons {
-  static const defaultName = 'task';
-  static const defaultIcon = Icons.task_alt_rounded;
+  const TaskIcons._();
 
-  static const _keywordMap = <String, String>{
-    'okul': 'school',
-    'ödev': 'school',
-    'ders': 'school',
-    'study': 'school',
-    'school': 'school',
-    'read': 'menu_book',
-    'oku': 'menu_book',
-    'kitap': 'menu_book',
-    'iş': 'work',
-    'toplantı': 'groups',
-    'meeting': 'groups',
-    'work': 'work',
-    'ofis': 'work',
-    'spor': 'fitness',
-    'egzersiz': 'fitness',
-    'gym': 'fitness',
-    'fitness': 'fitness',
-    'koş': 'directions_run',
-    'run': 'directions_run',
-    'yürü': 'directions_walk',
-    'walk': 'directions_walk',
-    'yemek': 'restaurant',
-    'cook': 'restaurant',
-    'mutfak': 'restaurant',
-    'kahvaltı': 'free_breakfast',
-    'breakfast': 'free_breakfast',
-    'temiz': 'cleaning',
-    'clean': 'cleaning',
-    'alışveriş': 'shopping',
-    'shop': 'shopping',
-    'market': 'shopping',
-    'sağlık': 'health',
-    'health': 'health',
-    'doktor': 'health',
-    'ilaç': 'medication',
-    'müzik': 'music',
-    'music': 'music',
-    'kod': 'code',
-    'code': 'code',
-    'program': 'code',
-    'yazılım': 'code',
-    'email': 'email',
-    'mail': 'email',
-    'e-posta': 'email',
-    'uyku': 'bedtime',
-    'sleep': 'bedtime',
-    'medit': 'self_improvement',
-    'yoga': 'self_improvement',
-    'odak': 'timer',
-    'focus': 'timer',
-    'proje': 'lightbulb',
-    'project': 'lightbulb',
-    'sunum': 'slideshow',
-    'presentation': 'slideshow',
-    'araştır': 'search',
-    'research': 'search',
-    'video': 'videocam',
-    'film': 'movie',
-    'çiz': 'brush',
-    'draw': 'brush',
-    'design': 'brush',
-    'tasarım': 'brush',
-    'araba': 'directions_car',
-    'drive': 'directions_car',
-    'seyahat': 'flight',
-    'travel': 'flight',
-    'uçak': 'flight',
-    'çocuk': 'child_care',
-    'baby': 'child_care',
-    'pet': 'pets',
-    'köpek': 'pets',
-    'kedi': 'pets',
-    'bahçe': 'yard',
-    'garden': 'yard',
-    'su': 'water_drop',
-    'water': 'water_drop',
-    'kahve': 'coffee',
-    'coffee': 'coffee',
-    'çay': 'coffee',
-  };
+  static const defaultName = 'other';
+  static const defaultIcon = TaskIconMapper.fallback;
 
-  static const _iconData = <String, IconData>{
-    'task': Icons.task_alt_rounded,
+  // Older tasks may still contain the former presentation-oriented names.
+  // They remain readable, while all newly classified tasks store a semantic
+  // TaskCategory.storageName.
+  static const _legacyIcons = <String, IconData>{
+    'task': defaultIcon,
     'school': Icons.school_rounded,
     'menu_book': Icons.menu_book_rounded,
     'work': Icons.work_rounded,
@@ -103,7 +28,6 @@ class TaskIcons {
     'medication': Icons.medication_rounded,
     'music': Icons.music_note_rounded,
     'code': Icons.code_rounded,
-    'email': Icons.email_rounded,
     'bedtime': Icons.bedtime_rounded,
     'self_improvement': Icons.self_improvement_rounded,
     'timer': Icons.timer_rounded,
@@ -114,25 +38,18 @@ class TaskIcons {
     'movie': Icons.movie_rounded,
     'brush': Icons.brush_rounded,
     'directions_car': Icons.directions_car_rounded,
-    'flight': Icons.flight_rounded,
     'child_care': Icons.child_care_rounded,
     'pets': Icons.pets_rounded,
     'yard': Icons.yard_rounded,
     'water_drop': Icons.water_drop_rounded,
-    'coffee': Icons.coffee_rounded,
   };
 
-  static String inferName(String title) {
-    final lower = title.toLowerCase();
-    for (final entry in _keywordMap.entries) {
-      if (lower.contains(entry.key)) return entry.value;
-    }
-    return 'task';
-  }
+  static IconData iconForTask({required String title, required String icon}) =>
+      fromName(icon);
 
-  static IconData iconForTask({required String title, required String icon}) {
-    return defaultIcon;
+  static IconData fromName(String name) {
+    final category = taskCategoryByStorageName[name];
+    if (category != null) return TaskIconMapper.iconFor(category);
+    return _legacyIcons[name] ?? defaultIcon;
   }
-
-  static IconData fromName(String name) => _iconData[name] ?? defaultIcon;
 }
