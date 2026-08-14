@@ -12,6 +12,7 @@ import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
+import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 typedef DailyTaskGroupMover =
@@ -175,6 +176,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             onMoveTask: _moveTaskToGroup,
             grouping: _grouping,
             onGroupingChanged: _setGrouping,
+            onRescheduleTasks: () => _showRescheduleReview(const []),
           ),
           data: (value) => _DailyBody(
             selectedDate: _selectedDate,
@@ -186,6 +188,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             onMoveTask: _moveTaskToGroup,
             grouping: _grouping,
             onGroupingChanged: _setGrouping,
+            onRescheduleTasks: () => _showRescheduleReview(value.tasks),
           ),
         ),
       ),
@@ -236,6 +239,19 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   Future<void> _moveTaskToGroup(TaskModel task, DayPeriod? period) async {
     await ref.read(dailyTaskGroupMoverProvider)(task, period, _selectedDate);
   }
+
+  Future<void> _showRescheduleReview(List<TaskModel> tasks) async {
+    await pushFlorienOverlayRoute<void>(
+      context: context,
+      builder: (_) => DailyRescheduleReviewFlow(
+        selectedDate: _selectedDate,
+        tasks: tasks,
+        onReschedule: (task, date) =>
+            ref.read(dailyTaskReschedulerProvider)(task, date),
+      ),
+    );
+    if (mounted) ref.invalidate(dailyTimelineProvider(_selectedDate));
+  }
 }
 
 class _DailyBody extends StatelessWidget {
@@ -249,6 +265,7 @@ class _DailyBody extends StatelessWidget {
     required this.onMoveTask,
     required this.grouping,
     required this.onGroupingChanged,
+    required this.onRescheduleTasks,
   });
 
   final DateTime selectedDate;
@@ -260,6 +277,7 @@ class _DailyBody extends StatelessWidget {
   final Future<void> Function(TaskModel task, DayPeriod? period) onMoveTask;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final VoidCallback onRescheduleTasks;
 
   @override
   Widget build(BuildContext context) {
@@ -300,6 +318,7 @@ class _DailyBody extends StatelessWidget {
                     onAdd: () => onAdd(DayPeriod.anytime),
                     grouping: grouping,
                     onGroupingChanged: onGroupingChanged,
+                    onRescheduleTasks: onRescheduleTasks,
                   ),
                 ),
               ),
@@ -349,6 +368,7 @@ class _DailyHeader extends StatelessWidget {
     required this.onAdd,
     required this.grouping,
     required this.onGroupingChanged,
+    required this.onRescheduleTasks,
   });
 
   final DateTime selectedDate;
@@ -356,6 +376,7 @@ class _DailyHeader extends StatelessWidget {
   final VoidCallback onAdd;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final VoidCallback onRescheduleTasks;
 
   @override
   Widget build(BuildContext context) {
@@ -379,6 +400,7 @@ class _DailyHeader extends StatelessWidget {
                 context,
                 grouping: grouping,
                 onGroupingChanged: onGroupingChanged,
+                onRescheduleTasks: onRescheduleTasks,
               ),
             ),
             const SizedBox(width: 6),
@@ -440,6 +462,7 @@ Future<void> _showDailyOptions(
   BuildContext context, {
   required DailyPlannerGrouping grouping,
   required ValueChanged<DailyPlannerGrouping> onGroupingChanged,
+  required VoidCallback onRescheduleTasks,
 }) => showGeneralDialog<void>(
   context: context,
   barrierDismissible: true,
@@ -449,6 +472,7 @@ Future<void> _showDailyOptions(
   pageBuilder: (context, _, _) => _DailyOptionsOverlay(
     grouping: grouping,
     onGroupingChanged: onGroupingChanged,
+    onRescheduleTasks: onRescheduleTasks,
   ),
   transitionBuilder: (context, animation, _, child) => FadeTransition(
     opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -460,10 +484,12 @@ class _DailyOptionsOverlay extends StatefulWidget {
   const _DailyOptionsOverlay({
     required this.grouping,
     required this.onGroupingChanged,
+    required this.onRescheduleTasks,
   });
 
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final VoidCallback onRescheduleTasks;
 
   @override
   State<_DailyOptionsOverlay> createState() => _DailyOptionsOverlayState();
@@ -516,7 +542,10 @@ class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
                                       ),
                                       icon: Icons.calendar_month_outlined,
                                       label: 'Görevleri yeniden zamanlama',
-                                      onTap: () {},
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        widget.onRescheduleTasks();
+                                      },
                                     ),
                                     _DailyMenuTile(
                                       key: const ValueKey(
@@ -920,6 +949,7 @@ class _DailyTimelineSectionsState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _TimelineDayMarker(
+                      markerKey: const ValueKey('daily-timeline-sun-marker'),
                       icon: Icons.wb_sunny_outlined,
                       color: _periodColor(DayPeriod.morning),
                     ),
@@ -935,6 +965,21 @@ class _DailyTimelineSectionsState
                             : null,
                       ),
                     _TimelinePlanGap(tasks: scheduled),
+                    const SizedBox(height: 10),
+                    _TimelineDayMarker(
+                      markerKey: const ValueKey('daily-timeline-moon-marker'),
+                      icon: Icons.nightlight_round,
+                      color: _periodColor(DayPeriod.evening),
+                    ),
+                    Text(
+                      '23:59',
+                      key: const ValueKey('daily-timeline-day-end'),
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -953,10 +998,11 @@ class _PlannedTimelineHeader extends StatelessWidget {
   Widget build(BuildContext context) => Align(
     alignment: Alignment.centerLeft,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: context.palette.surfaceMuted,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        borderRadius: BorderRadius.circular(FlorienRadius.sm),
+        border: Border.all(color: context.palette.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -964,12 +1010,13 @@ class _PlannedTimelineHeader extends StatelessWidget {
           Text(
             'PLANLANDI ($count)',
             style: const TextStyle(
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
+              letterSpacing: .9,
             ),
           ),
-          const SizedBox(width: 12),
-          const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+          const SizedBox(width: 9),
+          const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
         ],
       ),
     ),
@@ -977,15 +1024,23 @@ class _PlannedTimelineHeader extends StatelessWidget {
 }
 
 class _TimelineDayMarker extends StatelessWidget {
-  const _TimelineDayMarker({required this.icon, required this.color});
+  const _TimelineDayMarker({
+    required this.markerKey,
+    required this.icon,
+    required this.color,
+  });
 
+  final Key markerKey;
   final IconData icon;
   final Color color;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 12, bottom: 6),
-    child: Icon(icon, color: color, size: 22),
+    padding: const EdgeInsets.only(bottom: 5),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Icon(icon, key: markerKey, color: color, size: 20),
+    ),
   );
 }
 
@@ -1113,47 +1168,41 @@ class _TimelinePlanGap extends StatelessWidget {
     final gap = endOfDay.difference(latestEnd);
     if (gap <= Duration.zero) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 5, 0, 0),
+      padding: const EdgeInsets.only(top: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: context.palette.border,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _periodColor(DayPeriod.evening),
-                  shape: BoxShape.circle,
+              SizedBox(
+                width: 20,
+                child: Column(
+                  children: [
+                    for (var index = 0; index < 3; index++) ...[
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: context.palette.border,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      if (index < 2) const SizedBox(height: 4),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 8),
               Text(
                 '${_timelineGapLabel(gap)} → Plan yok',
                 style: TextStyle(
                   color: context.palette.textSecondary,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 7),
-          Text(
-            '23:59',
-            style: TextStyle(
-              color: context.palette.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
           ),
         ],
       ),
@@ -1477,10 +1526,10 @@ class _DailyDragPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _periodColor(task.dayPeriod);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: context.palette.surface,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        borderRadius: BorderRadius.circular(FlorienRadius.sm),
         border: Border.all(color: color.withValues(alpha: .45)),
         boxShadow: [
           BoxShadow(
@@ -1493,15 +1542,15 @@ class _DailyDragPreview extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            radius: 19,
+            radius: 16,
             backgroundColor: color.withValues(alpha: .16),
             child: Icon(
               TaskIcons.iconForTask(title: task.title, icon: task.icon),
               color: color,
-              size: 20,
+              size: 17,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 9),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1511,19 +1560,22 @@ class _DailyDragPreview extends StatelessWidget {
                   task.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   _durationLabel(task.durationMinutes),
                   style: TextStyle(
                     color: context.palette.textSecondary,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.drag_indicator_rounded, color: color),
+          Icon(Icons.drag_indicator_rounded, color: color, size: 18),
         ],
       ),
     );
@@ -1559,7 +1611,13 @@ class _DailyTaskCard extends ConsumerWidget {
         : (activeFocus?.progress ?? scheduledProgress);
     final completionButton = IconButton(
       tooltip: task.isCompleted ? 'Tamamlanmadı' : 'Tamamla',
-      iconSize: timelineStyle ? 34 : 24,
+      iconSize: timelineStyle ? 25 : 22,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      constraints: BoxConstraints.tightFor(
+        width: timelineStyle ? 34 : 30,
+        height: timelineStyle ? 34 : 30,
+      ),
       onPressed: () async {
         if (task.isCompleted) {
           await ref.read(taskRepositoryProvider).uncompleteTask(task.id);
@@ -1582,10 +1640,10 @@ class _DailyTaskCard extends ConsumerWidget {
         opacity: task.isCompleted ? .55 : 1,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
+          margin: const EdgeInsets.only(bottom: 5),
           decoration: BoxDecoration(
             color: context.palette.surface,
-            borderRadius: BorderRadius.circular(FlorienRadius.md),
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
             border: Border.all(
               color: progress == null
                   ? context.palette.border
@@ -1593,32 +1651,31 @@ class _DailyTaskCard extends ConsumerWidget {
               width: progress == null ? 1 : 1.5,
             ),
             boxShadow: [
-              BoxShadow(
-                color: progress == null
-                    ? Colors.black.withValues(alpha: .035)
-                    : color.withValues(alpha: .12),
-                blurRadius: progress == null ? 12 : 18,
-                offset: const Offset(0, 6),
-              ),
+              if (progress != null)
+                BoxShadow(
+                  color: color.withValues(alpha: .08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
             ],
           ),
           child: InkWell(
             onTap: () => _showTaskActions(context, ref),
-            borderRadius: BorderRadius.circular(FlorienRadius.md),
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(13, 14, 5, 14),
+              padding: const EdgeInsets.fromLTRB(10, 5, 4, 5),
               child: Row(
                 children: [
                   Container(
                     key: ValueKey('timeline-task-bar-${task.id}'),
-                    width: 8,
-                    height: 58,
+                    width: 4,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 9),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1628,9 +1685,8 @@ class _DailyTaskCard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -.2,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -1641,7 +1697,7 @@ class _DailyTaskCard extends ConsumerWidget {
                           key: ValueKey('timeline-task-status-${task.id}'),
                           style: TextStyle(
                             color: context.palette.textSecondary,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -1651,7 +1707,7 @@ class _DailyTaskCard extends ConsumerWidget {
                     task: task,
                     color: color,
                     progress: progress,
-                    dimension: 52,
+                    dimension: 34,
                   ),
                   completionButton,
                 ],
@@ -1665,20 +1721,28 @@ class _DailyTaskCard extends ConsumerWidget {
       opacity: task.isCompleted ? .55 : 1,
       duration: const Duration(milliseconds: 180),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 9),
+        margin: const EdgeInsets.only(bottom: 5),
         decoration: BoxDecoration(
           color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
           border: Border.all(color: context.palette.border),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-          leading: _DailyTaskIcon(task: task, color: color, progress: progress),
+          dense: true,
+          visualDensity: const VisualDensity(vertical: -3),
+          contentPadding: const EdgeInsets.fromLTRB(10, 1, 5, 1),
+          leading: _DailyTaskIcon(
+            task: task,
+            color: color,
+            progress: progress,
+            dimension: 32,
+          ),
           title: Text(
             task.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
+              fontSize: 14.5,
               fontWeight: FontWeight.w600,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
@@ -1694,7 +1758,7 @@ class _DailyTaskCard extends ConsumerWidget {
             key: ValueKey('daily-task-status-${task.id}'),
             style: TextStyle(
               color: context.palette.textSecondary,
-              fontSize: 12,
+              fontSize: 11,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,

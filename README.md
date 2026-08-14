@@ -58,5 +58,6 @@ users/{uid}
 |----------|----------|
 | `assistBreakdown` | Görevi adımlara böl |
 | `assistPlan` | Doğal dilden günlük plan |
+| `assistPlannerChat` | Planner kapsamlı sohbet ve onaylanabilir To-do taslakları |
 
 Spring Boot `backend/` klasörü artık Flutter tarafından kullanılmıyor; ileride kaldırılabilir.

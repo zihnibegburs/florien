@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/repositories/repositories.dart';
+import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
@@ -19,6 +21,10 @@ final appleAuthServiceProvider = Provider<AppleAuthService>(
 
 final taskAlarmServiceProvider = Provider<TaskAlarmService>(
   (ref) => TaskAlarmService(),
+);
+
+final plannerAiGatewayProvider = Provider<PlannerAiGateway>(
+  (ref) => FirebasePlannerAiGateway(ref.watch(cloudFunctionsProvider)),
 );
 
 final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(
@@ -202,6 +208,39 @@ class ActiveFocusTask {
 final activeFocusTaskProvider = StateProvider<ActiveFocusTask?>((ref) => null);
 
 final focusTimerResetSignalProvider = StateProvider<int>((ref) => 0);
+
+final createStandaloneFocusTaskProvider =
+    Provider<Future<FocusTaskLaunch> Function(int)>((ref) {
+      final repository = ref.watch(taskRepositoryProvider);
+      return (durationMinutes) async {
+        final duration = durationMinutes.clamp(1, 24 * 60);
+        final scheduledAt = DateTime.now();
+        final created = await repository.createTask(
+          title: 'Odaklan',
+          color: '#6C5CE7',
+          icon: 'timer',
+          durationMinutes: duration,
+          scheduledAt: scheduledAt,
+          isTimed: true,
+          isInbox: false,
+          dayPeriod: dayPeriodForLocalTime(scheduledAt),
+        );
+        final started = await repository.startTask(created.id);
+        final startedAt = started.startedAt ?? scheduledAt;
+
+        ref.invalidate(inboxProvider);
+        ref.invalidate(dailyTimelineProvider);
+        return FocusTaskLaunch(
+          taskId: started.id,
+          title: started.title,
+          durationMinutes: started.durationMinutes,
+          icon: started.icon,
+          color: started.color,
+          startedAt: startedAt,
+          endsAt: startedAt.add(Duration(minutes: duration)),
+        );
+      };
+    });
 
 final completionCountsProvider = FutureProvider.autoDispose<CompletionCounts>((
   ref,

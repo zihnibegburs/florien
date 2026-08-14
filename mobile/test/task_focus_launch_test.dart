@@ -151,6 +151,84 @@ void main() {
     expect(find.text(first.title), findsOneWidget);
     expect(find.text(second.title), findsNothing);
   });
+
+  testWidgets('standalone focus becomes a progressing daily task', (
+    tester,
+  ) async {
+    final dailyTasks = <TaskModel>[];
+    int? createdDuration;
+    await _pumpHome(
+      tester,
+      inboxOverride: _EmptyInboxNotifier.new,
+      dailyTasks: dailyTasks,
+      onStandaloneFocusStarted: (minutes) async {
+        createdDuration = minutes;
+        final now = DateTime.now();
+        final task = TaskModel(
+          id: 'standalone-focus-task',
+          title: 'Odaklan',
+          color: '#6C5CE7',
+          icon: 'timer',
+          durationMinutes: minutes,
+          scheduledAt: now,
+          status: TaskStatus.inProgress,
+          sortOrder: 0,
+          isInbox: false,
+          isTimed: true,
+          dayPeriod: dayPeriodForLocalTime(now),
+        );
+        dailyTasks.add(task);
+        return FocusTaskLaunch(
+          taskId: task.id,
+          title: task.title,
+          durationMinutes: task.durationMinutes,
+          icon: task.icon,
+          color: task.color,
+          startedAt: now,
+          endsAt: now.add(Duration(minutes: minutes)),
+        );
+      },
+    );
+
+    await tester.tap(find.text('Odaklan'));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('Başla'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(createdDuration, 5);
+    _expectActiveTaskFocus(tester, title: 'Odaklan', remaining: '5:00');
+
+    await tester.tap(find.text('Günlük'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const ValueKey('standalone-focus-task')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('daily-task-progress-standalone-focus-task')),
+      findsOneWidget,
+    );
+    final status = tester.widget<Text>(
+      find.byKey(const ValueKey('daily-task-status-standalone-focus-task')),
+    );
+    expect(status.data, matches(RegExp(r'^\d{2}:\d{2}$')));
+  });
+
+  testWidgets('compact bottom banner opens the planner AI chat', (
+    tester,
+  ) async {
+    await _pumpHome(
+      tester,
+      inboxOverride: _EmptyInboxNotifier.new,
+      dailyTasks: const [],
+    );
+
+    expect(tester.getSize(find.byType(NavigationBar)).height, 64);
+    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plan Asistanı'), findsOneWidget);
+    expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
+  });
 }
 
 Future<void> _pumpHome(
@@ -158,6 +236,7 @@ Future<void> _pumpHome(
   required InboxNotifier Function() inboxOverride,
   required List<TaskModel> dailyTasks,
   ValueChanged<TaskModel>? onStarted,
+  Future<FocusTaskLaunch> Function(int)? onStandaloneFocusStarted,
 }) async {
   await tester.binding.setSurfaceSize(const Size(430, 1100));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -172,6 +251,10 @@ Future<void> _pumpHome(
         startTaskFocusProvider.overrideWithValue((task) async {
           onStarted?.call(task);
         }),
+        if (onStandaloneFocusStarted != null)
+          createStandaloneFocusTaskProvider.overrideWithValue(
+            onStandaloneFocusStarted,
+          ),
         completeFocusedTaskProvider.overrideWithValue((_) async {}),
       ],
       child: MaterialApp(
@@ -188,8 +271,10 @@ void _expectActiveTaskFocus(
   required String title,
   required String remaining,
 }) {
-  expect(find.byKey(const ValueKey('active-focus-title')), findsOneWidget);
-  expect(find.text(title), findsOneWidget);
+  final activeTitle = tester.widget<Text>(
+    find.byKey(const ValueKey('active-focus-title')),
+  );
+  expect(activeTitle.data, title);
   expect(find.text(remaining), findsOneWidget);
   expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
   final icon = tester.widget<Icon>(

@@ -377,10 +377,6 @@ void main() {
     expect(find.text('Günlük modu'), findsOneWidget);
     expect(find.text('Gruplama seçenekleri'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
-    await tester.pump();
-    expect(find.text('Görevleri yeniden zamanlama'), findsOneWidget);
-
     await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
     await tester.pumpAndSettle();
     expect(
@@ -410,6 +406,26 @@ void main() {
     );
     expect(find.text(clockLabel(timedStart)), findsOneWidget);
     expect(find.text(clockLabel(timedEnd)), findsOneWidget);
+    expect(
+      tester
+          .getTopLeft(find.byKey(const ValueKey('daily-timeline-sun-marker')))
+          .dx,
+      moreOrLessEquals(
+        tester.getTopLeft(find.text(clockLabel(timedStart))).dx,
+        epsilon: .1,
+      ),
+    );
+    expect(
+      tester
+          .getTopLeft(find.byKey(const ValueKey('daily-timeline-moon-marker')))
+          .dx,
+      moreOrLessEquals(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('daily-timeline-day-end')))
+            .dx,
+        epsilon: .1,
+      ),
+    );
 
     await tester.tap(find.byTooltip('Günlük seçenekleri'));
     await tester.pumpAndSettle();
@@ -1065,5 +1081,204 @@ void main() {
     expect(rescheduledDate?.month, tomorrow.month);
     expect(rescheduledDate?.day, tomorrow.day);
     expect(rescheduledPeriod, DayPeriod.evening);
+  });
+
+  testWidgets(
+    'daily review shows completed tasks then repeatedly moves selected tasks',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final today = DateTime.now();
+      final completed = TaskModel(
+        id: 'review-completed',
+        title: 'Biten görev',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 15,
+        scheduledAt: today,
+        completedAt: today,
+        status: TaskStatus.completed,
+        sortOrder: 0,
+        isInbox: false,
+      );
+      final first = TaskModel(
+        id: 'review-first',
+        title: 'İlk kalan',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 20,
+        scheduledAt: today,
+        status: TaskStatus.pending,
+        sortOrder: 1,
+        isInbox: false,
+      );
+      final second = TaskModel(
+        id: 'review-second',
+        title: 'İkinci kalan',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 25,
+        scheduledAt: today,
+        status: TaskStatus.pending,
+        sortOrder: 2,
+        isInbox: false,
+      );
+      final movedDates = <String, DateTime>{};
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dailyTimelineProvider.overrideWith(
+              (ref, date) async =>
+                  TimelineModel(date: date, tasks: [completed, first, second]),
+            ),
+            dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+              movedDates[task.id] = date;
+            }),
+          ],
+          child: MaterialApp(
+            theme: FlorienTheme.light,
+            home: const Scaffold(body: DailyPlannerTab()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Günlük seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('daily-review-completed')),
+        findsOneWidget,
+      );
+      expect(find.text('1 görev tamamladın'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('daily-review-completed')),
+          matching: find.text(completed.title),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('daily-review-close')), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('daily-review-remaining')),
+        findsOneWidget,
+      );
+      expect(find.text('2 yarın taşınsın mı?'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('daily-review-task-review-second')),
+      );
+      await tester.pump();
+      expect(find.text('1 yarın taşınsın mı?'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('daily-review-move-tomorrow')),
+      );
+      await tester.pumpAndSettle();
+      expect(movedDates.keys, contains(first.id));
+      expect(movedDates.keys, isNot(contains(second.id)));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('daily-review-remaining')),
+          matching: find.text(first.title),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('daily-review-remaining')),
+          matching: find.text(second.title),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('1 yarın taşınsın mı?'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('daily-review-more-dates')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('daily-review-date-picker')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('daily-review-date-close')),
+        findsOneWidget,
+      );
+      final customDate = DateTime(today.year, today.month, today.day + 4);
+      tester
+          .widget<CalendarDatePicker>(
+            find.byKey(const ValueKey('daily-review-date-picker')),
+          )
+          .onDateChanged(customDate);
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('daily-review-date-apply')));
+      await tester.pumpAndSettle();
+
+      expect(movedDates[second.id], customDate);
+      expect(
+        find.byKey(const ValueKey('daily-review-finished')),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
+      expect(find.byKey(const ValueKey('daily-review-finished')), findsNothing);
+    },
+  );
+
+  testWidgets('daily review can finish manually when no task is completed', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final task = TaskModel(
+      id: 'review-pending-only',
+      title: 'Kalan görev',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 15,
+      scheduledAt: DateTime.now(),
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: [task]),
+          ),
+          dailyTaskReschedulerProvider.overrideWithValue((_, _) async {}),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Günlük seçenekleri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('daily-review-completed')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('daily-review-remaining')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('daily-review-finish')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-review-finished')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-review-close')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('daily-review-close')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
   });
 }

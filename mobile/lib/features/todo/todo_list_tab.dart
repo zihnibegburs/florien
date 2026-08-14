@@ -1346,30 +1346,33 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       duration: const Duration(milliseconds: 180),
       opacity: task.isCompleted ? .58 : 1,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 5),
         decoration: BoxDecoration(
           color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
           border: Border.all(color: context.palette.border),
           boxShadow: [
             if (!task.isCompleted)
               BoxShadow(
-                color: color.withValues(alpha: .07),
-                blurRadius: 18,
-                offset: const Offset(0, 7),
+                color: color.withValues(alpha: .035),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
           ],
         ),
         child: Column(
           children: [
             ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(13, 8, 8, 8),
+              dense: true,
+              visualDensity: const VisualDensity(vertical: -3),
+              contentPadding: const EdgeInsets.fromLTRB(10, 2, 6, 2),
               leading: CircleAvatar(
-                radius: 20,
+                radius: 15,
                 backgroundColor: color.withValues(alpha: .18),
                 child: Icon(
                   TaskIcons.iconForTask(title: task.title, icon: task.icon),
                   color: color,
+                  size: 16,
                 ),
               ),
               title: Text(
@@ -1377,6 +1380,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w600,
                   decoration: task.isCompleted
                       ? TextDecoration.lineThrough
@@ -1389,7 +1393,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                       '${task.durationMinutes} dk',
                       style: TextStyle(
                         color: context.palette.textSecondary,
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
                         decoration: task.isCompleted
                             ? TextDecoration.lineThrough
@@ -1405,6 +1409,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
                 compact: true,
+                size: 30,
                 filled: task.isCompleted,
                 onPressed: () => _toggleCompletion(task),
               ),
@@ -1419,16 +1424,16 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                 child: InkWell(
                   onTap: () => setState(() => _expanded = !_expanded),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(13, 10, 10, 10),
+                    padding: const EdgeInsets.fromLTRB(10, 5, 8, 5),
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 52,
+                          width: 44,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(99),
                             child: LinearProgressIndicator(
                               value: subtaskProgress,
-                              minHeight: 6,
+                              minHeight: 4,
                               backgroundColor: context.palette.surfaceMuted,
                             ),
                           ),
@@ -1439,7 +1444,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                             '$completedSubtasks / ${task.subtasks.length} alt görev',
                             style: TextStyle(
                               color: context.palette.textSecondary,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1449,7 +1454,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                           duration: const Duration(milliseconds: 180),
                           child: Icon(
                             Icons.keyboard_arrow_down_rounded,
-                            size: 22,
+                            size: 20,
                             color: context.palette.textSecondary,
                           ),
                         ),
@@ -1940,6 +1945,7 @@ class _TodoIconButton extends StatelessWidget {
     required this.icon,
     this.compact = false,
     this.filled = true,
+    this.size,
   });
 
   final String tooltip;
@@ -1947,10 +1953,11 @@ class _TodoIconButton extends StatelessWidget {
   final IconData icon;
   final bool compact;
   final bool filled;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 34.0 : 40.0;
+    final resolvedSize = size ?? (compact ? 34.0 : 40.0);
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -1959,8 +1966,8 @@ class _TodoIconButton extends StatelessWidget {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(10),
           child: Ink(
-            width: size,
-            height: size,
+            width: resolvedSize,
+            height: resolvedSize,
             decoration: BoxDecoration(
               color: filled
                   ? Theme.of(context).colorScheme.primary
@@ -1973,7 +1980,7 @@ class _TodoIconButton extends StatelessWidget {
               color: filled
                   ? Theme.of(context).colorScheme.onPrimary
                   : context.palette.textSecondary,
-              size: compact ? 18 : 21,
+              size: size == null ? (compact ? 18 : 21) : resolvedSize * .54,
             ),
           ),
         ),

@@ -12,6 +12,7 @@ class FocusTimerTab extends StatefulWidget {
     super.key,
     this.launchRequest,
     this.resetSignal = 0,
+    this.onStandaloneFocusStarted,
     this.onTaskProgressChanged,
     this.onTaskCompleted,
     this.onSessionClosed,
@@ -19,6 +20,8 @@ class FocusTimerTab extends StatefulWidget {
 
   final FocusTaskLaunch? launchRequest;
   final int resetSignal;
+  final Future<FocusTaskLaunch> Function(int durationMinutes)?
+  onStandaloneFocusStarted;
   final ValueChanged<ActiveFocusTask?>? onTaskProgressChanged;
   final Future<void> Function(String taskId)? onTaskCompleted;
   final VoidCallback? onSessionClosed;
@@ -43,6 +46,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
   String _taskColor = '#6C5CE7';
   bool _taskCompletionRequested = false;
   bool _automaticTask = false;
+  bool _creatingStandaloneTask = false;
 
   @override
   void initState() {
@@ -65,7 +69,9 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       return;
     }
     final request = widget.launchRequest;
-    if (request != null && !_sameLaunch(request, oldWidget.launchRequest)) {
+    if (request != null &&
+        request.taskId != _taskId &&
+        !_sameLaunch(request, oldWidget.launchRequest)) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _startTaskFocus(request),
       );
@@ -85,7 +91,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
     super.dispose();
   }
 
-  void _toggleTimer() {
+  Future<void> _toggleTimer() async {
     if (_isRunning) {
       _timer?.cancel();
       setState(() {});
@@ -93,6 +99,37 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       return;
     }
     if (_remainingSeconds <= 0) return;
+
+    if (!_sessionActive &&
+        _taskId == null &&
+        widget.onStandaloneFocusStarted != null) {
+      if (_creatingStandaloneTask) return;
+      setState(() => _creatingStandaloneTask = true);
+      try {
+        final launch = await widget.onStandaloneFocusStarted!(_selectedMinutes);
+        if (!mounted) return;
+        setState(() {
+          _selectedMinutes = launch.durationMinutes.clamp(1, 24 * 60);
+          _remainingSeconds = _selectedMinutes * 60;
+          _sessionTotalSeconds = _remainingSeconds;
+          _taskId = launch.taskId;
+          _taskTitle = launch.title;
+          _taskIcon = launch.icon;
+          _taskColor = launch.color;
+          _taskCompletionRequested = false;
+          _automaticTask = false;
+        });
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Odaklanma görevi oluşturulamadı.')),
+          );
+        }
+        return;
+      } finally {
+        if (mounted) setState(() => _creatingStandaloneTask = false);
+      }
+    }
 
     final now = DateTime.now();
     _sessionStartedAt ??= now;
@@ -174,7 +211,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       _taskCompletionRequested = false;
       _automaticTask = request.automatic;
     });
-    _toggleTimer();
+    unawaited(_toggleTimer());
   }
 
   bool _sameLaunch(FocusTaskLaunch? a, FocusTaskLaunch? b) =>
@@ -249,13 +286,13 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
   Future<void> _selectDuration(int minutes) async {
     if (minutes > 0) {
       _setDuration(minutes);
-      _toggleTimer();
+      await _toggleTimer();
       return;
     }
     final customMinutes = await _showCustomDurationPicker();
     if (customMinutes != null && mounted) {
       _setDuration(customMinutes);
-      _toggleTimer();
+      await _toggleTimer();
     }
   }
 
@@ -467,7 +504,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
                     isRunning: _isRunning,
                     isFinished: _remainingSeconds <= 0,
                     onAddMinute: _addMinute,
-                    onToggle: _toggleTimer,
+                    onToggle: () => unawaited(_toggleTimer()),
                     onFinish: _closeSession,
                     onComplete: () => unawaited(_completeAndCloseSession()),
                   )
@@ -477,7 +514,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
                     progress: setupProgress.clamp(0, 1),
                     onRotationStart: _startDurationRotation,
                     onRotationUpdate: _updateDurationRotation,
-                    onStart: _toggleTimer,
+                    onStart: () => unawaited(_toggleTimer()),
                   ),
           ),
         ],

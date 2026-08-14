@@ -6,6 +6,7 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/focus_timer_tab.dart';
+import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 class TodoHomeScreen extends ConsumerStatefulWidget {
@@ -99,6 +100,17 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     if (mounted) unawaited(_refreshScheduledFocus());
   }
 
+  Future<FocusTaskLaunch> _createStandaloneFocusTask(
+    int durationMinutes,
+  ) async {
+    final launch = await ref.read(createStandaloneFocusTaskProvider)(
+      durationMinutes,
+    );
+    ref.read(focusTaskLaunchProvider.notifier).state = launch;
+    ref.invalidate(dailyTimelineProvider);
+    return launch;
+  }
+
   @override
   Widget build(BuildContext context) {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
@@ -164,6 +176,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           FocusTimerTab(
             launchRequest: requestedFocus ?? _scheduledFocusLaunch,
             resetSignal: ref.watch(focusTimerResetSignalProvider),
+            onStandaloneFocusStarted: _createStandaloneFocusTask,
             onTaskProgressChanged: (progress) =>
                 ref.read(activeFocusTaskProvider.notifier).state = progress,
             onTaskCompleted: _completeFocusedTask,
@@ -178,44 +191,73 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(FlorienRadius.xl),
-              border: Border.all(color: context.palette.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .07),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(FlorienRadius.xl),
+                    border: Border.all(color: context.palette.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .07),
+                        blurRadius: 22,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(FlorienRadius.xl),
+                    child: NavigationBar(
+                      height: 64,
+                      selectedIndex: _selectedIndex,
+                      onDestinationSelected: (index) =>
+                          setState(() => _selectedIndex = index),
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(Icons.check_box_outlined),
+                          selectedIcon: Icon(Icons.check_box_rounded),
+                          label: 'To-do',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.calendar_today_outlined),
+                          selectedIcon: Icon(Icons.calendar_today_rounded),
+                          label: 'Günlük',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.timelapse_outlined),
+                          selectedIcon: Icon(Icons.timelapse_rounded),
+                          label: 'Odaklan',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(FlorienRadius.xl),
-              child: NavigationBar(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (index) =>
-                    setState(() => _selectedIndex = index),
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.check_box_outlined),
-                    selectedIcon: Icon(Icons.check_box_rounded),
-                    label: 'To-do',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.calendar_today_outlined),
-                    selectedIcon: Icon(Icons.calendar_today_rounded),
-                    label: 'Günlük',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.timelapse_outlined),
-                    selectedIcon: Icon(Icons.timelapse_rounded),
-                    label: 'Odaklan',
-                  ),
-                ],
               ),
-            ),
+              const SizedBox(width: 10),
+              Material(
+                key: const ValueKey('planner-ai-chat-button'),
+                color: FlorienColors.primary,
+                shape: const CircleBorder(),
+                elevation: 4,
+                shadowColor: FlorienColors.primary,
+                child: IconButton(
+                  tooltip: 'Plan asistanını aç',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PlannerAiChatScreen(),
+                    ),
+                  ),
+                  constraints: const BoxConstraints.tightFor(
+                    width: 58,
+                    height: 58,
+                  ),
+                  color: Colors.white,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 25),
+                ),
+              ),
+            ],
           ),
         ),
       ),
