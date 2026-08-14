@@ -11,7 +11,7 @@ public record GroqProperties(
 ) {
     public GroqProperties {
         if (baseUrl == null) baseUrl = "https://api.groq.com/openai/v1";
-        if (model == null) model = "llama-3.3-70b-versatile";
+        if (model == null) model = "openai/gpt-oss-120b";
         if (timeoutSeconds <= 0) timeoutSeconds = 60;
     }
 }

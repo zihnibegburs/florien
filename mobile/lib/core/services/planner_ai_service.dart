@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
 class PlannerChatTurn {
   const PlannerChatTurn({required this.role, required this.content});
@@ -17,6 +18,15 @@ class PlannerTaskSuggestion {
 
   final String title;
   final int durationMinutes;
+}
+
+class PlannerAiException implements Exception {
+  const PlannerAiException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 class PlannerAiReply {
@@ -38,10 +48,24 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
   @override
   Future<PlannerAiReply> send(List<PlannerChatTurn> conversation) async {
     final callable = _functions.httpsCallable('assistPlannerChat');
-    final result = await callable.call(<String, Object?>{
-      'messages': conversation.map((turn) => turn.toJson()).toList(),
-    });
-    final data = Map<String, dynamic>.from(result.data as Map);
+    late final HttpsCallableResult<dynamic> result;
+    try {
+      result = await callable.call(<String, Object?>{
+        'messages': conversation.map((turn) => turn.toJson()).toList(),
+      });
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      debugPrint(
+        'assistPlannerChat failed: ${error.code} ${error.message}\n$stackTrace',
+      );
+      throw PlannerAiException(_messageFor(error));
+    }
+    final raw = result.data;
+    if (raw is! Map) {
+      throw const PlannerAiException(
+        'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+      );
+    }
+    final data = Map<String, dynamic>.from(raw);
     final tasksRaw = data['tasks'] as List? ?? const [];
     final tasks = tasksRaw
         .map((node) {
@@ -64,4 +88,18 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
       tasks: tasks,
     );
   }
+}
+
+String _messageFor(FirebaseFunctionsException error) {
+  return switch (error.code) {
+    'unauthenticated' => 'Plan asistanı için giriş yapmış olman gerekiyor.',
+    'not-found' =>
+      'Plan asistanı fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
+    'failed-precondition' =>
+      'Plan asistanı API anahtarı (GROQ_API_KEY) yapılandırılmamış.',
+    'unavailable' || 'deadline-exceeded' =>
+      'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
+    _ =>
+      'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+  };
 }

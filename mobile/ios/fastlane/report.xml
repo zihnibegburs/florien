@@ -5,52 +5,52 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000411">
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000313">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.003424">
+      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.09554">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: latest_testflight_build_number" time="1.683687">
+      <testcase classname="fastlane.lanes" name="2: latest_testflight_build_number" time="1.568691">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: install_provisioning_profile" time="0.091829">
+      <testcase classname="fastlane.lanes" name="3: install_provisioning_profile" time="0.121733">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: update_code_signing_settings" time="0.051784">
+      <testcase classname="fastlane.lanes" name="4: update_code_signing_settings" time="0.044034">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="5: install_provisioning_profile" time="0.083524">
+      <testcase classname="fastlane.lanes" name="5: install_provisioning_profile" time="0.069995">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="6: update_code_signing_settings" time="0.020691">
+      <testcase classname="fastlane.lanes" name="6: update_code_signing_settings" time="0.017019">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="7: flutter pub get" time="1.827352">
+      <testcase classname="fastlane.lanes" name="7: flutter pub get" time="1.694079">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="8: flutter build ipa --release --build-number\=1 --export-options-plist\=/Users/zihnicanbegburs/Project/Florien/mobile/ios/fastlane/ExportOptions.plist" time="443.559121">
+      <testcase classname="fastlane.lanes" name="8: flutter build ipa --release --build-number\=4 --export-options-plist\=/Users/zihnicanbegburs/Project/Florien/mobile/ios/fastlane/ExportOptions.plist" time="329.441245">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="9: upload_to_testflight" time="151.61324">
+      <testcase classname="fastlane.lanes" name="9: upload_to_testflight" time="150.551037">
         
       </testcase>
     

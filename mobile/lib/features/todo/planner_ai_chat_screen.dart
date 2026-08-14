@@ -64,14 +64,16 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
           ),
         );
       });
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Planner AI chat failed: $error\n$stackTrace');
       if (!mounted) return;
       setState(() {
         _messages.add(
           _PlannerChatMessage(
             role: 'assistant',
-            text:
-                'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+            text: error is PlannerAiException
+                ? error.message
+                : 'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
           ),
         );
       });
