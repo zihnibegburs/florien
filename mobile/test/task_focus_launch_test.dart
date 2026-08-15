@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
@@ -221,7 +222,11 @@ void main() {
       dailyTasks: const [],
     );
 
-    expect(tester.getSize(find.byType(NavigationBar)).height, 64);
+    expect(find.byType(FlorienBottomNavigation), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-chat-button')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
     await tester.pumpAndSettle();
 

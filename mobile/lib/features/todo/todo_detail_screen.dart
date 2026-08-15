@@ -219,8 +219,12 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                   title: const Text('Süre'),
                   trailing: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: context.palette.surfaceMuted,
+                      color: context.palette.surface,
                       borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -385,10 +389,14 @@ class _DetailIcon extends StatelessWidget {
     width: 34,
     height: 34,
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(11),
+      color: FlorienColors.primaryLight,
+      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
     ),
-    child: Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+    child: Icon(icon, size: 18, color: FlorienColors.onPrimary),
   );
 }
 
@@ -401,8 +409,12 @@ class _ValuePill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
     decoration: BoxDecoration(
-      color: context.palette.surfaceMuted,
+      color: context.palette.surface,
       borderRadius: BorderRadius.circular(99),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
     ),
     child: Text(
       label,

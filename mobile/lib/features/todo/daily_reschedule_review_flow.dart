@@ -530,15 +530,19 @@ class _DatePill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primaryContainer,
+      color: FlorienColors.primary,
       borderRadius: BorderRadius.circular(99),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
     ),
     child: Text(
       _fullDateLabel(date),
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onPrimaryContainer,
+      style: const TextStyle(
+        color: FlorienColors.onPrimary,
         fontSize: 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
     ),
   );

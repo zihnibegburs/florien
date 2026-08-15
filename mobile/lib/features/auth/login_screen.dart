@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
 
@@ -144,21 +145,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           v == null || v.length < 6 ? s.passwordMin6 : null,
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: authState.isLoading ? null : _login,
-                        child: authState.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(s.login),
-                      ),
+                    FlorienPrimaryButton(
+                      label: s.login,
+                      onPressed: authState.isLoading ? null : _login,
+                      isLoading: authState.isLoading,
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -190,24 +180,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: authState.isLoading
-                            ? null
-                            : _loginWithGoogle,
-                        icon: const Icon(Icons.g_mobiledata, size: 28),
-                        label: Text(s.loginWithGoogle),
-                      ),
+                    FlorienSecondaryButton(
+                      label: s.loginWithGoogle,
+                      icon: Icons.g_mobiledata,
+                      onPressed: authState.isLoading ? null : _loginWithGoogle,
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: authState.isLoading ? null : _loginWithApple,
-                        icon: const Icon(Icons.apple, size: 22),
-                        label: Text(s.loginWithApple),
-                      ),
+                    FlorienSecondaryButton(
+                      label: s.loginWithApple,
+                      icon: Icons.apple,
+                      onPressed: authState.isLoading ? null : _loginWithApple,
                     ),
                     const SizedBox(height: 16),
                     Center(

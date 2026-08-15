@@ -1130,8 +1130,12 @@ class _TimerControlButton extends StatelessWidget {
     onPressed: onTap,
     style: FilledButton.styleFrom(
       minimumSize: Size(compact ? 92 : 154, 52),
-      backgroundColor: context.palette.surfaceMuted,
+      backgroundColor: context.palette.surface,
       foregroundColor: context.palette.textPrimary,
+      side: BorderSide(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
       shape: const StadiumBorder(),
     ),
     icon: Icon(icon, size: 26),

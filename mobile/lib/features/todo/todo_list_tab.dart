@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -357,24 +358,32 @@ class _ListTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 7),
+    padding: const EdgeInsets.only(right: 8),
     child: Material(
-      color: selected
-          ? Theme.of(context).colorScheme.primaryContainer
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+        borderRadius: BorderRadius.circular(FlorienRadius.pill),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? FlorienColors.primary
+                : context.palette.surface,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
               letterSpacing: -.3,
               color: selected
-                  ? Theme.of(context).colorScheme.primary
+                  ? FlorienColors.onPrimary
                   : context.palette.textSecondary,
             ),
           ),
@@ -855,23 +864,18 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: FlorienSecondaryButton(
+                      label: 'Vazgeç',
                       onPressed: _isSaving ? null : _close,
-                      child: const Text('Vazgeç'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton.icon(
+                    child: FlorienPrimaryButton(
+                      label: _isSaving ? 'Ekleniyor' : 'Ekle',
+                      icon: Icons.add_rounded,
                       onPressed: _isSaving ? null : _create,
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add_rounded),
-                      label: Text(_isSaving ? 'Ekleniyor' : 'Ekle'),
+                      isLoading: _isSaving,
                     ),
                   ),
                 ],
@@ -1131,8 +1135,8 @@ class _TodoSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(FlorienRadius.sm),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1142,17 +1146,17 @@ class _TodoSection extends StatelessWidget {
                         Text(
                           '${section.label} (${tasks.length})',
                           style: TextStyle(
-                            color: section.color,
+                            color: context.palette.textPrimary,
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: .5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: .4,
                           ),
                         ),
                         Icon(
                           collapsed
                               ? Icons.keyboard_arrow_down_rounded
                               : Icons.keyboard_arrow_up_rounded,
-                          color: section.color,
+                          color: context.palette.textSecondary,
                         ),
                       ],
                     ),
@@ -1241,18 +1245,17 @@ class _TodoDragPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = FlorienColors.fromHex(task.color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        border: Border.all(color: color.withValues(alpha: .45)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .14),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: Color.alphaBlend(
+          color.withValues(alpha: 0.12),
+          context.palette.surface,
+        ),
+        borderRadius: BorderRadius.circular(FlorienRadius.lg),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
+        ),
       ),
       child: Row(
         children: [
@@ -1364,34 +1367,32 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       duration: const Duration(milliseconds: 180),
       opacity: task.isCompleted ? .58 : 1,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 5),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          border: Border.all(color: context.palette.border),
-          boxShadow: [
-            if (!task.isCompleted)
-              BoxShadow(
-                color: color.withValues(alpha: .035),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-          ],
+          color: Color.alphaBlend(
+            color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
+            context.palette.surface,
+          ),
+          borderRadius: BorderRadius.circular(FlorienRadius.lg),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
         ),
         child: Column(
           children: [
             ListTile(
               dense: true,
-              visualDensity: const VisualDensity(vertical: -3),
-              contentPadding: const EdgeInsets.fromLTRB(10, 2, 6, 2),
-              leading: TaskIconBadge.forTask(icon: task.icon, size: 32),
+              visualDensity: const VisualDensity(vertical: -2),
+              contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+              leading: TaskIconBadge.forTask(icon: task.icon, size: 36),
               title: Text(
                 task.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                   decoration: task.isCompleted
                       ? TextDecoration.lineThrough
                       : TextDecoration.none,
@@ -1974,15 +1975,18 @@ class _TodoIconButton extends StatelessWidget {
             height: resolvedSize,
             decoration: BoxDecoration(
               color: filled
-                  ? Theme.of(context).colorScheme.primary
-                  : context.palette.surfaceMuted,
-              border: filled ? null : Border.all(color: context.palette.border),
-              borderRadius: BorderRadius.circular(10),
+                  ? FlorienColors.primary
+                  : context.palette.surface,
+              border: Border.all(
+                color: context.palette.border,
+                width: FlorienBorders.thin,
+              ),
+              borderRadius: BorderRadius.circular(FlorienRadius.sm),
             ),
             child: Icon(
               icon,
               color: filled
-                  ? Theme.of(context).colorScheme.onPrimary
+                  ? FlorienColors.onPrimary
                   : context.palette.textSecondary,
               size: size == null ? (compact ? 18 : 21) : resolvedSize * .54,
             ),

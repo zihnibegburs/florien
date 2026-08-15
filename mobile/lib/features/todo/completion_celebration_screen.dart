@@ -77,21 +77,16 @@ class _CompletionCelebrationScreenState
                         width: 96,
                         height: 96,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: FlorienColors.primary,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: .22),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: context.palette.border,
+                            width: FlorienBorders.thin,
+                          ),
                         ),
                         child: const Icon(
                           Icons.check_rounded,
-                          color: Colors.white,
+                          color: FlorienColors.onPrimary,
                           size: 48,
                         ),
                       ),

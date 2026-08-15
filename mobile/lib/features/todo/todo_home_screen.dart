@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/focus_timer_tab.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
+import 'package:florien/features/todo/statistics_tab.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 class TodoHomeScreen extends ConsumerStatefulWidget {
@@ -115,54 +117,49 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   Widget build(BuildContext context) {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: _selectedIndex == 0
           ? AppBar(
               title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          FlorienColors.primaryLight,
-                          FlorienColors.primary,
-                        ],
+                      color: FlorienColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
                       ),
-                      borderRadius: BorderRadius.circular(11),
-                      boxShadow: [
-                        BoxShadow(
-                          color: FlorienColors.primary.withValues(alpha: .22),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                     child: const Icon(
                       Icons.local_florist_rounded,
                       size: 18,
-                      color: Colors.white,
+                      color: FlorienColors.onPrimary,
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(_selectedIndex == 0 ? 'Florien' : 'Odaklan'),
+                  const Text('Florien'),
                 ],
               ),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 12),
                   child: IconButton(
                     tooltip: 'Çıkış yap',
                     onPressed: () =>
                         ref.read(authStateProvider.notifier).logout(),
                     style: IconButton.styleFrom(
-                      backgroundColor: context.palette.surfaceMuted,
-                      foregroundColor: context.palette.textSecondary,
+                      backgroundColor: context.palette.surface,
+                      foregroundColor: context.palette.textPrimary,
+                      side: BorderSide(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
+                      ),
                     ),
-                    icon: const Icon(Icons.logout_rounded, size: 19),
+                    icon: const Icon(Icons.logout_rounded, size: 18),
                   ),
                 ),
               ],
@@ -186,78 +183,46 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
               }
             },
           ),
+          const StatisticsTab(),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(FlorienRadius.xl),
-                    border: Border.all(color: context.palette.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: .07),
-                        blurRadius: 22,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(FlorienRadius.xl),
-                    child: NavigationBar(
-                      height: 64,
-                      selectedIndex: _selectedIndex,
-                      onDestinationSelected: (index) =>
-                          setState(() => _selectedIndex = index),
-                      destinations: const [
-                        NavigationDestination(
-                          icon: Icon(Icons.check_box_outlined),
-                          selectedIcon: Icon(Icons.check_box_rounded),
-                          label: 'To-do',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.calendar_today_outlined),
-                          selectedIcon: Icon(Icons.calendar_today_rounded),
-                          label: 'Günlük',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.timelapse_outlined),
-                          selectedIcon: Icon(Icons.timelapse_rounded),
-                          label: 'Odaklan',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+      bottomNavigationBar: FlorienBottomNavigation(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) =>
+            setState(() => _selectedIndex = index),
+        destinations: const [
+          FlorienNavDestination(
+            label: 'To-do',
+            icon: Icons.check_box_outlined,
+            selectedIcon: Icons.check_box_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'Günlük',
+            icon: Icons.calendar_today_outlined,
+            selectedIcon: Icons.calendar_today_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'Odaklan',
+            icon: Icons.timelapse_outlined,
+            selectedIcon: Icons.timelapse_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'İstatistik',
+            icon: Icons.bar_chart_rounded,
+            selectedIcon: Icons.bar_chart_rounded,
+          ),
+        ],
+        trailing: FlorienAiFab(
+          key: const ValueKey('planner-ai-chat-button'),
+          tooltip: 'Plan asistanını aç',
+          onPressed: () => Navigator.of(context).push(
+            PageRouteBuilder<void>(
+              transitionDuration: const Duration(milliseconds: 220),
+              pageBuilder: (_, animation, _) => FadeTransition(
+                opacity: animation,
+                child: const PlannerAiChatScreen(),
               ),
-              const SizedBox(width: 10),
-              Material(
-                key: const ValueKey('planner-ai-chat-button'),
-                color: FlorienColors.primary,
-                shape: const CircleBorder(),
-                elevation: 4,
-                shadowColor: FlorienColors.primary,
-                child: IconButton(
-                  tooltip: 'Plan asistanını aç',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const PlannerAiChatScreen(),
-                    ),
-                  ),
-                  constraints: const BoxConstraints.tightFor(
-                    width: 58,
-                    height: 58,
-                  ),
-                  color: Colors.white,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 25),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

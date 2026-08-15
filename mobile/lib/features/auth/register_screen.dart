@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/features/providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -120,21 +121,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       v == null || v.length < 6 ? s.passwordMin6 : null,
                 ),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: authState.isLoading ? null : _register,
-                    child: authState.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(s.register),
-                  ),
+                FlorienPrimaryButton(
+                  label: s.register,
+                  onPressed: authState.isLoading ? null : _register,
+                  isLoading: authState.isLoading,
                 ),
               ],
             ),

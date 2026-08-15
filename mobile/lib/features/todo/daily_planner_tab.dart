@@ -304,7 +304,7 @@ class _DailyBody extends StatelessWidget {
           pinned: false,
           toolbarHeight: 0,
           collapsedHeight: 0,
-          expandedHeight: 196,
+          expandedHeight: 232,
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: context.palette.background,
@@ -312,8 +312,8 @@ class _DailyBody extends StatelessWidget {
           flexibleSpace: ClipRect(
             child: OverflowBox(
               alignment: Alignment.topCenter,
-              minHeight: 196,
-              maxHeight: 196,
+              minHeight: 232,
+              maxHeight: 232,
               child: ColoredBox(
                 color: context.palette.background,
                 child: Padding(
@@ -419,7 +419,7 @@ class _DailyHeader extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -427,9 +427,10 @@ class _DailyHeader extends StatelessWidget {
               child: Text(
                 _weekdayName(selectedDate),
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: -1,
+                  height: 1.05,
                 ),
               ),
             ),
@@ -442,7 +443,7 @@ class _DailyHeader extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Row(
           children: [
             for (var offset = -3; offset <= 3; offset++)
@@ -672,19 +673,15 @@ class _DailyMenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: context.palette.surface.withValues(alpha: .98),
-      borderRadius: BorderRadius.circular(26),
-      border: Border.all(color: context.palette.border),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: .22),
-          blurRadius: 26,
-          offset: const Offset(0, 12),
-        ),
-      ],
+      color: context.palette.surface,
+      borderRadius: BorderRadius.circular(FlorienRadius.xl),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(FlorienRadius.xl - 1),
       child: Material(color: Colors.transparent, child: child),
     ),
   );
@@ -1638,42 +1635,37 @@ class _DailyTaskCard extends ConsumerWidget {
         opacity: task.isCompleted ? .55 : 1,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 5),
+          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+            color: Color.alphaBlend(
+              color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
+              context.palette.surface,
+            ),
+            borderRadius: BorderRadius.circular(FlorienRadius.lg),
             border: Border.all(
               color: progress == null
                   ? context.palette.border
-                  : color.withValues(alpha: .45),
-              width: progress == null ? 1 : 1.5,
+                  : color.withValues(alpha: .55),
+              width: FlorienBorders.thin,
             ),
-            boxShadow: [
-              if (progress != null)
-                BoxShadow(
-                  color: color.withValues(alpha: .08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-            ],
           ),
           child: InkWell(
             onTap: () => _showTaskActions(context, ref),
-            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+            borderRadius: BorderRadius.circular(FlorienRadius.lg),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 5, 4, 5),
+              padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
               child: Row(
                 children: [
                   Container(
                     key: ValueKey('timeline-task-bar-${task.id}'),
                     width: 4,
-                    height: 34,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1683,8 +1675,8 @@ class _DailyTaskCard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -1719,29 +1711,35 @@ class _DailyTaskCard extends ConsumerWidget {
       opacity: task.isCompleted ? .55 : 1,
       duration: const Duration(milliseconds: 180),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 5),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          border: Border.all(color: context.palette.border),
+          color: Color.alphaBlend(
+            color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
+            context.palette.surface,
+          ),
+          borderRadius: BorderRadius.circular(FlorienRadius.lg),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
         ),
         child: ListTile(
           dense: true,
-          visualDensity: const VisualDensity(vertical: -3),
-          contentPadding: const EdgeInsets.fromLTRB(10, 1, 5, 1),
+          visualDensity: const VisualDensity(vertical: -2),
+          contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
           leading: _DailyTaskIcon(
             task: task,
             color: color,
             progress: progress,
-            dimension: 32,
+            dimension: 36,
           ),
           title: Text(
             task.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,
@@ -1756,7 +1754,7 @@ class _DailyTaskCard extends ConsumerWidget {
             key: ValueKey('daily-task-status-${task.id}'),
             style: TextStyle(
               color: context.palette.textSecondary,
-              fontSize: 11,
+              fontSize: 12,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,
@@ -3402,19 +3400,25 @@ class _SquareButton extends StatelessWidget {
       message: tooltip,
       child: Material(
         color: emphasized
-            ? Theme.of(context).colorScheme.primary
-            : context.palette.surfaceMuted,
-        borderRadius: BorderRadius.circular(11),
+            ? FlorienColors.primary
+            : context.palette.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
+          side: BorderSide(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
           child: SizedBox.square(
             dimension: size,
             child: Icon(
               icon,
               size: compact ? 18 : 21,
               color: emphasized
-                  ? Theme.of(context).colorScheme.onPrimary
+                  ? FlorienColors.onPrimary
                   : context.palette.textSecondary,
             ),
           ),
@@ -3440,22 +3444,32 @@ class _DayButton extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 2),
     child: Material(
-      color: selected
-          ? Theme.of(context).colorScheme.primaryContainer
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      color: Colors.transparent,
       child: InkWell(
         onTap: () => onTap(date),
         borderRadius: BorderRadius.circular(FlorienRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 9),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? FlorienColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(FlorienRadius.md),
+            border: selected
+                ? Border.all(
+                    color: context.palette.border,
+                    width: FlorienBorders.thin,
+                  )
+                : null,
+          ),
           child: Column(
             children: [
               Text(
                 _weekdayShort(date),
                 style: TextStyle(
-                  color: today
-                      ? Theme.of(context).colorScheme.primary
+                  color: selected
+                      ? FlorienColors.onPrimary
+                      : today
+                      ? FlorienColors.onPrimary.withValues(alpha: 0.7)
                       : context.palette.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -3466,10 +3480,10 @@ class _DayButton extends StatelessWidget {
                 '${date.day}',
                 style: TextStyle(
                   color: selected
-                      ? Theme.of(context).colorScheme.primary
+                      ? FlorienColors.onPrimary
                       : context.palette.textPrimary,
                   fontSize: 20,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 ),
               ),
             ],

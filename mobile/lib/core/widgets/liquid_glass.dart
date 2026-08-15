@@ -38,7 +38,7 @@ class LiquidGlass extends StatelessWidget {
     this.blurSigma = LiquidGlassTokens.blurSigma,
     this.tintColor,
     this.tintOpacity,
-    this.borderWidth = 1,
+    this.borderWidth = FlorienBorders.thin,
     this.gradient,
     this.boxShadow,
     this.clipBehavior = Clip.antiAlias,
