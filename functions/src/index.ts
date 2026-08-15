@@ -11,6 +11,19 @@ const GROQ_BASE = "https://api.groq.com/openai/v1";
 // llama-3.3-70b-versatile shuts down 2026-08-16 (free/dev already failing).
 const GROQ_MODEL = "openai/gpt-oss-120b";
 
+export const deleteAccount = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const uid = request.auth.uid;
+  await admin.firestore().recursiveDelete(
+    admin.firestore().collection("users").doc(uid)
+  );
+  await admin.auth().deleteUser(uid);
+  return { deleted: true };
+});
+
 type GroqChatResponse = {
   choices?: Array<{ message?: { content?: string } }>;
 };

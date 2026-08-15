@@ -31,7 +31,8 @@ class FocusTimerTab extends StatefulWidget {
   State<FocusTimerTab> createState() => _FocusTimerTabState();
 }
 
-class _FocusTimerTabState extends State<FocusTimerTab> {
+class _FocusTimerTabState extends State<FocusTimerTab>
+    with SingleTickerProviderStateMixin {
   int _selectedMinutes = 5;
   int _remainingSeconds = 5 * 60;
   int _sessionTotalSeconds = 5 * 60;
@@ -48,10 +49,33 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
   bool _taskCompletionRequested = false;
   bool _automaticTask = false;
   bool _creatingStandaloneTask = false;
+  bool _isFinishing = false;
+  late final AnimationController _completionController;
+  late final Animation<double> _completionScale;
 
   @override
   void initState() {
     super.initState();
+    _completionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+    );
+    _completionScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1,
+          end: 1.045,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 42,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.045,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeInOutCubic)),
+        weight: 58,
+      ),
+    ]).animate(_completionController);
     final request = widget.launchRequest;
     if (request != null) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -89,6 +113,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
   @override
   void dispose() {
     _timer?.cancel();
+    _completionController.dispose();
     super.dispose();
   }
 
@@ -174,6 +199,7 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       _taskColor = '#6C5CE7';
       _taskCompletionRequested = false;
       _automaticTask = false;
+      _isFinishing = false;
     });
     widget.onTaskProgressChanged?.call(null);
     widget.onSessionClosed?.call();
@@ -273,6 +299,20 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
       _publishTaskProgress();
       await _markTaskCompleted(taskId);
     }
+    if (mounted) await _finishSessionWithAnimation();
+  }
+
+  Future<void> _finishSessionWithAnimation() async {
+    if (_isFinishing) return;
+    setState(() => _isFinishing = true);
+    unawaited(HapticFeedback.mediumImpact());
+
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      _closeSession();
+      return;
+    }
+
+    await _completionController.forward(from: 0);
     if (mounted) _closeSession();
   }
 
@@ -453,72 +493,80 @@ class _FocusTimerTabState extends State<FocusTimerTab> {
         ? 0.0
         : (_sessionTotalSeconds - _remainingSeconds) / _sessionTotalSeconds;
 
-    return SafeArea(
-      child: ListView(
-        physics: _sessionActive
-            ? const NeverScrollableScrollPhysics()
-            : const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-        children: [
-          Row(
+    return ScaleTransition(
+      scale: _completionScale,
+      alignment: Alignment.center,
+      child: IgnorePointer(
+        ignoring: _isFinishing,
+        child: SafeArea(
+          child: ListView(
+            physics: _sessionActive
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
             children: [
-              _SimpleActionButton(
-                icon: Icons.music_note_rounded,
-                label: 'Ayarla',
-                onTap: () {},
-              ),
-              const SizedBox(width: 12),
-              if (_sessionActive)
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: _AlarmToggleButton(
-                      enabled: _alarmEnabled,
-                      onTap: () =>
-                          setState(() => _alarmEnabled = !_alarmEnabled),
+              Row(
+                children: [
+                  _SimpleActionButton(
+                    icon: Icons.music_note_rounded,
+                    label: 'Ayarla',
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 12),
+                  if (_sessionActive)
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _AlarmToggleButton(
+                          enabled: _alarmEnabled,
+                          onTap: () =>
+                              setState(() => _alarmEnabled = !_alarmEnabled),
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _DurationMenuButton(onSelected: _selectDuration),
+                      ),
                     ),
-                  ),
-                )
-              else
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: _DurationMenuButton(onSelected: _selectDuration),
-                  ),
-                ),
+                ],
+              ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 240),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: _sessionActive
+                    ? _ActiveTimer(
+                        key: const ValueKey('active-timer'),
+                        title: _taskTitle ?? 'Odaklan',
+                        taskIcon: _taskTitle == null ? null : _taskIcon,
+                        taskColor: _taskColor,
+                        remainingLabel: _remainingLabel,
+                        timeRange:
+                            '${_clockLabel(_sessionStartedAt)} → ${_clockLabel(_plannedEndAt)}',
+                        progress: elapsedProgress.clamp(.025, 1),
+                        isRunning: _isRunning,
+                        isFinished: _remainingSeconds <= 0,
+                        onAddMinute: _addMinute,
+                        onToggle: () => unawaited(_toggleTimer()),
+                        onFinish: () =>
+                            unawaited(_finishSessionWithAnimation()),
+                        onComplete: () => unawaited(_completeAndCloseSession()),
+                      )
+                    : _TimerSetup(
+                        key: const ValueKey('timer-setup'),
+                        selectedMinutes: _selectedMinutes,
+                        progress: setupProgress.clamp(0, 1),
+                        onRotationStart: _startDurationRotation,
+                        onRotationUpdate: _updateDurationRotation,
+                        onStart: () => unawaited(_toggleTimer()),
+                      ),
+              ),
             ],
           ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 240),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _sessionActive
-                ? _ActiveTimer(
-                    key: const ValueKey('active-timer'),
-                    title: _taskTitle ?? 'Odaklan',
-                    taskIcon: _taskTitle == null ? null : _taskIcon,
-                    taskColor: _taskColor,
-                    remainingLabel: _remainingLabel,
-                    timeRange:
-                        '${_clockLabel(_sessionStartedAt)} → ${_clockLabel(_plannedEndAt)}',
-                    progress: elapsedProgress.clamp(.025, 1),
-                    isRunning: _isRunning,
-                    isFinished: _remainingSeconds <= 0,
-                    onAddMinute: _addMinute,
-                    onToggle: () => unawaited(_toggleTimer()),
-                    onFinish: _closeSession,
-                    onComplete: () => unawaited(_completeAndCloseSession()),
-                  )
-                : _TimerSetup(
-                    key: const ValueKey('timer-setup'),
-                    selectedMinutes: _selectedMinutes,
-                    progress: setupProgress.clamp(0, 1),
-                    onRotationStart: _startDurationRotation,
-                    onRotationUpdate: _updateDurationRotation,
-                    onStart: () => unawaited(_toggleTimer()),
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1049,7 +1097,7 @@ class _AlarmToggleButton extends StatelessWidget {
                 enabled ? Icons.alarm_on_rounded : Icons.alarm_off_rounded,
                 size: 19,
                 color: enabled
-                    ? Theme.of(context).colorScheme.primary
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
                     : context.palette.textSecondary,
               ),
               const SizedBox(width: 7),
@@ -1059,7 +1107,7 @@ class _AlarmToggleButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: enabled
-                      ? Theme.of(context).colorScheme.primary
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
                       : context.palette.textSecondary,
                   fontWeight: FontWeight.w700,
                 ),

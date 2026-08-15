@@ -5,8 +5,11 @@ import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/repositories/repositories.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
+import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
+import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
@@ -20,7 +23,91 @@ final appleAuthServiceProvider = Provider<AppleAuthService>(
 );
 
 final taskAlarmServiceProvider = Provider<TaskAlarmService>(
-  (ref) => TaskAlarmService(),
+  (ref) => TaskAlarmService(ref.watch(settingsStorageProvider)),
+);
+
+final notificationPreferencesProvider = FutureProvider<NotificationPreferences>(
+  (ref) => ref.watch(taskAlarmServiceProvider).getPreferences(),
+);
+
+final calendarConnectionServiceProvider = Provider<CalendarConnectionService>(
+  (ref) => CalendarConnectionService(ref.watch(settingsStorageProvider)),
+);
+
+final calendarConnectionsProvider = FutureProvider<List<CalendarConnection>>(
+  (ref) => ref.watch(calendarConnectionServiceProvider).getConnections(),
+);
+
+final profileStorageProvider = Provider<ProfileStorage>(
+  (ref) => ProfileStorage(),
+);
+
+final appProfilesProvider =
+    AsyncNotifierProvider<AppProfilesNotifier, AppProfilesState>(
+      AppProfilesNotifier.new,
+    );
+
+class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
+  late String _ownerId;
+  late String _fallbackName;
+
+  @override
+  Future<AppProfilesState> build() {
+    final auth = ref.watch(authStateProvider).valueOrNull;
+    _ownerId = auth?.userId ?? 'guest';
+    _fallbackName = auth?.firstName.isNotEmpty == true
+        ? auth!.firstName
+        : 'Profilim';
+    return ref
+        .read(profileStorageProvider)
+        .load(ownerId: _ownerId, fallbackName: _fallbackName);
+  }
+
+  Future<void> create(String name) => _save(
+    () => ref
+        .read(profileStorageProvider)
+        .create(ownerId: _ownerId, fallbackName: _fallbackName, name: name),
+  );
+
+  Future<void> rename(String profileId, String name) => _save(
+    () => ref
+        .read(profileStorageProvider)
+        .rename(
+          ownerId: _ownerId,
+          fallbackName: _fallbackName,
+          profileId: profileId,
+          name: name,
+        ),
+  );
+
+  Future<void> select(String profileId) => _save(
+    () => ref
+        .read(profileStorageProvider)
+        .select(
+          ownerId: _ownerId,
+          fallbackName: _fallbackName,
+          profileId: profileId,
+        ),
+  );
+
+  Future<void> delete(String profileId) => _save(
+    () => ref
+        .read(profileStorageProvider)
+        .delete(
+          ownerId: _ownerId,
+          fallbackName: _fallbackName,
+          profileId: profileId,
+        ),
+  );
+
+  Future<void> _save(Future<AppProfilesState> Function() operation) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(operation);
+  }
+}
+
+final activeAppProfileProvider = Provider<AppProfile?>(
+  (ref) => ref.watch(appProfilesProvider).valueOrNull?.activeProfile,
 );
 
 final plannerAiGatewayProvider = Provider<PlannerAiGateway>(
@@ -100,6 +187,17 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     await ref.read(googleAuthServiceProvider).signOut();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
+  }
+
+  Future<void> deleteAccount() async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount();
+      state = const AsyncData(null);
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      rethrow;
+    }
   }
 
   void _refreshPreferences() {

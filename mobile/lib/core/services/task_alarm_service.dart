@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:florien/core/storage/settings_storage.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 class TaskAlarmService {
+  TaskAlarmService(this._settingsStorage);
+
+  final SettingsStorage _settingsStorage;
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
@@ -29,22 +33,28 @@ class TaskAlarmService {
     required DateTime alarmAt,
   }) async {
     if (alarmAt.toUtc().isBefore(DateTime.now().toUtc())) return false;
+    final preferences = await getPreferences();
+    if (!preferences.taskRemindersEnabled) return false;
     await initialize();
     if (kIsWeb) return false;
     final permitted = await _requestPermission();
     if (!permitted) return false;
 
     final scheduled = tz.TZDateTime.from(alarmAt.toUtc(), tz.UTC);
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'task_alarms',
         'Görev alarmları',
         channelDescription: 'Planlanan görev saatleri için hatırlatmalar',
         importance: Importance.high,
         priority: Priority.high,
-        playSound: true,
+        playSound: preferences.soundEnabled,
+        enableVibration: preferences.vibrationEnabled,
       ),
-      iOS: DarwinNotificationDetails(presentAlert: true, presentSound: true),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: preferences.soundEnabled,
+      ),
     );
     try {
       await _notifications.zonedSchedule(
@@ -78,6 +88,34 @@ class TaskAlarmService {
     await initialize();
     if (kIsWeb) return;
     await _notifications.cancel(_notificationId(taskId));
+  }
+
+  Future<NotificationPreferences> getPreferences() =>
+      _settingsStorage.getNotificationPreferences();
+
+  Future<bool> setTaskRemindersEnabled(bool enabled) async {
+    if (!enabled) {
+      await _settingsStorage.setTaskRemindersEnabled(false);
+      await cancelAll();
+      return false;
+    }
+
+    await initialize();
+    if (kIsWeb || !await _requestPermission()) return false;
+    await _settingsStorage.setTaskRemindersEnabled(true);
+    return true;
+  }
+
+  Future<void> setSoundEnabled(bool enabled) =>
+      _settingsStorage.setNotificationSoundEnabled(enabled);
+
+  Future<void> setVibrationEnabled(bool enabled) =>
+      _settingsStorage.setNotificationVibrationEnabled(enabled);
+
+  Future<void> cancelAll() async {
+    await initialize();
+    if (kIsWeb) return;
+    await _notifications.cancelAll();
   }
 
   Future<bool> _requestPermission() async {

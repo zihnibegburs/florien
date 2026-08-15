@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
@@ -12,11 +13,14 @@ import 'package:florien/firebase_options.dart';
 class AuthRepository {
   AuthRepository({
     required FirebaseAuth auth,
+    required FirebaseFunctions functions,
     required UserProfileService profiles,
   }) : _auth = auth,
+       _functions = functions,
        _profiles = profiles;
 
   final FirebaseAuth _auth;
+  final FirebaseFunctions _functions;
   final UserProfileService _profiles;
 
   void _ensureConfigured() {
@@ -92,6 +96,13 @@ class AuthRepository {
     await _auth.signOut();
   }
 
+  Future<void> deleteAccount() async {
+    _ensureConfigured();
+    if (_auth.currentUser == null) throw StateError('Oturum bulunamadı.');
+    await _functions.httpsCallable('deleteAccount').call();
+    await _auth.signOut();
+  }
+
   Future<AuthResponse> updateProfile({
     String? displayName,
     String? avatarColor,
@@ -135,6 +146,7 @@ class AuthRepository {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     auth: ref.watch(firebaseAuthProvider),
+    functions: ref.watch(cloudFunctionsProvider),
     profiles: ref.watch(userProfileServiceProvider),
   );
 });

@@ -368,9 +368,7 @@ class _ListTitle extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected
-                ? FlorienColors.primary
-                : context.palette.surface,
+            color: selected ? FlorienColors.primary : context.palette.surface,
             borderRadius: BorderRadius.circular(FlorienRadius.pill),
             border: Border.all(
               color: context.palette.border,
@@ -1384,8 +1382,8 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
             ListTile(
               dense: true,
               visualDensity: const VisualDensity(vertical: -2),
-              contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
-              leading: TaskIconBadge.forTask(icon: task.icon, size: 36),
+              contentPadding: const EdgeInsets.fromLTRB(14, 5, 8, 5),
+              leading: TaskIconBadge.forTask(icon: task.icon, size: 32),
               title: Text(
                 task.title,
                 maxLines: 1,
@@ -1974,9 +1972,7 @@ class _TodoIconButton extends StatelessWidget {
             width: resolvedSize,
             height: resolvedSize,
             decoration: BoxDecoration(
-              color: filled
-                  ? FlorienColors.primary
-                  : context.palette.surface,
+              color: filled ? FlorienColors.primary : context.palette.surface,
               border: Border.all(
                 color: context.palette.border,
                 width: FlorienBorders.thin,

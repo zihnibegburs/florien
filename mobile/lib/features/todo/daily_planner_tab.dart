@@ -1653,13 +1653,13 @@ class _DailyTaskCard extends ConsumerWidget {
             onTap: () => _showTaskActions(context, ref),
             borderRadius: BorderRadius.circular(FlorienRadius.lg),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+              padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
               child: Row(
                 children: [
                   Container(
                     key: ValueKey('timeline-task-bar-${task.id}'),
                     width: 4,
-                    height: 36,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(99),
@@ -1697,7 +1697,7 @@ class _DailyTaskCard extends ConsumerWidget {
                     task: task,
                     color: color,
                     progress: progress,
-                    dimension: 34,
+                    dimension: 30,
                   ),
                   completionButton,
                 ],
@@ -1726,12 +1726,12 @@ class _DailyTaskCard extends ConsumerWidget {
         child: ListTile(
           dense: true,
           visualDensity: const VisualDensity(vertical: -2),
-          contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+          contentPadding: const EdgeInsets.fromLTRB(14, 5, 8, 5),
           leading: _DailyTaskIcon(
             task: task,
             color: color,
             progress: progress,
-            dimension: 36,
+            dimension: 32,
           ),
           title: Text(
             task.title,
@@ -3399,9 +3399,7 @@ class _SquareButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: emphasized
-            ? FlorienColors.primary
-            : context.palette.surface,
+        color: emphasized ? FlorienColors.primary : context.palette.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.sm),
           side: BorderSide(

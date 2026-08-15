@@ -14,7 +14,10 @@ class StatisticsTab extends ConsumerWidget {
     final authName = ref.watch(
       authStateProvider.select((value) => value.valueOrNull?.firstName),
     );
-    final name = (authName == null || authName.isEmpty) ? 'Florien' : authName;
+    final profileName = ref.watch(activeAppProfileProvider)?.name;
+    final name = profileName?.isNotEmpty == true
+        ? profileName!
+        : (authName == null || authName.isEmpty ? 'Florien' : authName);
     final today = counts.valueOrNull?.today ?? 0;
     final week = counts.valueOrNull?.thisWeek ?? 0;
     final streak = week.clamp(0, 7);
@@ -39,9 +42,13 @@ class StatisticsTab extends ConsumerWidget {
                 child: _StatsHeader(name: name),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: FlorienSpacing.xxl)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: FlorienSpacing.xxl),
+            ),
             const SliverToBoxAdapter(child: _BadgeCarousel()),
-            const SliverToBoxAdapter(child: SizedBox(height: FlorienSpacing.xxl)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: FlorienSpacing.xxl),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -54,14 +61,20 @@ class StatisticsTab extends ConsumerWidget {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: FlorienSpacing.xxxl)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: FlorienSpacing.xxxl),
+            ),
             const SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: FlorienSpacing.screen),
+                padding: EdgeInsets.symmetric(
+                  horizontal: FlorienSpacing.screen,
+                ),
                 child: _MoodSection(),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: FlorienSpacing.xxxl)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: FlorienSpacing.xxxl),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: FlorienSpacing.huge),
@@ -96,9 +109,9 @@ class _StatsHeader extends StatelessWidget {
           ),
           child: Text(
             name,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         const Spacer(),
@@ -113,9 +126,7 @@ class _StatsHeader extends StatelessWidget {
           icon: Icons.settings_outlined,
           onPressed: () {
             Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const SettingsScreen(),
-              ),
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
             );
           },
         ),
@@ -150,10 +161,7 @@ class _RoundHeaderButton extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
-          child: SizedBox.square(
-            dimension: 44,
-            child: Icon(icon, size: 20),
-          ),
+          child: SizedBox.square(dimension: 44, child: Icon(icon, size: 20)),
         ),
       ),
     );
@@ -166,7 +174,12 @@ class _BadgeCarousel extends StatelessWidget {
   static const _badges = [
     _BadgeData('Odak', Icons.timelapse_rounded, FlorienColors.accent, 8),
     _BadgeData('Akış', Icons.auto_awesome_rounded, FlorienColors.paleBlue, 11),
-    _BadgeData('Radiance', Icons.local_florist_rounded, FlorienColors.softPink, 14),
+    _BadgeData(
+      'Radiance',
+      Icons.local_florist_rounded,
+      FlorienColors.softPink,
+      14,
+    ),
     _BadgeData('Ritim', Icons.bolt_rounded, FlorienColors.primary, 9),
     _BadgeData('Denge', Icons.spa_rounded, FlorienColors.mint, 6),
   ];
@@ -241,9 +254,9 @@ class _BadgeOrb extends StatelessWidget {
             badge.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           Text(
             '${badge.tasks} görev',
@@ -414,10 +427,7 @@ class _MoodSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             for (var i = 0; i < _days.length; i++)
-              _MoodDayButton(
-                label: _days[i],
-                selected: i == selected,
-              ),
+              _MoodDayButton(label: _days[i], selected: i == selected),
           ],
         ),
       ],
@@ -483,11 +493,7 @@ class _TipsSection extends StatelessWidget {
       Icons.edit_calendar_rounded,
       FlorienColors.aiLavender,
     ),
-    (
-      'ODAKLANARAK İLERLEYİN',
-      Icons.timer_outlined,
-      FlorienColors.mint,
-    ),
+    ('ODAKLANARAK İLERLEYİN', Icons.timer_outlined, FlorienColors.mint),
   ];
 
   @override
@@ -496,7 +502,9 @@ class _TipsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: FlorienSpacing.screen),
+          padding: const EdgeInsets.symmetric(
+            horizontal: FlorienSpacing.screen,
+          ),
           child: Text(
             'Bir Profesyonel Gibi Plan Yapın',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -531,11 +539,7 @@ class _TipsSection extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final tip = _tips[index];
-              return _TipCard(
-                title: tip.$1,
-                icon: tip.$2,
-                accent: tip.$3,
-              );
+              return _TipCard(title: tip.$1, icon: tip.$2, accent: tip.$3);
             },
           ),
         ),

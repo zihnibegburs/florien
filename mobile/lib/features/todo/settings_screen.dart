@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/features/todo/calendar_connections_screen.dart';
+import 'package:florien/features/todo/notification_settings_screen.dart';
+import 'package:florien/features/todo/profile_management_screen.dart';
+import 'package:florien/features/providers.dart';
 
-/// Full settings page. Only [Görünüm] is interactive.
+/// Full settings page.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -61,28 +65,35 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
               'Ayarlar',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
-            const _SettingsRow(
+            _SettingsRow(
               icon: Icons.notifications_none_rounded,
               label: 'Bildirimler',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationSettingsScreen(),
+                ),
+              ),
             ),
-            const _SettingsRow(
+            _SettingsRow(
               icon: Icons.calendar_month_outlined,
               label: 'Bağlı Takvimler',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CalendarConnectionsScreen(),
+                ),
+              ),
             ),
             const _SettingsRow(
               icon: Icons.format_list_bulleted_rounded,
               label: 'Hatırlatıcı içe aktar',
               locked: true,
             ),
-            const _SettingsRow(
-              icon: Icons.circle_outlined,
-              label: 'Tema',
-            ),
+            const _SettingsRow(icon: Icons.circle_outlined, label: 'Tema'),
             _SettingsRow(
               icon: Icons.wb_sunny_outlined,
               label: 'Görünüm',
@@ -104,31 +115,42 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
               'Profil',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
-            const _SettingsRow(
+            _SettingsRow(
               icon: Icons.person_add_alt_1_outlined,
               label: 'Yeni profil ekle',
-              locked: true,
+              onTap: () => _openProfiles(context),
             ),
-            const _SettingsRow(
+            _SettingsRow(
               icon: Icons.person_outline_rounded,
               label: 'Profil adını düzenle',
+              onTap: () => _openProfiles(context),
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
               'Hesap ve abonelik',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
             const _SettingsRow(
               icon: Icons.restart_alt_rounded,
               label: 'Satın alımı geri yükle',
+            ),
+            _SettingsRow(
+              icon: Icons.logout_rounded,
+              label: 'Çıkış yap',
+              onTap: () => _confirmLogout(context, ref),
+            ),
+            _SettingsRow(
+              icon: Icons.delete_outline_rounded,
+              label: 'Hesabı sil',
+              onTap: () => _confirmDeleteAccount(context, ref),
             ),
           ],
         ),
@@ -141,6 +163,73 @@ class SettingsScreen extends ConsumerWidget {
     ThemeMode.dark => 'Karanlık',
     ThemeMode.system => 'Sistem',
   };
+
+  void _openProfiles(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProfileManagementScreen()));
+  }
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final approved = await _confirmAction(
+      context,
+      title: 'Çıkış yapılsın mı?',
+      message: 'Hesabından çıkış yapacaksın.',
+      actionLabel: 'Çıkış yap',
+    );
+    if (approved != true) return;
+    await ref.read(authStateProvider.notifier).logout();
+  }
+
+  Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final approved = await _confirmAction(
+      context,
+      title: 'Hesap silinsin mi?',
+      message: 'Hesabın ve buluttaki görevlerin kalıcı olarak silinecek.',
+      actionLabel: 'Hesabı sil',
+      destructive: true,
+    );
+    if (approved != true || !context.mounted) return;
+
+    try {
+      await ref.read(authStateProvider.notifier).deleteAccount();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Hesap silinemedi: $error')));
+    }
+  }
+
+  Future<bool?> _confirmAction(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String actionLabel,
+    bool destructive = false,
+  }) => showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          style: destructive
+              ? FilledButton.styleFrom(backgroundColor: context.palette.error)
+              : null,
+          child: Text(actionLabel),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _showAppearanceSheet(
     BuildContext context,
