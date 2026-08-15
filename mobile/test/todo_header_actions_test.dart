@@ -57,6 +57,7 @@ void main() {
     await tester.tap(find.byTooltip('Yeni yapılacak ekle'));
     await tester.pumpAndSettle();
     expect(find.text('Ne yapman gerekiyor?'), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-quick-voice')), findsOneWidget);
     await tester.tap(find.text('Vazgeç'));
     await tester.pumpAndSettle();
 

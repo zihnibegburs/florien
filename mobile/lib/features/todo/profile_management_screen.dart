@@ -74,7 +74,14 @@ class _ProfileManagementScreenState
           autofocus: true,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(labelText: 'Profil adı'),
+          decoration: InputDecoration(
+            labelText: 'Profil adı',
+            labelStyle: TextStyle(color: dialogContext.palette.textSecondary),
+            floatingLabelStyle: TextStyle(
+              color: dialogContext.palette.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
         ),
         actions: [

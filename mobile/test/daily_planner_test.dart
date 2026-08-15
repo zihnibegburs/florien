@@ -212,6 +212,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Günlük görev ekle'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-quick-voice')), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('daily-quick-title')),
       'Raporu hazırla',
@@ -222,6 +223,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('todo-quick-title')), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-quick-voice')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-quick-voice')), findsNothing);
     expect(find.text('Ne yapman gerekiyor?'), findsOneWidget);
     expect(
       tester

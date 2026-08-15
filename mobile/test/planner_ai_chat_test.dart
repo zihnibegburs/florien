@@ -83,6 +83,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey('planner-ai-voice')), findsOneWidget);
+
     await tester.enterText(
       find.byKey(const ValueKey('planner-ai-input')),
       'Bugün koşup kitap okuyacağım',

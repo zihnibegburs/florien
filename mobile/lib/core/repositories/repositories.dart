@@ -152,10 +152,11 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 class TaskRepository {
-  TaskRepository(this._db, this._auth);
+  TaskRepository(this._db, this._auth, {required this.profileId});
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
+  final String profileId;
 
   String get _uid {
     final uid = _auth.currentUser?.uid;
@@ -163,7 +164,8 @@ class TaskRepository {
     return uid;
   }
 
-  CollectionReference<Map<String, dynamic>> get _tasks => tasksCol(_db, _uid);
+  CollectionReference<Map<String, dynamic>> get _tasks =>
+      tasksCol(_db, _uid, profileId);
 
   Future<List<TaskModel>> getInbox() async {
     final snap = await _tasks
@@ -650,6 +652,9 @@ class TaskRepository {
     required String parentId,
     required List<({String title, int durationMinutes, String color})> subtasks,
   }) async {
+    final capped = subtasks
+        .take(TaskModel.userSubtaskLimit)
+        .toList(growable: false);
     final parentRef = _tasks.doc(parentId);
     final parentSnap = await parentRef.get();
     if (!parentSnap.exists) throw StateError('Task not found');
@@ -666,7 +671,7 @@ class TaskRepository {
       throw StateError('Task already has subtasks');
     }
 
-    final totalDuration = subtasks.fold<int>(
+    final totalDuration = capped.fold<int>(
       0,
       (total, step) => total + step.durationMinutes,
     );
@@ -678,7 +683,7 @@ class TaskRepository {
     var current = parent.scheduledAt?.toUtc();
     final createdSubs = <TaskModel>[];
     var order = 0;
-    for (final sub in subtasks) {
+    for (final sub in capped) {
       final childRef = _tasks.doc();
       final data = {
         'title': sub.title.trim(),
@@ -725,6 +730,11 @@ class TaskRepository {
     required String parentId,
     required List<String> titles,
   }) async {
+    final cappedTitles = titles
+        .map((title) => title.trim())
+        .where((title) => title.isNotEmpty)
+        .take(TaskModel.userSubtaskLimit)
+        .toList(growable: false);
     final parentRef = _tasks.doc(parentId);
     final parentSnapshot = await parentRef.get();
     if (!parentSnapshot.exists) throw StateError('Task not found');
@@ -745,8 +755,8 @@ class TaskRepository {
     final batch = _db.batch();
     var scheduledAt = parent.scheduledAt?.toUtc();
 
-    for (var index = 0; index < titles.length; index++) {
-      final title = titles[index].trim();
+    for (var index = 0; index < cappedTitles.length; index++) {
+      final title = cappedTitles[index];
       if (index < existing.length) {
         final document = existing[index];
         batch.update(document.reference, {
@@ -794,7 +804,7 @@ class TaskRepository {
         }
       }
     }
-    for (var index = titles.length; index < existing.length; index++) {
+    for (var index = cappedTitles.length; index < existing.length; index++) {
       batch.delete(existing[index].reference);
     }
     await batch.commit();
@@ -983,10 +993,3 @@ class TaskRepository {
     return trimmed.isEmpty ? null : trimmed;
   }
 }
-
-final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  return TaskRepository(
-    ref.watch(firestoreProvider),
-    ref.watch(firebaseAuthProvider),
-  );
-});

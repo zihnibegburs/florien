@@ -9,15 +9,17 @@ import 'package:florien/core/storage/settings_storage.dart';
 /// Florien design tokens — soft neo-brutalist, pastel accents, bold type.
 class FlorienColors {
   static const primary = Color(0xFFFFF76A);
+  static const accentText = Color(0xFF765415);
+  static const focusAccent = Color(0xFFF2BC52);
   static const onPrimary = Color(0xFF171717);
   static const primaryLight = Color(0xFFFFF9A8);
   static const accent = Color(0xFFC4B5FD);
   static const aiAccent = Color(0xFFA78BFA);
   static const aiLavender = Color(0xFFE9E2FF);
   static const mint = Color(0xFFB8F2D0);
-  static const paleBlue = Color(0xFFD4E8FF);
+  static const paleBlue = Color(0xFFBCEEFF);
   static const softPink = Color(0xFFFFD6E7);
-  static const softLime = Color(0xFFE4F5A9);
+  static const softLime = Color(0xFFDDFC83);
   static const success = Color(0xFF2F9E6B);
   static const warning = Color(0xFFD97706);
   static const error = Color(0xFFDC2626);
@@ -38,9 +40,9 @@ class FlorienColors {
     '#FFF76A',
     '#C4B5FD',
     '#B8F2D0',
-    '#D4E8FF',
+    '#BCEEFF',
     '#FFD6E7',
-    '#E4F5A9',
+    '#DDFC83',
     '#FFE0B2',
     '#D1C4E9',
   ];
@@ -53,7 +55,7 @@ class FlorienColors {
   static LinearGradient get aiGradient => const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFC4B5FD), Color(0xFFA78BFA), Color(0xFFFFF76A)],
+    colors: [paleBlue, aiAccent, softLime, primary],
   );
 }
 
@@ -240,6 +242,7 @@ class FlorienTheme {
   static ThemeData _build(Brightness brightness, FlorienPalette palette) {
     final isDark = brightness == Brightness.dark;
     const primary = FlorienColors.primary;
+    const interactivePrimary = FlorienColors.accentText;
     const onPrimary = FlorienColors.onPrimary;
     final baseTextTheme = GoogleFonts.manropeTextTheme(
       ThemeData(brightness: brightness).textTheme,
@@ -247,7 +250,7 @@ class FlorienTheme {
 
     final colorScheme = ColorScheme(
       brightness: brightness,
-      primary: primary,
+      primary: interactivePrimary,
       onPrimary: onPrimary,
       primaryContainer: palette.primaryMuted,
       onPrimaryContainer: palette.textPrimary,
@@ -542,9 +545,7 @@ class FlorienTheme {
         ),
         checkColor: const WidgetStatePropertyAll(onPrimary),
         side: BorderSide(color: palette.border, width: FlorienBorders.thin),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith(

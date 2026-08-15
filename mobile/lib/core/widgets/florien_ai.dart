@@ -65,6 +65,9 @@ class FlorienAiInput extends StatelessWidget {
     this.hintText = 'Ne yapmak istiyorsun?',
     this.inputKey,
     this.sendKey,
+    this.voiceKey,
+    this.onVoiceTap,
+    this.isListening = false,
   });
 
   final TextEditingController controller;
@@ -73,6 +76,9 @@ class FlorienAiInput extends StatelessWidget {
   final String hintText;
   final Key? inputKey;
   final Key? sendKey;
+  final Key? voiceKey;
+  final VoidCallback? onVoiceTap;
+  final bool isListening;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +123,40 @@ class FlorienAiInput extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+            if (onVoiceTap != null) ...[
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: voiceKey,
+                  onTap: enabled ? onVoiceTap : null,
+                  customBorder: const CircleBorder(),
+                  child: Ink(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: isListening || context.isFlorienDark
+                          ? FlorienColors.aiGradient
+                          : null,
+                      color: isListening || context.isFlorienDark
+                          ? null
+                          : context.palette.aiSurface,
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
+                      ),
+                    ),
+                    child: Icon(
+                      isListening
+                          ? Icons.stop_rounded
+                          : Icons.graphic_eq_rounded,
+                      color: FlorienColors.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             Material(
               color: Colors.transparent,
               child: InkWell(

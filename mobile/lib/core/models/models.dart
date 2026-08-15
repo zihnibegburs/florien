@@ -58,6 +58,9 @@ class AuthResponse {
 }
 
 class TaskModel {
+  static const int aiSubtaskLimit = 5;
+  static const int userSubtaskLimit = 30;
+
   final String id;
   final String title;
   final String? description;

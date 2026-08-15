@@ -52,28 +52,53 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _isFinishing = false;
   late final AnimationController _completionController;
   late final Animation<double> _completionScale;
+  late final Animation<double> _completionCelebrationOpacity;
 
   @override
   void initState() {
     super.initState();
     _completionController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 520),
+      duration: const Duration(seconds: 2),
     );
     _completionScale = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(
           begin: 1,
-          end: 1.045,
+          end: 1.18,
         ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 42,
+        weight: 24,
       ),
       TweenSequenceItem(
         tween: Tween<double>(
-          begin: 1.045,
-          end: 1,
+          begin: 1.18,
+          end: 1.1,
         ).chain(CurveTween(curve: Curves.easeInOutCubic)),
-        weight: 58,
+        weight: 52,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.1,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 24,
+      ),
+    ]).animate(_completionController);
+    _completionCelebrationOpacity = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 0,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 12,
+      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1), weight: 58),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 30,
       ),
     ]).animate(_completionController);
     final request = widget.launchRequest;
@@ -493,79 +518,91 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         ? 0.0
         : (_sessionTotalSeconds - _remainingSeconds) / _sessionTotalSeconds;
 
-    return ScaleTransition(
-      scale: _completionScale,
-      alignment: Alignment.center,
-      child: IgnorePointer(
-        ignoring: _isFinishing,
-        child: SafeArea(
-          child: ListView(
-            physics: _sessionActive
-                ? const NeverScrollableScrollPhysics()
-                : const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-            children: [
-              Row(
-                children: [
-                  _SimpleActionButton(
-                    icon: Icons.music_note_rounded,
-                    label: 'Ayarla',
-                    onTap: () {},
-                  ),
-                  const SizedBox(width: 12),
-                  if (_sessionActive)
-                    Flexible(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _AlarmToggleButton(
-                          enabled: _alarmEnabled,
-                          onTap: () =>
-                              setState(() => _alarmEnabled = !_alarmEnabled),
-                        ),
-                      ),
+    return IgnorePointer(
+      ignoring: _isFinishing,
+      child: SafeArea(
+        child: ListView(
+          physics: _sessionActive
+              ? const NeverScrollableScrollPhysics()
+              : const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 160),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: _isFinishing
+                  ? const SizedBox(
+                      key: ValueKey('focus-top-controls-hidden'),
+                      height: 44,
                     )
-                  else
-                    Flexible(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _DurationMenuButton(onSelected: _selectDuration),
-                      ),
+                  : Row(
+                      key: const ValueKey('focus-top-controls'),
+                      children: [
+                        _SimpleActionButton(
+                          icon: Icons.music_note_rounded,
+                          label: 'Ayarla',
+                          onTap: () {},
+                        ),
+                        const SizedBox(width: 12),
+                        if (_sessionActive)
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: _AlarmToggleButton(
+                                enabled: _alarmEnabled,
+                                onTap: () => setState(
+                                  () => _alarmEnabled = !_alarmEnabled,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: _DurationMenuButton(
+                                onSelected: _selectDuration,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 240),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: _sessionActive
-                    ? _ActiveTimer(
-                        key: const ValueKey('active-timer'),
-                        title: _taskTitle ?? 'Odaklan',
-                        taskIcon: _taskTitle == null ? null : _taskIcon,
-                        taskColor: _taskColor,
-                        remainingLabel: _remainingLabel,
-                        timeRange:
-                            '${_clockLabel(_sessionStartedAt)} → ${_clockLabel(_plannedEndAt)}',
-                        progress: elapsedProgress.clamp(.025, 1),
-                        isRunning: _isRunning,
-                        isFinished: _remainingSeconds <= 0,
-                        onAddMinute: _addMinute,
-                        onToggle: () => unawaited(_toggleTimer()),
-                        onFinish: () =>
-                            unawaited(_finishSessionWithAnimation()),
-                        onComplete: () => unawaited(_completeAndCloseSession()),
-                      )
-                    : _TimerSetup(
-                        key: const ValueKey('timer-setup'),
-                        selectedMinutes: _selectedMinutes,
-                        progress: setupProgress.clamp(0, 1),
-                        onRotationStart: _startDurationRotation,
-                        onRotationUpdate: _updateDurationRotation,
-                        onStart: () => unawaited(_toggleTimer()),
-                      ),
-              ),
-            ],
-          ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 240),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: _sessionActive
+                  ? _ActiveTimer(
+                      key: const ValueKey('active-timer'),
+                      title: _taskTitle ?? 'Odaklan',
+                      taskIcon: _taskTitle == null ? null : _taskIcon,
+                      taskColor: _taskColor,
+                      remainingLabel: _remainingLabel,
+                      timeRange:
+                          '${_clockLabel(_sessionStartedAt)} → ${_clockLabel(_plannedEndAt)}',
+                      progress: elapsedProgress.clamp(.025, 1),
+                      isRunning: _isRunning,
+                      isFinished: _remainingSeconds <= 0,
+                      onAddMinute: _addMinute,
+                      onToggle: () => unawaited(_toggleTimer()),
+                      onFinish: () => unawaited(_finishSessionWithAnimation()),
+                      onComplete: () => unawaited(_completeAndCloseSession()),
+                      isCelebrating: _isFinishing,
+                      celebrationScale: _completionScale,
+                      celebrationOpacity: _completionCelebrationOpacity,
+                    )
+                  : _TimerSetup(
+                      key: const ValueKey('timer-setup'),
+                      selectedMinutes: _selectedMinutes,
+                      progress: setupProgress.clamp(0, 1),
+                      onRotationStart: _startDurationRotation,
+                      onRotationUpdate: _updateDurationRotation,
+                      onStart: () => unawaited(_toggleTimer()),
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -648,6 +685,9 @@ class _ActiveTimer extends StatefulWidget {
     required this.onToggle,
     required this.onFinish,
     required this.onComplete,
+    required this.isCelebrating,
+    required this.celebrationScale,
+    required this.celebrationOpacity,
   });
 
   final String title;
@@ -662,6 +702,9 @@ class _ActiveTimer extends StatefulWidget {
   final VoidCallback onToggle;
   final VoidCallback onFinish;
   final VoidCallback onComplete;
+  final bool isCelebrating;
+  final Animation<double> celebrationScale;
+  final Animation<double> celebrationOpacity;
 
   @override
   State<_ActiveTimer> createState() => _ActiveTimerState();
@@ -788,40 +831,54 @@ class _ActiveTimerState extends State<_ActiveTimer>
         ),
       ),
       const SizedBox(height: 22),
-      _TimerDial(
-        key: const ValueKey('active-focus-dial'),
-        progress: _displayProgress ?? widget.progress,
-        showHandle: true,
-        onRotationStart: _startRotation,
-        onRotationUpdate: _updateRotation,
-        onRotationEnd: _endRotation,
-        child: Container(
-          key: const ValueKey('active-focus-icon-circle'),
-          width: 212,
-          height: 212,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.taskIcon == null
-                ? const Color(0xFFFFDFC5)
-                : FlorienColors.fromHex(
-                    widget.taskColor,
-                  ).withValues(alpha: .18),
-          ),
-          child: widget.taskIcon == null
-              ? Icon(
-                  Icons.hourglass_bottom_rounded,
-                  key: const ValueKey('active-focus-task-icon'),
-                  size: 94,
-                  color: const Color(0xFF9A6037),
-                )
-              : TaskIconBadge.forTask(
-                  icon: widget.taskIcon!,
-                  size: 148,
-                  iconSize: 112,
-                  circular: true,
-                  iconKey: const ValueKey('active-focus-task-icon'),
+      Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          ScaleTransition(
+            scale: widget.celebrationScale,
+            child: _TimerDial(
+              key: const ValueKey('active-focus-dial'),
+              progress: _displayProgress ?? widget.progress,
+              showHandle: true,
+              onRotationStart: _startRotation,
+              onRotationUpdate: _updateRotation,
+              onRotationEnd: _endRotation,
+              child: Container(
+                key: const ValueKey('active-focus-icon-circle'),
+                width: 212,
+                height: 212,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.taskIcon == null
+                      ? const Color(0xFFFFDFC5)
+                      : FlorienColors.fromHex(
+                          widget.taskColor,
+                        ).withValues(alpha: .18),
                 ),
-        ),
+                child: widget.taskIcon == null
+                    ? Icon(
+                        Icons.hourglass_bottom_rounded,
+                        key: const ValueKey('active-focus-task-icon'),
+                        size: 94,
+                        color: const Color(0xFF9A6037),
+                      )
+                    : TaskIconBadge.forTask(
+                        icon: widget.taskIcon!,
+                        size: 148,
+                        iconSize: 112,
+                        circular: true,
+                        iconKey: const ValueKey('active-focus-task-icon'),
+                      ),
+              ),
+            ),
+          ),
+          if (widget.isCelebrating)
+            _FocusDialCelebration(
+              opacity: widget.celebrationOpacity,
+              scale: widget.celebrationScale,
+            ),
+        ],
       ),
       const SizedBox(height: 28),
       Text(
@@ -833,30 +890,91 @@ class _ActiveTimerState extends State<_ActiveTimer>
         ),
       ),
       const SizedBox(height: 20),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TextButton(
-            onPressed: widget.onAddMinute,
-            child: const Text(
-              '+ 1 dk',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-            ),
-          ),
-          const SizedBox(width: 14),
-          _TimerControlButton(
-            icon: widget.isFinished
-                ? Icons.replay_rounded
-                : widget.isRunning
-                ? Icons.pause_rounded
-                : Icons.play_arrow_rounded,
-            label: '',
-            onTap: widget.isFinished ? widget.onFinish : widget.onToggle,
-            compact: true,
-          ),
-        ],
+      AnimatedSwitcher(
+        duration: const Duration(milliseconds: 160),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: widget.isCelebrating
+            ? const SizedBox(
+                key: ValueKey('focus-timer-controls-hidden'),
+                height: 54,
+              )
+            : Row(
+                key: const ValueKey('focus-timer-controls'),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: widget.onAddMinute,
+                    child: const Text(
+                      '+ 1 dk',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  _TimerControlButton(
+                    icon: widget.isFinished
+                        ? Icons.replay_rounded
+                        : widget.isRunning
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
+                    label: '',
+                    onTap: widget.isFinished
+                        ? widget.onFinish
+                        : widget.onToggle,
+                    compact: true,
+                  ),
+                ],
+              ),
       ),
     ],
+  );
+}
+
+class _FocusDialCelebration extends StatelessWidget {
+  const _FocusDialCelebration({required this.opacity, required this.scale});
+
+  final Animation<double> opacity;
+  final Animation<double> scale;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: FadeTransition(
+      opacity: opacity,
+      child: ScaleTransition(
+        scale: scale,
+        child: SizedBox(
+          key: const ValueKey('focus-dial-celebration'),
+          width: 390,
+          height: 390,
+          child: const Stack(
+            children: [
+              Positioned(top: 20, left: 82, child: _FocusSparkle(size: 28)),
+              Positioned(top: 62, right: 34, child: _FocusSparkle(size: 20)),
+              Positioned(top: 172, right: 5, child: _FocusSparkle(size: 30)),
+              Positioned(bottom: 38, right: 62, child: _FocusSparkle(size: 18)),
+              Positioned(bottom: 12, left: 118, child: _FocusSparkle(size: 26)),
+              Positioned(top: 156, left: 10, child: _FocusSparkle(size: 18)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _FocusSparkle extends StatelessWidget {
+  const _FocusSparkle({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Icon(
+    Icons.auto_awesome_rounded,
+    size: size,
+    color: FlorienColors.focusAccent,
   );
 }
 
@@ -917,8 +1035,8 @@ class _TimerDial extends StatelessWidget {
             painter: _SimpleDialPainter(
               progress: progress,
               trackColor: context.palette.surfaceMuted,
-              tickColor: Theme.of(context).colorScheme.primary,
-              progressColor: Theme.of(context).colorScheme.primary,
+              tickColor: FlorienColors.focusAccent,
+              progressColor: FlorienColors.focusAccent,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -947,18 +1065,20 @@ class _TimerDial extends StatelessWidget {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
+                          color: FlorienColors.focusAccent.withValues(
+                            alpha: .22,
+                          ),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: .35),
+                            color: FlorienColors.focusAccent.withValues(
+                              alpha: .55,
+                            ),
                           ),
                         ),
                         child: Icon(
                           Icons.rotate_right_rounded,
                           size: 20,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: FlorienColors.focusAccent,
                         ),
                       ),
                     ),

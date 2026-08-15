@@ -80,29 +80,55 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
         ),
   );
 
-  Future<void> select(String profileId) => _save(
-    () => ref
-        .read(profileStorageProvider)
-        .select(
-          ownerId: _ownerId,
-          fallbackName: _fallbackName,
-          profileId: profileId,
-        ),
-  );
+  Future<void> select(String profileId) async {
+    final currentId = state.valueOrNull?.activeProfileId;
+    final next = await _save(
+      () => ref
+          .read(profileStorageProvider)
+          .select(
+            ownerId: _ownerId,
+            fallbackName: _fallbackName,
+            profileId: profileId,
+          ),
+    );
+    if (next.activeProfileId != currentId) _resetProfileScopedState();
+  }
 
-  Future<void> delete(String profileId) => _save(
-    () => ref
-        .read(profileStorageProvider)
-        .delete(
-          ownerId: _ownerId,
-          fallbackName: _fallbackName,
-          profileId: profileId,
-        ),
-  );
+  Future<void> delete(String profileId) async {
+    final currentId = state.valueOrNull?.activeProfileId;
+    final next = await _save(
+      () => ref
+          .read(profileStorageProvider)
+          .delete(
+            ownerId: _ownerId,
+            fallbackName: _fallbackName,
+            profileId: profileId,
+          ),
+    );
+    if (next.activeProfileId != currentId) _resetProfileScopedState();
+  }
 
-  Future<void> _save(Future<AppProfilesState> Function() operation) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(operation);
+  Future<AppProfilesState> _save(
+    Future<AppProfilesState> Function() operation,
+  ) async {
+    try {
+      final next = await operation();
+      state = AsyncData(next);
+      return next;
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  void _resetProfileScopedState() {
+    ref.read(activeFocusTaskProvider.notifier).state = null;
+    ref.read(focusTaskLaunchProvider.notifier).state = null;
+    ref.read(focusTimerResetSignalProvider.notifier).state++;
+    ref.invalidate(inboxProvider);
+    ref.invalidate(todoListsProvider);
+    ref.invalidate(dailyTimelineProvider);
+    ref.invalidate(completionCountsProvider);
   }
 }
 
@@ -110,8 +136,26 @@ final activeAppProfileProvider = Provider<AppProfile?>(
   (ref) => ref.watch(appProfilesProvider).valueOrNull?.activeProfile,
 );
 
+final activeProfileScopeProvider = Provider<String>((ref) {
+  final ownerId = ref.watch(authStateProvider).valueOrNull?.userId ?? 'guest';
+  final profileId = ref.watch(activeAppProfileProvider)?.id ?? 'primary';
+  return '$ownerId:$profileId';
+});
+
+final taskRepositoryProvider = Provider<TaskRepository>((ref) {
+  return TaskRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(firebaseAuthProvider),
+    profileId: ref.watch(activeAppProfileProvider)?.id ?? 'primary',
+  );
+});
+
 final plannerAiGatewayProvider = Provider<PlannerAiGateway>(
   (ref) => FirebasePlannerAiGateway(ref.watch(cloudFunctionsProvider)),
+);
+
+final taskBreakdownServiceProvider = Provider<TaskBreakdownService>(
+  (ref) => FirebaseTaskBreakdownService(ref.watch(cloudFunctionsProvider)),
 );
 
 final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(
@@ -218,12 +262,15 @@ final todoListsProvider =
 
 class TodoListsNotifier extends AsyncNotifier<List<TodoListDefinition>> {
   @override
-  Future<List<TodoListDefinition>> build() =>
-      ref.read(todoListStorageProvider).load();
+  Future<List<TodoListDefinition>> build() => ref
+      .watch(todoListStorageProvider)
+      .load(profileScope: ref.watch(activeProfileScopeProvider));
 
   Future<void> save(List<TodoListDefinition> lists) async {
     state = AsyncData(lists);
-    await ref.read(todoListStorageProvider).save(lists);
+    await ref
+        .read(todoListStorageProvider)
+        .save(lists, profileScope: ref.read(activeProfileScopeProvider));
   }
 }
 
@@ -233,8 +280,9 @@ final inboxProvider = AsyncNotifierProvider<InboxNotifier, List<TaskModel>>(
 
 final dailyTimelineProvider = FutureProvider.autoDispose
     .family<TimelineModel, DateTime>((ref, date) async {
+      final repository = ref.watch(taskRepositoryProvider);
       try {
-        return await ref.read(taskRepositoryProvider).getTimeline(date);
+        return await repository.getTimeline(date);
       } catch (_) {
         return TimelineModel(date: date, tasks: const []);
       }
@@ -343,10 +391,9 @@ final createStandaloneFocusTaskProvider =
 final completionCountsProvider = FutureProvider.autoDispose<CompletionCounts>((
   ref,
 ) async {
+  final repository = ref.watch(taskRepositoryProvider);
   try {
-    return await ref
-        .read(taskRepositoryProvider)
-        .getCompletionCounts(DateTime.now());
+    return await repository.getCompletionCounts(DateTime.now());
   } catch (_) {
     // The task that opened this page has just completed, so one is the safe
     // minimum while an offline count cannot be loaded.
@@ -415,8 +462,9 @@ final completeFocusedTaskProvider = Provider<Future<void> Function(String)>((
 class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
   @override
   Future<List<TaskModel>> build() async {
+    final repository = ref.watch(taskRepositoryProvider);
     try {
-      return await ref.read(taskRepositoryProvider).getInbox();
+      return await repository.getInbox();
     } catch (_) {
       return const [];
     }

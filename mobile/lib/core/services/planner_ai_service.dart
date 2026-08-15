@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:florien/core/models/models.dart';
 
 class PlannerChatTurn {
   const PlannerChatTurn({required this.role, required this.content});
@@ -34,6 +35,43 @@ class PlannerAiReply {
 
   final String message;
   final List<PlannerTaskSuggestion> tasks;
+}
+
+abstract interface class TaskBreakdownService {
+  Future<List<String>> generateSubtasks(String title);
+}
+
+class FirebaseTaskBreakdownService implements TaskBreakdownService {
+  const FirebaseTaskBreakdownService(this._functions);
+
+  final FirebaseFunctions _functions;
+
+  @override
+  Future<List<String>> generateSubtasks(String title) async {
+    try {
+      final result = await _functions.httpsCallable('assistBreakdown').call(
+        <String, Object?>{'task': title},
+      );
+      final raw = result.data;
+      if (raw is! Map) throw const PlannerAiException('Geçersiz AI yanıtı.');
+      final steps = raw['steps'] as List? ?? const [];
+      final titles = steps
+          .whereType<Map>()
+          .map((step) => (step['title']?.toString() ?? '').trim())
+          .where((title) => title.isNotEmpty)
+          .take(TaskModel.aiSubtaskLimit)
+          .toList(growable: false);
+      if (titles.isEmpty) {
+        throw const PlannerAiException('AI alt görev üretemedi.');
+      }
+      return titles;
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      debugPrint(
+        'assistBreakdown failed: ${error.code} ${error.message}\n$stackTrace',
+      );
+      throw PlannerAiException(_breakdownMessageFor(error));
+    }
+  }
 }
 
 abstract interface class PlannerAiGateway {
@@ -101,5 +139,17 @@ String _messageFor(FirebaseFunctionsException error) {
       'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
     _ =>
       'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+  };
+}
+
+String _breakdownMessageFor(FirebaseFunctionsException error) {
+  return switch (error.code) {
+    'unauthenticated' => 'AI alt görevleri için giriş yapmış olman gerekiyor.',
+    'not-found' =>
+      'AI alt görev fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
+    'failed-precondition' => 'AI alt görevleri şu an yapılandırılmamış.',
+    'unavailable' || 'deadline-exceeded' =>
+      'AI alt görevleri şu an yanıt vermiyor. Biraz sonra tekrar dene.',
+    _ => 'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
   };
 }

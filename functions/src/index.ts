@@ -102,7 +102,7 @@ export const assistBreakdown = onCall({ secrets: [groqApiKey] }, async (request)
   }
 
   const prompt = `Sen ADHD dostu bir görev planlama asistanısın. Kullanıcının görevini küçük, yapılabilir adımlara böl.
-Her adım için gerçekçi süre (dakika) tahmin et. Türkçe yanıt ver.
+En fazla 5 adım üret. Her adım için gerçekçi süre (dakika) tahmin et. Türkçe yanıt ver.
 SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin yazma:
 {"steps":[{"title":"adım adı","durationMinutes":15}]}
 
@@ -122,7 +122,8 @@ Görev: ${task}`;
         color: COLORS[i % COLORS.length],
       };
     })
-    .filter((s): s is { title: string; durationMinutes: number; color: string } => s != null);
+    .filter((s): s is { title: string; durationMinutes: number; color: string } => s != null)
+    .slice(0, 5);
 
   if (steps.length === 0) {
     throw new HttpsError("not-found", "AI adım üretemedi, tekrar dene");

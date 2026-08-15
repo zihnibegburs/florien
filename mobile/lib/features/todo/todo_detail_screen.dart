@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
@@ -45,6 +47,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
   late TaskPriority _priority = widget.priority;
   late String? _todoListId = widget.todoListId;
   bool _saving = false;
+  bool _generatingSubtasks = false;
   late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
     initialCategory: widget.initialIcon,
   );
@@ -69,10 +72,56 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
   void _addSubtask() {
     final value = _subtask.text.trim();
     if (value.isEmpty) return;
+    if (_subtasks.length >= TaskModel.userSubtaskLimit) {
+      _showSubtaskLimitWarning();
+      return;
+    }
     setState(() {
       _subtasks.add(value);
       _subtask.clear();
     });
+  }
+
+  void _showSubtaskLimitWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('En fazla 30 alt görev ekleyebilirsin.')),
+    );
+  }
+
+  void _onTitleChanged(String value) {
+    _taskIcon.onTaskChanged(value);
+    setState(() {});
+  }
+
+  Future<void> _generateSubtasks() async {
+    final title = _title.text.trim();
+    if (title.isEmpty ||
+        _generatingSubtasks ||
+        _subtasks.length >= TaskModel.userSubtaskLimit) {
+      return;
+    }
+
+    setState(() => _generatingSubtasks = true);
+    try {
+      final generated = await ref
+          .read(taskBreakdownServiceProvider)
+          .generateSubtasks(title);
+      if (!mounted || _title.text.trim().isEmpty) return;
+      final existing = _subtasks.map((item) => item.toLowerCase()).toSet();
+      final remaining = TaskModel.userSubtaskLimit - _subtasks.length;
+      final additions = generated
+          .where((item) => existing.add(item.toLowerCase()))
+          .take(math.min(TaskModel.aiSubtaskLimit, remaining))
+          .toList();
+      setState(() => _subtasks.addAll(additions));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _generatingSubtasks = false);
+    }
   }
 
   Future<void> _save() async {
@@ -133,22 +182,22 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close_rounded),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: IconButton.filled(
-              tooltip: 'Kaydet',
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check_rounded),
-            ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check_rounded),
+            label: Text(_saving ? 'Kaydediliyor...' : 'To-do’yu kaydet'),
           ),
-        ],
+        ),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -158,25 +207,71 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           MediaQuery.viewInsetsOf(context).bottom + 32,
         ),
         children: [
-          TextField(
-            controller: _title,
-            onChanged: _taskIcon.onTaskChanged,
-            autofocus: widget.initialTitle.trim().isEmpty,
-            textCapitalization: TextCapitalization.sentences,
-            style: Theme.of(context).textTheme.titleLarge,
-            decoration: InputDecoration(
-              hintText: 'Görev başlığı',
-              prefixIcon: ValueListenableBuilder(
-                valueListenable: _taskIcon,
-                builder: (_, result, __) =>
-                    TaskIconBadge.forResult(result, size: 34),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: context.palette.primaryMuted,
+              borderRadius: BorderRadius.circular(FlorienRadius.lg),
+              border: Border.all(
+                color: context.palette.border,
+                width: FlorienBorders.thin,
               ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.checklist_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.isEditing
+                          ? 'To-do görevini düzenle'
+                          : 'Aklındaki işi yakala',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const ValueKey('todo-detail-title'),
+                  controller: _title,
+                  onChanged: _onTitleChanged,
+                  autofocus: widget.initialTitle.trim().isEmpty,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  decoration: InputDecoration(
+                    hintText: 'Ne yapman gerekiyor?',
+                    filled: true,
+                    fillColor: context.palette.surface,
+                    prefixIcon: ValueListenableBuilder(
+                      valueListenable: _taskIcon,
+                      builder: (_, result, _) =>
+                          TaskIconBadge.forResult(result, size: 34),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 14),
           Card(
             child: Column(
               children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: _TodoFormSectionHeader(
+                    icon: Icons.tune_rounded,
+                    title: 'Görev ayarları',
+                    subtitle: 'Liste, öncelik ve süreyi seç.',
+                    color: FlorienColors.paleBlue,
+                  ),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const _DetailIcon(
                     Icons.format_list_bulleted_rounded,
@@ -257,18 +352,32 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      const _DetailIcon(Icons.account_tree_outlined),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Alt görevler',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const Spacer(),
-                      if (_subtasks.isNotEmpty)
-                        _ValuePill(label: '${_subtasks.length} adet'),
-                    ],
+                  _TodoFormSectionHeader(
+                    icon: Icons.account_tree_outlined,
+                    title: 'Alt görevler',
+                    subtitle: _subtasks.isEmpty
+                        ? 'Küçük adımlar başlatmayı kolaylaştırır.'
+                        : 'Adımları dilediğin sırayla düzenleyebilirsin.',
+                    color: FlorienColors.aiLavender,
+                    trailing:
+                        _title.text.trim().isNotEmpty &&
+                            _subtasks.length < TaskModel.userSubtaskLimit
+                        ? IconButton.filledTonal(
+                            key: const ValueKey('todo-ai-subtasks-button'),
+                            tooltip: 'AI ile alt görev oluştur',
+                            onPressed: _generatingSubtasks
+                                ? null
+                                : _generateSubtasks,
+                            icon: _generatingSubtasks
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.auto_awesome_rounded),
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   for (var index = 0; index < _subtasks.length; index++)
@@ -287,6 +396,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                     children: [
                       Expanded(
                         child: TextField(
+                          key: const ValueKey('todo-detail-subtask-input'),
                           controller: _subtask,
                           onSubmitted: (_) => _addSubtask(),
                           decoration: const InputDecoration(
@@ -313,15 +423,11 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      const _DetailIcon(Icons.notes_rounded),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Notlar',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
+                  const _TodoFormSectionHeader(
+                    icon: Icons.notes_rounded,
+                    title: 'Notlar',
+                    subtitle: 'Hatırlamak istediğin ayrıntılar.',
+                    color: FlorienColors.softPink,
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -377,6 +483,62 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     if (selected == null || !mounted) return;
     setState(() => _todoListId = selected == defaultList ? null : selected);
   }
+}
+
+class _TodoFormSectionHeader extends StatelessWidget {
+  const _TodoFormSectionHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 21),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.palette.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        trailing ?? const SizedBox.shrink(),
+      ],
+    ),
+  );
 }
 
 class _DetailIcon extends StatelessWidget {

@@ -21,8 +21,14 @@ DocumentReference<Map<String, dynamic>> userDoc(
   String uid,
 ) => db.collection('users').doc(uid);
 
-/// `users/{uid}/tasks`
+/// `users/{uid}/tasks` for the legacy primary profile, otherwise
+/// `users/{uid}/profiles/{profileId}/tasks`.
 CollectionReference<Map<String, dynamic>> tasksCol(
   FirebaseFirestore db,
   String uid,
-) => userDoc(db, uid).collection('tasks');
+  String profileId,
+) {
+  final user = userDoc(db, uid);
+  if (profileId == 'primary') return user.collection('tasks');
+  return user.collection('profiles').doc(profileId).collection('tasks');
+}

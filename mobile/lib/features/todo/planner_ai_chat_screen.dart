@@ -9,6 +9,7 @@ import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
+import 'package:florien/features/todo/planner_ai_voice_capture_screen.dart';
 
 class PlannerAiChatScreen extends ConsumerStatefulWidget {
   const PlannerAiChatScreen({super.key});
@@ -35,6 +36,21 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openVoiceInput() async {
+    final existingText = _controller.text.trim();
+    final spokenText = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const PlannerAiVoiceCaptureScreen()),
+    );
+    if (!mounted || spokenText == null || spokenText.trim().isEmpty) return;
+    final text = existingText.isEmpty
+        ? spokenText.trim()
+        : '$existingText ${spokenText.trim()}';
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
   }
 
   Future<void> _send() async {
@@ -164,46 +180,52 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
         builder: (context) => Scaffold(
           backgroundColor: context.palette.background,
           appBar: AppBar(
-            leadingWidth: 64,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: IconButton(
-                tooltip: 'Kapat',
-                onPressed: () => Navigator.pop(context),
-                style: IconButton.styleFrom(
-                  backgroundColor: context.palette.surface,
-                  foregroundColor: context.palette.textPrimary,
-                  side: BorderSide(
-                    color: context.palette.border,
-                    width: FlorienBorders.thin,
-                  ),
+            backgroundColor: Colors.transparent,
+            toolbarHeight: 78,
+            automaticallyImplyLeading: false,
+            titleSpacing: 16,
+            title: Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: context.palette.surface.withValues(alpha: 0.46),
+                borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                border: Border.all(
+                  color: context.palette.textPrimary.withValues(alpha: 0.82),
+                  width: FlorienBorders.thin,
                 ),
-                icon: const Icon(Icons.close_rounded),
               ),
-            ),
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    gradient: FlorienColors.aiGradient,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: context.palette.border,
-                      width: FlorienBorders.thin,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Kapat',
+                    onPressed: () => Navigator.pop(context),
+                    style: IconButton.styleFrom(
+                      backgroundColor: context.palette.textPrimary,
+                      foregroundColor: context.palette.background,
+                    ),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                  const Expanded(child: Center(child: Text('Plan Asistanı'))),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: FlorienColors.aiGradient,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 19,
+                      color: FlorienColors.onPrimary,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 14,
-                    color: FlorienColors.onPrimary,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text('Plan Asistanı'),
-              ],
+                ],
+              ),
             ),
           ),
           body: SafeArea(
@@ -214,7 +236,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                   child: ListView.builder(
                     key: const ValueKey('planner-ai-message-list'),
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                     itemCount: _messages.length + (_sending ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _messages.length) {
@@ -235,6 +257,8 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                   onSend: () => unawaited(_send()),
                   inputKey: const ValueKey('planner-ai-input'),
                   sendKey: const ValueKey('planner-ai-send'),
+                  voiceKey: const ValueKey('planner-ai-voice'),
+                  onVoiceTap: _openVoiceInput,
                 ),
               ],
             ),
@@ -410,7 +434,9 @@ class _ProposalStatus extends StatelessWidget {
           Icon(
             approved ? Icons.check_circle_rounded : Icons.cancel_outlined,
             size: 18,
-            color: approved ? FlorienColors.mint : context.palette.textSecondary,
+            color: approved
+                ? FlorienColors.mint
+                : context.palette.textSecondary,
           ),
         const SizedBox(width: 6),
         Text(

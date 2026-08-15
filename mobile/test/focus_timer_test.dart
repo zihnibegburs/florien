@@ -270,6 +270,24 @@ void main() {
       lessThan(3),
     );
     await fullGesture.up();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.byKey(const ValueKey('focus-dial-celebration')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('focus-top-controls-hidden')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('focus-timer-controls-hidden')),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpAndSettle();
 
     expect(find.text('Odaklanmaya başla'), findsOneWidget);

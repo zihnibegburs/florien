@@ -6,7 +6,7 @@ import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
-import 'package:florien/core/repositories/repositories.dart';
+import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
@@ -16,6 +16,7 @@ import 'package:florien/features/task_icon/presentation/realtime_task_icon_contr
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
+import 'package:florien/features/todo/routine_discovery_screen.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 typedef DailyTaskGroupMover =
@@ -183,6 +184,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             grouping: _grouping,
             onGroupingChanged: _setGrouping,
             onRescheduleTasks: () => _showRescheduleReview(const []),
+            onDiscoverRoutines: _showRoutineDiscovery,
           ),
           data: (value) => _DailyBody(
             selectedDate: _selectedDate,
@@ -195,6 +197,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             grouping: _grouping,
             onGroupingChanged: _setGrouping,
             onRescheduleTasks: () => _showRescheduleReview(value.tasks),
+            onDiscoverRoutines: _showRoutineDiscovery,
           ),
         ),
       ),
@@ -258,6 +261,31 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
     );
     if (mounted) ref.invalidate(dailyTimelineProvider(_selectedDate));
   }
+
+  Future<void> _showRoutineDiscovery() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RoutineDiscoveryScreen(
+          onTaskSelected: (task, theme) => pushFlorienOverlayRoute<bool>(
+            context: context,
+            builder: (_) => _DailyTaskDetailScreen(
+              initialDraft: _DailyTaskDraft(
+                date: _selectedDate,
+                period: task.period,
+                title: task.title,
+                description: task.description,
+                durationMinutes: task.durationMinutes,
+                icon: task.icon,
+                color: theme.color,
+                presetSubtasks: task.subtasks,
+                openDetails: true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _DailyBody extends StatelessWidget {
@@ -272,6 +300,7 @@ class _DailyBody extends StatelessWidget {
     required this.grouping,
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
+    required this.onDiscoverRoutines,
   });
 
   final DateTime selectedDate;
@@ -284,6 +313,7 @@ class _DailyBody extends StatelessWidget {
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
+  final Future<void> Function() onDiscoverRoutines;
 
   @override
   Widget build(BuildContext context) {
@@ -325,6 +355,7 @@ class _DailyBody extends StatelessWidget {
                     grouping: grouping,
                     onGroupingChanged: onGroupingChanged,
                     onRescheduleTasks: onRescheduleTasks,
+                    onDiscoverRoutines: onDiscoverRoutines,
                   ),
                 ),
               ),
@@ -375,6 +406,7 @@ class _DailyHeader extends StatelessWidget {
     required this.grouping,
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
+    required this.onDiscoverRoutines,
   });
 
   final DateTime selectedDate;
@@ -383,6 +415,7 @@ class _DailyHeader extends StatelessWidget {
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
+  final Future<void> Function() onDiscoverRoutines;
 
   @override
   Widget build(BuildContext context) {
@@ -407,6 +440,7 @@ class _DailyHeader extends StatelessWidget {
                 grouping: grouping,
                 onGroupingChanged: onGroupingChanged,
                 onRescheduleTasks: onRescheduleTasks,
+                onDiscoverRoutines: onDiscoverRoutines,
               ),
             ),
             const SizedBox(width: 6),
@@ -470,6 +504,7 @@ Future<void> _showDailyOptions(
   required DailyPlannerGrouping grouping,
   required ValueChanged<DailyPlannerGrouping> onGroupingChanged,
   required VoidCallback onRescheduleTasks,
+  required Future<void> Function() onDiscoverRoutines,
 }) => showGeneralDialog<void>(
   context: context,
   barrierDismissible: true,
@@ -480,6 +515,7 @@ Future<void> _showDailyOptions(
     grouping: grouping,
     onGroupingChanged: onGroupingChanged,
     onRescheduleTasks: onRescheduleTasks,
+    onDiscoverRoutines: onDiscoverRoutines,
   ),
   transitionBuilder: (context, animation, _, child) => FadeTransition(
     opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -492,11 +528,13 @@ class _DailyOptionsOverlay extends StatefulWidget {
     required this.grouping,
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
+    required this.onDiscoverRoutines,
   });
 
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
+  final Future<void> Function() onDiscoverRoutines;
 
   @override
   State<_DailyOptionsOverlay> createState() => _DailyOptionsOverlayState();
@@ -560,7 +598,10 @@ class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
                                       ),
                                       icon: Icons.search_rounded,
                                       label: 'Rutinleri keşfedin',
-                                      onTap: () {},
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        widget.onDiscoverRoutines();
+                                      },
                                     ),
                                     _DailyMenuTile(
                                       key: const ValueKey('daily-menu-mode'),
@@ -1725,13 +1766,14 @@ class _DailyTaskCard extends ConsumerWidget {
         ),
         child: ListTile(
           dense: true,
-          visualDensity: const VisualDensity(vertical: -2),
-          contentPadding: const EdgeInsets.fromLTRB(14, 5, 8, 5),
+          visualDensity: const VisualDensity(vertical: -4),
+          minVerticalPadding: 0,
+          contentPadding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
           leading: _DailyTaskIcon(
             task: task,
             color: color,
             progress: progress,
-            dimension: 32,
+            dimension: 28,
           ),
           title: Text(
             task.title,
@@ -2284,6 +2326,8 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
   late bool _isTimed = widget.initialDraft.isTimed;
   late DateTime? _startsAt = widget.initialDraft.startsAt;
   late DateTime? _endsAt = widget.initialDraft.endsAt;
+  final _speech = SpeechInputService();
+  bool _listening = false;
   late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
     initialCategory: widget.initialDraft.icon,
   );
@@ -2300,7 +2344,40 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
   void dispose() {
     _title.dispose();
     _taskIcon.dispose();
+    _speech.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleVoiceInput() async {
+    if (_listening) {
+      await _speech.stop();
+      return;
+    }
+    final existingText = _title.text.trim();
+    await _speech.start(
+      onText: (spokenText) {
+        if (!mounted) return;
+        final text = existingText.isEmpty
+            ? spokenText
+            : '$existingText $spokenText';
+        _title.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+        _taskIcon.onTaskChanged(text);
+      },
+      onListeningChanged: (isListening) {
+        if (mounted) setState(() => _listening = isListening);
+      },
+      onError: _showVoiceError,
+    );
+  }
+
+  void _showVoiceError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   _DailyTaskDraft _draft({required bool details}) =>
@@ -2352,22 +2429,63 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
-                key: const ValueKey('daily-quick-title'),
-                controller: _title,
-                onChanged: _taskIcon.onTaskChanged,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                textCapitalization: TextCapitalization.sentences,
-                onSubmitted: (_) => _submit(),
-                style: Theme.of(context).textTheme.titleLarge,
-                decoration: InputDecoration(
-                  hintText: 'Sırada ne var?',
-                  border: InputBorder.none,
-                  prefixIcon: ValueListenableBuilder(
-                    valueListenable: _taskIcon,
-                    builder: (_, result, __) =>
-                        TaskIconBadge.forResult(result, size: 34),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: context.palette.primaryMuted,
+                      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                      border: Border.all(color: context.palette.border),
+                    ),
+                    child: const Icon(Icons.add_task_rounded, size: 21),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Yeni görev',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Kapat',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: context.palette.primaryMuted,
+                  borderRadius: BorderRadius.circular(FlorienRadius.md),
+                  border: Border.all(
+                    color: context.palette.border,
+                    width: FlorienBorders.thin,
+                  ),
+                ),
+                child: TextField(
+                  key: const ValueKey('daily-quick-title'),
+                  controller: _title,
+                  onChanged: _taskIcon.onTaskChanged,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  textCapitalization: TextCapitalization.sentences,
+                  onSubmitted: (_) => _submit(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  decoration: InputDecoration(
+                    hintText: 'Sırada ne var?',
+                    border: InputBorder.none,
+                    prefixIcon: ValueListenableBuilder(
+                      valueListenable: _taskIcon,
+                      builder: (_, result, _) =>
+                          TaskIconBadge.forResult(result, size: 34),
+                    ),
                   ),
                 ),
               ),
@@ -2411,9 +2529,15 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.graphic_eq_rounded, size: 18),
-                    label: const Text('Konuş'),
+                    key: const ValueKey('daily-quick-voice'),
+                    onPressed: _toggleVoiceInput,
+                    icon: Icon(
+                      _listening
+                          ? Icons.stop_rounded
+                          : Icons.graphic_eq_rounded,
+                      size: 18,
+                    ),
+                    label: Text(_listening ? 'Dinliyorum' : 'Konuş'),
                   ),
                 ],
               ),
@@ -2517,6 +2641,7 @@ class _DailyTaskDetailScreenState
   );
   late final List<String> _subtasks = [...widget.initialDraft.subtasks];
   bool _saving = false;
+  bool _generatingSubtasks = false;
   late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
     initialCategory: widget.initialDraft.icon,
   );
@@ -2579,10 +2704,61 @@ class _DailyTaskDetailScreenState
   void _addSubtask() {
     final value = _subtask.text.trim();
     if (value.isEmpty) return;
+    if (_subtasks.length >= TaskModel.userSubtaskLimit) {
+      _showSubtaskLimitWarning();
+      return;
+    }
     setState(() {
       _subtasks.add(value);
       _subtask.clear();
     });
+  }
+
+  void _showSubtaskLimitWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('En fazla 30 alt görev ekleyebilirsin.')),
+    );
+  }
+
+  void _onTitleChanged(String value) {
+    _taskIcon.onTaskChanged(value);
+    setState(() {});
+  }
+
+  Future<void> _generateSubtasks() async {
+    final title = _title.text.trim();
+    if (title.isEmpty ||
+        _generatingSubtasks ||
+        _subtasks.length >= TaskModel.userSubtaskLimit) {
+      return;
+    }
+
+    setState(() => _generatingSubtasks = true);
+    try {
+      final generated = widget.initialDraft.presetSubtasks.isNotEmpty
+          ? await Future<List<String>>.delayed(
+              const Duration(milliseconds: 450),
+              () => widget.initialDraft.presetSubtasks,
+            )
+          : await ref
+                .read(taskBreakdownServiceProvider)
+                .generateSubtasks(title);
+      if (!mounted || _title.text.trim().isEmpty) return;
+      final existing = _subtasks.map((item) => item.toLowerCase()).toSet();
+      final remaining = TaskModel.userSubtaskLimit - _subtasks.length;
+      final additions = generated
+          .where((item) => existing.add(item.toLowerCase()))
+          .take(math.min(TaskModel.aiSubtaskLimit, remaining))
+          .toList();
+      setState(() => _subtasks.addAll(additions));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _generatingSubtasks = false);
+    }
   }
 
   @override
@@ -2594,21 +2770,22 @@ class _DailyTaskDetailScreenState
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.close_rounded),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: IconButton.filled(
-            tooltip: 'Kaydet',
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-          ),
+    ),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+        child: FilledButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check_rounded),
+          label: Text(_saving ? 'Kaydediliyor...' : 'Görevi kaydet'),
         ),
-      ],
+      ),
     ),
     body: ListView(
       padding: EdgeInsets.fromLTRB(
@@ -2618,26 +2795,72 @@ class _DailyTaskDetailScreenState
         MediaQuery.viewInsetsOf(context).bottom + 32,
       ),
       children: [
-        TextField(
-          key: const ValueKey('daily-detail-title'),
-          controller: _title,
-          onChanged: _taskIcon.onTaskChanged,
-          autofocus: _title.text.trim().isEmpty,
-          textCapitalization: TextCapitalization.sentences,
-          style: Theme.of(context).textTheme.titleLarge,
-          decoration: InputDecoration(
-            hintText: 'Görev başlığı',
-            prefixIcon: ValueListenableBuilder(
-              valueListenable: _taskIcon,
-              builder: (_, result, __) =>
-                  TaskIconBadge.forResult(result, size: 34),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: context.palette.primaryMuted,
+            borderRadius: BorderRadius.circular(FlorienRadius.lg),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
             ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.screenTitle == 'Görev ekle'
+                          ? 'Bugün için küçük bir adım'
+                          : 'Görevini düzenle',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const ValueKey('daily-detail-title'),
+                controller: _title,
+                onChanged: _onTitleChanged,
+                autofocus: _title.text.trim().isEmpty,
+                textCapitalization: TextCapitalization.sentences,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                decoration: InputDecoration(
+                  hintText: 'Ne yapmak istersin?',
+                  filled: true,
+                  fillColor: context.palette.surface,
+                  prefixIcon: ValueListenableBuilder(
+                    valueListenable: _taskIcon,
+                    builder: (_, result, _) =>
+                        TaskIconBadge.forResult(result, size: 34),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 14),
         Card(
           child: Column(
             children: [
+              const _DailyFormSectionHeader(
+                icon: Icons.calendar_month_rounded,
+                title: 'Planlama',
+                subtitle: 'Bu görev için nazik bir yer aç.',
+                color: FlorienColors.paleBlue,
+              ),
+              const Divider(height: 1),
               _DetailTile(
                 icon: _isTimed
                     ? Icons.edit_calendar_outlined
@@ -2736,10 +2959,34 @@ class _DailyTaskDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Alt görevler',
-                  style: Theme.of(context).textTheme.titleMedium,
+                _DailyFormSectionHeader(
+                  icon: Icons.account_tree_outlined,
+                  title: 'Alt görevler',
+                  subtitle: _subtasks.isEmpty
+                      ? 'Küçük adımlar başlatmayı kolaylaştırır.'
+                      : 'Adımları dilediğin sırayla düzenleyebilirsin.',
+                  color: FlorienColors.aiLavender,
+                  trailing:
+                      _title.text.trim().isNotEmpty &&
+                          _subtasks.length < TaskModel.userSubtaskLimit
+                      ? IconButton.filledTonal(
+                          key: const ValueKey('daily-ai-subtasks-button'),
+                          tooltip: 'AI ile alt görev oluştur',
+                          onPressed: _generatingSubtasks
+                              ? null
+                              : _generateSubtasks,
+                          icon: _generatingSubtasks
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.auto_awesome_rounded),
+                        )
+                      : null,
                 ),
+                const SizedBox(height: 12),
                 for (var index = 0; index < _subtasks.length; index++)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -2756,6 +3003,7 @@ class _DailyTaskDetailScreenState
                   children: [
                     Expanded(
                       child: TextField(
+                        key: const ValueKey('daily-detail-subtask-input'),
                         controller: _subtask,
                         onSubmitted: (_) => _addSubtask(),
                         decoration: const InputDecoration(
@@ -2778,14 +3026,25 @@ class _DailyTaskDetailScreenState
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _notes,
-              minLines: 4,
-              maxLines: 8,
-              decoration: const InputDecoration(
-                hintText: 'Notlarını buraya yaz…',
-                border: InputBorder.none,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _DailyFormSectionHeader(
+                  icon: Icons.notes_rounded,
+                  title: 'Notlar',
+                  subtitle: 'Hatırlamak istediğin ayrıntılar.',
+                  color: FlorienColors.softPink,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _notes,
+                  minLines: 4,
+                  maxLines: 8,
+                  decoration: const InputDecoration(
+                    hintText: 'Notlarını buraya yaz…',
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -2898,6 +3157,62 @@ class _DailyTaskDetailScreenState
   }
 }
 
+class _DailyFormSectionHeader extends StatelessWidget {
+  const _DailyFormSectionHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 21),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.palette.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        trailing ?? const SizedBox.shrink(),
+      ],
+    ),
+  );
+}
+
 class _DetailTile extends StatelessWidget {
   const _DetailTile({
     super.key,
@@ -2913,18 +3228,55 @@ class _DetailTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: Icon(icon),
-    title: Text(label),
-    trailing: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-      decoration: BoxDecoration(
-        color: context.palette.surfaceMuted,
-        borderRadius: BorderRadius.circular(99),
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: context.palette.aiSurface,
+                borderRadius: BorderRadius.circular(FlorienRadius.sm),
+              ),
+              child: Icon(icon, size: 19),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: context.palette.primaryMuted,
+                borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                border: Border.all(
+                  color: context.palette.border,
+                  width: FlorienBorders.thin,
+                ),
+              ),
+              child: Text(
+                value,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
-      child: Text(value),
     ),
-    onTap: onTap,
   );
 }
 
@@ -3237,6 +3589,7 @@ class _DailyTaskDraft {
     this.recurrence = const RecurrenceSelection(),
     this.alarmAt,
     this.subtasks = const [],
+    this.presetSubtasks = const [],
     this.icon = TaskIcons.defaultName,
     this.color = '#4F52B2',
     this.openDetails = false,
@@ -3254,6 +3607,7 @@ class _DailyTaskDraft {
   final RecurrenceSelection recurrence;
   final DateTime? alarmAt;
   final List<String> subtasks;
+  final List<String> presetSubtasks;
   final String icon;
   final String color;
   final bool openDetails;
@@ -3273,6 +3627,7 @@ class _DailyTaskDraft {
     DateTime? alarmAt,
     bool clearAlarmAt = false,
     List<String>? subtasks,
+    List<String>? presetSubtasks,
     String? icon,
     String? color,
     bool? openDetails,
@@ -3289,6 +3644,7 @@ class _DailyTaskDraft {
     recurrence: recurrence ?? this.recurrence,
     alarmAt: clearAlarmAt ? null : (alarmAt ?? this.alarmAt),
     subtasks: subtasks ?? this.subtasks,
+    presetSubtasks: presetSubtasks ?? this.presetSubtasks,
     icon: icon ?? this.icon,
     color: color ?? this.color,
     openDetails: openDetails ?? this.openDetails,

@@ -28,11 +28,16 @@ class TodoListDefinition {
 }
 
 class TodoListStorage {
-  static const _key = 'todo_list_definitions_v1';
+  static const _legacyKey = 'todo_list_definitions_v1';
+  static const _keyPrefix = 'todo_list_definitions_v2_';
 
-  Future<List<TodoListDefinition>> load() async {
+  Future<List<TodoListDefinition>> load({required String profileScope}) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
+    final raw =
+        prefs.getString(_keyFor(profileScope)) ??
+        (profileScope.endsWith(':primary')
+            ? prefs.getString(_legacyKey)
+            : null);
     if (raw == null) return const [];
     try {
       final value = jsonDecode(raw) as List<dynamic>;
@@ -46,11 +51,16 @@ class TodoListStorage {
     }
   }
 
-  Future<void> save(List<TodoListDefinition> lists) async {
+  Future<void> save(
+    List<TodoListDefinition> lists, {
+    required String profileScope,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      _key,
+      _keyFor(profileScope),
       jsonEncode(lists.map((list) => list.toJson()).toList()),
     );
   }
+
+  String _keyFor(String profileScope) => '$_keyPrefix$profileScope';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
@@ -112,51 +113,11 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                PopupMenuButton<_TodoMenuAction>(
+                _TodoIconButton(
                   tooltip: 'Liste seçenekleri',
-                  padding: EdgeInsets.zero,
-                  style: IconButton.styleFrom(
-                    fixedSize: const Size.square(40),
-                    padding: EdgeInsets.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    backgroundColor: context.palette.surfaceMuted,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                    ),
-                  ),
-                  onSelected: (action) => _handleMenu(action, lists),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: _TodoMenuAction.newList,
-                      child: ListTile(
-                        leading: Icon(Icons.add_circle_outline),
-                        title: Text('Yeni liste oluştur'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: _TodoMenuAction.editLists,
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Düzenleme listeleri'),
-                      ),
-                    ),
-                    PopupMenuDivider(),
-                    PopupMenuItem(
-                      value: _TodoMenuAction.group,
-                      child: ListTile(
-                        leading: Icon(Icons.account_tree_outlined),
-                        title: Text('Grup'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: _TodoMenuAction.options,
-                      child: ListTile(
-                        leading: Icon(Icons.tune_rounded),
-                        title: Text('Seçenekler görüntüle'),
-                      ),
-                    ),
-                  ],
-                  icon: const Icon(Icons.more_horiz_rounded, size: 19),
+                  onPressed: () => _showHeaderMenu(lists),
+                  icon: Icons.more_horiz_rounded,
+                  filled: false,
                 ),
                 const SizedBox(width: 4),
                 _TodoIconButton(
@@ -282,6 +243,17 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
     if (mounted) setState(() => _selectedListId = created.id);
   }
 
+  Future<void> _showHeaderMenu(List<TodoListDefinition> lists) async {
+    final action = await showFlorienBottomSheet<_TodoMenuAction>(
+      context: context,
+      builder: (_) => _TodoHeaderMenuSheet(
+        grouping: _grouping,
+        showDuration: _showDuration,
+      ),
+    );
+    if (action != null && mounted) await _handleMenu(action, lists);
+  }
+
   Future<TodoListDefinition?> _showListEditor([TodoListDefinition? existing]) =>
       showFlorienBottomSheet<TodoListDefinition>(
         context: context,
@@ -294,7 +266,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
       context: context,
       maxWidth: 340,
       builder: (_) => _ChoiceDialog<_TodoGrouping>(
-        title: 'Grup',
+        title: 'Görevleri grupla',
         value: _grouping,
         options: const {
           _TodoGrouping.none: ('Gruplama yok', Icons.reorder_rounded),
@@ -344,6 +316,278 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
 enum _TodoMenuAction { newList, editLists, group, options }
 
 enum _TodoGrouping { none, priority, size, eisenhower }
+
+class _TodoHeaderMenuSheet extends StatelessWidget {
+  const _TodoHeaderMenuSheet({
+    required this.grouping,
+    required this.showDuration,
+  });
+
+  final _TodoGrouping grouping;
+  final bool showDuration;
+
+  String get _groupingLabel => switch (grouping) {
+    _TodoGrouping.none => 'Tek liste',
+    _TodoGrouping.priority => 'Önceliğe göre',
+    _TodoGrouping.size => 'Görev boyutuna göre',
+    _TodoGrouping.eisenhower => 'Eisenhower matrisi',
+  };
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+      decoration: BoxDecoration(
+        color: context.palette.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border(
+          top: BorderSide(color: context.palette.border, width: 2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .08),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .78,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.palette.border,
+                    borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: FlorienColors.aiLavender,
+                      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                      border: Border.all(color: context.palette.border),
+                    ),
+                    child: const Icon(Icons.tune_rounded, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'To-do düzeni',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Listelerini ve görünümü düzenle.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: context.palette.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Kapat',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TodoMenuActionCard(
+                      icon: Icons.add_rounded,
+                      label: 'Yeni liste',
+                      color: context.palette.primaryMuted,
+                      onTap: () =>
+                          Navigator.pop(context, _TodoMenuAction.newList),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _TodoMenuActionCard(
+                      icon: Icons.edit_note_rounded,
+                      label: 'Düzenleme listeleri',
+                      color: context.palette.aiSurface,
+                      onTap: () =>
+                          Navigator.pop(context, _TodoMenuAction.editLists),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'GÖRÜNÜM',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: context.palette.textSecondary,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .8,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _TodoMenuRow(
+                icon: Icons.account_tree_outlined,
+                label: 'Görevleri grupla',
+                value: _groupingLabel,
+                color: FlorienColors.mint,
+                onTap: () => Navigator.pop(context, _TodoMenuAction.group),
+              ),
+              const SizedBox(height: 8),
+              _TodoMenuRow(
+                icon: Icons.visibility_outlined,
+                label: 'Görünüm ayarları',
+                value: showDuration ? 'Süre açık' : 'Süre kapalı',
+                color: FlorienColors.softPink,
+                onTap: () => Navigator.pop(context, _TodoMenuAction.options),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _TodoMenuActionCard extends StatelessWidget {
+  const _TodoMenuActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: color,
+    borderRadius: BorderRadius.circular(FlorienRadius.md),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      child: Container(
+        height: 100,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 23),
+            const Spacer(),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _TodoMenuRow extends StatelessWidget {
+  const _TodoMenuRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: context.palette.surfaceMuted,
+    borderRadius: BorderRadius.circular(FlorienRadius.md),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(FlorienRadius.sm),
+              ),
+              child: Icon(icon, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: context.palette.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
 class _ListTitle extends StatelessWidget {
   const _ListTitle({
@@ -639,23 +883,56 @@ class _ChoiceDialog<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(title),
+    contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
     content: Column(
       mainAxisSize: MainAxisSize.min,
-      children: options.entries
-          .map(
-            (entry) => ListTile(
-              leading: Icon(entry.value.$2),
-              title: Text(entry.value.$1),
-              trailing: entry.key == value
-                  ? const Icon(Icons.check_rounded)
-                  : null,
+      children: [
+        for (final entry in options.entries) ...[
+          Material(
+            color: entry.key == value
+                ? context.palette.primaryMuted
+                : context.palette.surfaceMuted,
+            borderRadius: BorderRadius.circular(FlorienRadius.md),
+            child: InkWell(
               onTap: () {
                 onChanged(entry.key);
                 Navigator.pop(context);
               },
+              borderRadius: BorderRadius.circular(FlorienRadius.md),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(FlorienRadius.md),
+                  border: Border.all(
+                    color: context.palette.border,
+                    width: FlorienBorders.thin,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(entry.value.$2, size: 20),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        entry.value.$1,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (entry.key == value)
+                      const Icon(Icons.check_circle_rounded, size: 21),
+                  ],
+                ),
+              ),
             ),
-          )
-          .toList(),
+          ),
+          if (entry.key != options.keys.last) const SizedBox(height: 8),
+        ],
+      ],
     ),
   );
 }
@@ -676,15 +953,36 @@ class _TodoOptionsDialogState extends State<_TodoOptionsDialog> {
   late bool _showDuration = widget.showDuration;
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Seçenekler görüntüle'),
-    content: SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      value: _showDuration,
-      onChanged: (value) {
-        setState(() => _showDuration = value);
-        widget.onChanged(value);
-      },
-      title: const Text('Görev süresi'),
+    title: const Text('Görünüm ayarları'),
+    contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+    content: Container(
+      decoration: BoxDecoration(
+        color: context.palette.surfaceMuted,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
+        ),
+      ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        value: _showDuration,
+        onChanged: (value) {
+          setState(() => _showDuration = value);
+          widget.onChanged(value);
+        },
+        secondary: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: FlorienColors.softPink,
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+          ),
+          child: const Icon(Icons.timer_outlined, size: 19),
+        ),
+        title: const Text('Görev süresi'),
+        subtitle: Text(_showDuration ? 'Kartlarda görünür' : 'Kartlarda gizli'),
+      ),
     ),
   );
 }
@@ -714,6 +1012,8 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   late String? _todoListId = widget.todoListId;
   late final RealtimeTaskIconController _taskIcon =
       RealtimeTaskIconController();
+  final _speech = SpeechInputService();
+  bool _listening = false;
 
   @override
   void initState() {
@@ -735,7 +1035,40 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   void dispose() {
     _controller.dispose();
     _taskIcon.dispose();
+    _speech.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleVoiceInput() async {
+    if (_listening) {
+      await _speech.stop();
+      return;
+    }
+    final existingText = _controller.text.trim();
+    await _speech.start(
+      onText: (spokenText) {
+        if (!mounted) return;
+        final text = existingText.isEmpty
+            ? spokenText
+            : '$existingText $spokenText';
+        _controller.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+        _taskIcon.onTaskChanged(text);
+      },
+      onListeningChanged: (isListening) {
+        if (mounted) setState(() => _listening = isListening);
+      },
+      onError: _showVoiceError,
+    );
+  }
+
+  void _showVoiceError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _close() {
@@ -804,23 +1137,62 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
-                key: const ValueKey('todo-quick-title'),
-                controller: _controller,
-                onChanged: _taskIcon.onTaskChanged,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _create(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: 'Ne yapman gerekiyor?',
-                  border: InputBorder.none,
-                  prefixIcon: ValueListenableBuilder(
-                    valueListenable: _taskIcon,
-                    builder: (_, result, __) =>
-                        TaskIconBadge.forResult(result, size: 34),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: palette.aiSurface,
+                      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                      border: Border.all(color: palette.border),
+                    ),
+                    child: const Icon(Icons.checklist_rounded, size: 21),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Yeni To-do',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Kapat',
+                    onPressed: _isSaving ? null : _close,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: palette.aiSurface,
+                  borderRadius: BorderRadius.circular(FlorienRadius.md),
+                  border: Border.all(
+                    color: palette.border,
+                    width: FlorienBorders.thin,
+                  ),
+                ),
+                child: TextField(
+                  key: const ValueKey('todo-quick-title'),
+                  controller: _controller,
+                  onChanged: _taskIcon.onTaskChanged,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _create(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Ne yapman gerekiyor?',
+                    border: InputBorder.none,
+                    prefixIcon: ValueListenableBuilder(
+                      valueListenable: _taskIcon,
+                      builder: (_, result, _) =>
+                          TaskIconBadge.forResult(result, size: 34),
+                    ),
                   ),
                 ),
               ),
@@ -867,7 +1239,26 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                       onPressed: _isSaving ? null : _close,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    key: const ValueKey('todo-quick-voice'),
+                    tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
+                    onPressed: _isSaving ? null : _toggleVoiceInput,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size.square(50),
+                      backgroundColor: _listening
+                          ? FlorienColors.softPink
+                          : palette.aiSurface,
+                      side: BorderSide(
+                        color: palette.border,
+                        width: FlorienBorders.thin,
+                      ),
+                    ),
+                    icon: Icon(
+                      _listening ? Icons.stop_rounded : Icons.mic_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: FlorienPrimaryButton(
                       label: _isSaving ? 'Ekleniyor' : 'Ekle',
@@ -1381,9 +1772,10 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
           children: [
             ListTile(
               dense: true,
-              visualDensity: const VisualDensity(vertical: -2),
-              contentPadding: const EdgeInsets.fromLTRB(14, 5, 8, 5),
-              leading: TaskIconBadge.forTask(icon: task.icon, size: 32),
+              visualDensity: const VisualDensity(vertical: -4),
+              minVerticalPadding: 0,
+              contentPadding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
+              leading: TaskIconBadge.forTask(icon: task.icon, size: 28),
               title: Text(
                 task.title,
                 maxLines: 1,
@@ -1418,7 +1810,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
                 compact: true,
-                size: 30,
+                size: 28,
                 filled: task.isCompleted,
                 onPressed: () => _toggleCompletion(task),
               ),
