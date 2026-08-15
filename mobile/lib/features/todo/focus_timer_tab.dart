@@ -170,13 +170,8 @@ class _FocusTimerTabState extends State<FocusTimerTab>
           _taskCompletionRequested = false;
           _automaticTask = false;
         });
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Odaklanma görevi oluşturulamadı.')),
-          );
-        }
-        return;
+      } catch (error) {
+        debugPrint('Standalone focus task could not be persisted: $error');
       } finally {
         if (mounted) setState(() => _creatingStandaloneTask = false);
       }
@@ -628,39 +623,26 @@ class _TimerSetup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      const SizedBox(height: 96),
+      const SizedBox(height: 72),
       const _FocusTitle(),
-      const SizedBox(height: 40),
-      _TimerDial(
-        key: const ValueKey('setup-focus-dial'),
-        progress: progress,
-        showHandle: true,
-        showDurationLabels: true,
-        onRotationStart: onRotationStart,
-        onRotationUpdate: onRotationUpdate,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectedMinutes <= 60
-                  ? '$selectedMinutes'
-                  : '${selectedMinutes ~/ 60}:${(selectedMinutes % 60).toString().padLeft(2, '0')}',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontSize: selectedMinutes <= 60 ? 58 : 46,
-                fontWeight: FontWeight.w500,
-                letterSpacing: -2,
-              ),
-            ),
-            Text(
-              selectedMinutes <= 60 ? 'DK.' : 'SA:DK',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ],
+      const SizedBox(height: 6),
+      Text(
+        'Süreyi yavaşça ayarla',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: context.palette.textSecondary,
+          fontWeight: FontWeight.w500,
         ),
       ),
-      const SizedBox(height: 38),
+      const SizedBox(height: 22),
+      _HourglassSelector(
+        selectedMinutes: selectedMinutes,
+        progress: progress,
+        onRotationStart: onRotationStart,
+        onRotationUpdate: onRotationUpdate,
+      ),
+      const SizedBox(height: 14),
+      _HourglassDragHint(),
+      const SizedBox(height: 24),
       _TimerControlButton(
         icon: Icons.play_arrow_rounded,
         label: 'Başla',
@@ -668,6 +650,348 @@ class _TimerSetup extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _HourglassSelector extends StatelessWidget {
+  const _HourglassSelector({
+    required this.selectedMinutes,
+    required this.progress,
+    required this.onRotationStart,
+    required this.onRotationUpdate,
+  });
+
+  final int selectedMinutes;
+  final double progress;
+  final void Function(Offset, Size) onRotationStart;
+  final void Function(Offset, Size) onRotationUpdate;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final size = math.min(constraints.maxWidth, 340.0);
+      final handleAngle = -math.pi / 2 + math.pi * 2 * progress;
+      final handleRadius = math.min(133.0, size / 2 - 20);
+      final selectedTop = 48 + (1 - progress) * 212;
+
+      return Listener(
+        key: const ValueKey('setup-focus-dial'),
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) =>
+            onRotationStart(event.localPosition, Size.square(size)),
+        onPointerMove: (event) =>
+            onRotationUpdate(event.localPosition, Size.square(size)),
+        child: SizedBox.square(
+          dimension: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _HourglassPainter(
+                    progress: progress,
+                    glassColor: context.palette.surface,
+                    outlineColor: context.palette.border,
+                    sandColor: FlorienColors.focusAccent,
+                    railColor: context.palette.textSecondary,
+                    accentColor: FlorienColors.primary,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 76,
+                top: size / 2 - 31,
+                width: 140,
+                height: 62,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.palette.surface,
+                    borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                    border: Border.all(
+                      color: context.palette.border,
+                      width: FlorienBorders.thin,
+                    ),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          selectedMinutes <= 60
+                              ? '$selectedMinutes'
+                              : '${selectedMinutes ~/ 60}:${(selectedMinutes % 60).toString().padLeft(2, '0')}',
+                          key: const ValueKey('hourglass-duration-label'),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -1,
+                              ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          selectedMinutes <= 60 ? 'dk' : 'sa:dk',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: size - 41,
+                top: selectedTop - 13,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: FlorienColors.primary,
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.medium,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: FlorienColors.focusAccent.withValues(
+                            alpha: .3,
+                          ),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: size / 2 + math.cos(handleAngle) * handleRadius - 19,
+                top: size / 2 + math.sin(handleAngle) * handleRadius - 19,
+                child: const Opacity(
+                  opacity: 0,
+                  child: SizedBox(
+                    key: ValueKey('focus-dial-handle'),
+                    width: 38,
+                    height: 38,
+                  ),
+                ),
+              ),
+              const Positioned(
+                right: -28,
+                top: 39,
+                child: _HourglassRailLabel(label: '60 dk'),
+              ),
+              const Positioned(
+                right: -28,
+                top: 93,
+                child: _HourglassRailLabel(label: '45 dk'),
+              ),
+              const Positioned(
+                right: -28,
+                top: 165,
+                child: _HourglassRailLabel(label: '25 dk'),
+              ),
+              const Positioned(
+                right: -28,
+                top: 219,
+                child: _HourglassRailLabel(label: '15 dk'),
+              ),
+              const Positioned(
+                right: -28,
+                top: 255,
+                child: _HourglassRailLabel(label: '5 dk'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _HourglassRailLabel extends StatelessWidget {
+  const _HourglassRailLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: context.palette.textPrimary,
+      fontWeight: FontWeight.w700,
+    ),
+  );
+}
+
+class _HourglassDragHint extends StatelessWidget {
+  const _HourglassDragHint();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+    decoration: BoxDecoration(
+      color: context.palette.aiSurface,
+      borderRadius: BorderRadius.circular(FlorienRadius.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.unfold_more_rounded,
+          size: 19,
+          color: context.palette.textSecondary,
+        ),
+        const SizedBox(width: 7),
+        Text(
+          'Sürükleyerek ayarla',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: context.palette.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _HourglassPainter extends CustomPainter {
+  const _HourglassPainter({
+    required this.progress,
+    required this.glassColor,
+    required this.outlineColor,
+    required this.sandColor,
+    required this.railColor,
+    required this.accentColor,
+  });
+
+  final double progress;
+  final Color glassColor;
+  final Color outlineColor;
+  final Color sandColor;
+  final Color railColor;
+  final Color accentColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const referenceSize = 340.0;
+    final scale = size.shortestSide / referenceSize;
+    canvas.scale(scale);
+    final paint = Paint()..isAntiAlias = true;
+
+    void roundedBar(double top) {
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(45, top, 192, 28),
+        const Radius.circular(14),
+      );
+      canvas.drawRRect(rect, paint..color = FlorienColors.aiLavender);
+      canvas.drawRRect(
+        rect,
+        paint
+          ..color = outlineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6,
+      );
+      paint.style = PaintingStyle.fill;
+    }
+
+    roundedBar(28);
+    roundedBar(278);
+
+    final glass = Path()
+      ..moveTo(62, 56)
+      ..cubicTo(62, 104, 88, 118, 137, 158)
+      ..cubicTo(88, 198, 62, 212, 62, 278)
+      ..lineTo(220, 278)
+      ..cubicTo(220, 212, 194, 198, 143, 158)
+      ..cubicTo(194, 118, 220, 104, 220, 56)
+      ..close();
+    canvas.drawPath(glass, paint..color = glassColor.withValues(alpha: .34));
+    canvas.drawPath(
+      glass,
+      paint
+        ..color = outlineColor.withValues(alpha: .58)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.7,
+    );
+    paint.style = PaintingStyle.fill;
+
+    final upperLevel = 132 - 65 * progress;
+    final upperSand = Path()
+      ..moveTo(74, upperLevel)
+      ..quadraticBezierTo(137, upperLevel + 14, 208, upperLevel)
+      ..cubicTo(196, 126, 173, 141, 143, 158)
+      ..cubicTo(114, 141, 89, 126, 74, upperLevel)
+      ..close();
+    canvas.drawPath(upperSand, paint..color = sandColor.withValues(alpha: .78));
+
+    final lowerHeight = 41 + 64 * (1 - progress);
+    final lowerTop = 270 - lowerHeight;
+    final lowerSand = Path()
+      ..moveTo(141, 165)
+      ..cubicTo(156, 194, 180, lowerTop, 210, 270)
+      ..lineTo(72, 270)
+      ..cubicTo(102, lowerTop, 126, 194, 141, 165)
+      ..close();
+    canvas.drawPath(lowerSand, paint..color = sandColor.withValues(alpha: .78));
+    canvas.drawLine(
+      const Offset(141, 157),
+      Offset(141, lowerTop + 5),
+      paint
+        ..color = sandColor.withValues(alpha: .65)
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
+    );
+
+    final highlight = Paint()
+      ..color = Colors.white.withValues(alpha: .65)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(const Offset(81, 82), const Offset(76, 116), highlight);
+
+    const railX = 281.0;
+    canvas.drawLine(
+      const Offset(railX, 48),
+      const Offset(railX, 260),
+      paint
+        ..color = railColor.withValues(alpha: .35)
+        ..strokeWidth = 1.5,
+    );
+    for (final top in [48.0, 102.0, 174.0, 228.0, 260.0]) {
+      canvas.drawCircle(
+        Offset(railX, top),
+        7,
+        paint
+          ..color = glassColor
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset(railX, top),
+        7,
+        paint
+          ..color = railColor.withValues(alpha: .45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
+      );
+      paint.style = PaintingStyle.fill;
+    }
+    canvas.drawCircle(
+      Offset(railX, 48 + (1 - progress) * 212),
+      10,
+      paint..color = accentColor.withValues(alpha: .55),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HourglassPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.glassColor != glassColor ||
+      oldDelegate.outlineColor != outlineColor ||
+      oldDelegate.sandColor != sandColor ||
+      oldDelegate.railColor != railColor ||
+      oldDelegate.accentColor != accentColor;
 }
 
 class _ActiveTimer extends StatefulWidget {
@@ -999,7 +1323,6 @@ class _TimerDial extends StatelessWidget {
     required this.progress,
     required this.child,
     this.showHandle = false,
-    this.showDurationLabels = false,
     this.onRotationStart,
     this.onRotationUpdate,
     this.onRotationEnd,
@@ -1008,7 +1331,6 @@ class _TimerDial extends StatelessWidget {
   final double progress;
   final Widget child;
   final bool showHandle;
-  final bool showDurationLabels;
   final void Function(Offset, Size)? onRotationStart;
   final void Function(Offset, Size)? onRotationUpdate;
   final VoidCallback? onRotationEnd;
@@ -1041,12 +1363,6 @@ class _TimerDial extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (showDurationLabels) ...[
-                  const Positioned(top: 42, child: _DialLabel(label: '60')),
-                  const Positioned(right: 35, child: _DialLabel(label: '15')),
-                  const Positioned(bottom: 42, child: _DialLabel(label: '30')),
-                  const Positioned(left: 35, child: _DialLabel(label: '45')),
-                ],
                 if (showHandle)
                   Positioned(
                     left:
@@ -1310,22 +1626,6 @@ class _TimerControlButton extends StatelessWidget {
     label: label.isEmpty
         ? const SizedBox.shrink()
         : Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-  );
-}
-
-class _DialLabel extends StatelessWidget {
-  const _DialLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Text(
-    label,
-    style: TextStyle(
-      color: context.palette.textSecondary,
-      fontSize: 15,
-      fontWeight: FontWeight.w700,
-    ),
   );
 }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -38,7 +37,6 @@ void main() {
           home: const TodoDetailScreen(
             initialTitle: '',
             initialDuration: 15,
-            priority: TaskPriority.none,
             todoListId: null,
           ),
         ),
@@ -47,6 +45,25 @@ void main() {
 
     const buttonKey = ValueKey('todo-ai-subtasks-button');
     expect(find.byKey(buttonKey), findsNothing);
+    expect(find.text('Görev ayarları'), findsNothing);
+    expect(find.text('Liste'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('todo-detail-subtask-input')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('todo-detail-notes')), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey('todo-subtasks-section-toggle')),
+    );
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('todo-detail-subtask-input')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('todo-notes-section-toggle')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('todo-detail-notes')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('todo-detail-title')),
@@ -72,7 +89,6 @@ void main() {
           home: TodoDetailScreen(
             initialTitle: 'Sunum hazırla',
             initialDuration: 15,
-            priority: TaskPriority.none,
             todoListId: null,
             initialSubtasks: List.generate(5, (index) => 'Adım $index'),
           ),
@@ -99,7 +115,6 @@ void main() {
           home: TodoDetailScreen(
             initialTitle: 'Sunum hazırla',
             initialDuration: 15,
-            priority: TaskPriority.none,
             todoListId: null,
             initialSubtasks: List.generate(30, (index) => 'Adım $index'),
           ),

@@ -144,25 +144,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                   const Text('Florien'),
                 ],
               ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: IconButton(
-                    tooltip: 'Çıkış yap',
-                    onPressed: () =>
-                        ref.read(authStateProvider.notifier).logout(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: context.palette.surface,
-                      foregroundColor: context.palette.textPrimary,
-                      side: BorderSide(
-                        color: context.palette.border,
-                        width: FlorienBorders.thin,
-                      ),
-                    ),
-                    icon: const Icon(Icons.logout_rounded, size: 18),
-                  ),
-                ),
-              ],
             )
           : null,
       body: IndexedStack(

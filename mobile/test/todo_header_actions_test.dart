@@ -51,6 +51,7 @@ void main() {
     await tester.tap(find.byTooltip('Liste seçenekleri'));
     await tester.pumpAndSettle();
     expect(find.text('Düzenleme listeleri'), findsOneWidget);
+    expect(find.text('Görevleri grupla'), findsNothing);
     await tester.tapAt(const Offset(8, 300));
     await tester.pumpAndSettle();
 
@@ -58,7 +59,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ne yapman gerekiyor?'), findsOneWidget);
     expect(find.byKey(const ValueKey('todo-quick-voice')), findsOneWidget);
-    await tester.tap(find.text('Vazgeç'));
+    expect(find.byKey(const ValueKey('todo-quick-submit')), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-quick-list')), findsNothing);
+    expect(find.text('Vazgeç'), findsNothing);
+    await tester.tap(find.byTooltip('Kapat'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);

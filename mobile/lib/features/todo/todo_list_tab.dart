@@ -4,7 +4,6 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -16,7 +15,6 @@ import 'package:florien/features/todo/todo_detail_screen.dart';
 Future<void> showTodoQuickAdd({
   required BuildContext context,
   required WidgetRef ref,
-  TaskPriority initialPriority = TaskPriority.none,
   String? todoListId,
   String initialTitle = '',
 }) async {
@@ -26,7 +24,6 @@ Future<void> showTodoQuickAdd({
     context: context,
     isScrollControlled: true,
     builder: (_) => _AddTodoDialog(
-      initialPriority: initialPriority,
       todoListId: todoListId,
       lists: lists,
       initialTitle: initialTitle,
@@ -38,7 +35,6 @@ Future<void> showTodoQuickAdd({
       builder: (_) => TodoDetailScreen(
         initialTitle: details.title,
         initialDuration: details.duration,
-        priority: details.priority,
         todoListId: details.todoListId,
         initialIcon: details.icon,
       ),
@@ -54,9 +50,8 @@ class TodoListTab extends ConsumerStatefulWidget {
 }
 
 class _TodoListTabState extends ConsumerState<TodoListTab> {
-  final Set<TaskPriority> _collapsed = {};
   String? _selectedListId;
-  _TodoGrouping _grouping = _TodoGrouping.priority;
+  bool _tasksCollapsed = false;
   bool _showDuration = true;
   bool _completedCollapsed = false;
 
@@ -122,7 +117,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                 const SizedBox(width: 4),
                 _TodoIconButton(
                   tooltip: 'Yeni yapılacak ekle',
-                  onPressed: () => _showAdd(TaskPriority.none),
+                  onPressed: _showAdd,
                   icon: Icons.add_rounded,
                 ),
               ],
@@ -135,32 +130,16 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
               ),
             ],
             const SizedBox(height: 22),
-            for (final section in _sectionsForGrouping()) ...[
-              _TodoSection(
-                section: section,
-                tasks: visibleTasks
-                    .where(
-                      (task) =>
-                          !task.isCompleted &&
-                          (_grouping != _TodoGrouping.priority ||
-                              task.priority == section.priority),
-                    )
-                    .toList(),
-                collapsed: _collapsed.contains(section.priority),
-                onToggle: () => setState(() {
-                  if (!_collapsed.add(section.priority)) {
-                    _collapsed.remove(section.priority);
-                  }
-                }),
-                onAdd: () => _showAdd(section.priority),
-                showDuration: _showDuration,
-                onTaskDropped: _grouping == _TodoGrouping.priority
-                    ? (task) =>
-                          _moveTaskToSection(task, priority: section.priority)
-                    : null,
-              ),
-              const SizedBox(height: 16),
-            ],
+            _TodoSection(
+              section: _defaultSection,
+              tasks: visibleTasks.where((task) => !task.isCompleted).toList(),
+              collapsed: _tasksCollapsed,
+              onToggle: () =>
+                  setState(() => _tasksCollapsed = !_tasksCollapsed),
+              onAdd: _showAdd,
+              showDuration: _showDuration,
+            ),
+            const SizedBox(height: 16),
             if (completedTasks.isNotEmpty) ...[
               _TodoSection(
                 section: _completedSection,
@@ -183,18 +162,16 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
     );
   }
 
-  Future<void> _showAdd(TaskPriority initialPriority) async {
+  Future<void> _showAdd() async {
     await showTodoQuickAdd(
       context: context,
       ref: ref,
-      initialPriority: initialPriority,
       todoListId: _selectedListId,
     );
   }
 
   Future<void> _moveTaskToSection(
     TaskModel task, {
-    TaskPriority? priority,
     bool completed = false,
   }) async {
     final notifier = ref.read(inboxProvider.notifier);
@@ -203,9 +180,6 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
       return;
     }
     if (task.isCompleted) await notifier.uncompleteTask(task.id);
-    if (priority != null && task.priority != priority) {
-      await notifier.updatePriority(task.id, priority);
-    }
   }
 
   Future<void> _handleMenu(
@@ -229,8 +203,6 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
             onEdit: _showListEditor,
           ),
         );
-      case _TodoMenuAction.group:
-        await _showGroupingMenu();
       case _TodoMenuAction.options:
         await _showOptionsMenu();
     }
@@ -246,10 +218,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
   Future<void> _showHeaderMenu(List<TodoListDefinition> lists) async {
     final action = await showFlorienBottomSheet<_TodoMenuAction>(
       context: context,
-      builder: (_) => _TodoHeaderMenuSheet(
-        grouping: _grouping,
-        showDuration: _showDuration,
-      ),
+      builder: (_) => _TodoHeaderMenuSheet(showDuration: _showDuration),
     );
     if (action != null && mounted) await _handleMenu(action, lists);
   }
@@ -261,27 +230,6 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
         builder: (_) => _ListEditorSheet(existing: existing),
       );
 
-  Future<void> _showGroupingMenu() async {
-    await showFlorienSoftDialog<void>(
-      context: context,
-      maxWidth: 340,
-      builder: (_) => _ChoiceDialog<_TodoGrouping>(
-        title: 'Görevleri grupla',
-        value: _grouping,
-        options: const {
-          _TodoGrouping.none: ('Gruplama yok', Icons.reorder_rounded),
-          _TodoGrouping.priority: ('Öncelik', Icons.flag_outlined),
-          _TodoGrouping.size: ('Görev boyutu', Icons.timelapse_rounded),
-          _TodoGrouping.eisenhower: (
-            'Eisenhower matrisi',
-            Icons.grid_view_rounded,
-          ),
-        },
-        onChanged: (value) => setState(() => _grouping = value),
-      ),
-    );
-  }
-
   Future<void> _showOptionsMenu() async {
     await showFlorienSoftDialog<void>(
       context: context,
@@ -292,46 +240,14 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
       ),
     );
   }
-
-  List<_TodoSectionData> _sectionsForGrouping() {
-    if (_grouping == _TodoGrouping.priority) return _sections;
-    final label = switch (_grouping) {
-      _TodoGrouping.none => 'YAPILACAK',
-      _TodoGrouping.size => 'GÖREV BOYUTU',
-      _TodoGrouping.eisenhower => 'EISENHOWER',
-      _TodoGrouping.priority => 'YAPILACAK',
-    };
-    return [
-      _TodoSectionData(
-        TaskPriority.none,
-        label,
-        'Görev',
-        FlorienColors.primary,
-        Icons.view_agenda_outlined,
-      ),
-    ];
-  }
 }
 
-enum _TodoMenuAction { newList, editLists, group, options }
-
-enum _TodoGrouping { none, priority, size, eisenhower }
+enum _TodoMenuAction { newList, editLists, options }
 
 class _TodoHeaderMenuSheet extends StatelessWidget {
-  const _TodoHeaderMenuSheet({
-    required this.grouping,
-    required this.showDuration,
-  });
+  const _TodoHeaderMenuSheet({required this.showDuration});
 
-  final _TodoGrouping grouping;
   final bool showDuration;
-
-  String get _groupingLabel => switch (grouping) {
-    _TodoGrouping.none => 'Tek liste',
-    _TodoGrouping.priority => 'Önceliğe göre',
-    _TodoGrouping.size => 'Görev boyutuna göre',
-    _TodoGrouping.eisenhower => 'Eisenhower matrisi',
-  };
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -442,14 +358,6 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   letterSpacing: .8,
                 ),
-              ),
-              const SizedBox(height: 8),
-              _TodoMenuRow(
-                icon: Icons.account_tree_outlined,
-                label: 'Görevleri grupla',
-                value: _groupingLabel,
-                color: FlorienColors.mint,
-                onTap: () => Navigator.pop(context, _TodoMenuAction.group),
               ),
               const SizedBox(height: 8),
               _TodoMenuRow(
@@ -642,22 +550,27 @@ class _ListAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 4),
+    padding: const EdgeInsets.only(right: 6),
     child: Tooltip(
       message: 'Yeni liste oluştur',
       child: Material(
-        color: context.palette.surface,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: context.palette.border),
-          borderRadius: BorderRadius.circular(FlorienRadius.sm),
-        ),
+        color: context.palette.surfaceMuted,
+        shape: const CircleBorder(),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          child: const SizedBox(
-            width: 36,
-            height: 36,
-            child: Icon(Icons.add_rounded, size: 18),
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: context.palette.border),
+            ),
+            child: Icon(
+              Icons.playlist_add_rounded,
+              size: 19,
+              color: context.palette.textPrimary,
+            ),
           ),
         ),
       ),
@@ -868,75 +781,6 @@ class _EditListsScreenState extends State<_EditListsScreen> {
   );
 }
 
-class _ChoiceDialog<T> extends StatelessWidget {
-  const _ChoiceDialog({
-    required this.title,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-  final String title;
-  final T value;
-  final Map<T, (String, IconData)> options;
-  final ValueChanged<T> onChanged;
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(title),
-    contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final entry in options.entries) ...[
-          Material(
-            color: entry.key == value
-                ? context.palette.primaryMuted
-                : context.palette.surfaceMuted,
-            borderRadius: BorderRadius.circular(FlorienRadius.md),
-            child: InkWell(
-              onTap: () {
-                onChanged(entry.key);
-                Navigator.pop(context);
-              },
-              borderRadius: BorderRadius.circular(FlorienRadius.md),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 11,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(FlorienRadius.md),
-                  border: Border.all(
-                    color: context.palette.border,
-                    width: FlorienBorders.thin,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(entry.value.$2, size: 20),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        entry.value.$1,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    if (entry.key == value)
-                      const Icon(Icons.check_circle_rounded, size: 21),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (entry.key != options.keys.last) const SizedBox(height: 8),
-        ],
-      ],
-    ),
-  );
-}
-
 class _TodoOptionsDialog extends StatefulWidget {
   const _TodoOptionsDialog({
     required this.showDuration,
@@ -989,13 +833,11 @@ class _TodoOptionsDialogState extends State<_TodoOptionsDialog> {
 
 class _AddTodoDialog extends ConsumerStatefulWidget {
   const _AddTodoDialog({
-    required this.initialPriority,
     required this.todoListId,
     required this.lists,
     this.initialTitle = '',
   });
 
-  final TaskPriority initialPriority;
   final String? todoListId;
   final List<TodoListDefinition> lists;
   final String initialTitle;
@@ -1006,7 +848,6 @@ class _AddTodoDialog extends ConsumerStatefulWidget {
 
 class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   late final _controller = TextEditingController(text: widget.initialTitle);
-  late final TaskPriority _priority = widget.initialPriority;
   bool _isSaving = false;
   int _duration = 15;
   late String? _todoListId = widget.todoListId;
@@ -1082,12 +923,11 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
 
     setState(() => _isSaving = true);
     try {
-      await _taskIcon.onTaskChanged(title);
+      _taskIcon.onTaskChanged(title);
       await ref
           .read(inboxProvider.notifier)
           .addToInbox(
             title: title,
-            priority: _priority,
             todoListId: _todoListId,
             durationMinutes: _duration,
             icon: _taskIcon.value.category.storageName,
@@ -1161,6 +1001,11 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                   IconButton(
                     tooltip: 'Kapat',
                     onPressed: _isSaving ? null : _close,
+                    iconSize: 19,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size.square(36),
+                      padding: EdgeInsets.zero,
+                    ),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -1199,20 +1044,22 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  _QuickOptionChip(
-                    key: const ValueKey('todo-quick-list'),
-                    icon: Icons.format_list_bulleted_rounded,
-                    label: _listName,
-                    onTap: _pickList,
-                  ),
-                  const SizedBox(width: 8),
+                  if (widget.lists.isNotEmpty) ...[
+                    _QuickOptionChip(
+                      key: const ValueKey('todo-quick-list'),
+                      icon: Icons.format_list_bulleted_rounded,
+                      label: _listName,
+                      onTap: _pickList,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   _QuickOptionChip(
                     key: const ValueKey('todo-quick-duration'),
                     icon: Icons.timer_outlined,
                     label: _durationLabel(_duration).toUpperCase(),
                     onTap: _pickDuration,
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   _QuickOptionChip(
                     key: const ValueKey('todo-quick-details'),
                     icon: Icons.more_horiz_rounded,
@@ -1222,7 +1069,6 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                       _TodoQuickDraft(
                         title: _controller.text,
                         duration: _duration,
-                        priority: _priority,
                         todoListId: _todoListId,
                         icon: _taskIcon.value.category.storageName,
                       ),
@@ -1233,19 +1079,13 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: FlorienSecondaryButton(
-                      label: 'Vazgeç',
-                      onPressed: _isSaving ? null : _close,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
+                  const Spacer(),
                   IconButton(
                     key: const ValueKey('todo-quick-voice'),
                     tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
                     onPressed: _isSaving ? null : _toggleVoiceInput,
                     style: IconButton.styleFrom(
-                      fixedSize: const Size.square(50),
+                      fixedSize: const Size.square(44),
                       backgroundColor: _listening
                           ? FlorienColors.softPink
                           : palette.aiSurface,
@@ -1259,13 +1099,20 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: FlorienPrimaryButton(
-                      label: _isSaving ? 'Ekleniyor' : 'Ekle',
-                      icon: Icons.add_rounded,
-                      onPressed: _isSaving ? null : _create,
-                      isLoading: _isSaving,
+                  IconButton.filled(
+                    key: const ValueKey('todo-quick-submit'),
+                    tooltip: _isSaving ? 'Ekleniyor' : 'Ekle',
+                    onPressed: _isSaving ? null : _create,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size.square(44),
+                      padding: EdgeInsets.zero,
                     ),
+                    icon: _isSaving
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_rounded, size: 22),
                   ),
                 ],
               ),
@@ -1353,14 +1200,12 @@ class _TodoQuickDraft {
   const _TodoQuickDraft({
     required this.title,
     required this.duration,
-    required this.priority,
     required this.todoListId,
     required this.icon,
   });
 
   final String title;
   final int duration;
-  final TaskPriority priority;
   final String? todoListId;
   final String icon;
 }
@@ -1408,54 +1253,22 @@ class _QuickOptionChip extends StatelessWidget {
 }
 
 class _TodoSectionData {
-  const _TodoSectionData(
-    this.priority,
-    this.label,
-    this.shortLabel,
-    this.color,
-    this.icon,
-  );
+  const _TodoSectionData(this.label, this.shortLabel, this.color, this.icon);
 
-  final TaskPriority priority;
   final String label;
   final String shortLabel;
   final Color color;
   final IconData icon;
 }
 
-const _sections = [
-  _TodoSectionData(
-    TaskPriority.high,
-    'YÜKSEK',
-    'Yüksek',
-    Color(0xFFE46666),
-    Icons.arrow_drop_up_rounded,
-  ),
-  _TodoSectionData(
-    TaskPriority.medium,
-    'ORTA',
-    'Orta',
-    Color(0xFFE0A62F),
-    Icons.circle,
-  ),
-  _TodoSectionData(
-    TaskPriority.low,
-    'DÜŞÜK',
-    'Düşük',
-    Color(0xFF528BB9),
-    Icons.arrow_drop_down_rounded,
-  ),
-  _TodoSectionData(
-    TaskPriority.none,
-    'YAPILACAK',
-    'Yapılacak',
-    FlorienColors.primary,
-    Icons.check_circle_outline_rounded,
-  ),
-];
+const _defaultSection = _TodoSectionData(
+  'YAPILACAK',
+  'Yapılacak',
+  FlorienColors.primary,
+  Icons.check_circle_outline_rounded,
+);
 
 const _completedSection = _TodoSectionData(
-  TaskPriority.none,
   'TAMAMLANDI',
   'Tamamlandı',
   FlorienColors.success,
@@ -1487,16 +1300,11 @@ class _TodoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DragTarget<TaskModel>(
-    key: ValueKey(
-      completedTarget
-          ? 'todo-drop-completed'
-          : 'todo-drop-${section.priority.name}',
-    ),
+    key: ValueKey(completedTarget ? 'todo-drop-completed' : 'todo-drop-tasks'),
     onWillAcceptWithDetails: (details) {
-      if (onTaskDropped == null) return false;
-      if (completedTarget) return !details.data.isCompleted;
-      return details.data.isCompleted ||
-          details.data.priority != section.priority;
+      return onTaskDropped != null &&
+          completedTarget &&
+          !details.data.isCompleted;
     },
     onAcceptWithDetails: (details) => onTaskDropped?.call(details.data),
     builder: (context, candidates, rejected) => AnimatedContainer(
@@ -1961,7 +1769,6 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                 .map((subtask) => subtask.title)
                 .toList(),
             initialDuration: task.durationMinutes,
-            priority: task.priority,
             todoListId: task.todoListId,
             initialIcon: task.icon,
           ),
@@ -1991,7 +1798,6 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                 .map((subtask) => subtask.title)
                 .toList(),
             initialDuration: task.durationMinutes,
-            priority: task.priority,
             todoListId: task.todoListId,
             initialIcon: task.icon,
           ),

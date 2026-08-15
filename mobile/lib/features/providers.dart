@@ -3,12 +3,16 @@ import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/repositories/repositories.dart';
+import 'package:florien/core/services/apple_health_mood_service.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/storage/onboarding_storage.dart';
+import 'package:florien/core/storage/mood_storage.dart';
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -21,6 +25,45 @@ final googleAuthServiceProvider = Provider<GoogleAuthService>(
 final appleAuthServiceProvider = Provider<AppleAuthService>(
   (ref) => AppleAuthService(),
 );
+
+final onboardingStorageProvider = Provider<OnboardingStorage>(
+  (ref) => OnboardingStorage(),
+);
+
+final onboardingPreferencesProvider =
+    AsyncNotifierProvider<OnboardingPreferencesNotifier, OnboardingPreferences>(
+      OnboardingPreferencesNotifier.new,
+    );
+
+class OnboardingPreferencesNotifier
+    extends AsyncNotifier<OnboardingPreferences> {
+  late String _ownerId;
+
+  @override
+  Future<OnboardingPreferences> build() {
+    _ownerId = ref.watch(authStateProvider).valueOrNull?.userId ?? 'guest';
+    return ref.read(onboardingStorageProvider).load(_ownerId);
+  }
+
+  Future<void> complete({
+    required bool productUpdatesEnabled,
+    required String primaryNeed,
+    required String neuroProfile,
+  }) => _save(
+    OnboardingPreferences(
+      completed: true,
+      productUpdatesEnabled: productUpdatesEnabled,
+      primaryNeed: primaryNeed,
+      neuroProfile: neuroProfile,
+      paywallSeen: true,
+    ),
+  );
+
+  Future<void> _save(OnboardingPreferences preferences) async {
+    await ref.read(onboardingStorageProvider).save(_ownerId, preferences);
+    state = AsyncData(preferences);
+  }
+}
 
 final taskAlarmServiceProvider = Provider<TaskAlarmService>(
   (ref) => TaskAlarmService(ref.watch(settingsStorageProvider)),
@@ -129,6 +172,7 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
     ref.invalidate(todoListsProvider);
     ref.invalidate(dailyTimelineProvider);
     ref.invalidate(completionCountsProvider);
+    ref.invalidate(moodEntriesProvider);
   }
 }
 
@@ -141,6 +185,115 @@ final activeProfileScopeProvider = Provider<String>((ref) {
   final profileId = ref.watch(activeAppProfileProvider)?.id ?? 'primary';
   return '$ownerId:$profileId';
 });
+
+final moodStorageProvider = Provider<MoodStorage>((ref) => MoodStorage());
+
+final appleHealthMoodServiceProvider = Provider<AppleHealthMoodService>(
+  (ref) => AppleHealthMoodService(),
+);
+
+final moodEntriesProvider =
+    AsyncNotifierProvider<MoodEntriesNotifier, List<MoodEntry>>(
+      MoodEntriesNotifier.new,
+    );
+
+class MoodEntriesNotifier extends AsyncNotifier<List<MoodEntry>> {
+  late String _profileScope;
+
+  @override
+  Future<List<MoodEntry>> build() async {
+    _profileScope = ref.watch(activeProfileScopeProvider);
+    return ref.read(moodStorageProvider).load(_profileScope);
+  }
+
+  Future<void> saveEntry(MoodEntry entry) async {
+    final current = state.valueOrNull ?? const <MoodEntry>[];
+    final updated = _upsert(current, entry.copyWith(healthSynced: false));
+    await _persist(updated);
+    if (await ref
+        .read(moodStorageProvider)
+        .isHealthSyncEnabled(_profileScope)) {
+      await _syncUnsyncedEntries(updated);
+    }
+  }
+
+  Future<bool> connectAppleHealth() async {
+    final allowed = await ref
+        .read(appleHealthMoodServiceProvider)
+        .requestAuthorization();
+    if (!allowed) return false;
+    await ref
+        .read(moodStorageProvider)
+        .setHealthSyncEnabled(_profileScope, true);
+    await syncCurrentWeek();
+    return true;
+  }
+
+  Future<void> syncCurrentWeek() async {
+    final current = state.valueOrNull ?? const <MoodEntry>[];
+    var updated = await _syncUnsyncedEntries(current, persist: false);
+    final weekStart = _startOfWeek(DateTime.now());
+    final healthEntries = await ref
+        .read(appleHealthMoodServiceProvider)
+        .readWeek(weekStart);
+    for (final healthEntry in healthEntries) {
+      final alreadyStored = updated.any(
+        (entry) => _isSameDay(entry.date, healthEntry.date),
+      );
+      if (!alreadyStored) {
+        updated = _upsert(
+          updated,
+          MoodEntry(
+            date: healthEntry.date,
+            mood: healthEntry.mood,
+            healthSynced: true,
+          ),
+        );
+      }
+    }
+    await _persist(updated);
+  }
+
+  Future<List<MoodEntry>> _syncUnsyncedEntries(
+    List<MoodEntry> entries, {
+    bool persist = true,
+  }) async {
+    final service = ref.read(appleHealthMoodServiceProvider);
+    var updated = [...entries];
+    for (var index = 0; index < updated.length; index++) {
+      final entry = updated[index];
+      if (entry.healthSynced || !await service.save(entry)) continue;
+      updated[index] = entry.copyWith(healthSynced: true);
+    }
+    if (persist) await _persist(updated);
+    return updated;
+  }
+
+  Future<void> _persist(List<MoodEntry> entries) async {
+    await ref.read(moodStorageProvider).save(_profileScope, entries);
+    state = AsyncData(entries);
+  }
+
+  List<MoodEntry> _upsert(List<MoodEntry> entries, MoodEntry entry) {
+    final result =
+        entries
+            .where((current) => !_isSameDay(current.date, entry.date))
+            .toList()
+          ..add(entry);
+    result.sort((first, second) => first.date.compareTo(second.date));
+    return result;
+  }
+}
+
+DateTime _startOfWeek(DateTime date) {
+  final day = DateTime(date.year, date.month, date.day);
+  return day.subtract(Duration(days: day.weekday - DateTime.monday));
+}
+
+bool _isSameDay(DateTime first, DateTime second) =>
+    first.year == second.year &&
+    first.month == second.month &&
+    first.day == second.day;
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository(
@@ -508,7 +661,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
   Future<void> addDetailed({
     required String title,
     required int durationMinutes,
-    required TaskPriority priority,
+    TaskPriority priority = TaskPriority.none,
     required String? todoListId,
     String? description,
     List<String> subtasks = const [],
@@ -524,7 +677,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
   Future<void> addDetailedWithIcon({
     required String title,
     required int durationMinutes,
-    required TaskPriority priority,
+    TaskPriority priority = TaskPriority.none,
     required String? todoListId,
     String? icon,
     String? description,
@@ -558,7 +711,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
     required String id,
     required String title,
     required int durationMinutes,
-    required TaskPriority priority,
+    TaskPriority priority = TaskPriority.none,
     required String? todoListId,
     String? description,
     List<String> subtasks = const [],
@@ -576,7 +729,7 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
     required String id,
     required String title,
     required int durationMinutes,
-    required TaskPriority priority,
+    TaskPriority priority = TaskPriority.none,
     required String? todoListId,
     String? icon,
     String? description,

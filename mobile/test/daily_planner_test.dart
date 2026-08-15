@@ -59,6 +59,8 @@ void main() {
     await tester.tap(find.byTooltip('Günlük görev ekle'));
     await tester.pumpAndSettle();
     expect(find.text('Sırada ne var?'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-quick-submit')), findsOneWidget);
+    expect(find.text('Vazgeç'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
     await tester.pumpAndSettle();
@@ -86,11 +88,33 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('daily-details-chip')));
     await tester.pumpAndSettle();
     expect(find.text('Görev ekle'), findsOneWidget);
+    expect(find.text('Planlama'), findsNothing);
     expect(find.text('Günün saati'), findsOneWidget);
     expect(find.text('Tarih'), findsOneWidget);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Yinelemek'), findsOneWidget);
     expect(find.byKey(const ValueKey('daily-alarm-time')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('daily-detail-subtask-input')),
+      findsNothing,
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('daily-subtasks-section-toggle')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('daily-subtasks-section-toggle')),
+    );
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('daily-detail-subtask-input')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('daily-notes-section-toggle')),
+    );
+    await tester.tap(find.byKey(const ValueKey('daily-notes-section-toggle')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('daily-detail-notes')), findsOneWidget);
 
     await tester.tap(find.text('Alarm'));
     await tester.pumpAndSettle();
@@ -817,7 +841,7 @@ void main() {
       find.byKey(const ValueKey('daily-detail-title')),
       'Güncellenen günlük görev',
     );
-    await tester.tap(find.byTooltip('Kaydet'));
+    await tester.tap(find.text('Görevi kaydet'));
     await tester.pumpAndSettle();
 
     expect(savedInput?.title, 'Güncellenen günlük görev');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/settings_screen.dart';
@@ -64,7 +65,7 @@ class StatisticsTab extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: SizedBox(height: FlorienSpacing.xxxl),
             ),
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: FlorienSpacing.screen,
@@ -404,45 +405,119 @@ class _StatColumn extends StatelessWidget {
   }
 }
 
-class _MoodSection extends StatelessWidget {
+class _MoodSection extends ConsumerWidget {
   const _MoodSection();
 
   static const _days = ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'];
 
   @override
-  Widget build(BuildContext context) {
-    final selected = DateTime.now().weekday - 1;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final weekStart = _weekStart(now);
+    final entries = ref.watch(moodEntriesProvider).valueOrNull ?? const [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Ruh Hali ve Günlük Yansımalar',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _connectAppleHealth(context, ref),
+              icon: const Icon(Icons.health_and_safety_outlined, size: 18),
+              label: const Text('Apple Sağlık'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
         Text(
-          'Ruh Hali ve Günlük Yansımalar',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-          ),
+          'Bu haftanın her günü için nasıl hissettiğini seç.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: context.palette.textSecondary),
         ),
         const SizedBox(height: FlorienSpacing.lg),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             for (var i = 0; i < _days.length; i++)
-              _MoodDayButton(label: _days[i], selected: i == selected),
+              _MoodDayButton(
+                label: _days[i],
+                date: weekStart.add(Duration(days: i)),
+                entry: _entryForDay(entries, weekStart.add(Duration(days: i))),
+                isToday: _sameDay(now, weekStart.add(Duration(days: i))),
+                onTap: () => _editMood(
+                  context,
+                  ref,
+                  weekStart.add(Duration(days: i)),
+                  _entryForDay(entries, weekStart.add(Duration(days: i))),
+                ),
+              ),
           ],
         ),
       ],
     );
   }
+
+  Future<void> _connectAppleHealth(BuildContext context, WidgetRef ref) async {
+    final connected = await ref
+        .read(moodEntriesProvider.notifier)
+        .connectAppleHealth();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          connected
+              ? 'Apple Sağlık bağlandı. Bu haftanın ruh halleri eşitlendi.'
+              : 'Apple Sağlık izni verilmedi veya bu iPhone desteklenmiyor.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editMood(
+    BuildContext context,
+    WidgetRef ref,
+    DateTime date,
+    MoodEntry? entry,
+  ) async {
+    final updated = await showModalBottomSheet<MoodEntry>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _MoodEntrySheet(date: date, entry: entry),
+    );
+    if (updated != null) {
+      await ref.read(moodEntriesProvider.notifier).saveEntry(updated);
+    }
+  }
 }
 
 class _MoodDayButton extends StatelessWidget {
-  const _MoodDayButton({required this.label, required this.selected});
+  const _MoodDayButton({
+    required this.label,
+    required this.date,
+    required this.entry,
+    required this.isToday,
+    required this.onTap,
+  });
 
   final String label;
-  final bool selected;
+  final DateTime date;
+  final MoodEntry? entry;
+  final bool isToday;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final mood = entry?.mood;
+    final color = _moodColor(mood, context);
     return Column(
       children: [
         Text(
@@ -453,29 +528,168 @@ class _MoodDayButton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: selected ? FlorienColors.primary : context.palette.surface,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.thin,
+        Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            key: ValueKey('mood-day-${date.year}-${date.month}-${date.day}'),
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: mood == null ? context.palette.surface : color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isToday
+                      ? FlorienColors.primary
+                      : context.palette.border,
+                  width: isToday ? FlorienBorders.medium : FlorienBorders.thin,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  mood?.emoji ?? '+',
+                  style: TextStyle(
+                    fontSize: mood == null ? 22 : 19,
+                    color: context.palette.textPrimary,
+                  ),
+                ),
+              ),
             ),
-          ),
-          child: Icon(
-            Icons.add_rounded,
-            size: 20,
-            color: selected
-                ? FlorienColors.onPrimary
-                : context.palette.textSecondary,
           ),
         ),
       ],
     );
   }
 }
+
+class _MoodEntrySheet extends StatefulWidget {
+  const _MoodEntrySheet({required this.date, required this.entry});
+
+  final DateTime date;
+  final MoodEntry? entry;
+
+  @override
+  State<_MoodEntrySheet> createState() => _MoodEntrySheetState();
+}
+
+class _MoodEntrySheetState extends State<_MoodEntrySheet> {
+  late MoodLevel _mood = widget.entry?.mood ?? MoodLevel.neutral;
+  late final TextEditingController _reflection = TextEditingController(
+    text: widget.entry?.reflection ?? '',
+  );
+
+  @override
+  void dispose() {
+    _reflection.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        18,
+        12,
+        18,
+        MediaQuery.viewInsetsOf(context).bottom + 18,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.palette.border,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            '${widget.date.day}.${widget.date.month} için nasılsın?',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final mood in MoodLevel.values)
+                ChoiceChip(
+                  label: Text('${mood.emoji} ${mood.label}'),
+                  selected: _mood == mood,
+                  selectedColor: _moodColor(mood, context),
+                  onSelected: (_) => setState(() => _mood = mood),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            key: const ValueKey('mood-reflection-input'),
+            controller: _reflection,
+            minLines: 3,
+            maxLines: 5,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              hintText: 'Bugünle ilgili kısa bir yansıma ekle (isteğe bağlı)',
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => Navigator.pop(
+                context,
+                MoodEntry(
+                  date: widget.date,
+                  mood: _mood,
+                  reflection: _reflection.text.trim(),
+                ),
+              ),
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Ruh halini kaydet'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+MoodEntry? _entryForDay(List<MoodEntry> entries, DateTime date) {
+  for (final entry in entries) {
+    if (_sameDay(entry.date, date)) return entry;
+  }
+  return null;
+}
+
+DateTime _weekStart(DateTime date) {
+  final day = DateTime(date.year, date.month, date.day);
+  return day.subtract(Duration(days: day.weekday - DateTime.monday));
+}
+
+bool _sameDay(DateTime first, DateTime second) =>
+    first.year == second.year &&
+    first.month == second.month &&
+    first.day == second.day;
+
+Color _moodColor(MoodLevel? mood, BuildContext context) => switch (mood) {
+  MoodLevel.veryLow => FlorienColors.softPink,
+  MoodLevel.low => FlorienColors.warning,
+  MoodLevel.neutral => context.palette.surfaceMuted,
+  MoodLevel.good => FlorienColors.mint,
+  MoodLevel.veryGood => FlorienColors.primary,
+  null => context.palette.surface,
+};
 
 class _TipsSection extends StatelessWidget {
   const _TipsSection({required this.todayCompleted});

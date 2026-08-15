@@ -2394,7 +2394,7 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
 
   Future<void> _submit() async {
     if (_title.text.trim().isEmpty) return;
-    await _taskIcon.onTaskChanged(_title.text.trim());
+    _taskIcon.onTaskChanged(_title.text.trim());
     if (!mounted) return;
     Navigator.pop(context, _draft(details: false));
   }
@@ -2453,6 +2453,11 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                   IconButton(
                     tooltip: 'Kapat',
                     onPressed: () => Navigator.pop(context),
+                    iconSize: 19,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size.square(36),
+                      padding: EdgeInsets.zero,
+                    ),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -2544,19 +2549,16 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Vazgeç'),
+                  const Spacer(),
+                  IconButton.filled(
+                    key: const ValueKey('daily-quick-submit'),
+                    tooltip: 'Ekle',
+                    onPressed: _submit,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size.square(44),
+                      padding: EdgeInsets.zero,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _submit,
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('Ekle'),
-                    ),
+                    icon: const Icon(Icons.check_rounded, size: 22),
                   ),
                 ],
               ),
@@ -2640,6 +2642,8 @@ class _DailyTaskDetailScreenState
     widget.initialDraft.alarmAt ?? nextDailyAlarmSlot(DateTime.now()),
   );
   late final List<String> _subtasks = [...widget.initialDraft.subtasks];
+  late bool _subtasksExpanded = widget.initialDraft.subtasks.isNotEmpty;
+  late bool _notesExpanded = widget.initialDraft.description.trim().isNotEmpty;
   bool _saving = false;
   bool _generatingSubtasks = false;
   late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
@@ -2667,7 +2671,7 @@ class _DailyTaskDetailScreenState
     if (_title.text.trim().isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
-      await _taskIcon.onTaskChanged(_title.text.trim());
+      _taskIcon.onTaskChanged(_title.text.trim());
       final taskDate = _isTimed ? _dateOnly(_startsAt) : _date;
       final taskPeriod = _isTimed ? dayPeriodForLocalTime(_startsAt) : _period;
       final draft = widget.initialDraft.copyWith(
@@ -2750,7 +2754,10 @@ class _DailyTaskDetailScreenState
           .where((item) => existing.add(item.toLowerCase()))
           .take(math.min(TaskModel.aiSubtaskLimit, remaining))
           .toList();
-      setState(() => _subtasks.addAll(additions));
+      setState(() {
+        _subtasks.addAll(additions);
+        _subtasksExpanded = true;
+      });
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -2854,13 +2861,6 @@ class _DailyTaskDetailScreenState
         Card(
           child: Column(
             children: [
-              const _DailyFormSectionHeader(
-                icon: Icons.calendar_month_rounded,
-                title: 'Planlama',
-                subtitle: 'Bu görev için nazik bir yer aç.',
-                color: FlorienColors.paleBlue,
-              ),
-              const Divider(height: 1),
               _DetailTile(
                 icon: _isTimed
                     ? Icons.edit_calendar_outlined
@@ -2960,6 +2960,7 @@ class _DailyTaskDetailScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _DailyFormSectionHeader(
+                  key: const ValueKey('daily-subtasks-section-toggle'),
                   icon: Icons.account_tree_outlined,
                   title: 'Alt görevler',
                   subtitle: _subtasks.isEmpty
@@ -2985,39 +2986,44 @@ class _DailyTaskDetailScreenState
                               : const Icon(Icons.auto_awesome_rounded),
                         )
                       : null,
+                  expanded: _subtasksExpanded,
+                  onTap: () =>
+                      setState(() => _subtasksExpanded = !_subtasksExpanded),
                 ),
-                const SizedBox(height: 12),
-                for (var index = 0; index < _subtasks.length; index++)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.circle_outlined, size: 18),
-                    title: Text(_subtasks[index]),
-                    trailing: IconButton(
-                      onPressed: () =>
-                          setState(() => _subtasks.removeAt(index)),
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        key: const ValueKey('daily-detail-subtask-input'),
-                        controller: _subtask,
-                        onSubmitted: (_) => _addSubtask(),
-                        decoration: const InputDecoration(
-                          hintText: 'Yeni alt görev',
-                        ),
+                if (_subtasksExpanded) ...[
+                  const SizedBox(height: 12),
+                  for (var index = 0; index < _subtasks.length; index++)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.circle_outlined, size: 18),
+                      title: Text(_subtasks[index]),
+                      trailing: IconButton(
+                        onPressed: () =>
+                            setState(() => _subtasks.removeAt(index)),
+                        icon: const Icon(Icons.close_rounded, size: 18),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      onPressed: _addSubtask,
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          key: const ValueKey('daily-detail-subtask-input'),
+                          controller: _subtask,
+                          onSubmitted: (_) => _addSubtask(),
+                          decoration: const InputDecoration(
+                            hintText: 'Yeni alt görev',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        onPressed: _addSubtask,
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -3029,21 +3035,27 @@ class _DailyTaskDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const _DailyFormSectionHeader(
+                _DailyFormSectionHeader(
+                  key: const ValueKey('daily-notes-section-toggle'),
                   icon: Icons.notes_rounded,
                   title: 'Notlar',
                   subtitle: 'Hatırlamak istediğin ayrıntılar.',
                   color: FlorienColors.softPink,
+                  expanded: _notesExpanded,
+                  onTap: () => setState(() => _notesExpanded = !_notesExpanded),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _notes,
-                  minLines: 4,
-                  maxLines: 8,
-                  decoration: const InputDecoration(
-                    hintText: 'Notlarını buraya yaz…',
+                if (_notesExpanded) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const ValueKey('daily-detail-notes'),
+                    controller: _notes,
+                    minLines: 4,
+                    maxLines: 8,
+                    decoration: const InputDecoration(
+                      hintText: 'Notlarını buraya yaz…',
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -3159,11 +3171,14 @@ class _DailyTaskDetailScreenState
 
 class _DailyFormSectionHeader extends StatelessWidget {
   const _DailyFormSectionHeader({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
     this.trailing,
+    this.expanded,
+    this.onTap,
   });
 
   final IconData icon;
@@ -3171,46 +3186,66 @@ class _DailyFormSectionHeader extends StatelessWidget {
   final String subtitle;
   final Color color;
   final Widget? trailing;
+  final bool? expanded;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
-      border: Border.all(
-        color: context.palette.border,
-        width: FlorienBorders.thin,
-      ),
-    ),
-    child: Row(
-      children: [
-        Icon(icon, size: 21),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: context.palette.textSecondary,
-                ),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final content = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
         ),
-        trailing ?? const SizedBox.shrink(),
-      ],
-    ),
-  );
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 21),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: context.palette.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ?trailing,
+          if (expanded case final expanded?)
+            Icon(
+              expanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+            ),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        child: content,
+      ),
+    );
+  }
 }
 
 class _DetailTile extends StatelessWidget {

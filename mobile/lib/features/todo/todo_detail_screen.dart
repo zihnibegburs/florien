@@ -15,7 +15,6 @@ class TodoDetailScreen extends ConsumerStatefulWidget {
     super.key,
     required this.initialTitle,
     required this.initialDuration,
-    required this.priority,
     required this.todoListId,
     this.taskId,
     this.initialDescription = '',
@@ -26,7 +25,6 @@ class TodoDetailScreen extends ConsumerStatefulWidget {
   final String initialTitle;
   final String? taskId;
   final int initialDuration;
-  final TaskPriority priority;
   final String? todoListId;
   final String initialDescription;
   final List<String> initialSubtasks;
@@ -44,8 +42,9 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
   final _subtask = TextEditingController();
   late final List<String> _subtasks = [...widget.initialSubtasks];
   late int _duration = widget.initialDuration;
-  late TaskPriority _priority = widget.priority;
   late String? _todoListId = widget.todoListId;
+  late bool _subtasksExpanded = widget.initialSubtasks.isNotEmpty;
+  late bool _notesExpanded = widget.initialDescription.trim().isNotEmpty;
   bool _saving = false;
   bool _generatingSubtasks = false;
   late final RealtimeTaskIconController _taskIcon = RealtimeTaskIconController(
@@ -113,7 +112,10 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           .where((item) => existing.add(item.toLowerCase()))
           .take(math.min(TaskModel.aiSubtaskLimit, remaining))
           .toList();
-      setState(() => _subtasks.addAll(additions));
+      setState(() {
+        _subtasks.addAll(additions);
+        _subtasksExpanded = true;
+      });
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -129,7 +131,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     if (title.isEmpty || _saving) return;
     setState(() => _saving = true);
     try {
-      await _taskIcon.onTaskChanged(title);
+      _taskIcon.onTaskChanged(title);
       final notifier = ref.read(inboxProvider.notifier);
       final description = _notes.text.trim().isEmpty
           ? null
@@ -140,7 +142,6 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           title: title,
           description: description,
           durationMinutes: _duration,
-          priority: _priority,
           todoListId: _todoListId,
           subtasks: _subtasks,
           icon: _taskIcon.value.category.storageName,
@@ -150,7 +151,6 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           title: title,
           description: description,
           durationMinutes: _duration,
-          priority: _priority,
           todoListId: _todoListId,
           subtasks: _subtasks,
           icon: _taskIcon.value.category.storageName,
@@ -262,53 +262,24 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           Card(
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: _TodoFormSectionHeader(
-                    icon: Icons.tune_rounded,
-                    title: 'Görev ayarları',
-                    subtitle: 'Liste, öncelik ve süreyi seç.',
-                    color: FlorienColors.paleBlue,
+                if (lists.isNotEmpty) ...[
+                  ListTile(
+                    leading: const _DetailIcon(
+                      Icons.format_list_bulleted_rounded,
+                    ),
+                    title: const Text('Liste'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _ValuePill(label: listName),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right_rounded),
+                      ],
+                    ),
+                    onTap: () => _pickList(lists),
                   ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const _DetailIcon(
-                    Icons.format_list_bulleted_rounded,
-                  ),
-                  title: const Text('Liste'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _ValuePill(label: listName),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded),
-                    ],
-                  ),
-                  onTap: () => _pickList(lists),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const _DetailIcon(Icons.flag_outlined),
-                  title: const Text('Öncelik'),
-                  trailing: DropdownButton<TaskPriority>(
-                    value: _priority,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(FlorienRadius.md),
-                    items: TaskPriority.values
-                        .map(
-                          (priority) => DropdownMenuItem(
-                            value: priority,
-                            child: Text(_priorityLabel(priority)),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) setState(() => _priority = value);
-                    },
-                  ),
-                ),
-                const Divider(height: 1),
+                  const Divider(height: 1),
+                ],
                 ListTile(
                   leading: const _DetailIcon(Icons.timer_outlined),
                   title: const Text('Süre'),
@@ -353,6 +324,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _TodoFormSectionHeader(
+                    key: const ValueKey('todo-subtasks-section-toggle'),
                     icon: Icons.account_tree_outlined,
                     title: 'Alt görevler',
                     subtitle: _subtasks.isEmpty
@@ -378,40 +350,45 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                                 : const Icon(Icons.auto_awesome_rounded),
                           )
                         : null,
+                    expanded: _subtasksExpanded,
+                    onTap: () =>
+                        setState(() => _subtasksExpanded = !_subtasksExpanded),
                   ),
-                  const SizedBox(height: 12),
-                  for (var index = 0; index < _subtasks.length; index++)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.circle_outlined, size: 18),
-                      title: Text(_subtasks[index]),
-                      trailing: IconButton(
-                        tooltip: 'Sil',
-                        onPressed: () =>
-                            setState(() => _subtasks.removeAt(index)),
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          key: const ValueKey('todo-detail-subtask-input'),
-                          controller: _subtask,
-                          onSubmitted: (_) => _addSubtask(),
-                          decoration: const InputDecoration(
-                            hintText: 'Yeni alt görev',
-                          ),
+                  if (_subtasksExpanded) ...[
+                    const SizedBox(height: 12),
+                    for (var index = 0; index < _subtasks.length; index++)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.circle_outlined, size: 18),
+                        title: Text(_subtasks[index]),
+                        trailing: IconButton(
+                          tooltip: 'Sil',
+                          onPressed: () =>
+                              setState(() => _subtasks.removeAt(index)),
+                          icon: const Icon(Icons.close_rounded, size: 18),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.filledTonal(
-                        tooltip: 'Alt görev ekle',
-                        onPressed: _addSubtask,
-                        icon: const Icon(Icons.add_rounded),
-                      ),
-                    ],
-                  ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            key: const ValueKey('todo-detail-subtask-input'),
+                            controller: _subtask,
+                            onSubmitted: (_) => _addSubtask(),
+                            decoration: const InputDecoration(
+                              hintText: 'Yeni alt görev',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: 'Alt görev ekle',
+                          onPressed: _addSubtask,
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -423,22 +400,29 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const _TodoFormSectionHeader(
+                  _TodoFormSectionHeader(
+                    key: const ValueKey('todo-notes-section-toggle'),
                     icon: Icons.notes_rounded,
                     title: 'Notlar',
                     subtitle: 'Hatırlamak istediğin ayrıntılar.',
                     color: FlorienColors.softPink,
+                    expanded: _notesExpanded,
+                    onTap: () =>
+                        setState(() => _notesExpanded = !_notesExpanded),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _notes,
-                    minLines: 4,
-                    maxLines: 8,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      hintText: 'Notlarını buraya yaz…',
+                  if (_notesExpanded) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const ValueKey('todo-detail-notes'),
+                      controller: _notes,
+                      minLines: 4,
+                      maxLines: 8,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        hintText: 'Notlarını buraya yaz…',
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -487,11 +471,14 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
 
 class _TodoFormSectionHeader extends StatelessWidget {
   const _TodoFormSectionHeader({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
     this.trailing,
+    this.expanded,
+    this.onTap,
   });
 
   final IconData icon;
@@ -499,46 +486,66 @@ class _TodoFormSectionHeader extends StatelessWidget {
   final String subtitle;
   final Color color;
   final Widget? trailing;
+  final bool? expanded;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
-      border: Border.all(
-        color: context.palette.border,
-        width: FlorienBorders.thin,
-      ),
-    ),
-    child: Row(
-      children: [
-        Icon(icon, size: 21),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: context.palette.textSecondary,
-                ),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final content = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
         ),
-        trailing ?? const SizedBox.shrink(),
-      ],
-    ),
-  );
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 21),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: context.palette.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ?trailing,
+          if (expanded case final expanded?)
+            Icon(
+              expanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+            ),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        child: content,
+      ),
+    );
+  }
 }
 
 class _DetailIcon extends StatelessWidget {
@@ -590,11 +597,4 @@ String _durationLabel(int minutes) => switch (minutes) {
   90 => '1,5 saat',
   120 => '2 saat',
   _ => '$minutes dk',
-};
-
-String _priorityLabel(TaskPriority priority) => switch (priority) {
-  TaskPriority.high => 'Yüksek',
-  TaskPriority.medium => 'Orta',
-  TaskPriority.low => 'Düşük',
-  TaskPriority.none => 'Yapılacak',
 };

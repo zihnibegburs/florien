@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
 
@@ -15,53 +13,23 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    await ref
-        .read(authStateProvider.notifier)
-        .login(_emailController.text.trim(), _passwordController.text);
-    if (mounted &&
-        ref.read(authStateProvider).hasValue &&
-        ref.read(authStateProvider).value != null) {
-      context.go('/todo');
-    }
-  }
-
   Future<void> _loginWithGoogle() async {
     await ref.read(authStateProvider.notifier).loginWithGoogle();
-    if (mounted &&
-        ref.read(authStateProvider).hasValue &&
-        ref.read(authStateProvider).value != null) {
-      context.go('/todo');
+    if (mounted && ref.read(authStateProvider).valueOrNull != null) {
+      context.go('/onboarding');
     }
   }
 
   Future<void> _loginWithApple() async {
     await ref.read(authStateProvider.notifier).loginWithApple();
-    if (mounted &&
-        ref.read(authStateProvider).hasValue &&
-        ref.read(authStateProvider).value != null) {
-      context.go('/todo');
+    if (mounted && ref.read(authStateProvider).valueOrNull != null) {
+      context.go('/onboarding');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
-    final s = ref.watch(stringsProvider);
-
     ref.listen(authStateProvider, (_, next) {
       if (next.hasError && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,142 +37,207 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             content: Text(
               next.error.toString().replaceFirst('Exception: ', ''),
             ),
-            backgroundColor: Colors.red.shade400,
           ),
         );
       }
     });
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(child: FlorienLogo()),
-                    const SizedBox(height: 20),
-                    Center(
-                      child: Text(
-                        'Florien',
-                        style: Theme.of(context).textTheme.displaySmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        s.loginTagline,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: context.palette.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 36),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: InputDecoration(
-                        labelText: s.email,
-                        hintText: 'ornek@email.com',
-                        prefixIcon: const Icon(Icons.mail_outline_rounded),
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? s.emailRequired : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.password],
-                      onFieldSubmitted: (_) => _login(),
-                      decoration: InputDecoration(
-                        labelText: s.password,
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                        ),
-                      ),
-                      validator: (v) =>
-                          v == null || v.length < 6 ? s.passwordMin6 : null,
-                    ),
-                    const SizedBox(height: 20),
-                    FlorienPrimaryButton(
-                      label: s.login,
-                      onPressed: authState.isLoading ? null : _login,
-                      isLoading: authState.isLoading,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            color: context.palette.textSecondary.withValues(
-                              alpha: 0.3,
+    return Theme(
+      data: FlorienTheme.dark,
+      child: Builder(
+        builder: (context) => Scaffold(
+          backgroundColor: const Color(0xFF16141A),
+          body: Stack(
+            children: [
+              const _AuthBackdrop(),
+              SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 112,
+                            height: 112,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: FlorienColors.aiGradient,
+                              border: Border.all(
+                                color: context.palette.textPrimary,
+                                width: FlorienBorders.thin,
+                              ),
                             ),
+                            child: const FlorienLogo(size: 96),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            s.orContinueWith,
-                            style: Theme.of(context).textTheme.bodySmall
+                          const SizedBox(height: 28),
+                          Text(
+                            'Florien',
+                            style: Theme.of(context).textTheme.displaySmall
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Hepsi bir arada planlama\nve üretkenlik',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineLarge
+                                ?.copyWith(
+                                  fontSize: 31,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Gününü kendi ritmine göre düzenle.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(
                                   color: context.palette.textSecondary,
                                 ),
                           ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            color: context.palette.textSecondary.withValues(
-                              alpha: 0.3,
-                            ),
+                          const SizedBox(height: 44),
+                          _AuthActionButton(
+                            label: 'Apple ile devam et',
+                            icon: Icons.apple,
+                            light: true,
+                            loading: authState.isLoading,
+                            onPressed: _loginWithApple,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    FlorienSecondaryButton(
-                      label: s.loginWithGoogle,
-                      icon: Icons.g_mobiledata,
-                      onPressed: authState.isLoading ? null : _loginWithGoogle,
-                    ),
-                    const SizedBox(height: 12),
-                    FlorienSecondaryButton(
-                      label: s.loginWithApple,
-                      icon: Icons.apple,
-                      onPressed: authState.isLoading ? null : _loginWithApple,
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => context.go('/register'),
-                        child: Text(s.noAccountRegister),
+                          const SizedBox(height: 12),
+                          _AuthActionButton(
+                            label: 'Google ile devam et',
+                            icon: Icons.g_mobiledata_rounded,
+                            loading: authState.isLoading,
+                            onPressed: _loginWithGoogle,
+                          ),
+                          const SizedBox(height: 12),
+                          _AuthActionButton(
+                            label: 'E-posta ile devam et',
+                            icon: Icons.mail_outline_rounded,
+                            outline: true,
+                            loading: authState.isLoading,
+                            onPressed: () => context.go('/register'),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Zaten bir hesabın var mı?',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: context.palette.textSecondary,
+                                ),
+                          ),
+                          TextButton(
+                            onPressed: () => context.go('/email-login'),
+                            child: const Text('Giriş Yap'),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _AuthBackdrop extends StatelessWidget {
+  const _AuthBackdrop();
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Stack(
+      children: [
+        Positioned(
+          top: -180,
+          right: -100,
+          child: _Glow(color: FlorienColors.aiAccent.withValues(alpha: 0.3)),
+        ),
+        Positioned(
+          top: 280,
+          left: -160,
+          child: _Glow(color: FlorienColors.paleBlue.withValues(alpha: 0.22)),
+        ),
+        Positioned(
+          bottom: -200,
+          right: -120,
+          child: _Glow(color: FlorienColors.softLime.withValues(alpha: 0.18)),
+        ),
+      ],
+    ),
+  );
+}
+
+class _Glow extends StatelessWidget {
+  const _Glow({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 380,
+    height: 380,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
+}
+
+class _AuthActionButton extends StatelessWidget {
+  const _AuthActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    required this.loading,
+    this.light = false,
+    this.outline = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool loading;
+  final bool light;
+  final bool outline;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: 56,
+    child: FilledButton.icon(
+      onPressed: loading ? null : onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: light
+            ? FlorienColors.darkTextPrimary
+            : outline
+            ? Colors.transparent
+            : context.palette.surface,
+        foregroundColor: light
+            ? FlorienColors.onPrimary
+            : context.palette.textPrimary,
+        side: BorderSide(
+          color: outline
+              ? context.palette.textSecondary
+              : context.palette.border,
+          width: FlorienBorders.thin,
+        ),
+      ),
+      icon: loading
+          ? SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: light
+                    ? FlorienColors.onPrimary
+                    : context.palette.textPrimary,
+              ),
+            )
+          : Icon(icon, size: icon == Icons.g_mobiledata_rounded ? 28 : 22),
+      label: Text(label),
+    ),
+  );
 }

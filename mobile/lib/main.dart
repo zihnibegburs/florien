@@ -7,10 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/liquid_glass.dart';
+import 'package:florien/features/auth/email_login_screen.dart';
 import 'package:florien/features/auth/login_screen.dart';
 import 'package:florien/features/auth/register_screen.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
+import 'package:florien/features/onboarding/onboarding_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
 
@@ -62,14 +64,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loggedIn = auth.valueOrNull != null;
       final isAuthRoute =
           state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/email-login';
       if (!loggedIn && !isAuthRoute) return '/login';
-      if (loggedIn && isAuthRoute) return '/todo';
+      if (loggedIn && isAuthRoute) return '/onboarding';
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+      GoRoute(
+        path: '/email-login',
+        builder: (_, _) => const EmailLoginScreen(),
+      ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
       GoRoute(path: '/todo', builder: (_, _) => const TodoHomeScreen()),
     ],
   );

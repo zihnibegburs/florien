@@ -39,7 +39,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/todo');
+      context.go('/onboarding');
     }
   }
 
@@ -61,72 +61,86 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go('/login'),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.createAccount,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+    return Theme(
+      data: FlorienTheme.dark,
+      child: Builder(
+        builder: (context) => Scaffold(
+          backgroundColor: const Color(0xFF16141A),
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => context.go('/login'),
+            ),
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.createAccount,
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      s.registerSubtitle,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: context.palette.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      s.yourName,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(hintText: s.yourName),
+                      validator: (v) =>
+                          v == null || v.length < 2 ? s.nameMin2 : null,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      s.email,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        hintText: 'ornek@email.com',
+                      ),
+                      validator: (v) =>
+                          v == null || !v.contains('@') ? s.validEmail : null,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      s.password,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(hintText: s.passwordMin6),
+                      validator: (v) =>
+                          v == null || v.length < 6 ? s.passwordMin6 : null,
+                    ),
+                    const SizedBox(height: 32),
+                    FlorienPrimaryButton(
+                      label: s.register,
+                      onPressed: authState.isLoading ? null : _register,
+                      isLoading: authState.isLoading,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  s.registerSubtitle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: context.palette.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(s.yourName, style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(hintText: s.yourName),
-                  validator: (v) =>
-                      v == null || v.length < 2 ? s.nameMin2 : null,
-                ),
-                const SizedBox(height: 20),
-                Text(s.email, style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'ornek@email.com',
-                  ),
-                  validator: (v) =>
-                      v == null || !v.contains('@') ? s.validEmail : null,
-                ),
-                const SizedBox(height: 20),
-                Text(s.password, style: Theme.of(context).textTheme.labelLarge),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: s.passwordMin6),
-                  validator: (v) =>
-                      v == null || v.length < 6 ? s.passwordMin6 : null,
-                ),
-                const SizedBox(height: 32),
-                FlorienPrimaryButton(
-                  label: s.register,
-                  onPressed: authState.isLoading ? null : _register,
-                  isLoading: authState.isLoading,
-                ),
-              ],
+              ),
             ),
           ),
         ),

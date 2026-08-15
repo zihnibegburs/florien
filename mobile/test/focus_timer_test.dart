@@ -186,6 +186,30 @@ void main() {
     expect(find.byIcon(Icons.alarm_on_rounded), findsOneWidget);
   });
 
+  testWidgets('timer starts when standalone task persistence fails', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          body: FocusTimerTab(
+            onStandaloneFocusStarted: (_) async =>
+                throw StateError('Network unavailable'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Başla'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+    expect(find.text('Odaklanma görevi oluşturulamadı.'), findsNothing);
+  });
+
   testWidgets('custom duration supports selections up to 24 hours', (
     tester,
   ) async {

@@ -93,24 +93,11 @@ class SettingsScreen extends ConsumerWidget {
               label: 'Hatırlatıcı içe aktar',
               locked: true,
             ),
-            const _SettingsRow(icon: Icons.circle_outlined, label: 'Tema'),
             _SettingsRow(
               icon: Icons.wb_sunny_outlined,
               label: 'Görünüm',
               trailingLabel: _themeLabel(themeMode),
               onTap: () => _showAppearanceSheet(context, ref, themeMode),
-            ),
-            const _SettingsRow(
-              icon: Icons.text_fields_rounded,
-              label: 'Yazı tipi ayarları',
-            ),
-            const _SettingsRow(
-              icon: Icons.music_note_outlined,
-              label: 'Sesler',
-            ),
-            const _SettingsRow(
-              icon: Icons.apps_rounded,
-              label: 'Uygulama simgesi',
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(

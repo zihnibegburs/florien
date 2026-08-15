@@ -53,12 +53,13 @@ class _CompletionInboxNotifier extends InboxNotifier {
   }
 
   @override
-  Future<void> updateDetailed({
+  Future<void> updateDetailedWithIcon({
     required String id,
     required String title,
     required int durationMinutes,
-    required TaskPriority priority,
+    TaskPriority priority = TaskPriority.none,
     required String? todoListId,
+    String? icon,
     String? description,
     List<String> subtasks = const [],
   }) async {
@@ -148,7 +149,7 @@ void main() {
     expect(title.style?.decoration, TextDecoration.none);
     expect(find.text('TAMAMLANDI (1)'), findsNothing);
     expect(find.text('YAPILACAK (1)'), findsOneWidget);
-    expect(find.text('YÜKSEK (0)'), findsOneWidget);
+    expect(find.text('YÜKSEK (0)'), findsNothing);
   });
 
   testWidgets('todo delete action removes the selected task', (tester) async {
@@ -203,8 +204,10 @@ void main() {
 
     expect(find.text('Görevi düzenle'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'Güncellenen görev');
-    await tester.tap(find.byTooltip('Kaydet'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('To-do’yu kaydet'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
 
     expect(inbox.updatedTitle, 'Güncellenen görev');
     expect(find.text('Güncellenen görev'), findsOneWidget);
