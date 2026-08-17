@@ -122,6 +122,7 @@ Future<T?> showFlorienBottomSheet<T>({
   bool isDismissible = true,
   bool enableDrag = true,
   bool useRootNavigator = false,
+  bool? showDragHandle,
   ShapeBorder? shape,
 }) {
   return showModalBottomSheet<T>(
@@ -131,7 +132,8 @@ Future<T?> showFlorienBottomSheet<T>({
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     useRootNavigator: useRootNavigator,
-    backgroundColor: shape != null ? null : Colors.transparent,
+    showDragHandle: showDragHandle,
+    backgroundColor: Colors.transparent,
     barrierColor: FlorienOverlay.barrierColor,
     shape: shape,
   );

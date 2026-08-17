@@ -19,7 +19,6 @@ class StatisticsTab extends ConsumerWidget {
     final name = profileName?.isNotEmpty == true
         ? profileName!
         : (authName == null || authName.isEmpty ? 'Florien' : authName);
-    final today = counts.valueOrNull?.today ?? 0;
     final week = counts.valueOrNull?.thisWeek ?? 0;
     final streak = week.clamp(0, 7);
     final completedGoal = 30;
@@ -71,15 +70,6 @@ class StatisticsTab extends ConsumerWidget {
                   horizontal: FlorienSpacing.screen,
                 ),
                 child: _MoodSection(),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: FlorienSpacing.xxxl),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: FlorienSpacing.huge),
-                child: _TipsSection(todayCompleted: today),
               ),
             ),
           ],
@@ -690,145 +680,3 @@ Color _moodColor(MoodLevel? mood, BuildContext context) => switch (mood) {
   MoodLevel.veryGood => FlorienColors.primary,
   null => context.palette.surface,
 };
-
-class _TipsSection extends StatelessWidget {
-  const _TipsSection({required this.todayCompleted});
-
-  final int todayCompleted;
-
-  static const _tips = [
-    (
-      'WEB ÜZERİNDE PLAN YAPIN',
-      Icons.laptop_mac_rounded,
-      FlorienColors.paleBlue,
-    ),
-    (
-      'KOLAYCA PLANLAYIN',
-      Icons.edit_calendar_rounded,
-      FlorienColors.aiLavender,
-    ),
-    ('ODAKLANARAK İLERLEYİN', Icons.timer_outlined, FlorienColors.mint),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: FlorienSpacing.screen,
-          ),
-          child: Text(
-            'Bir Profesyonel Gibi Plan Yapın',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.4,
-            ),
-          ),
-        ),
-        if (todayCompleted > 0) ...[
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: FlorienSpacing.screen,
-            ),
-            child: Text(
-              'Bugün $todayCompleted görev tamamladınız',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: context.palette.textSecondary,
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: FlorienSpacing.lg),
-        SizedBox(
-          height: 168,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: FlorienSpacing.screen,
-            ),
-            itemCount: _tips.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final tip = _tips[index];
-              return _TipCard(title: tip.$1, icon: tip.$2, accent: tip.$3);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TipCard extends StatelessWidget {
-  const _TipCard({
-    required this.title,
-    required this.icon,
-    required this.accent,
-  });
-
-  final String title;
-  final IconData icon;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 168,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(FlorienRadius.xl),
-                border: Border.all(
-                  color: context.palette.border,
-                  width: FlorienBorders.thin,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Icon(icon, size: 42, color: FlorienColors.onPrimary),
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: context.palette.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: context.palette.border,
-                          width: FlorienBorders.thin,
-                        ),
-                      ),
-                      child: const Icon(Icons.play_arrow_rounded, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

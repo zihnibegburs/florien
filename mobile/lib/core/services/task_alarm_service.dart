@@ -7,6 +7,8 @@ import 'package:timezone/timezone.dart' as tz;
 class TaskAlarmService {
   TaskAlarmService(this._settingsStorage);
 
+  static const _focusTimerAlarmId = 'focus_timer_alarm';
+
   final SettingsStorage _settingsStorage;
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -90,6 +92,62 @@ class TaskAlarmService {
     await _notifications.cancel(_notificationId(taskId));
   }
 
+  Future<bool> scheduleFocusTimerAlarm({
+    required String title,
+    required DateTime alarmAt,
+  }) async {
+    if (alarmAt.toUtc().isBefore(DateTime.now().toUtc())) return false;
+    await initialize();
+    if (kIsWeb || !await _requestPermission()) return false;
+
+    final preferences = await getPreferences();
+    final details = _focusTimerNotificationDetails(preferences);
+    final scheduled = tz.TZDateTime.from(alarmAt.toUtc(), tz.UTC);
+    try {
+      await _notifications.zonedSchedule(
+        _notificationId(_focusTimerAlarmId),
+        title,
+        'Odak turun tamamlandı.',
+        scheduled,
+        details,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: _focusTimerAlarmId,
+      );
+    } catch (_) {
+      await _notifications.zonedSchedule(
+        _notificationId(_focusTimerAlarmId),
+        title,
+        'Odak turun tamamlandı.',
+        scheduled,
+        details,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: _focusTimerAlarmId,
+      );
+    }
+    return true;
+  }
+
+  Future<void> completeFocusTimerAlarm({required String title}) async {
+    await initialize();
+    if (kIsWeb) return;
+
+    final preferences = await getPreferences();
+    await _notifications.cancel(_notificationId(_focusTimerAlarmId));
+    await _notifications.show(
+      _notificationId(_focusTimerAlarmId),
+      title,
+      'Odak turun tamamlandı.',
+      _focusTimerNotificationDetails(preferences),
+      payload: _focusTimerAlarmId,
+    );
+  }
+
+  Future<void> cancelFocusTimerAlarm() => cancel(_focusTimerAlarmId);
+
   Future<NotificationPreferences> getPreferences() =>
       _settingsStorage.getNotificationPreferences();
 
@@ -139,6 +197,24 @@ class TaskAlarmService {
     }
     return true;
   }
+
+  NotificationDetails _focusTimerNotificationDetails(
+    NotificationPreferences preferences,
+  ) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      'focus_timer_alarm',
+      'Odak zamanlayıcısı',
+      channelDescription: 'Odak süresi tamamlandığında çalan alarm',
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: preferences.soundEnabled,
+      enableVibration: preferences.vibrationEnabled,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentSound: preferences.soundEnabled,
+    ),
+  );
 
   int _notificationId(String taskId) {
     var hash = 17;

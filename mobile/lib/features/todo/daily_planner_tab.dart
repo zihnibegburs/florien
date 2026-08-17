@@ -222,6 +222,8 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
     final draft = await showFlorienBottomSheet<_DailyTaskDraft>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(),
       builder: (_) => _DailyQuickAddSheet(
         initialDraft: _DailyTaskDraft(date: _selectedDate, period: period),
       ),
@@ -1676,7 +1678,7 @@ class _DailyTaskCard extends ConsumerWidget {
         opacity: task.isCompleted ? .55 : 1,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: Color.alphaBlend(
               color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
@@ -1694,13 +1696,13 @@ class _DailyTaskCard extends ConsumerWidget {
             onTap: () => _showTaskActions(context, ref),
             borderRadius: BorderRadius.circular(FlorienRadius.lg),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
+              padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
               child: Row(
                 children: [
                   Container(
                     key: ValueKey('timeline-task-bar-${task.id}'),
                     width: 4,
-                    height: 30,
+                    height: 26,
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(99),
@@ -1738,7 +1740,7 @@ class _DailyTaskCard extends ConsumerWidget {
                     task: task,
                     color: color,
                     progress: progress,
-                    dimension: 30,
+                    dimension: 28,
                   ),
                   completionButton,
                 ],
@@ -1752,7 +1754,7 @@ class _DailyTaskCard extends ConsumerWidget {
       opacity: task.isCompleted ? .55 : 1,
       duration: const Duration(milliseconds: 180),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: Color.alphaBlend(
             color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
@@ -1767,8 +1769,9 @@ class _DailyTaskCard extends ConsumerWidget {
         child: ListTile(
           dense: true,
           visualDensity: const VisualDensity(vertical: -4),
+          minTileHeight: 46,
           minVerticalPadding: 0,
-          contentPadding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
+          contentPadding: const EdgeInsets.fromLTRB(12, 0, 6, 0),
           leading: _DailyTaskIcon(
             task: task,
             color: color,
@@ -2491,6 +2494,48 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                       builder: (_, result, _) =>
                           TaskIconBadge.forResult(result, size: 34),
                     ),
+                    suffixIconConstraints: const BoxConstraints(),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            key: const ValueKey('daily-quick-voice'),
+                            tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
+                            onPressed: _toggleVoiceInput,
+                            style: IconButton.styleFrom(
+                              fixedSize: const Size.square(34),
+                              padding: EdgeInsets.zero,
+                              backgroundColor: _listening
+                                  ? FlorienColors.softPink
+                                  : context.palette.surface,
+                              side: BorderSide(
+                                color: context.palette.border,
+                                width: FlorienBorders.thin,
+                              ),
+                            ),
+                            icon: Icon(
+                              _listening
+                                  ? Icons.stop_rounded
+                                  : Icons.graphic_eq_rounded,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const ValueKey('daily-quick-submit'),
+                            tooltip: 'Ekle',
+                            onPressed: _submit,
+                            style: IconButton.styleFrom(
+                              fixedSize: const Size.square(34),
+                              padding: EdgeInsets.zero,
+                            ),
+                            icon: const Icon(Icons.check_rounded, size: 19),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2531,34 +2576,6 @@ class _DailyQuickAddSheetState extends State<_DailyQuickAddSheet> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    key: const ValueKey('daily-quick-voice'),
-                    onPressed: _toggleVoiceInput,
-                    icon: Icon(
-                      _listening
-                          ? Icons.stop_rounded
-                          : Icons.graphic_eq_rounded,
-                      size: 18,
-                    ),
-                    label: Text(_listening ? 'Dinliyorum' : 'Konuş'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Spacer(),
-                  IconButton.filled(
-                    key: const ValueKey('daily-quick-submit'),
-                    tooltip: 'Ekle',
-                    onPressed: _submit,
-                    style: IconButton.styleFrom(
-                      fixedSize: const Size.square(44),
-                      padding: EdgeInsets.zero,
-                    ),
-                    icon: const Icon(Icons.check_rounded, size: 22),
                   ),
                 ],
               ),

@@ -158,6 +158,16 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             onTaskProgressChanged: (progress) =>
                 ref.read(activeFocusTaskProvider.notifier).state = progress,
             onTaskCompleted: _completeFocusedTask,
+            onFocusAlarmScheduled: (alarmAt, title) async {
+              await ref
+                  .read(taskAlarmServiceProvider)
+                  .scheduleFocusTimerAlarm(title: title, alarmAt: alarmAt);
+            },
+            onFocusAlarmCompleted: (title) => ref
+                .read(taskAlarmServiceProvider)
+                .completeFocusTimerAlarm(title: title),
+            onFocusAlarmCancelled: () =>
+                ref.read(taskAlarmServiceProvider).cancelFocusTimerAlarm(),
             onSessionClosed: () {
               if (ref.read(focusTaskLaunchProvider) != null) {
                 ref.read(focusTaskLaunchProvider.notifier).state = null;

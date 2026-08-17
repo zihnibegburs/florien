@@ -23,6 +23,8 @@ Future<void> showTodoQuickAdd({
   final details = await showFlorienBottomSheet<_TodoQuickDraft>(
     context: context,
     isScrollControlled: true,
+    showDragHandle: false,
+    shape: const RoundedRectangleBorder(),
     builder: (_) => _AddTodoDialog(
       todoListId: todoListId,
       lists: lists,
@@ -1038,6 +1040,55 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                       builder: (_, result, _) =>
                           TaskIconBadge.forResult(result, size: 34),
                     ),
+                    suffixIconConstraints: const BoxConstraints(),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            key: const ValueKey('todo-quick-voice'),
+                            tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
+                            onPressed: _isSaving ? null : _toggleVoiceInput,
+                            style: IconButton.styleFrom(
+                              fixedSize: const Size.square(34),
+                              padding: EdgeInsets.zero,
+                              backgroundColor: _listening
+                                  ? FlorienColors.softPink
+                                  : palette.surface,
+                              side: BorderSide(
+                                color: palette.border,
+                                width: FlorienBorders.thin,
+                              ),
+                            ),
+                            icon: Icon(
+                              _listening
+                                  ? Icons.stop_rounded
+                                  : Icons.mic_rounded,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const ValueKey('todo-quick-submit'),
+                            tooltip: _isSaving ? 'Ekleniyor' : 'Ekle',
+                            onPressed: _isSaving ? null : _create,
+                            style: IconButton.styleFrom(
+                              fixedSize: const Size.square(34),
+                              padding: EdgeInsets.zero,
+                            ),
+                            icon: _isSaving
+                                ? const SizedBox.square(
+                                    dimension: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_rounded, size: 19),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1073,46 +1124,6 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                         icon: _taskIcon.value.category.storageName,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Spacer(),
-                  IconButton(
-                    key: const ValueKey('todo-quick-voice'),
-                    tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
-                    onPressed: _isSaving ? null : _toggleVoiceInput,
-                    style: IconButton.styleFrom(
-                      fixedSize: const Size.square(44),
-                      backgroundColor: _listening
-                          ? FlorienColors.softPink
-                          : palette.aiSurface,
-                      side: BorderSide(
-                        color: palette.border,
-                        width: FlorienBorders.thin,
-                      ),
-                    ),
-                    icon: Icon(
-                      _listening ? Icons.stop_rounded : Icons.mic_rounded,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    key: const ValueKey('todo-quick-submit'),
-                    tooltip: _isSaving ? 'Ekleniyor' : 'Ekle',
-                    onPressed: _isSaving ? null : _create,
-                    style: IconButton.styleFrom(
-                      fixedSize: const Size.square(44),
-                      padding: EdgeInsets.zero,
-                    ),
-                    icon: _isSaving
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check_rounded, size: 22),
                   ),
                 ],
               ),
@@ -1322,54 +1333,47 @@ class _TodoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Material(
-                color: section.color.withValues(alpha: .12),
-                borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                child: InkWell(
-                  onTap: onToggle,
+          if (completedTarget)
+            Row(
+              children: [
+                Material(
+                  color: section.color.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(section.icon, size: 16, color: section.color),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${section.label} (${tasks.length})',
-                          style: TextStyle(
-                            color: context.palette.textPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: .4,
+                  child: InkWell(
+                    onTap: onToggle,
+                    borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(section.icon, size: 16, color: section.color),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${section.label} (${tasks.length})',
+                            style: TextStyle(
+                              color: context.palette.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .4,
+                            ),
                           ),
-                        ),
-                        Icon(
-                          collapsed
-                              ? Icons.keyboard_arrow_down_rounded
-                              : Icons.keyboard_arrow_up_rounded,
-                          color: context.palette.textSecondary,
-                        ),
-                      ],
+                          Icon(
+                            collapsed
+                                ? Icons.keyboard_arrow_down_rounded
+                                : Icons.keyboard_arrow_up_rounded,
+                            color: context.palette.textSecondary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              if (allowAdd && tasks.isNotEmpty)
-                _TodoIconButton(
-                  tooltip: '${section.shortLabel} görev ekle',
-                  onPressed: onAdd,
-                  icon: Icons.add_rounded,
-                  filled: false,
-                ),
-            ],
-          ),
+              ],
+            ),
           if (!collapsed) ...[
             const SizedBox(height: 8),
             if (tasks.isEmpty && allowAdd)

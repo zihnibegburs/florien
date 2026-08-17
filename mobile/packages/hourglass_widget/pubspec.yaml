@@ -1,0 +1,15 @@
+name: hourglass_widget
+description: Local Dart-only fork of hourglass_widget (avoids broken iOS podspec naming on pub.dev).
+version: 0.0.5
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.1
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: false
