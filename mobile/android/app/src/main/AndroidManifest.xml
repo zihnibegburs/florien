@@ -33,6 +33,7 @@
 
         <receiver
             android:name=".FlorienWidgetProvider"
+            android:label="Günlük plan"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -40,6 +41,61 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/florien_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".TodoWidgetProvider"
+            android:label="To-do"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/florien_todo_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".Focus15WidgetProvider"
+            android:label="15 dk odaklan"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/florien_focus_15_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".QuickActionsWidgetProvider"
+            android:label="Florien hızlı eylemler"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/florien_quick_actions_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".FocusPresetsWidgetProvider"
+            android:label="Odak süresi"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/florien_focus_presets_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".QuickAddWidgetProvider"
+            android:label="Hızlı To-do"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/florien_quick_add_widget_info" />
         </receiver>
 
         <receiver

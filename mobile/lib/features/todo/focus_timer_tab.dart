@@ -57,6 +57,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _automaticTask = false;
   bool _creatingStandaloneTask = false;
   bool _isFinishing = false;
+  bool _focusAlarmScheduled = false;
   late final AnimationController _completionController;
   late final Animation<double> _completionScale;
   late final Animation<double> _completionCelebrationOpacity;
@@ -317,6 +318,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     }
     try {
       await schedule(alarmAt, _taskTitle ?? 'Odaklanma tamamlandı');
+      _focusAlarmScheduled = true;
     } catch (error) {
       debugPrint('Focus alarm could not be scheduled: $error');
     }
@@ -327,6 +329,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     if (complete == null) return;
     try {
       await complete(_taskTitle ?? 'Odaklanma tamamlandı');
+      _focusAlarmScheduled = false;
     } catch (error) {
       debugPrint('Focus alarm could not be completed: $error');
     }
@@ -334,7 +337,8 @@ class _FocusTimerTabState extends State<FocusTimerTab>
 
   Future<void> _cancelFocusAlarm() async {
     final cancel = widget.onFocusAlarmCancelled;
-    if (cancel == null) return;
+    if (cancel == null || !_focusAlarmScheduled) return;
+    _focusAlarmScheduled = false;
     try {
       await cancel();
     } catch (error) {

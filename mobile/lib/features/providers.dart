@@ -8,6 +8,7 @@ import 'package:florien/core/repositories/repositories.dart';
 import 'package:florien/core/services/apple_health_mood_service.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
+import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
@@ -484,6 +485,12 @@ class FocusTaskLaunch {
 }
 
 final focusTaskLaunchProvider = StateProvider<FocusTaskLaunch?>((ref) => null);
+
+final homeWidgetLaunchProvider = StateProvider<HomeWidgetLaunchCommand?>(
+  (ref) => null,
+);
+
+final dailyPlannerQuickAddSignalProvider = StateProvider<int>((ref) => 0);
 
 class ActiveFocusTask {
   const ActiveFocusTask({

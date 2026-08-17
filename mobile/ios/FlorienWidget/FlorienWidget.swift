@@ -1,26 +1,43 @@
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
+import home_widget
 
 private let appGroupId = "group.com.florien.app"
 private let sharedDefault = UserDefaults(suiteName: appGroupId)!
 
+struct FlorienWidgetTask: Identifiable {
+    let id: String
+    let title: String
+    let icon: String
+}
+
 struct FlorienWidgetEntry: TimelineEntry {
     let date: Date
-    let title: String
-    let subtitle: String
-    let taskCount: Int
-    let taskCountLabel: String
+    let profileId: String
+    let dailyTaskCount: Int
+    let dailyTasks: [FlorienWidgetTask]
+    let todoTaskCount: Int
+    let todoTasks: [FlorienWidgetTask]
 }
 
 struct FlorienWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> FlorienWidgetEntry {
         FlorienWidgetEntry(
             date: Date(),
-            title: "Breakfast",
-            subtitle: "Up next · 08:00",
-            taskCount: 3,
-            taskCountLabel: "3 tasks"
+            profileId: "primary",
+            dailyTaskCount: 3,
+            dailyTasks: [
+                FlorienWidgetTask(id: "daily-1", title: "Kahvaltı yap", icon: "breakfast"),
+                FlorienWidgetTask(id: "daily-2", title: "Toplantıya hazırlan", icon: "meeting"),
+                FlorienWidgetTask(id: "daily-3", title: "Kısa yürüyüş", icon: "walking")
+            ],
+            todoTaskCount: 2,
+            todoTasks: [
+                FlorienWidgetTask(id: "todo-1", title: "E-postaları yanıtla", icon: "email"),
+                FlorienWidgetTask(id: "todo-2", title: "Market listesi hazırla", icon: "groceries")
+            ]
         )
     }
 
@@ -35,19 +52,27 @@ struct FlorienWidgetProvider: TimelineProvider {
     }
 
     private func readEntry() -> FlorienWidgetEntry {
-        let active = sharedDefault.string(forKey: "active_task_title")
-        let next = sharedDefault.string(forKey: "next_task_title")
-        let title = active ?? next ?? sharedDefault.string(forKey: "widget_title") ?? "Florien"
-        let subtitle = sharedDefault.string(forKey: "widget_subtitle") ?? "Florien"
-        let count = sharedDefault.integer(forKey: "task_count")
-        let countLabel = sharedDefault.string(forKey: "task_count_label") ?? "\(count)"
+        let dailyTasks = tasks(for: "daily_task")
+        let todoTasks = tasks(for: "todo_task")
         return FlorienWidgetEntry(
             date: Date(),
-            title: title,
-            subtitle: subtitle,
-            taskCount: count,
-            taskCountLabel: countLabel
+            profileId: sharedDefault.string(forKey: "widget_profile_id") ?? "primary",
+            dailyTaskCount: sharedDefault.integer(forKey: "daily_pending_count"),
+            dailyTasks: dailyTasks,
+            todoTaskCount: sharedDefault.integer(forKey: "todo_pending_count"),
+            todoTasks: todoTasks
         )
+    }
+
+    private func tasks(for prefix: String) -> [FlorienWidgetTask] {
+        (1...6).compactMap { index in
+            let task = sharedDefault.string(forKey: "\(prefix)_\(index)") ?? ""
+            let taskId = sharedDefault.string(forKey: "\(prefix)_\(index)_id") ?? ""
+            let icon = sharedDefault.string(forKey: "\(prefix)_\(index)_icon") ?? "task"
+            return task.isEmpty || taskId.isEmpty
+                ? nil
+                : FlorienWidgetTask(id: taskId, title: task, icon: icon)
+        }
     }
 }
 
@@ -55,25 +80,165 @@ struct FlorienWidgetView: View {
     let entry: FlorienWidgetEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        FlorienTaskListWidgetView(
+            title: "Günlük plan",
+            taskCount: entry.dailyTaskCount,
+            tasks: entry.dailyTasks,
+            emptyMessage: "Bugün için planın boş",
+            rootURL: FlorienWidgetURL.today,
+            addURL: FlorienWidgetURL.dailyAdd,
+            profileId: entry.profileId
+        )
+    }
+}
+
+struct FlorienTodoWidgetView: View {
+    let entry: FlorienWidgetEntry
+
+    var body: some View {
+        FlorienTaskListWidgetView(
+            title: "To-do",
+            taskCount: entry.todoTaskCount,
+            tasks: entry.todoTasks,
+            emptyMessage: "To-do listen şu an boş",
+            rootURL: FlorienWidgetURL.todo,
+            addURL: FlorienWidgetURL.todoAdd,
+            profileId: entry.profileId
+        )
+    }
+}
+
+private struct FlorienTaskListWidgetView: View {
+    let title: String
+    let taskCount: Int
+    let tasks: [FlorienWidgetTask]
+    let emptyMessage: String
+    let rootURL: URL
+    let addURL: URL
+    let profileId: String
+
+    @Environment(\.widgetFamily) private var family
+
+    private var visibleTasks: ArraySlice<FlorienWidgetTask> {
+        tasks.prefix(maxVisibleTaskCount)
+    }
+
+    private var maxVisibleTaskCount: Int {
+        switch family {
+        case .systemSmall:
+            return 1
+        case .systemMedium:
+            return 3
+        case .systemLarge:
+            return 6
+        default:
+            return 3
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
             HStack {
-                Text("Florien")
+                Text(title)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.42, green: 0.39, blue: 1.0))
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                    .lineLimit(1)
                 Spacer()
-                Text(entry.taskCountLabel)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                Link(destination: addURL) {
+                    ZStack {
+                        Circle().fill(FlorienWidgetStyle.primary)
+                        Image(systemName: "plus")
+                            .font(.caption.bold())
+                            .foregroundStyle(FlorienWidgetStyle.ink)
+                    }
+                    .frame(width: 26, height: 26)
+                }
             }
-            Text(entry.title)
-                .font(.headline)
-                .lineLimit(2)
-            Text(entry.subtitle)
-                .font(.caption)
-                .foregroundColor(.secondary)
+            Text("\(taskCount) tamamlanmamış görev")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(FlorienWidgetStyle.muted)
+            if tasks.isEmpty {
+                Text(emptyMessage)
+                    .font(.headline)
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                Text("Kendine biraz alan aç.")
+                    .font(.caption)
+                    .foregroundStyle(FlorienWidgetStyle.muted)
+            } else {
+                ForEach(visibleTasks) { task in
+                    let completionURL = FlorienWidgetURL.taskComplete(
+                        taskId: task.id,
+                        source: rootURL == FlorienWidgetURL.today ? "daily" : "todo",
+                        profileId: profileId
+                    )
+                    HStack(spacing: 8) {
+                        FlorienWidgetTaskIcon(icon: task.icon)
+                        Text(task.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(FlorienWidgetStyle.ink)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        if family != .systemSmall {
+                            if #available(iOS 17.0, *) {
+                                Button(intent: FlorienWidgetCompletionIntent(
+                                    url: completionURL,
+                                    appGroup: appGroupId
+                                )) {
+                                    Image(systemName: "circle")
+                                        .font(.title3)
+                                        .foregroundStyle(FlorienWidgetStyle.muted)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Link(destination: completionURL) {
+                                    Image(systemName: "circle")
+                                        .font(.title3)
+                                        .foregroundStyle(FlorienWidgetStyle.muted)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         .padding()
+        .widgetURL(rootURL)
+        .florienWidgetContainerBackground()
+    }
+}
+
+private struct FlorienWidgetTaskIcon: View {
+    let icon: String
+
+    private var symbolName: String {
+        switch icon {
+        case "meeting", "groups": return "person.2.fill"
+        case "email": return "envelope.fill"
+        case "phone_call": return "phone.fill"
+        case "study", "school", "menu_book", "reading": return "book.fill"
+        case "shopping", "groceries", "shopping_bag": return "cart.fill"
+        case "breakfast", "lunch", "dinner", "restaurant", "cooking": return "fork.knife"
+        case "running", "directions_run": return "figure.run"
+        case "walking", "directions_walk": return "figure.walk"
+        case "gym", "fitness", "workout": return "dumbbell.fill"
+        case "cleaning": return "sparkles"
+        case "meditation", "self_improvement": return "figure.mind.and.body"
+        case "work", "project", "presentation": return "briefcase.fill"
+        case "appointment", "doctor", "health": return "cross.case.fill"
+        case "timer": return "timer"
+        default: return "checklist"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Circle().fill(FlorienWidgetStyle.lilacSoft)
+            Image(systemName: symbolName)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(FlorienWidgetStyle.ink)
+        }
+        .frame(width: 22, height: 22)
     }
 }
 
@@ -81,6 +246,11 @@ struct FlorienWidgetView: View {
 struct FlorienWidgetBundle: WidgetBundle {
     var body: some Widget {
         FlorienWidget()
+        FlorienTodoWidget()
+        FlorienFocus15Widget()
+        FlorienFocusPresetsWidget()
+        FlorienQuickAddWidget()
+        FlorienQuickActionsWidget()
         if #available(iOS 16.1, *) {
             FlorienLiveActivityWidget()
         }
@@ -94,9 +264,289 @@ struct FlorienWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { entry in
             FlorienWidgetView(entry: entry)
         }
-        .configurationDisplayName("Florien Plan")
-        .description("Günlük planını ana ekrandan takip et.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .configurationDisplayName("Günlük Plan")
+        .description("Bugün tamamlanmamış görevlerini gör.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
+struct FlorienTodoWidget: Widget {
+    let kind: String = "FlorienTodoWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { entry in
+            FlorienTodoWidgetView(entry: entry)
+        }
+        .configurationDisplayName("To-do")
+        .description("Tamamlanmamış To-do görevlerini gör ve ekle.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
+struct FlorienFocus15Widget: Widget {
+    let kind: String = "FlorienFocus15Widget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
+            FlorienFocus15WidgetView()
+        }
+        .configurationDisplayName("15 dk Odaklan")
+        .description("Tek dokunuşla 15 dakikalık odak turu başlat.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct FlorienFocus15WidgetView: View {
+    var body: some View {
+        Link(destination: FlorienWidgetURL.focus(minutes: 15)) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Florien · Odaklan")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                Spacer(minLength: 0)
+                Text("15 dakikalık\nalanın hazır")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                FlorienWidgetPill(label: "▶ Başla", color: FlorienWidgetStyle.primary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding()
+        }
+        .florienWidgetContainerBackground()
+    }
+}
+
+struct FlorienFocusPresetsWidget: Widget {
+    let kind: String = "FlorienFocusPresetsWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
+            FlorienFocusPresetsWidgetView()
+        }
+        .configurationDisplayName("Odak Süresi")
+        .description("5, 10, 15 veya 30 dakikalık odak turu başlat.")
+        .supportedFamilies([.systemMedium])
+    }
+}
+
+struct FlorienFocusPresetsWidgetView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Ne kadar odaklanmak istersin?")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(FlorienWidgetStyle.ink)
+            HStack(spacing: 7) {
+                ForEach([5, 10, 15, 30], id: \.self) { minutes in
+                    Link(destination: FlorienWidgetURL.focus(minutes: minutes)) {
+                        FlorienWidgetPill(
+                            label: "\(minutes) dk",
+                            color: minutes == 15
+                                ? FlorienWidgetStyle.primary
+                                : FlorienWidgetStyle.card
+                        )
+                    }
+                }
+            }
+        }
+        .padding()
+        .florienWidgetContainerBackground()
+    }
+}
+
+struct FlorienQuickAddWidget: Widget {
+    let kind: String = "FlorienQuickAddWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
+            FlorienQuickAddWidgetView()
+        }
+        .configurationDisplayName("Hızlı To-do")
+        .description("Aklına geleni hızlıca To-do listene ekle.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct FlorienQuickAddWidgetView: View {
+    var body: some View {
+        Link(destination: FlorienWidgetURL.todoAdd) {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                Spacer(minLength: 0)
+                Text("Aklına bir şey mi geldi?")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+                FlorienWidgetPill(label: "＋ To-do ekle", color: FlorienWidgetStyle.primary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding()
+        }
+        .florienWidgetContainerBackground()
+    }
+}
+
+struct FlorienQuickActionsWidget: Widget {
+    let kind: String = "FlorienQuickActionsWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
+            FlorienQuickActionsWidgetView()
+        }
+        .configurationDisplayName("Florien Hızlı Eylemler")
+        .description("AI, planlama, To-do ve odaklana tek dokunuşla ulaş.")
+        .supportedFamilies([.systemMedium])
+    }
+}
+
+private struct FlorienQuickActionsWidgetView: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Link(destination: FlorienWidgetURL.ai) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(FlorienWidgetStyle.actionSurface)
+                    HStack {
+                        Text("Planın nedir?")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(FlorienWidgetStyle.ink)
+                        Spacer()
+                        ZStack {
+                            Circle().fill(FlorienWidgetStyle.primary)
+                            Image(systemName: "mic.fill")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(FlorienWidgetStyle.ink)
+                        }
+                        .frame(width: 40, height: 40)
+                        .overlay(alignment: .topTrailing) {
+                            Image(systemName: "sparkles")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(FlorienWidgetStyle.lilac)
+                                .offset(x: 7, y: -5)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                }
+            }
+            HStack(spacing: 12) {
+                FlorienQuickActionButton(icon: "calendar", color: FlorienWidgetStyle.lilacSoft, url: FlorienWidgetURL.today)
+                FlorienQuickActionButton(icon: "checkmark.square", color: FlorienWidgetStyle.primarySoft, url: FlorienWidgetURL.todoAdd)
+                FlorienQuickActionButton(icon: "calendar.badge.plus", color: FlorienWidgetStyle.primary, url: FlorienWidgetURL.dailyAdd)
+                FlorienQuickActionButton(icon: "timer", color: FlorienWidgetStyle.greenSoft, url: FlorienWidgetURL.focusScreen)
+            }
+        }
+        .padding()
+        .florienWidgetContainerBackground()
+    }
+}
+
+private struct FlorienQuickActionButton: View {
+    let icon: String
+    let color: Color
+    let url: URL
+
+    var body: some View {
+        Link(destination: url) {
+            ZStack {
+                Circle().fill(color)
+                Image(systemName: icon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(FlorienWidgetStyle.ink)
+            }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1, contentMode: .fit)
+        }
+    }
+}
+
+private enum FlorienWidgetURL {
+    static let today = URL(string: "florien://widget/today?homeWidget=1")!
+    static let todo = URL(string: "florien://widget/todo?homeWidget=1")!
+    static let todoAdd = URL(string: "florien://widget/todo/add?homeWidget=1")!
+    static let dailyAdd = URL(string: "florien://widget/daily/add?homeWidget=1")!
+    static let ai = URL(string: "florien://widget/ai?homeWidget=1")!
+    static let focusScreen = URL(string: "florien://widget/focus/screen?homeWidget=1")!
+
+    static func focus(minutes: Int) -> URL {
+        URL(string: "florien://widget/focus?minutes=\(minutes)&homeWidget=1")!
+    }
+
+    static func taskComplete(taskId: String, source: String, profileId: String) -> URL {
+        var components = URLComponents()
+        components.scheme = "florien"
+        components.host = "widget"
+        components.path = "/task/complete"
+        components.queryItems = [
+            URLQueryItem(name: "taskId", value: taskId),
+            URLQueryItem(name: "source", value: source),
+            URLQueryItem(name: "profileId", value: profileId),
+            URLQueryItem(name: "homeWidget", value: "1")
+        ]
+        return components.url!
+    }
+}
+
+@available(iOS 17.0, *)
+private struct FlorienWidgetCompletionIntent: AppIntent {
+    static var title: LocalizedStringResource = "Görevi tamamla"
+
+    @Parameter(title: "Widget URL") var url: URL?
+    @Parameter(title: "App Group") var appGroup: String?
+
+    init() {}
+
+    init(url: URL, appGroup: String) {
+        self.url = url
+        self.appGroup = appGroup
+    }
+
+    func perform() async throws -> some IntentResult {
+        await HomeWidgetBackgroundWorker.run(url: url, appGroup: appGroup ?? appGroupId)
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+@available(iOSApplicationExtension, unavailable)
+extension FlorienWidgetCompletionIntent: ForegroundContinuableIntent {}
+
+private enum FlorienWidgetStyle {
+    static let ink = Color(red: 0.16, green: 0.15, blue: 0.18)
+    static let muted = Color(red: 0.35, green: 0.33, blue: 0.39)
+    static let primary = Color(red: 0.95, green: 0.74, blue: 0.32)
+    static let card = Color(red: 1.0, green: 0.99, blue: 0.97)
+    static let lilac = Color(red: 0.67, green: 0.63, blue: 0.87)
+    static let actionSurface = Color(red: 0.91, green: 0.89, blue: 0.96)
+    static let lilacSoft = Color(red: 0.84, green: 0.80, blue: 0.93)
+    static let primarySoft = Color(red: 0.99, green: 0.91, blue: 0.68)
+    static let greenSoft = Color(red: 0.75, green: 0.87, blue: 0.78)
+}
+
+private struct FlorienWidgetPill: View {
+    let label: String
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Capsule().fill(color)
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(FlorienWidgetStyle.ink)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func florienWidgetContainerBackground(_ color: Color = FlorienWidgetStyle.card) -> some View {
+        if #available(iOS 17.0, *) {
+            containerBackground(color, for: .widget)
+        } else {
+            self
+        }
     }
 }
 

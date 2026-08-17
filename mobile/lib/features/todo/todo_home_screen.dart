@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
@@ -21,9 +23,16 @@ class TodoHomeScreen extends ConsumerStatefulWidget {
 class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   int _selectedIndex = 0;
   late final ProviderSubscription<FocusTaskLaunch?> _focusLaunchSubscription;
+  late final ProviderSubscription<HomeWidgetLaunchCommand?>
+  _homeWidgetLaunchSubscription;
+  late final ProviderSubscription<AsyncValue<TimelineModel>>
+  _widgetTimelineSubscription;
+  late final ProviderSubscription<AsyncValue<List<TaskModel>>>
+  _widgetInboxSubscription;
   FocusTaskLaunch? _scheduledFocusLaunch;
   Timer? _scheduledFocusClock;
   bool _refreshingScheduledFocus = false;
+  int _widgetLaunchRevision = 0;
 
   @override
   void initState() {
@@ -36,6 +45,40 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         setState(() => _selectedIndex = 2);
       }
     });
+    _homeWidgetLaunchSubscription = ref.listenManual(
+      homeWidgetLaunchProvider,
+      (_, command) => unawaited(_handleHomeWidgetLaunch(command)),
+      fireImmediately: true,
+    );
+    final today = _today();
+    _widgetTimelineSubscription = ref.listenManual(
+      dailyTimelineProvider(today),
+      (_, timeline) {
+        final value = timeline.valueOrNull;
+        if (value != null) {
+          final profileId = ref.read(activeAppProfileProvider)?.id ?? 'primary';
+          unawaited(
+            HomeScreenWidgetService.syncDailyPlan(
+              date: today,
+              tasks: value.tasks,
+              profileId: profileId,
+            ),
+          );
+        }
+      },
+      fireImmediately: true,
+    );
+    _widgetInboxSubscription = ref.listenManual(inboxProvider, (_, inbox) {
+      final tasks = inbox.valueOrNull;
+      if (tasks != null) {
+        unawaited(
+          HomeScreenWidgetService.syncTodo(
+            tasks: tasks,
+            profileId: ref.read(activeAppProfileProvider)?.id ?? 'primary',
+          ),
+        );
+      }
+    }, fireImmediately: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_refreshScheduledFocus());
     });
@@ -49,7 +92,94 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   void dispose() {
     _scheduledFocusClock?.cancel();
     _focusLaunchSubscription.close();
+    _homeWidgetLaunchSubscription.close();
+    _widgetTimelineSubscription.close();
+    _widgetInboxSubscription.close();
     super.dispose();
+  }
+
+  DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  Future<void> _handleHomeWidgetLaunch(HomeWidgetLaunchCommand? command) async {
+    if (command == null || !mounted) return;
+    final revision = ++_widgetLaunchRevision;
+    ref.read(homeWidgetLaunchProvider.notifier).state = null;
+    await _dismissWidgetOverlays();
+    if (!mounted || revision != _widgetLaunchRevision) return;
+    switch (command.action) {
+      case HomeWidgetLaunchAction.focus:
+      case HomeWidgetLaunchAction.focusScreen:
+        setState(() => _selectedIndex = 2);
+      case HomeWidgetLaunchAction.today:
+        setState(() => _selectedIndex = 1);
+      case HomeWidgetLaunchAction.todo:
+        setState(() => _selectedIndex = 0);
+      case HomeWidgetLaunchAction.todoAdd:
+        setState(() => _selectedIndex = 0);
+        unawaited(_openWidgetTodoQuickAdd(revision));
+      case HomeWidgetLaunchAction.dailyAdd:
+        setState(() => _selectedIndex = 1);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && revision == _widgetLaunchRevision) {
+            ref.read(dailyPlannerQuickAddSignalProvider.notifier).state++;
+          }
+        });
+      case HomeWidgetLaunchAction.ai:
+        setState(() => _selectedIndex = 0);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || revision != _widgetLaunchRevision) return;
+          FocusManager.instance.primaryFocus?.unfocus();
+          Navigator.of(context, rootNavigator: true).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const PlannerAiChatScreen(),
+            ),
+          );
+        });
+      case HomeWidgetLaunchAction.taskComplete:
+        setState(() => _selectedIndex = command.isDailyPlan ? 1 : 0);
+        final taskId = command.taskId;
+        if (taskId != null) unawaited(_completeWidgetTask(taskId));
+    }
+  }
+
+  Future<void> _dismissWidgetOverlays() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).popUntil((route) => route.isFirst);
+    await WidgetsBinding.instance.endOfFrame;
+  }
+
+  Future<void> _completeWidgetTask(String taskId) async {
+    try {
+      await ref.read(taskRepositoryProvider).completeTask(taskId);
+      ref.invalidate(inboxProvider);
+      ref.invalidate(dailyTimelineProvider);
+    } catch (error) {
+      debugPrint('Home widget task could not be completed: $error');
+    }
+  }
+
+  Future<void> _openWidgetTodoQuickAdd(int revision) async {
+    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted || revision != _widgetLaunchRevision) return;
+    try {
+      await showTodoQuickAdd(context: context, ref: ref, autofocus: false);
+    } catch (error) {
+      debugPrint('Home widget To-do sheet could not be opened: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('To-do ekleme ekranı açılamadı.')),
+        );
+      }
+    }
   }
 
   Future<void> _refreshScheduledFocus() async {
@@ -116,6 +246,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
+    final alarms = ref.read(taskAlarmServiceProvider);
     return Scaffold(
       backgroundColor: context.palette.background,
       appBar: _selectedIndex == 0
@@ -150,7 +281,9 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         index: _selectedIndex,
         children: [
           const TodoListTab(),
-          const DailyPlannerTab(),
+          DailyPlannerTab(
+            quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
+          ),
           FocusTimerTab(
             launchRequest: requestedFocus ?? _scheduledFocusLaunch,
             resetSignal: ref.watch(focusTimerResetSignalProvider),
@@ -159,15 +292,14 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                 ref.read(activeFocusTaskProvider.notifier).state = progress,
             onTaskCompleted: _completeFocusedTask,
             onFocusAlarmScheduled: (alarmAt, title) async {
-              await ref
-                  .read(taskAlarmServiceProvider)
-                  .scheduleFocusTimerAlarm(title: title, alarmAt: alarmAt);
+              await alarms.scheduleFocusTimerAlarm(
+                title: title,
+                alarmAt: alarmAt,
+              );
             },
-            onFocusAlarmCompleted: (title) => ref
-                .read(taskAlarmServiceProvider)
-                .completeFocusTimerAlarm(title: title),
-            onFocusAlarmCancelled: () =>
-                ref.read(taskAlarmServiceProvider).cancelFocusTimerAlarm(),
+            onFocusAlarmCompleted: (title) =>
+                alarms.completeFocusTimerAlarm(title: title),
+            onFocusAlarmCancelled: alarms.cancelFocusTimerAlarm,
             onSessionClosed: () {
               if (ref.read(focusTaskLaunchProvider) != null) {
                 ref.read(focusTaskLaunchProvider.notifier).state = null;

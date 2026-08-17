@@ -15,6 +15,7 @@ import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
+import 'package:florien/features/todo/daily_plan_share_sheet.dart';
 import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
 import 'package:florien/features/todo/routine_discovery_screen.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
@@ -151,7 +152,9 @@ final dailyTaskCompleterProvider = Provider<DailyTaskCompleter>((ref) {
 });
 
 class DailyPlannerTab extends ConsumerStatefulWidget {
-  const DailyPlannerTab({super.key});
+  const DailyPlannerTab({super.key, this.quickAddSignal = 0});
+
+  final int quickAddSignal;
 
   @override
   ConsumerState<DailyPlannerTab> createState() => _DailyPlannerTabState();
@@ -163,6 +166,15 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   late DateTime _selectedDate = _dateOnly(DateTime.now());
   final Set<DayPeriod> _collapsed = {};
   DailyPlannerGrouping _grouping = DailyPlannerGrouping.list;
+
+  @override
+  void didUpdateWidget(covariant DailyPlannerTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.quickAddSignal == oldWidget.quickAddSignal) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_showQuickAdd(DayPeriod.anytime));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,6 +197,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             onGroupingChanged: _setGrouping,
             onRescheduleTasks: () => _showRescheduleReview(const []),
             onDiscoverRoutines: _showRoutineDiscovery,
+            onShare: () => _showDailyShare(const []),
           ),
           data: (value) => _DailyBody(
             selectedDate: _selectedDate,
@@ -198,6 +211,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             onGroupingChanged: _setGrouping,
             onRescheduleTasks: () => _showRescheduleReview(value.tasks),
             onDiscoverRoutines: _showRoutineDiscovery,
+            onShare: () => _showDailyShare(value.tasks),
           ),
         ),
       ),
@@ -217,6 +231,9 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   void _setGrouping(DailyPlannerGrouping value) {
     setState(() => _grouping = value);
   }
+
+  Future<void> _showDailyShare(List<TaskModel> tasks) =>
+      showDailyPlanShareSheet(context, date: _selectedDate, tasks: tasks);
 
   Future<void> _showQuickAdd(DayPeriod period) async {
     final draft = await showFlorienBottomSheet<_DailyTaskDraft>(
@@ -303,6 +320,7 @@ class _DailyBody extends StatelessWidget {
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
+    required this.onShare,
   });
 
   final DateTime selectedDate;
@@ -316,6 +334,7 @@ class _DailyBody extends StatelessWidget {
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -358,6 +377,7 @@ class _DailyBody extends StatelessWidget {
                     onGroupingChanged: onGroupingChanged,
                     onRescheduleTasks: onRescheduleTasks,
                     onDiscoverRoutines: onDiscoverRoutines,
+                    onShare: onShare,
                   ),
                 ),
               ),
@@ -409,6 +429,7 @@ class _DailyHeader extends StatelessWidget {
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
+    required this.onShare,
   });
 
   final DateTime selectedDate;
@@ -418,6 +439,7 @@ class _DailyHeader extends StatelessWidget {
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -434,6 +456,13 @@ class _DailyHeader extends StatelessWidget {
               onTap: () => onSelectDate(today),
             ),
             const Spacer(),
+            _SquareButton(
+              key: const ValueKey('daily-share-plan'),
+              tooltip: 'Günü paylaş',
+              icon: Icons.ios_share_rounded,
+              onTap: onShare,
+            ),
+            const SizedBox(width: 6),
             _SquareButton(
               tooltip: 'Günlük seçenekleri',
               icon: Icons.more_horiz_rounded,
@@ -1657,13 +1686,27 @@ class _DailyTaskCard extends ConsumerWidget {
         height: timelineStyle ? 34 : 30,
       ),
       onPressed: () async {
-        if (task.isCompleted) {
-          await ref.read(taskRepositoryProvider).uncompleteTask(task.id);
-        } else {
-          final counts = await ref.read(dailyTaskCompleterProvider)(task.id);
+        try {
+          if (task.isCompleted) {
+            await ref.read(taskRepositoryProvider).uncompleteTask(task.id);
+          } else {
+            final counts = await ref.read(dailyTaskCompleterProvider)(task.id);
+            if (!context.mounted) return;
+            await showCompletionCelebration(context, counts);
+          }
+        } on StateError {
           if (!context.mounted) return;
-          await showCompletionCelebration(context, counts);
+          ref.invalidate(dailyTimelineProvider(selectedDate));
+          return;
+        } catch (error) {
+          debugPrint('Daily task completion could not be changed: $error');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Görev durumu güncellenemedi.')),
+            );
+          }
         }
+        if (!context.mounted) return;
         ref.invalidate(dailyTimelineProvider(selectedDate));
       },
       icon: Icon(

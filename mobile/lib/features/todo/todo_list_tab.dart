@@ -17,6 +17,7 @@ Future<void> showTodoQuickAdd({
   required WidgetRef ref,
   String? todoListId,
   String initialTitle = '',
+  bool autofocus = true,
 }) async {
   final lists = await ref.read(todoListsProvider.future);
   if (!context.mounted) return;
@@ -29,6 +30,7 @@ Future<void> showTodoQuickAdd({
       todoListId: todoListId,
       lists: lists,
       initialTitle: initialTitle,
+      autofocus: autofocus,
     ),
   );
   if (details != null && context.mounted) {
@@ -838,11 +840,13 @@ class _AddTodoDialog extends ConsumerStatefulWidget {
     required this.todoListId,
     required this.lists,
     this.initialTitle = '',
+    this.autofocus = true,
   });
 
   final String? todoListId;
   final List<TodoListDefinition> lists;
   final String initialTitle;
+  final bool autofocus;
 
   @override
   ConsumerState<_AddTodoDialog> createState() => _AddTodoDialogState();
@@ -1026,7 +1030,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                   key: const ValueKey('todo-quick-title'),
                   controller: _controller,
                   onChanged: _taskIcon.onTaskChanged,
-                  autofocus: true,
+                  autofocus: widget.autofocus,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _create(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
