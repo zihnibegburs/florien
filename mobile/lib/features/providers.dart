@@ -9,6 +9,7 @@ import 'package:florien/core/services/apple_health_mood_service.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
+import 'package:florien/core/services/live_activity_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
@@ -72,6 +73,14 @@ final taskAlarmServiceProvider = Provider<TaskAlarmService>(
 
 final notificationPreferencesProvider = FutureProvider<NotificationPreferences>(
   (ref) => ref.watch(taskAlarmServiceProvider).getPreferences(),
+);
+
+final liveActivityServiceProvider = Provider<FlorienLiveActivityService>(
+  (ref) => FlorienLiveActivityService(),
+);
+
+final liveActivityPreferencesProvider = FutureProvider<LiveActivityPreferences>(
+  (ref) => ref.watch(settingsStorageProvider).getLiveActivityPreferences(),
 );
 
 final calendarConnectionServiceProvider = Provider<CalendarConnectionService>(

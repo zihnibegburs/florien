@@ -570,6 +570,7 @@ extension LiveActivitiesAppAttributes {
 
 @available(iOS 16.1, *)
 private struct FlorienLiveActivityData {
+    let activityKind: String
     let taskTitle: String
     let remaining: String
     let statusLabel: String
@@ -580,10 +581,11 @@ private struct FlorienLiveActivityData {
 
     init(context: ActivityViewContext<LiveActivitiesAppAttributes>) {
         let key = context.attributes.prefixedKey
+        activityKind = sharedDefault.string(forKey: key("activityKind")) ?? "focus"
         taskTitle = sharedDefault.string(forKey: key("taskTitle")) ?? "Florien"
         remaining = sharedDefault.string(forKey: key("remaining")) ?? "--:--"
         statusLabel = sharedDefault.string(forKey: key("statusLabel")) ?? "Florien"
-        let colorHex = sharedDefault.string(forKey: key("color")) ?? "#4F52B2"
+        let colorHex = sharedDefault.string(forKey: key("color")) ?? "#8FB6A0"
         accentColor = Color(hex: colorHex)
         isPaused = sharedDefault.integer(forKey: key("paused")) == 1
 
@@ -595,6 +597,15 @@ private struct FlorienLiveActivityData {
         timerEndDate = endMs > 0
             ? Date(timeIntervalSince1970: endMs / 1000)
             : Date().addingTimeInterval(30 * 60)
+    }
+
+    var iconName: String {
+        switch activityKind {
+        case "nextPlan": return "calendar"
+        case "dailyProgress": return "chart.bar.fill"
+        case "reminder": return "alarm.fill"
+        default: return isPaused ? "pause.fill" : "timer"
+        }
     }
 }
 
@@ -636,12 +647,12 @@ struct FlorienLiveActivityWidget: Widget {
                         .opacity(data.isPaused ? 0.35 : 1)
                 }
             } compactLeading: {
-                Image(systemName: data.isPaused ? "pause.fill" : "timer")
+                Image(systemName: data.iconName)
                     .foregroundStyle(data.accentColor)
             } compactTrailing: {
                 FlorienTimerLabel(data: data, font: .caption2.monospacedDigit().bold())
             } minimal: {
-                Image(systemName: "timer")
+                Image(systemName: data.iconName)
                     .foregroundStyle(data.accentColor)
             }
             .widgetURL(URL(string: "florien://focus")!)

@@ -14,6 +14,17 @@ class NotificationPreferences {
   final bool vibrationEnabled;
 }
 
+class LiveActivityPreferences {
+  const LiveActivityPreferences({this.focusTimerEnabled = true});
+
+  final bool focusTimerEnabled;
+
+  LiveActivityPreferences copyWith({bool? focusTimerEnabled}) =>
+      LiveActivityPreferences(
+        focusTimerEnabled: focusTimerEnabled ?? this.focusTimerEnabled,
+      );
+}
+
 class SettingsStorage {
   static const _languageKey = 'app_language';
   static const _themeModeKey = 'app_theme_mode';
@@ -21,6 +32,7 @@ class SettingsStorage {
   static const _notificationSoundEnabledKey = 'notification_sound_enabled';
   static const _notificationVibrationEnabledKey =
       'notification_vibration_enabled';
+  static const _liveFocusKey = 'live_activity_focus_enabled';
 
   Future<String> getLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -78,6 +90,18 @@ class SettingsStorage {
   Future<void> setNotificationVibrationEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notificationVibrationEnabledKey, enabled);
+  }
+
+  Future<LiveActivityPreferences> getLiveActivityPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    return LiveActivityPreferences(
+      focusTimerEnabled: prefs.getBool(_liveFocusKey) ?? true,
+    );
+  }
+
+  Future<void> setLiveActivityPreferences(LiveActivityPreferences value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_liveFocusKey, value.focusTimerEnabled);
   }
 
   static const _importedCalendarEventsKey = 'imported_calendar_event_ids';

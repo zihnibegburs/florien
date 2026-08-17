@@ -64,6 +64,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
               profileId: profileId,
             ),
           );
+          unawaited(_syncDailyLiveActivities(today, value.tasks));
         }
       },
       fireImmediately: true,
@@ -232,6 +233,35 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     if (mounted) unawaited(_refreshScheduledFocus());
   }
 
+  Future<void> _syncDailyLiveActivities(
+    DateTime date,
+    List<TaskModel> tasks,
+  ) async {
+    final preferences = await ref.read(liveActivityPreferencesProvider.future);
+    await ref
+        .read(liveActivityServiceProvider)
+        .syncDailyPlan(date: date, tasks: tasks, preferences: preferences);
+  }
+
+  Future<void> _syncFocusLiveActivity(ActiveFocusTask? progress) async {
+    final preferences = await ref.read(liveActivityPreferencesProvider.future);
+    final launch = ref.read(focusTaskLaunchProvider) ?? _scheduledFocusLaunch;
+    await ref
+        .read(liveActivityServiceProvider)
+        .syncFocus(
+          title: launch?.title ?? 'Odaklanma',
+          remainingSeconds: progress?.remainingSeconds ?? 0,
+          totalSeconds: progress?.totalSeconds ?? 0,
+          isRunning: progress?.isRunning ?? false,
+          preferences: preferences,
+        );
+  }
+
+  void _onFocusTaskProgressChanged(ActiveFocusTask? progress) {
+    ref.read(activeFocusTaskProvider.notifier).state = progress;
+    unawaited(_syncFocusLiveActivity(progress));
+  }
+
   Future<FocusTaskLaunch> _createStandaloneFocusTask(
     int durationMinutes,
   ) async {
@@ -288,8 +318,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             launchRequest: requestedFocus ?? _scheduledFocusLaunch,
             resetSignal: ref.watch(focusTimerResetSignalProvider),
             onStandaloneFocusStarted: _createStandaloneFocusTask,
-            onTaskProgressChanged: (progress) =>
-                ref.read(activeFocusTaskProvider.notifier).state = progress,
+            onTaskProgressChanged: _onFocusTaskProgressChanged,
             onTaskCompleted: _completeFocusedTask,
             onFocusAlarmScheduled: (alarmAt, title) async {
               await alarms.scheduleFocusTimerAlarm(

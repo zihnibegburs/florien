@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/todo/calendar_connections_screen.dart';
 import 'package:florien/features/todo/notification_settings_screen.dart';
+import 'package:florien/features/todo/live_activity_settings_screen.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/providers.dart';
 
@@ -76,6 +77,15 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const NotificationSettingsScreen(),
+                ),
+              ),
+            ),
+            _SettingsRow(
+              icon: Icons.timelapse_rounded,
+              label: 'Canlı Etkinlikler',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const LiveActivitySettingsScreen(),
                 ),
               ),
             ),
