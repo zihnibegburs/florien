@@ -1378,7 +1378,7 @@ class _TodoSection extends StatelessWidget {
             ],
           ),
           if (!collapsed) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
             if (tasks.isEmpty && allowAdd)
               _EmptySection(onAdd: onAdd)
             else
@@ -1506,27 +1506,27 @@ class _EmptySection extends StatelessWidget {
         onTap: onAdd,
         borderRadius: BorderRadius.circular(FlorienRadius.sm),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
-            color: context.palette.surface.withValues(alpha: .7),
-            borderRadius: BorderRadius.circular(FlorienRadius.md),
-            border: Border.all(color: context.palette.border),
+            color: context.palette.surfaceMuted.withValues(alpha: .42),
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
           ),
           child: Row(
             children: [
               Icon(
-                Icons.add_circle_outline_rounded,
-                color: context.palette.textSecondary,
+                Icons.add_rounded,
+                size: 16,
+                color: context.palette.textSecondary.withValues(alpha: .68),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Acele yok  •  görev eklemek için dokun',
+                  'Görev ekle',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: context.palette.textSecondary,
-                    fontSize: 13,
+                    color: context.palette.textSecondary.withValues(alpha: .72),
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

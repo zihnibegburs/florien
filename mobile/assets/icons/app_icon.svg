@@ -1,12 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#45A894"/>
-      <stop offset="100%" stop-color="#2D7A6E"/>
-    </linearGradient>
-  </defs>
-  <rect width="1024" height="1024" fill="url(#bg)"/>
-  <rect x="176" y="296" width="300" height="104" rx="52" fill="#E07A5F"/>
-  <rect x="176" y="460" width="520" height="104" rx="52" fill="#FFFFFF"/>
-  <rect x="176" y="624" width="672" height="104" rx="52" fill="#FFFFFF" fill-opacity="0.92"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="464" height="464" viewBox="0 0 464 464" fill="none">
+  <title>Florien app icon master</title>
+  <defs><linearGradient id="app-icon-lavender" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0" stop-color="#BBB6D4"/>
+  <stop offset="1" stop-color="#9892B8"/>
+</linearGradient>
+<linearGradient id="app-icon-coral" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0" stop-color="#F7A08F"/>
+  <stop offset="1" stop-color="#E78370"/>
+</linearGradient>
+<linearGradient id="app-icon-yellow" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0" stop-color="#FFD26C"/>
+  <stop offset="1" stop-color="#EFB844"/>
+</linearGradient>
+<linearGradient id="app-icon-sage" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0" stop-color="#A8C5AF"/>
+  <stop offset="1" stop-color="#83A48D"/>
+</linearGradient>
+<linearGradient id="app-icon-cream" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0" stop-color="#FFFCF6"/>
+  <stop offset="1" stop-color="#FAF4E8"/>
+</linearGradient></defs>
+  <rect width="464" height="464" fill="url(#app-icon-cream)"/>
+  <g transform="translate(0 34)">
+    <rect x="82" y="53" width="98" height="68" rx="18" fill="url(#app-icon-lavender)" transform="rotate(8 131 87)"/>
+<rect x="60" y="157" width="106" height="76" rx="19" fill="url(#app-icon-coral)" transform="rotate(-12 113 195)"/>
+<rect x="98" y="248" width="102" height="70" rx="19" fill="url(#app-icon-sage)" transform="rotate(-15 149 283)"/>
+<circle cx="234" cy="147" r="7.5" fill="#292D39"/>
+<circle cx="234" cy="190" r="7.5" fill="#292D39"/>
+<circle cx="234" cy="233" r="7.5" fill="#292D39"/>
+<rect x="297" y="67" width="98" height="70" rx="17" fill="url(#app-icon-lavender)"/>
+<rect x="298" y="154" width="96" height="74" rx="17" fill="url(#app-icon-yellow)"/>
+<rect x="298" y="242" width="96" height="76" rx="17" fill="url(#app-icon-sage)"/>
+  </g>
 </svg>

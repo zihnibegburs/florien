@@ -994,7 +994,7 @@ class _DailyTimelineSectionsState
           label: 'HERHANGİ BİR ZAMAN (${anytime.length})',
           onAdd: widget.onAdd,
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: 5),
         Container(
           key: const ValueKey('daily-timeline-anytime'),
           child: anytime.isEmpty
@@ -1428,29 +1428,30 @@ class _DailyEmptyState extends StatelessWidget {
     color: Colors.transparent,
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      borderRadius: BorderRadius.circular(FlorienRadius.sm),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: context.palette.surface.withValues(alpha: .72),
-          borderRadius: BorderRadius.circular(FlorienRadius.md),
-          border: Border.all(color: context.palette.border),
+          color: context.palette.surfaceMuted.withValues(alpha: .42),
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
         ),
         child: Row(
           children: [
+            Icon(
+              Icons.add_rounded,
+              size: 16,
+              color: context.palette.textSecondary.withValues(alpha: .68),
+            ),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 _periodHint(period),
                 style: TextStyle(
-                  color: context.palette.textSecondary,
-                  fontSize: 13,
+                  color: context.palette.textSecondary.withValues(alpha: .72),
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-            Icon(
-              Icons.add_circle_outline_rounded,
-              color: context.palette.textSecondary,
             ),
           ],
         ),
@@ -4072,10 +4073,10 @@ String _periodLabel(DayPeriod period) => switch (period) {
 };
 
 String _periodHint(DayPeriod period) => switch (period) {
-  DayPeriod.anytime => 'Bugün herhangi bir zaman',
-  DayPeriod.morning => 'Güne sakin bir başlangıç yapın',
-  DayPeriod.daytime => 'Günün ortasına görev ekleyin',
-  DayPeriod.evening => 'Günü istediğiniz gibi bitirin',
+  DayPeriod.anytime => 'Bu gruba görev ekle',
+  DayPeriod.morning => 'Sabah için görev ekle',
+  DayPeriod.daytime => 'Gündüz için görev ekle',
+  DayPeriod.evening => 'Akşam için görev ekle',
 };
 
 IconData _periodIcon(DayPeriod period) => switch (period) {

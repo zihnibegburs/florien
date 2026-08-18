@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
@@ -27,9 +32,11 @@ class _DailyPlanShareSheet extends StatefulWidget {
 }
 
 class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
+  final GlobalKey _shareCardKey = GlobalKey();
   late final Set<String> _selectedTaskIds = {
     for (final task in widget.tasks) task.id,
   };
+  _DailyShareTheme _selectedTheme = _dailyShareThemes.first;
   var _showPreview = false;
   var _isSharing = false;
 
@@ -59,22 +66,64 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
     });
   }
 
-  Future<void> _share() async {
+  Future<void> _share(BuildContext anchorContext) async {
     if (_selectedTasks.isEmpty || _isSharing) return;
     setState(() => _isSharing = true);
     try {
-      await Share.share(
-        _shareText(),
+      final shareBox = anchorContext.findRenderObject() as RenderBox?;
+      final shareOrigin = shareBox != null && shareBox.hasSize
+          ? shareBox.localToGlobal(Offset.zero) & shareBox.size
+          : null;
+      final shareFile = await _createShareImage();
+      final result = await Share.shareXFiles(
+        [XFile(shareFile.path, mimeType: 'image/png', name: _shareFileName())],
+        text: _shareText(),
         subject: '${_formattedDate(widget.date)} planım',
+        sharePositionOrigin: shareOrigin,
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Paylaşım ekranı açılamadı.')),
-      );
+      if (result.status == ShareResultStatus.unavailable) {
+        await _copyShareText();
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Daily plan share failed: $error\n$stackTrace');
+      await _copyShareText();
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
+  }
+
+  Future<File> _createShareImage() async {
+    final boundary =
+        _shareCardKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+    if (boundary == null) {
+      throw StateError('Paylaşım önizlemesi hazırlanamadı.');
+    }
+    final image = await boundary.toImage(pixelRatio: 3);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    if (byteData == null) {
+      throw StateError('Paylaşım görseli oluşturulamadı.');
+    }
+    final file = File(
+      '${Directory.systemTemp.path}/${DateTime.now().microsecondsSinceEpoch}-${_shareFileName()}',
+    );
+    return file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+  }
+
+  String _shareFileName() {
+    final date = widget.date;
+    return 'florien-plan-${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}.png';
+  }
+
+  Future<void> _copyShareText() async {
+    await Clipboard.setData(ClipboardData(text: _shareText()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Paylaşım açılamadı; plan panoya kopyalandı.'),
+      ),
+    );
   }
 
   String _shareText() {
@@ -204,6 +253,7 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
     final palette = context.palette;
     final completed = _selectedTasks.where((task) => task.isCompleted).length;
     final planned = _selectedTasks.length - completed;
+    final shareTheme = _selectedTheme;
     return Column(
       key: const ValueKey('daily-share-preview'),
       mainAxisSize: MainAxisSize.min,
@@ -217,85 +267,60 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
           onClose: () => Navigator.pop(context),
           onBack: () => setState(() => _showPreview = false),
         ),
-        const SizedBox(height: 16),
-        Flexible(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: palette.aiSurface,
-              borderRadius: BorderRadius.circular(FlorienRadius.lg),
-              border: Border.all(
-                color: palette.border,
-                width: FlorienBorders.thin,
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Text(
+              'Görünüm',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const Spacer(),
+            Text(
+              shareTheme.name,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: context.palette.textSecondary,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: FlorienColors.primary,
-                        borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.calendar_today_rounded,
-                        color: FlorienColors.onPrimary,
-                        size: 19,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _formattedDate(widget.date),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    _SummaryPill(
-                      label: '$planned planlandı',
-                      color: FlorienColors.primary,
-                    ),
-                    if (completed > 0)
-                      _SummaryPill(
-                        label: '$completed tamamlandı',
-                        color: FlorienColors.mint,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                for (final task in _selectedTasks) ...[
-                  _PreviewTaskTile(task: task),
-                  const SizedBox(height: 7),
-                ],
-              ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        _ShareThemePicker(
+          selectedTheme: shareTheme,
+          onSelected: (theme) => setState(() => _selectedTheme = theme),
+        ),
+        const SizedBox(height: 12),
+        Flexible(
+          child: SingleChildScrollView(
+            child: RepaintBoundary(
+              key: _shareCardKey,
+              child: _DailyShareCard(
+                date: widget.date,
+                tasks: _selectedTasks,
+                planned: planned,
+                completed: completed,
+                shareTheme: shareTheme,
+              ),
             ),
           ),
         ),
         const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            key: const ValueKey('daily-share-submit'),
-            onPressed: _isSharing ? null : _share,
-            icon: _isSharing
-                ? const SizedBox.square(
-                    dimension: 17,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.ios_share_rounded),
-            label: Text(_isSharing ? 'Açılıyor…' : 'Paylaş'),
+        Builder(
+          builder: (anchorContext) => SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const ValueKey('daily-share-submit'),
+              onPressed: _isSharing ? null : () => _share(anchorContext),
+              icon: _isSharing
+                  ? const SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.ios_share_rounded),
+              label: Text(_isSharing ? 'Açılıyor…' : 'Paylaş'),
+            ),
           ),
         ),
       ],
@@ -435,63 +460,320 @@ class _SelectableTaskTile extends StatelessWidget {
   }
 }
 
-class _PreviewTaskTile extends StatelessWidget {
-  const _PreviewTaskTile({required this.task});
+class _ShareThemePicker extends StatelessWidget {
+  const _ShareThemePicker({
+    required this.selectedTheme,
+    required this.onSelected,
+  });
 
-  final TaskModel task;
+  final _DailyShareTheme selectedTheme;
+  final ValueChanged<_DailyShareTheme> onSelected;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final color = task.isCompleted ? FlorienColors.mint : palette.surface;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(FlorienRadius.sm),
-        border: Border.all(color: palette.border, width: FlorienBorders.thin),
-      ),
+  Widget build(BuildContext context) => SizedBox(
+    height: 68,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          Icon(
-            task.isCompleted
-                ? Icons.check_circle_rounded
-                : Icons.circle_outlined,
-            size: 19,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              task.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                decoration: task.isCompleted
-                    ? TextDecoration.lineThrough
-                    : null,
-              ),
+          for (var index = 0; index < _dailyShareThemes.length; index++) ...[
+            if (index > 0) const SizedBox(width: 7),
+            _ShareThemeOption(
+              shareTheme: _dailyShareThemes[index],
+              selected: selectedTheme == _dailyShareThemes[index],
+              onTap: () => onSelected(_dailyShareThemes[index]),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            task.isCompleted ? 'Bitti' : 'Planlı',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: palette.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _ShareThemeOption extends StatelessWidget {
+  const _ShareThemeOption({
+    required this.shareTheme,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _DailyShareTheme shareTheme;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    selected: selected,
+    button: true,
+    label: '${shareTheme.name} paylaşım teması',
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey('daily-share-theme-${shareTheme.id}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FlorienRadius.sm),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 76,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: selected
+                ? context.palette.primaryMuted
+                : context.palette.surfaceMuted.withValues(alpha: .55),
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+            border: Border.all(
+              color: selected
+                  ? context.palette.textPrimary
+                  : context.palette.border,
+              width: selected ? 1.8 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: shareTheme.gradient == null
+                        ? shareTheme.background
+                        : null,
+                    gradient: shareTheme.gradient,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _ThemeColorDot(color: shareTheme.accent),
+                        const SizedBox(width: 3),
+                        _ThemeColorDot(color: shareTheme.completed),
+                        const SizedBox(width: 3),
+                        _ThemeColorDot(color: shareTheme.text),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                shareTheme.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ThemeColorDot extends StatelessWidget {
+  const _ThemeColorDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 9,
+    height: 9,
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white.withValues(alpha: .55)),
+    ),
+  );
+}
+
+class _DailyShareCard extends StatelessWidget {
+  const _DailyShareCard({
+    required this.date,
+    required this.tasks,
+    required this.planned,
+    required this.completed,
+    required this.shareTheme,
+  });
+
+  final DateTime date;
+  final List<TaskModel> tasks;
+  final int planned;
+  final int completed;
+  final _DailyShareTheme shareTheme;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: shareTheme.gradient == null ? shareTheme.background : null,
+      gradient: shareTheme.gradient,
+      borderRadius: BorderRadius.circular(FlorienRadius.lg),
+      border: Border.all(color: shareTheme.border, width: 1.5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: shareTheme.surface.withValues(alpha: .9),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: shareTheme.border),
+              ),
+              child: Image.asset(
+                'assets/brand/florien-symbol-color.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'FLORIEN',
+                    style: TextStyle(
+                      color: shareTheme.mutedText,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formattedDate(date),
+                    style: TextStyle(
+                      color: shareTheme.text,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 17),
+        Text(
+          'Günlük planım',
+          style: TextStyle(
+            color: shareTheme.text,
+            fontSize: 25,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            _SummaryPill(
+              label: '$planned planlandı',
+              color: shareTheme.accent,
+              textColor: shareTheme.text,
+              borderColor: shareTheme.border,
+            ),
+            if (completed > 0)
+              _SummaryPill(
+                label: '$completed tamamlandı',
+                color: shareTheme.completed,
+                textColor: shareTheme.text,
+                borderColor: shareTheme.border,
+              ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        for (var index = 0; index < tasks.length; index++) ...[
+          _PreviewTaskTile(task: tasks[index], shareTheme: shareTheme),
+          if (index < tasks.length - 1) const SizedBox(height: 7),
+        ],
+        const SizedBox(height: 16),
+        Text(
+          'Kendi ritminde, gerçekçi bir gün.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: shareTheme.mutedText,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PreviewTaskTile extends StatelessWidget {
+  const _PreviewTaskTile({required this.task, required this.shareTheme});
+
+  final TaskModel task;
+  final _DailyShareTheme shareTheme;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+    decoration: BoxDecoration(
+      color: task.isCompleted
+          ? shareTheme.completed.withValues(alpha: .72)
+          : shareTheme.surface.withValues(alpha: .92),
+      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+      border: Border.all(color: shareTheme.border),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          task.isCompleted ? Icons.check_circle_rounded : Icons.circle_outlined,
+          size: 19,
+          color: shareTheme.text,
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            task.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: shareTheme.text,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+              decorationColor: shareTheme.text,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          task.isCompleted ? 'Bitti' : 'Planlı',
+          style: TextStyle(
+            color: shareTheme.mutedText,
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _SummaryPill extends StatelessWidget {
-  const _SummaryPill({required this.label, required this.color});
+  const _SummaryPill({
+    required this.label,
+    required this.color,
+    required this.textColor,
+    required this.borderColor,
+  });
 
   final String label;
   final Color color;
+  final Color textColor;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -499,19 +781,122 @@ class _SummaryPill extends StatelessWidget {
     decoration: BoxDecoration(
       color: color,
       borderRadius: BorderRadius.circular(99),
-      border: Border.all(
-        color: context.palette.border,
-        width: FlorienBorders.thin,
-      ),
+      border: Border.all(color: borderColor),
     ),
     child: Text(
       label,
-      style: Theme.of(
-        context,
-      ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800),
+      style: TextStyle(
+        color: textColor,
+        fontSize: 11.5,
+        fontWeight: FontWeight.w800,
+      ),
     ),
   );
 }
+
+class _DailyShareTheme {
+  const _DailyShareTheme({
+    required this.id,
+    required this.name,
+    required this.background,
+    required this.surface,
+    required this.text,
+    required this.mutedText,
+    required this.accent,
+    required this.completed,
+    required this.border,
+    this.gradient,
+  });
+
+  final String id;
+  final String name;
+  final Color background;
+  final Color surface;
+  final Color text;
+  final Color mutedText;
+  final Color accent;
+  final Color completed;
+  final Color border;
+  final Gradient? gradient;
+}
+
+const _dailyShareThemes = [
+  _DailyShareTheme(
+    id: 'florien',
+    name: 'Florien',
+    background: Color(0xFFFAF6ED),
+    surface: Color(0xFFFFFCF7),
+    text: Color(0xFF29262D),
+    mutedText: Color(0xFF6F6974),
+    accent: Color(0xFFF2BC52),
+    completed: Color(0xFF8FB6A0),
+    border: Color(0xFF29262D),
+  ),
+  _DailyShareTheme(
+    id: 'night',
+    name: 'Gece',
+    background: Color(0xFF19171E),
+    surface: Color(0xFF302D36),
+    text: Color(0xFFFFFCF7),
+    mutedText: Color(0xFFC4BEC9),
+    accent: Color(0xFFAAA0BE),
+    completed: Color(0xFF789B88),
+    border: Color(0xFF514B59),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF19171E), Color(0xFF2E263D)],
+    ),
+  ),
+  _DailyShareTheme(
+    id: 'ocean',
+    name: 'Okyanus',
+    background: Color(0xFFDDF5F4),
+    surface: Color(0xFFF4FFFF),
+    text: Color(0xFF173A43),
+    mutedText: Color(0xFF50727A),
+    accent: Color(0xFF73C8D2),
+    completed: Color(0xFF7FD0AE),
+    border: Color(0xFF75AAB2),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFE3FAF4), Color(0xFFCDECF7)],
+    ),
+  ),
+  _DailyShareTheme(
+    id: 'sunset',
+    name: 'Gün Batımı',
+    background: Color(0xFFFFE9DE),
+    surface: Color(0xFFFFF8F3),
+    text: Color(0xFF43282E),
+    mutedText: Color(0xFF855A61),
+    accent: Color(0xFFF3B45F),
+    completed: Color(0xFFE98F82),
+    border: Color(0xFFCA796E),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFFFF0D8), Color(0xFFFFD8D2)],
+    ),
+  ),
+  _DailyShareTheme(
+    id: 'pop',
+    name: 'Pop',
+    background: Color(0xFFBCA8FF),
+    surface: Color(0xFFFFF8FE),
+    text: Color(0xFF241B38),
+    mutedText: Color(0xFF5E4E78),
+    accent: Color(0xFFFFD85E),
+    completed: Color(0xFF77E0BE),
+    border: Color(0xFF5E3D8B),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFFFB5D8), Color(0xFFB9B2FF), Color(0xFF8DE5E1)],
+    ),
+  ),
+];
 
 class _ShareEmptyState extends StatelessWidget {
   const _ShareEmptyState();

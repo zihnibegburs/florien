@@ -9,16 +9,13 @@ class FlorienLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final px = (size * MediaQuery.devicePixelRatioOf(context)).round();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(size * 0.22),
+    return SizedBox.square(
+      dimension: size,
       child: Image.asset(
-        'assets/icons/app_icon.png',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
+        'assets/brand/florien-symbol-color.png',
+        fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
         cacheWidth: px,
-        cacheHeight: px,
         gaplessPlayback: true,
       ),
     );
