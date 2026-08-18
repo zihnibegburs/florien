@@ -30,7 +30,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
         .read(authStateProvider.notifier)
         .login(_emailController.text.trim(), _passwordController.text);
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/onboarding');
+      context.go('/todo');
     }
   }
 

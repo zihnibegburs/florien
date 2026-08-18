@@ -4,6 +4,14 @@ import 'package:florien/core/storage/settings_storage.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+enum TaskAlarmReadiness {
+  ready,
+  past,
+  remindersDisabled,
+  permissionDenied,
+  unsupported,
+}
+
 class TaskAlarmService {
   TaskAlarmService(this._settingsStorage);
 
@@ -34,30 +42,12 @@ class TaskAlarmService {
     required String title,
     required DateTime alarmAt,
   }) async {
-    if (alarmAt.toUtc().isBefore(DateTime.now().toUtc())) return false;
+    final readiness = await prepareTaskAlarm(alarmAt);
+    if (readiness != TaskAlarmReadiness.ready) return false;
     final preferences = await getPreferences();
-    if (!preferences.taskRemindersEnabled) return false;
-    await initialize();
-    if (kIsWeb) return false;
-    final permitted = await _requestPermission();
-    if (!permitted) return false;
 
     final scheduled = tz.TZDateTime.from(alarmAt.toUtc(), tz.UTC);
-    final details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'task_alarms',
-        'Görev alarmları',
-        channelDescription: 'Planlanan görev saatleri için hatırlatmalar',
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: preferences.soundEnabled,
-        enableVibration: preferences.vibrationEnabled,
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentSound: preferences.soundEnabled,
-      ),
-    );
+    final details = _taskNotificationDetails(preferences);
     try {
       await _notifications.zonedSchedule(
         _notificationId(taskId),
@@ -70,20 +60,41 @@ class TaskAlarmService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: taskId,
       );
-    } catch (_) {
-      await _notifications.zonedSchedule(
-        _notificationId(taskId),
-        title,
-        'Görev saatiniz geldi.',
-        scheduled,
-        details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: taskId,
-      );
+    } catch (error) {
+      debugPrint('Exact task alarm could not be scheduled: $error');
+      try {
+        await _notifications.zonedSchedule(
+          _notificationId(taskId),
+          title,
+          'Görev saatiniz geldi.',
+          scheduled,
+          details,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: taskId,
+        );
+      } catch (fallbackError) {
+        debugPrint('Task alarm could not be scheduled: $fallbackError');
+        return false;
+      }
     }
-    return true;
+    return _hasPendingNotification(taskId);
+  }
+
+  Future<TaskAlarmReadiness> prepareTaskAlarm(DateTime alarmAt) async {
+    if (!alarmAt.toUtc().isAfter(DateTime.now().toUtc())) {
+      return TaskAlarmReadiness.past;
+    }
+    final preferences = await getPreferences();
+    if (!preferences.taskRemindersEnabled) {
+      return TaskAlarmReadiness.remindersDisabled;
+    }
+    await initialize();
+    if (kIsWeb) return TaskAlarmReadiness.unsupported;
+    return await _requestPermission()
+        ? TaskAlarmReadiness.ready
+        : TaskAlarmReadiness.permissionDenied;
   }
 
   Future<void> cancel(String taskId) async {
@@ -202,7 +213,7 @@ class TaskAlarmService {
     NotificationPreferences preferences,
   ) => NotificationDetails(
     android: AndroidNotificationDetails(
-      'focus_timer_alarm',
+      _androidChannelId('focus_timer_alarm_v2', preferences),
       'Odak zamanlayıcısı',
       channelDescription: 'Odak süresi tamamlandığında çalan alarm',
       importance: Importance.max,
@@ -213,8 +224,48 @@ class TaskAlarmService {
     iOS: DarwinNotificationDetails(
       presentAlert: true,
       presentSound: preferences.soundEnabled,
+      presentBanner: true,
+      presentList: true,
+      interruptionLevel: InterruptionLevel.timeSensitive,
     ),
   );
+
+  NotificationDetails _taskNotificationDetails(
+    NotificationPreferences preferences,
+  ) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      _androidChannelId('task_alarms_v2', preferences),
+      'Görev alarmları',
+      channelDescription: 'Planlanan görev saatleri için hatırlatmalar',
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: preferences.soundEnabled,
+      enableVibration: preferences.vibrationEnabled,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentSound: preferences.soundEnabled,
+      presentBanner: true,
+      presentList: true,
+      interruptionLevel: InterruptionLevel.timeSensitive,
+    ),
+  );
+
+  String _androidChannelId(
+    String prefix,
+    NotificationPreferences preferences,
+  ) =>
+      '${prefix}_${preferences.soundEnabled ? 'sound' : 'silent'}_${preferences.vibrationEnabled ? 'vibrate' : 'steady'}';
+
+  Future<bool> _hasPendingNotification(String taskId) async {
+    try {
+      final pending = await _notifications.pendingNotificationRequests();
+      return pending.any((request) => request.id == _notificationId(taskId));
+    } catch (error) {
+      debugPrint('Scheduled task alarm could not be verified: $error');
+      return true;
+    }
+  }
 
   int _notificationId(String taskId) {
     var hash = 17;

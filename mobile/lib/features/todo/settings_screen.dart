@@ -108,11 +108,6 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const _SettingsRow(
-              icon: Icons.format_list_bulleted_rounded,
-              label: 'Hatırlatıcı içe aktar',
-              locked: true,
-            ),
             _SettingsRow(
               icon: Icons.wb_sunny_outlined,
               label: 'Görünüm',
@@ -357,14 +352,12 @@ class _SettingsRow extends StatelessWidget {
     required this.icon,
     required this.label,
     this.trailingLabel,
-    this.locked = false,
     this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String? trailingLabel;
-  final bool locked;
   final VoidCallback? onTap;
 
   @override
@@ -389,15 +382,6 @@ class _SettingsRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (locked)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Icon(
-                    Icons.lock_rounded,
-                    size: 16,
-                    color: FlorienColors.aiAccent,
-                  ),
-                ),
               if (trailingLabel != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),

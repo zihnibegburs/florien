@@ -3,6 +3,8 @@ import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/services/task_alarm_service.dart';
+import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
@@ -28,6 +30,14 @@ class _AvailableListsNotifier extends TodoListsNotifier {
       description: 'İş görevleri',
     ),
   ];
+}
+
+class _ReadyTaskAlarmService extends TaskAlarmService {
+  _ReadyTaskAlarmService() : super(SettingsStorage());
+
+  @override
+  Future<TaskAlarmReadiness> prepareTaskAlarm(DateTime alarmAt) async =>
+      TaskAlarmReadiness.ready;
 }
 
 void main() {
@@ -588,7 +598,7 @@ void main() {
     expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
   });
 
-  testWidgets('date selector hides on task scroll and snaps back on reverse', (
+  testWidgets('date selector collapses behind the pinned daily header', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 700));
@@ -628,7 +638,9 @@ void main() {
     );
     expect(appBar.floating, isTrue);
     expect(appBar.snap, isTrue);
-    expect(appBar.pinned, isFalse);
+    expect(appBar.pinned, isTrue);
+    expect(appBar.collapsedHeight, 64);
+    expect(appBar.clipBehavior, Clip.hardEdge);
     final header = find.byKey(const ValueKey('daily-date-header'));
     expect(tester.getTopLeft(header).dy, greaterThanOrEqualTo(0));
 
@@ -639,9 +651,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('daily-floating-date-header')),
-      findsNothing,
+      findsOneWidget,
     );
-    expect(header, findsNothing);
+    expect(header, findsOneWidget);
+    expect(tester.getTopLeft(header).dy, greaterThanOrEqualTo(0));
 
     await tester.drag(
       find.byKey(const ValueKey('daily-planner-page')),
@@ -815,6 +828,7 @@ void main() {
             expect(updatedTask.id, task.id);
             savedInput = input;
           }),
+          taskAlarmServiceProvider.overrideWithValue(_ReadyTaskAlarmService()),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,

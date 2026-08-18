@@ -39,7 +39,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/onboarding');
+      context.go('/todo');
     }
   }
 

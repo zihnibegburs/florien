@@ -1,6 +1,7 @@
 import Flutter
 import HealthKit
 import UIKit
+import UserNotifications
 import home_widget
 
 @main
@@ -11,6 +12,7 @@ import home_widget
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     if #available(iOS 17, *) {
       HomeWidgetBackgroundWorker.setPluginRegistrantCallback { registry in
         GeneratedPluginRegistrant.register(with: registry)

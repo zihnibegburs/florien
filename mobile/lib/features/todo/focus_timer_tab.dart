@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/providers.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FocusTimerTab extends StatefulWidget {
   const FocusTimerTab({
@@ -40,6 +43,9 @@ class FocusTimerTab extends StatefulWidget {
 
 class _FocusTimerTabState extends State<FocusTimerTab>
     with SingleTickerProviderStateMixin {
+  static const _selectedMusicPreferenceKey = 'focus_timer_selected_music';
+  static const _musicAutoPlayPreferenceKey = 'focus_timer_music_auto_play';
+
   int _selectedMinutes = 5;
   int _remainingSeconds = 5 * 60;
   int _sessionTotalSeconds = 5 * 60;
@@ -58,6 +64,11 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _creatingStandaloneTask = false;
   bool _isFinishing = false;
   bool _focusAlarmScheduled = false;
+  late final AudioPlayer _focusMusicPlayer;
+  _FocusMusicTrack? _selectedMusic;
+  String? _loadedMusicId;
+  bool _musicAutoPlay = false;
+  bool _musicActiveForSession = false;
   late final AnimationController _completionController;
   late final Animation<double> _completionScale;
   late final Animation<double> _completionCelebrationOpacity;
@@ -65,6 +76,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   @override
   void initState() {
     super.initState();
+    _focusMusicPlayer = AudioPlayer();
+    unawaited(_focusMusicPlayer.setLoopMode(LoopMode.one));
+    unawaited(_focusMusicPlayer.setVolume(.58));
+    unawaited(_restoreMusicSettings());
     _completionController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -147,14 +162,129 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   void dispose() {
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
+    unawaited(_focusMusicPlayer.dispose());
     _completionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreMusicSettings() async {
+    final preferences = await SharedPreferences.getInstance();
+    final selectedId = preferences.getString(_selectedMusicPreferenceKey);
+    final selectedMusic = _focusMusicTracks
+        .where((track) => track.id == selectedId)
+        .firstOrNull;
+    if (!mounted) return;
+    setState(() {
+      _selectedMusic = selectedMusic;
+      _musicAutoPlay =
+          preferences.getBool(_musicAutoPlayPreferenceKey) ?? false;
+    });
+  }
+
+  Future<void> _persistMusicSettings() async {
+    final preferences = await SharedPreferences.getInstance();
+    final selectedId = _selectedMusic?.id;
+    if (selectedId == null) {
+      await preferences.remove(_selectedMusicPreferenceKey);
+    } else {
+      await preferences.setString(_selectedMusicPreferenceKey, selectedId);
+    }
+    await preferences.setBool(_musicAutoPlayPreferenceKey, _musicAutoPlay);
+  }
+
+  Future<void> _prepareSelectedMusic() async {
+    final selectedMusic = _selectedMusic;
+    if (selectedMusic == null || _loadedMusicId == selectedMusic.id) return;
+    await _focusMusicPlayer.setAsset(selectedMusic.assetPath);
+    await _focusMusicPlayer.setLoopMode(LoopMode.one);
+    _loadedMusicId = selectedMusic.id;
+  }
+
+  Future<void> _playSelectedMusic({bool showError = false}) async {
+    if (_selectedMusic == null) return;
+    try {
+      final audioSession = await AudioSession.instance;
+      await audioSession.configure(AudioSessionConfiguration.music());
+      await _prepareSelectedMusic();
+      unawaited(_focusMusicPlayer.play());
+      if (mounted) setState(() {});
+    } catch (error) {
+      debugPrint('Focus music could not be played: $error');
+      if (showError && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Müzik şu anda oynatılamadı.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pauseFocusMusic() async {
+    try {
+      await _focusMusicPlayer.pause();
+      if (mounted) setState(() {});
+    } catch (error) {
+      debugPrint('Focus music could not be paused: $error');
+    }
+  }
+
+  Future<void> _stopFocusMusic() async {
+    try {
+      await _focusMusicPlayer.pause();
+      await _focusMusicPlayer.seek(Duration.zero);
+      if (mounted) setState(() {});
+    } catch (error) {
+      debugPrint('Focus music could not be stopped: $error');
+    }
+  }
+
+  Future<void> _handleMusicMenuSelection(String value) async {
+    if (value == _FocusMusicMenuValue.none) {
+      setState(() {
+        _selectedMusic = null;
+        _loadedMusicId = null;
+        _musicActiveForSession = false;
+      });
+      await _stopFocusMusic();
+      await _persistMusicSettings();
+      return;
+    }
+
+    if (value == _FocusMusicMenuValue.autoPlayOn ||
+        value == _FocusMusicMenuValue.autoPlayOff) {
+      final autoPlay = value == _FocusMusicMenuValue.autoPlayOn;
+      setState(() => _musicAutoPlay = autoPlay);
+      if (autoPlay && _isRunning && _selectedMusic != null) {
+        _musicActiveForSession = true;
+        await _playSelectedMusic(showError: true);
+      } else if (!autoPlay && _musicActiveForSession) {
+        _musicActiveForSession = false;
+        await _pauseFocusMusic();
+      }
+      await _persistMusicSettings();
+      return;
+    }
+
+    final selectedMusic = _focusMusicTracks
+        .where((track) => value == _FocusMusicMenuValue.track(track.id))
+        .firstOrNull;
+    if (selectedMusic == null) return;
+
+    setState(() {
+      _selectedMusic = selectedMusic;
+      _loadedMusicId = null;
+      if (_sessionActive) _musicActiveForSession = true;
+    });
+    await _persistMusicSettings();
+    if (_isRunning) {
+      await _playSelectedMusic(showError: true);
+    }
   }
 
   Future<void> _toggleTimer() async {
     if (_isRunning) {
       _timer?.cancel();
       unawaited(_cancelFocusAlarm());
+      if (_musicActiveForSession) unawaited(_pauseFocusMusic());
       setState(() {});
       _publishTaskProgress();
       return;
@@ -187,16 +317,22 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       }
     }
 
+    final startingNewSession = !_sessionActive;
     final now = DateTime.now();
     _sessionStartedAt ??= now;
     _sessionTotalSeconds = _sessionActive
         ? math.max(_sessionTotalSeconds, _remainingSeconds)
         : _remainingSeconds;
     _plannedEndAt = now.add(Duration(seconds: _remainingSeconds));
+    if (startingNewSession) {
+      _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       if (_remainingSeconds <= 1) {
         timer.cancel();
+        _musicActiveForSession = false;
+        unawaited(_stopFocusMusic());
         setState(() => _remainingSeconds = 0);
         _publishTaskProgress();
         final taskId = _taskId;
@@ -216,11 +352,14 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     setState(() {});
     _publishTaskProgress();
     unawaited(_scheduleFocusAlarm());
+    if (_musicActiveForSession) unawaited(_playSelectedMusic());
   }
 
   void _closeSession() {
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
+    _musicActiveForSession = false;
+    unawaited(_stopFocusMusic());
     setState(() {
       _sessionStartedAt = null;
       _plannedEndAt = null;
@@ -242,6 +381,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     if (!mounted) return;
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
+    _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
     final duration = request.durationMinutes.clamp(1, 24 * 60);
     final now = DateTime.now();
     final scheduledEnd = request.endsAt;
@@ -375,6 +515,8 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     final taskId = _taskId;
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
+    _musicActiveForSession = false;
+    unawaited(_stopFocusMusic());
     if (taskId != null) {
       setState(() => _remainingSeconds = 0);
       _publishTaskProgress();
@@ -385,6 +527,8 @@ class _FocusTimerTabState extends State<FocusTimerTab>
 
   Future<void> _finishSessionWithAnimation() async {
     if (_isFinishing) return;
+    _musicActiveForSession = false;
+    unawaited(_stopFocusMusic());
     setState(() => _isFinishing = true);
     unawaited(HapticFeedback.mediumImpact());
 
@@ -595,10 +739,12 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                   : Row(
                       key: const ValueKey('focus-top-controls'),
                       children: [
-                        _SimpleActionButton(
-                          icon: Icons.music_note_rounded,
-                          label: 'Ayarla',
-                          onTap: () {},
+                        _FocusMusicMenuButton(
+                          selectedMusic: _selectedMusic,
+                          autoPlay: _musicAutoPlay,
+                          isPlaying: _focusMusicPlayer.playing,
+                          onSelected: (value) =>
+                              unawaited(_handleMusicMenuSelection(value)),
                         ),
                         const SizedBox(width: 12),
                         if (_sessionActive)
@@ -861,144 +1007,196 @@ class _ActiveTimerState extends State<_ActiveTimer>
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      const SizedBox(height: 72),
-      AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutBack,
-        switchOutCurve: Curves.easeIn,
-        child: widget.isCelebrating
-            ? _FocusCompletionHeading(
-                key: const ValueKey('focus-completion-heading'),
-              )
-            : Column(
-                key: const ValueKey('active-focus-heading'),
-                children: [
-                  Text(
-                    widget.title,
-                    key: const ValueKey('active-focus-title'),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -1.2,
+  Widget build(BuildContext context) {
+    final isPaused =
+        !widget.isRunning && !widget.isFinished && !widget.isCelebrating;
+    return Column(
+      children: [
+        const SizedBox(height: 72),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOutBack,
+          switchOutCurve: Curves.easeIn,
+          child: widget.isCelebrating
+              ? _FocusCompletionHeading(
+                  key: const ValueKey('focus-completion-heading'),
+                )
+              : Column(
+                  key: const ValueKey('active-focus-heading'),
+                  children: [
+                    Text(
+                      widget.title,
+                      key: const ValueKey('active-focus-title'),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(
+                            fontSize: 38,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -1.2,
+                          ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.timeRange,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: context.palette.textSecondary,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.timeRange,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: context.palette.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-      ),
-      const SizedBox(height: 22),
-      Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          ScaleTransition(
-            scale: widget.celebrationScale,
-            child: _TimerDial(
-              key: const ValueKey('active-focus-dial'),
-              progress: _displayProgress ?? widget.progress,
-              showHandle: true,
-              onRotationStart: _startRotation,
-              onRotationUpdate: _updateRotation,
-              onRotationEnd: _endRotation,
-              child: Container(
-                key: const ValueKey('active-focus-icon-circle'),
-                width: 212,
-                height: 212,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.taskIcon == null
-                      ? const Color(0xFFFFDFC5)
-                      : FlorienColors.fromHex(
-                          widget.taskColor,
-                        ).withValues(alpha: .18),
+                  ],
                 ),
-                child: widget.taskIcon == null
-                    ? Icon(
-                        Icons.hourglass_bottom_rounded,
-                        key: const ValueKey('active-focus-task-icon'),
-                        size: 94,
-                        color: const Color(0xFF9A6037),
-                      )
-                    : TaskIconBadge.forTask(
-                        icon: widget.taskIcon!,
-                        size: 148,
-                        iconSize: 112,
-                        circular: true,
-                        iconKey: const ValueKey('active-focus-task-icon'),
+        ),
+        const SizedBox(height: 22),
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            ScaleTransition(
+              scale: widget.celebrationScale,
+              child: _TimerDial(
+                key: const ValueKey('active-focus-dial'),
+                progress: _displayProgress ?? widget.progress,
+                showHandle: true,
+                paused: isPaused,
+                onRotationStart: _startRotation,
+                onRotationUpdate: _updateRotation,
+                onRotationEnd: _endRotation,
+                child: AnimatedContainer(
+                  key: const ValueKey('active-focus-icon-circle'),
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  width: 212,
+                  height: 212,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.taskIcon == null
+                        ? const Color(0xFFFFDFC5)
+                        : FlorienColors.fromHex(
+                            widget.taskColor,
+                          ).withValues(alpha: .18),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 180),
+                        opacity: isPaused ? .72 : 1,
+                        child: widget.taskIcon == null
+                            ? Icon(
+                                Icons.hourglass_bottom_rounded,
+                                key: const ValueKey('active-focus-task-icon'),
+                                size: 94,
+                                color: const Color(0xFF9A6037),
+                              )
+                            : TaskIconBadge.forTask(
+                                icon: widget.taskIcon!,
+                                size: 148,
+                                iconSize: 112,
+                                circular: true,
+                                iconKey: const ValueKey(
+                                  'active-focus-task-icon',
+                                ),
+                              ),
                       ),
+                      Positioned(
+                        right: 14,
+                        bottom: 14,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          switchInCurve: Curves.easeOutBack,
+                          switchOutCurve: Curves.easeIn,
+                          child: isPaused
+                              ? Container(
+                                  key: const ValueKey('focus-paused-indicator'),
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: context.palette.surface,
+                                    border: Border.all(
+                                      color: context.palette.border,
+                                      width: FlorienBorders.thin,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.pause_rounded,
+                                    size: 20,
+                                    color: context.palette.textSecondary,
+                                  ),
+                                )
+                              : const SizedBox(
+                                  key: ValueKey('focus-running-indicator'),
+                                  width: 38,
+                                  height: 38,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-          if (widget.isCelebrating)
-            _FocusDialCelebration(
-              opacity: widget.celebrationOpacity,
-              scale: widget.celebrationScale,
-            ),
-        ],
-      ),
-      const SizedBox(height: 28),
-      Text(
-        widget.remainingLabel,
-        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-          fontSize: 52,
-          fontWeight: FontWeight.w500,
-          letterSpacing: -1.5,
+            if (widget.isCelebrating)
+              _FocusDialCelebration(
+                opacity: widget.celebrationOpacity,
+                scale: widget.celebrationScale,
+              ),
+          ],
         ),
-      ),
-      const SizedBox(height: 20),
-      AnimatedSwitcher(
-        duration: const Duration(milliseconds: 160),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: widget.isCelebrating
-            ? const SizedBox(
-                key: ValueKey('focus-timer-controls-hidden'),
-                height: 54,
-              )
-            : Row(
-                key: const ValueKey('focus-timer-controls'),
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: widget.onAddMinute,
-                    child: const Text(
-                      '+ 1 dk',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+        const SizedBox(height: 28),
+        Text(
+          widget.remainingLabel,
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+            fontSize: 52,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -1.5,
+          ),
+        ),
+        const SizedBox(height: 20),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 160),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: widget.isCelebrating
+              ? const SizedBox(
+                  key: ValueKey('focus-timer-controls-hidden'),
+                  height: 54,
+                )
+              : Row(
+                  key: const ValueKey('focus-timer-controls'),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: widget.onAddMinute,
+                      child: const Text(
+                        '+ 1 dk',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  _TimerControlButton(
-                    icon: widget.isFinished
-                        ? Icons.replay_rounded
-                        : widget.isRunning
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                    label: '',
-                    onTap: widget.isFinished
-                        ? widget.onFinish
-                        : widget.onToggle,
-                    compact: true,
-                  ),
-                ],
-              ),
-      ),
-    ],
-  );
+                    const SizedBox(width: 14),
+                    _TimerControlButton(
+                      icon: widget.isFinished
+                          ? Icons.replay_rounded
+                          : widget.isRunning
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      label: '',
+                      onTap: widget.isFinished
+                          ? widget.onFinish
+                          : widget.onToggle,
+                      compact: true,
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
 }
 
 class _FocusDialCelebration extends StatelessWidget {
@@ -1144,6 +1342,7 @@ class _TimerDial extends StatelessWidget {
     required this.child,
     this.showHandle = false,
     this.showDurationLabels = false,
+    this.paused = false,
     this.onRotationStart,
     this.onRotationUpdate,
     this.onRotationEnd,
@@ -1153,6 +1352,7 @@ class _TimerDial extends StatelessWidget {
   final Widget child;
   final bool showHandle;
   final bool showDurationLabels;
+  final bool paused;
   final void Function(Offset, Size)? onRotationStart;
   final void Function(Offset, Size)? onRotationUpdate;
   final VoidCallback? onRotationEnd;
@@ -1161,6 +1361,9 @@ class _TimerDial extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final size = math.min(constraints.maxWidth, 310.0);
+      final dialAccent = paused
+          ? context.palette.textSecondary
+          : FlorienColors.focusAccent;
       return Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: onRotationStart == null
@@ -1179,8 +1382,8 @@ class _TimerDial extends StatelessWidget {
             painter: _SimpleDialPainter(
               progress: progress,
               trackColor: context.palette.surfaceMuted,
-              tickColor: FlorienColors.focusAccent,
-              progressColor: FlorienColors.focusAccent,
+              tickColor: dialAccent,
+              progressColor: dialAccent,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -1209,20 +1412,16 @@ class _TimerDial extends StatelessWidget {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: FlorienColors.focusAccent.withValues(
-                            alpha: .22,
-                          ),
+                          color: dialAccent.withValues(alpha: .22),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: FlorienColors.focusAccent.withValues(
-                              alpha: .55,
-                            ),
+                            color: dialAccent.withValues(alpha: .55),
                           ),
                         ),
                         child: Icon(
                           Icons.rotate_right_rounded,
                           size: 20,
-                          color: FlorienColors.focusAccent,
+                          color: dialAccent,
                         ),
                       ),
                     ),
@@ -1384,45 +1583,182 @@ class _AlarmToggleButton extends StatelessWidget {
   );
 }
 
-class _SimpleActionButton extends StatelessWidget {
-  const _SimpleActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
+class _FocusMusicMenuButton extends StatelessWidget {
+  const _FocusMusicMenuButton({
+    required this.selectedMusic,
+    required this.autoPlay,
+    required this.isPlaying,
+    required this.onSelected,
   });
 
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+  final _FocusMusicTrack? selectedMusic;
+  final bool autoPlay;
+  final bool isPlaying;
+  final ValueChanged<String> onSelected;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) => PopupMenuButton<String>(
+    tooltip: 'Odak müziğini ayarla',
+    position: PopupMenuPosition.under,
+    offset: const Offset(0, 6),
     color: context.palette.surface,
-    shape: StadiumBorder(side: BorderSide(color: context.palette.border)),
-    child: InkWell(
-      onTap: onTap,
-      customBorder: const StadiumBorder(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+    elevation: 5,
+    constraints: const BoxConstraints(minWidth: 248, maxWidth: 288),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(24),
+      side: BorderSide(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
+    ),
+    onSelected: onSelected,
+    itemBuilder: (context) => [
+      for (final track in _focusMusicTracks)
+        CheckedPopupMenuItem<String>(
+          value: _FocusMusicMenuValue.track(track.id),
+          checked: selectedMusic?.id == track.id,
+          height: 44,
+          child: Text(
+            track.title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      CheckedPopupMenuItem<String>(
+        value: _FocusMusicMenuValue.none,
+        checked: selectedMusic == null,
+        height: 44,
+        child: const Text(
+          'Müzik yok',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      const PopupMenuDivider(height: 16),
+      PopupMenuItem<String>(
+        enabled: false,
+        height: 38,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 19),
-            const SizedBox(width: 7),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+            Icon(
+              Icons.play_circle_outline_rounded,
+              size: 19,
+              color: context.palette.textSecondary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Otomatik oynatma',
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
       ),
+      CheckedPopupMenuItem<String>(
+        value: _FocusMusicMenuValue.autoPlayOn,
+        checked: autoPlay,
+        height: 44,
+        child: const Text(
+          'Açık',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      CheckedPopupMenuItem<String>(
+        value: _FocusMusicMenuValue.autoPlayOff,
+        checked: !autoPlay,
+        height: 44,
+        child: const Text(
+          'Kapalı',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+    ],
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 166),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: context.palette.surface,
+          shape: StadiumBorder(side: BorderSide(color: context.palette.border)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPlaying ? Icons.graphic_eq_rounded : Icons.music_note_rounded,
+                size: 19,
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  selectedMusic?.title ?? 'Müzik',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
   );
 }
+
+class _FocusMusicTrack {
+  const _FocusMusicTrack({
+    required this.id,
+    required this.title,
+    required this.assetPath,
+  });
+
+  final String id;
+  final String title;
+  final String assetPath;
+}
+
+abstract final class _FocusMusicMenuValue {
+  static const none = 'music:none';
+  static const autoPlayOn = 'autoplay:on';
+  static const autoPlayOff = 'autoplay:off';
+
+  static String track(String id) => 'music:$id';
+}
+
+const _focusMusicTracks = <_FocusMusicTrack>[
+  _FocusMusicTrack(
+    id: 'gece-akisi',
+    title: 'Gece Akışı',
+    assetPath: 'assets/focus_music/01-gece-akisi.m4a',
+  ),
+  _FocusMusicTrack(
+    id: 'gun-isigi',
+    title: 'Gün Işığı',
+    assetPath: 'assets/focus_music/02-gun-isigi.m4a',
+  ),
+  _FocusMusicTrack(
+    id: 'sessiz-odak',
+    title: 'Sessiz Odak',
+    assetPath: 'assets/focus_music/03-sessiz-odak.m4a',
+  ),
+  _FocusMusicTrack(
+    id: 'hizli-baslangic',
+    title: 'Hızlı Başlangıç',
+    assetPath: 'assets/focus_music/04-hizli-baslangic.m4a',
+  ),
+  _FocusMusicTrack(
+    id: 'derin-akis',
+    title: 'Derin Akış',
+    assetPath: 'assets/focus_music/05-derin-akis.m4a',
+  ),
+  _FocusMusicTrack(
+    id: 'kafa-toparlama',
+    title: 'Kafa Toparlama',
+    assetPath: 'assets/focus_music/06-kafa-toparlama.m4a',
+  ),
+];
 
 class _TimerControlButton extends StatelessWidget {
   const _TimerControlButton({

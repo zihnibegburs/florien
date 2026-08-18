@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/services/speech_input_service.dart';
+import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/widgets/delayed_scroll_chrome.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -90,13 +92,17 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       if (input.alarmAt == null) {
         await alarms.cancel(task.id);
       } else {
-        await alarms.schedule(
+        final scheduled = await alarms.schedule(
           taskId: task.id,
           title: input.title,
           alarmAt: input.alarmAt!,
         );
+        if (!scheduled) {
+          debugPrint('Updated daily task alarm was not scheduled.');
+        }
       }
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Updated daily task alarm failed: $error');
       // Notification setup must not prevent the task update from completing.
     }
     ref.invalidate(dailyTimelineProvider(previousDate));
@@ -152,9 +158,16 @@ final dailyTaskCompleterProvider = Provider<DailyTaskCompleter>((ref) {
 });
 
 class DailyPlannerTab extends ConsumerStatefulWidget {
-  const DailyPlannerTab({super.key, this.quickAddSignal = 0});
+  const DailyPlannerTab({
+    super.key,
+    this.quickAddSignal = 0,
+    this.scrollChromeEnabled = true,
+    this.onScrollChromeVisibilityChanged,
+  });
 
   final int quickAddSignal;
+  final bool scrollChromeEnabled;
+  final ValueChanged<bool>? onScrollChromeVisibilityChanged;
 
   @override
   ConsumerState<DailyPlannerTab> createState() => _DailyPlannerTabState();
@@ -166,10 +179,14 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   late DateTime _selectedDate = _dateOnly(DateTime.now());
   final Set<DayPeriod> _collapsed = {};
   DailyPlannerGrouping _grouping = DailyPlannerGrouping.list;
+  bool _scrollChromeVisible = true;
 
   @override
   void didUpdateWidget(covariant DailyPlannerTab oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollChromeEnabled && !widget.scrollChromeEnabled) {
+      _scrollChromeVisible = true;
+    }
     if (widget.quickAddSignal == oldWidget.quickAddSignal) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_showQuickAdd(DayPeriod.anytime));
@@ -180,42 +197,54 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   Widget build(BuildContext context) {
     final timeline = ref.watch(dailyTimelineProvider(_selectedDate));
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async =>
-            ref.refresh(dailyTimelineProvider(_selectedDate).future),
-        child: timeline.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => _DailyBody(
-            selectedDate: _selectedDate,
-            tasks: const [],
-            collapsed: _collapsed,
-            onSelectDate: _selectDate,
-            onToggleSection: _toggleSection,
-            onAdd: _showQuickAdd,
-            onMoveTask: _moveTaskToGroup,
-            grouping: _grouping,
-            onGroupingChanged: _setGrouping,
-            onRescheduleTasks: () => _showRescheduleReview(const []),
-            onDiscoverRoutines: _showRoutineDiscovery,
-            onShare: () => _showDailyShare(const []),
-          ),
-          data: (value) => _DailyBody(
-            selectedDate: _selectedDate,
-            tasks: value.tasks,
-            collapsed: _collapsed,
-            onSelectDate: _selectDate,
-            onToggleSection: _toggleSection,
-            onAdd: _showQuickAdd,
-            onMoveTask: _moveTaskToGroup,
-            grouping: _grouping,
-            onGroupingChanged: _setGrouping,
-            onRescheduleTasks: () => _showRescheduleReview(value.tasks),
-            onDiscoverRoutines: _showRoutineDiscovery,
-            onShare: () => _showDailyShare(value.tasks),
+      child: DelayedScrollChrome(
+        enabled: widget.scrollChromeEnabled,
+        onVisibilityChanged: _handleScrollChromeVisibility,
+        child: RefreshIndicator(
+          onRefresh: () async =>
+              ref.refresh(dailyTimelineProvider(_selectedDate).future),
+          child: timeline.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => _DailyBody(
+              selectedDate: _selectedDate,
+              tasks: const [],
+              collapsed: _collapsed,
+              onSelectDate: _selectDate,
+              onToggleSection: _toggleSection,
+              onAdd: _showQuickAdd,
+              onMoveTask: _moveTaskToGroup,
+              grouping: _grouping,
+              onGroupingChanged: _setGrouping,
+              onRescheduleTasks: () => _showRescheduleReview(const []),
+              onDiscoverRoutines: _showRoutineDiscovery,
+              onShare: () => _showDailyShare(const []),
+              scrollChromeVisible: _scrollChromeVisible,
+            ),
+            data: (value) => _DailyBody(
+              selectedDate: _selectedDate,
+              tasks: value.tasks,
+              collapsed: _collapsed,
+              onSelectDate: _selectDate,
+              onToggleSection: _toggleSection,
+              onAdd: _showQuickAdd,
+              onMoveTask: _moveTaskToGroup,
+              grouping: _grouping,
+              onGroupingChanged: _setGrouping,
+              onRescheduleTasks: () => _showRescheduleReview(value.tasks),
+              onDiscoverRoutines: _showRoutineDiscovery,
+              onShare: () => _showDailyShare(value.tasks),
+              scrollChromeVisible: _scrollChromeVisible,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleScrollChromeVisibility(bool visible) {
+    if (_scrollChromeVisible == visible) return;
+    setState(() => _scrollChromeVisible = visible);
+    widget.onScrollChromeVisibilityChanged?.call(visible);
   }
 
   void _selectDate(DateTime value) {
@@ -321,6 +350,7 @@ class _DailyBody extends StatelessWidget {
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
     required this.onShare,
+    required this.scrollChromeVisible,
   });
 
   final DateTime selectedDate;
@@ -335,6 +365,7 @@ class _DailyBody extends StatelessWidget {
   final VoidCallback onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
+  final bool scrollChromeVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +373,7 @@ class _DailyBody extends StatelessWidget {
     final completedTasks = tasks.where((task) => task.isCompleted).toList();
     return CustomScrollView(
       key: const ValueKey('daily-planner-page'),
+      paintOrder: SliverPaintOrder.firstIsTop,
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
@@ -352,10 +384,11 @@ class _DailyBody extends StatelessWidget {
           automaticallyImplyLeading: false,
           floating: true,
           snap: true,
-          pinned: false,
+          pinned: true,
           toolbarHeight: 0,
-          collapsedHeight: 0,
+          collapsedHeight: 64,
           expandedHeight: 232,
+          clipBehavior: Clip.hardEdge,
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: context.palette.background,
@@ -369,15 +402,19 @@ class _DailyBody extends StatelessWidget {
                 color: context.palette.background,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-                  child: _DailyHeader(
-                    selectedDate: selectedDate,
-                    onSelectDate: onSelectDate,
-                    onAdd: () => onAdd(DayPeriod.anytime),
-                    grouping: grouping,
-                    onGroupingChanged: onGroupingChanged,
-                    onRescheduleTasks: onRescheduleTasks,
-                    onDiscoverRoutines: onDiscoverRoutines,
-                    onShare: onShare,
+                  child: ScrollChromeVisibility(
+                    key: const ValueKey('daily-scroll-chrome-header'),
+                    visible: scrollChromeVisible,
+                    child: _DailyHeader(
+                      selectedDate: selectedDate,
+                      onSelectDate: onSelectDate,
+                      onAdd: () => onAdd(DayPeriod.anytime),
+                      grouping: grouping,
+                      onGroupingChanged: onGroupingChanged,
+                      onRescheduleTasks: onRescheduleTasks,
+                      onDiscoverRoutines: onDiscoverRoutines,
+                      onShare: onShare,
+                    ),
                   ),
                 ),
               ),
@@ -2735,6 +2772,21 @@ class _DailyTaskDetailScreenState
       _taskIcon.onTaskChanged(_title.text.trim());
       final taskDate = _isTimed ? _dateOnly(_startsAt) : _date;
       final taskPeriod = _isTimed ? dayPeriodForLocalTime(_startsAt) : _period;
+      final alarmAt = _alarm ? _alarmDateTime(taskDate, _alarmTime) : null;
+      if (alarmAt != null) {
+        final readiness = await ref
+            .read(taskAlarmServiceProvider)
+            .prepareTaskAlarm(alarmAt);
+        if (readiness != TaskAlarmReadiness.ready) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_alarmReadinessMessage(readiness))),
+            );
+          }
+          return;
+        }
+        if (!mounted) return;
+      }
       final draft = widget.initialDraft.copyWith(
         title: _title.text.trim(),
         description: _notes.text.trim(),
@@ -2748,7 +2800,7 @@ class _DailyTaskDetailScreenState
         endsAt: _isTimed ? _endsAt : null,
         clearTimedRange: !_isTimed,
         recurrence: RecurrenceSelection(type: _recurrence),
-        alarmAt: _alarm ? _alarmDateTime(taskDate, _alarmTime) : null,
+        alarmAt: alarmAt,
         clearAlarmAt: !_alarm,
         icon: _taskIcon.value.category.storageName,
         subtasks: _subtasks,
@@ -3775,10 +3827,14 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
   final alarmAt = draft.alarmAt;
   if (alarmAt != null) {
     try {
-      await ref
+      final scheduled = await ref
           .read(taskAlarmServiceProvider)
           .schedule(taskId: task.id, title: task.title, alarmAt: alarmAt);
-    } catch (_) {
+      if (!scheduled) {
+        debugPrint('Created daily task alarm was not scheduled.');
+      }
+    } catch (error) {
+      debugPrint('Created daily task alarm failed: $error');
       // Notification setup must not prevent the task itself from being saved.
     }
   }
@@ -4045,6 +4101,18 @@ DateTime _ceilToFiveMinutes(DateTime value) {
 
 DateTime _alarmDateTime(DateTime date, TimeOfDay time) =>
     DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+String _alarmReadinessMessage(
+  TaskAlarmReadiness readiness,
+) => switch (readiness) {
+  TaskAlarmReadiness.past => 'Alarm saati gelecekte olmalı.',
+  TaskAlarmReadiness.remindersDisabled =>
+    'Görev hatırlatıcıları kapalı. Ayarlar > Bildirimler bölümünden açabilirsin.',
+  TaskAlarmReadiness.permissionDenied =>
+    'Bildirim izni kapalı. Cihaz Ayarları > Florien > Bildirimler bölümünden açabilirsin.',
+  TaskAlarmReadiness.unsupported => 'Bu cihazda plan alarmı kullanılamıyor.',
+  TaskAlarmReadiness.ready => '',
+};
 
 String _formatAlarmTime(TimeOfDay time) =>
     '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';

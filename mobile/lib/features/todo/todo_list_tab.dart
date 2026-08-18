@@ -4,6 +4,7 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/delayed_scroll_chrome.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -47,7 +48,14 @@ Future<void> showTodoQuickAdd({
 }
 
 class TodoListTab extends ConsumerStatefulWidget {
-  const TodoListTab({super.key});
+  const TodoListTab({
+    super.key,
+    this.scrollChromeEnabled = true,
+    this.onScrollChromeVisibilityChanged,
+  });
+
+  final bool scrollChromeEnabled;
+  final ValueChanged<bool>? onScrollChromeVisibilityChanged;
 
   @override
   ConsumerState<TodoListTab> createState() => _TodoListTabState();
@@ -58,6 +66,21 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
   bool _tasksCollapsed = false;
   bool _showDuration = true;
   bool _completedCollapsed = false;
+  bool _scrollChromeVisible = true;
+
+  @override
+  void didUpdateWidget(covariant TodoListTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollChromeEnabled && !widget.scrollChromeEnabled) {
+      _scrollChromeVisible = true;
+    }
+  }
+
+  void _handleScrollChromeVisibility(bool visible) {
+    if (_scrollChromeVisible == visible) return;
+    setState(() => _scrollChromeVisible = visible);
+    widget.onScrollChromeVisibilityChanged?.call(visible);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,83 +107,103 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
         final completedTasks = visibleTasks
             .where((task) => task.isCompleted)
             .toList();
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 40),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _ListTitle(
-                          label: 'To-do',
-                          selected: activeListId == null,
-                          onTap: () => setState(() => _selectedListId = null),
-                        ),
-                        for (final list in lists)
+        return DelayedScrollChrome(
+          enabled: widget.scrollChromeEnabled,
+          onVisibilityChanged: _handleScrollChromeVisibility,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 40),
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
                           _ListTitle(
-                            label: list.name,
-                            selected: activeListId == list.id,
-                            onTap: () =>
-                                setState(() => _selectedListId = list.id),
+                            label: 'To-do',
+                            selected: activeListId == null,
+                            onTap: () => setState(() => _selectedListId = null),
                           ),
-                        _ListAddButton(onTap: () => _createList(lists)),
+                          for (final list in lists)
+                            _ListTitle(
+                              label: list.name,
+                              selected: activeListId == list.id,
+                              onTap: () =>
+                                  setState(() => _selectedListId = list.id),
+                            ),
+                          ScrollChromeVisibility(
+                            key: const ValueKey('todo-scroll-chrome-list-add'),
+                            visible: _scrollChromeVisible,
+                            child: _ListAddButton(
+                              onTap: () => _createList(lists),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  ScrollChromeVisibility(
+                    key: const ValueKey('todo-scroll-chrome-actions'),
+                    visible: _scrollChromeVisible,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _TodoIconButton(
+                          tooltip: 'Liste seçenekleri',
+                          onPressed: () => _showHeaderMenu(lists),
+                          icon: Icons.more_horiz_rounded,
+                          filled: false,
+                        ),
+                        const SizedBox(width: 4),
+                        _TodoIconButton(
+                          tooltip: 'Yeni yapılacak ekle',
+                          onPressed: _showAdd,
+                          icon: Icons.add_rounded,
+                        ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                _TodoIconButton(
-                  tooltip: 'Liste seçenekleri',
-                  onPressed: () => _showHeaderMenu(lists),
-                  icon: Icons.more_horiz_rounded,
-                  filled: false,
-                ),
-                const SizedBox(width: 4),
-                _TodoIconButton(
-                  tooltip: 'Yeni yapılacak ekle',
-                  onPressed: _showAdd,
-                  icon: Icons.add_rounded,
+                ],
+              ),
+              if (currentList?.description.isNotEmpty ?? false) ...[
+                const SizedBox(height: 6),
+                Text(
+                  currentList!.description,
+                  style: TextStyle(color: context.palette.textSecondary),
                 ),
               ],
-            ),
-            if (currentList?.description.isNotEmpty ?? false) ...[
-              const SizedBox(height: 6),
-              Text(
-                currentList!.description,
-                style: TextStyle(color: context.palette.textSecondary),
-              ),
-            ],
-            const SizedBox(height: 22),
-            _TodoSection(
-              section: _defaultSection,
-              tasks: visibleTasks.where((task) => !task.isCompleted).toList(),
-              collapsed: _tasksCollapsed,
-              onToggle: () =>
-                  setState(() => _tasksCollapsed = !_tasksCollapsed),
-              onAdd: _showAdd,
-              showDuration: _showDuration,
-            ),
-            const SizedBox(height: 16),
-            if (completedTasks.isNotEmpty) ...[
+              const SizedBox(height: 22),
               _TodoSection(
-                section: _completedSection,
-                tasks: completedTasks,
-                collapsed: _completedCollapsed,
+                section: _defaultSection,
+                tasks: visibleTasks.where((task) => !task.isCompleted).toList(),
+                collapsed: _tasksCollapsed,
                 onToggle: () =>
-                    setState(() => _completedCollapsed = !_completedCollapsed),
-                onAdd: () {},
+                    setState(() => _tasksCollapsed = !_tasksCollapsed),
+                onAdd: _showAdd,
                 showDuration: _showDuration,
-                allowAdd: false,
-                completedTarget: true,
-                onTaskDropped: (task) =>
-                    _moveTaskToSection(task, completed: true),
               ),
               const SizedBox(height: 16),
+              if (completedTasks.isNotEmpty) ...[
+                _TodoSection(
+                  section: _completedSection,
+                  tasks: completedTasks,
+                  collapsed: _completedCollapsed,
+                  onToggle: () => setState(
+                    () => _completedCollapsed = !_completedCollapsed,
+                  ),
+                  onAdd: () {},
+                  showDuration: _showDuration,
+                  allowAdd: false,
+                  completedTarget: true,
+                  onTaskDropped: (task) =>
+                      _moveTaskToSection(task, completed: true),
+                ),
+                const SizedBox(height: 16),
+              ],
             ],
-          ],
+          ),
         );
       },
     );

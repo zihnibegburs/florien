@@ -174,6 +174,18 @@ void main() {
     expect(find.text('+ 1 dk'), findsOneWidget);
     expect(find.byIcon(Icons.hourglass_bottom_rounded), findsOneWidget);
     expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
+    expect(find.byKey(const ValueKey('focus-paused-indicator')), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.pause_rounded));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('focus-paused-indicator')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byIcon(Icons.play_arrow_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('focus-paused-indicator')), findsNothing);
 
     await tester.tap(find.text('Alarm açık'));
     await tester.pumpAndSettle();

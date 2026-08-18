@@ -47,23 +47,41 @@ class OnboardingPreferencesNotifier
     return ref.read(onboardingStorageProvider).load(_ownerId);
   }
 
-  Future<void> complete({
-    required bool productUpdatesEnabled,
-    required String primaryNeed,
-    required String neuroProfile,
-  }) => _save(
-    OnboardingPreferences(
-      completed: true,
-      productUpdatesEnabled: productUpdatesEnabled,
-      primaryNeed: primaryNeed,
-      neuroProfile: neuroProfile,
-      paywallSeen: true,
-    ),
-  );
+  Future<void> recordOnboardingAnswer({
+    required String questionId,
+    required String answerId,
+  }) {
+    final current = state.valueOrNull ?? const OnboardingPreferences();
+    return _save(
+      current.copyWith(
+        answers: {
+          ...current.answers,
+          questionId: OnboardingAnswer(
+            questionId: questionId,
+            answerId: answerId,
+            answeredAt: DateTime.now(),
+          ),
+        },
+      ),
+    );
+  }
+
+  Future<void> completeOnboarding() {
+    final current = state.valueOrNull ?? const OnboardingPreferences();
+    return _save(current.copyWith(completed: true));
+  }
+
+  Future<void> restartOnboarding() => _save(const OnboardingPreferences());
 
   Future<void> _save(OnboardingPreferences preferences) async {
-    await ref.read(onboardingStorageProvider).save(_ownerId, preferences);
+    final previous = state;
     state = AsyncData(preferences);
+    try {
+      await ref.read(onboardingStorageProvider).save(_ownerId, preferences);
+    } catch (error, stackTrace) {
+      state = previous;
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 }
 

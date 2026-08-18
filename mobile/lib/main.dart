@@ -189,15 +189,17 @@ class _FlorienAppState extends ConsumerState<FlorienApp> {
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authStateProvider);
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/onboarding',
     redirect: (context, state) {
       final loggedIn = auth.valueOrNull != null;
+      final isOnboardingRoute = state.matchedLocation == '/onboarding';
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/email-login';
+      if (isOnboardingRoute) return null;
       if (!loggedIn && !isAuthRoute) return '/login';
-      if (loggedIn && isAuthRoute) return '/onboarding';
+      if (loggedIn && isAuthRoute) return '/todo';
       return null;
     },
     routes: [

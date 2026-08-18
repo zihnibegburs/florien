@@ -6,6 +6,8 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
+import 'package:florien/core/widgets/delayed_scroll_chrome.dart';
+import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
@@ -24,6 +26,7 @@ class TodoHomeScreen extends ConsumerStatefulWidget {
 
 class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   int _selectedIndex = 0;
+  bool _scrollChromeVisible = true;
   late final ProviderSubscription<FocusTaskLaunch?> _focusLaunchSubscription;
   late final ProviderSubscription<HomeWidgetLaunchCommand?>
   _homeWidgetLaunchSubscription;
@@ -44,7 +47,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       request,
     ) {
       if (request != null && mounted && _selectedIndex != 2) {
-        setState(() => _selectedIndex = 2);
+        _selectTab(2);
       }
     });
     _homeWidgetLaunchSubscription = ref.listenManual(
@@ -115,23 +118,23 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     switch (command.action) {
       case HomeWidgetLaunchAction.focus:
       case HomeWidgetLaunchAction.focusScreen:
-        setState(() => _selectedIndex = 2);
+        _selectTab(2);
       case HomeWidgetLaunchAction.today:
-        setState(() => _selectedIndex = 1);
+        _selectTab(1);
       case HomeWidgetLaunchAction.todo:
-        setState(() => _selectedIndex = 0);
+        _selectTab(0);
       case HomeWidgetLaunchAction.todoAdd:
-        setState(() => _selectedIndex = 0);
+        _selectTab(0);
         unawaited(_openWidgetTodoQuickAdd(revision));
       case HomeWidgetLaunchAction.dailyAdd:
-        setState(() => _selectedIndex = 1);
+        _selectTab(1);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && revision == _widgetLaunchRevision) {
             ref.read(dailyPlannerQuickAddSignalProvider.notifier).state++;
           }
         });
       case HomeWidgetLaunchAction.ai:
-        setState(() => _selectedIndex = 0);
+        _selectTab(0);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || revision != _widgetLaunchRevision) return;
           FocusManager.instance.primaryFocus?.unfocus();
@@ -142,7 +145,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           );
         });
       case HomeWidgetLaunchAction.taskComplete:
-        setState(() => _selectedIndex = command.isDailyPlan ? 1 : 0);
+        _selectTab(command.isDailyPlan ? 1 : 0);
         final taskId = command.taskId;
         if (taskId != null) unawaited(_completeWidgetTask(taskId));
     }
@@ -264,6 +267,23 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     unawaited(_syncFocusLiveActivity(progress));
   }
 
+  void _selectTab(int index) {
+    if (!mounted) return;
+    setState(() {
+      _selectedIndex = index;
+      _scrollChromeVisible = true;
+    });
+  }
+
+  void _handleScrollChromeVisibility(int tabIndex, bool visible) {
+    if (!mounted ||
+        _selectedIndex != tabIndex ||
+        _scrollChromeVisible == visible) {
+      return;
+    }
+    setState(() => _scrollChromeVisible = visible);
+  }
+
   Future<FocusTaskLaunch> _createStandaloneFocusTask(
     int durationMinutes,
   ) async {
@@ -284,38 +304,46 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       backgroundColor: context.palette.background,
       appBar: _selectedIndex == 0
           ? AppBar(
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: FlorienColors.primary,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: context.palette.border,
-                        width: FlorienBorders.thin,
+              title: ScrollChromeVisibility(
+                key: const ValueKey('todo-home-scroll-chrome-header'),
+                visible: _scrollChromeVisible,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: context.palette.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: context.palette.border,
+                          width: FlorienBorders.thin,
+                        ),
+                      ),
+                      child: const Center(
+                        child: FlorienLogo(
+                          key: ValueKey('todo-home-brand-icon'),
+                          size: 25,
+                        ),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.local_florist_rounded,
-                      size: 18,
-                      color: FlorienColors.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Florien'),
-                ],
+                    const SizedBox(width: 10),
+                    const Text('Florien'),
+                  ],
+                ),
               ),
               actions: [
                 if (premium != null && !premium.isPremium)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _PremiumHeaderButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const PremiumMembershipScreen(),
+                  ScrollChromeVisibility(
+                    visible: _scrollChromeVisible,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _PremiumHeaderButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PremiumMembershipScreen(),
+                          ),
                         ),
                       ),
                     ),
@@ -326,9 +354,16 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const TodoListTab(),
+          TodoListTab(
+            scrollChromeEnabled: _selectedIndex == 0,
+            onScrollChromeVisibilityChanged: (visible) =>
+                _handleScrollChromeVisibility(0, visible),
+          ),
           DailyPlannerTab(
             quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
+            scrollChromeEnabled: _selectedIndex == 1,
+            onScrollChromeVisibilityChanged: (visible) =>
+                _handleScrollChromeVisibility(1, visible),
           ),
           FocusTimerTab(
             launchRequest: requestedFocus ?? _scheduledFocusLaunch,
@@ -354,41 +389,44 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           const StatisticsTab(),
         ],
       ),
-      bottomNavigationBar: FlorienBottomNavigation(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
-        destinations: const [
-          FlorienNavDestination(
-            label: 'To-do',
-            icon: Icons.check_box_outlined,
-            selectedIcon: Icons.check_box_rounded,
-          ),
-          FlorienNavDestination(
-            label: 'Günlük',
-            icon: Icons.calendar_today_outlined,
-            selectedIcon: Icons.calendar_today_rounded,
-          ),
-          FlorienNavDestination(
-            label: 'Odaklan',
-            icon: Icons.timelapse_outlined,
-            selectedIcon: Icons.timelapse_rounded,
-          ),
-          FlorienNavDestination(
-            label: 'İstatistik',
-            icon: Icons.bar_chart_rounded,
-            selectedIcon: Icons.bar_chart_rounded,
-          ),
-        ],
-        trailing: FlorienAiFab(
-          key: const ValueKey('planner-ai-chat-button'),
-          tooltip: 'Plan asistanını aç',
-          onPressed: () => Navigator.of(context).push(
-            PageRouteBuilder<void>(
-              transitionDuration: const Duration(milliseconds: 220),
-              pageBuilder: (_, animation, _) => FadeTransition(
-                opacity: animation,
-                child: const PlannerAiChatScreen(),
+      bottomNavigationBar: ScrollChromeVisibility(
+        key: const ValueKey('home-scroll-chrome-navigation'),
+        visible: _scrollChromeVisible,
+        child: FlorienBottomNavigation(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _selectTab,
+          destinations: const [
+            FlorienNavDestination(
+              label: 'To-do',
+              icon: Icons.check_box_outlined,
+              selectedIcon: Icons.check_box_rounded,
+            ),
+            FlorienNavDestination(
+              label: 'Günlük',
+              icon: Icons.calendar_today_outlined,
+              selectedIcon: Icons.calendar_today_rounded,
+            ),
+            FlorienNavDestination(
+              label: 'Odaklan',
+              icon: Icons.timelapse_outlined,
+              selectedIcon: Icons.timelapse_rounded,
+            ),
+            FlorienNavDestination(
+              label: 'İstatistik',
+              icon: Icons.bar_chart_rounded,
+              selectedIcon: Icons.bar_chart_rounded,
+            ),
+          ],
+          trailing: FlorienAiFab(
+            key: const ValueKey('planner-ai-chat-button'),
+            tooltip: 'Plan asistanını aç',
+            onPressed: () => Navigator.of(context).push(
+              PageRouteBuilder<void>(
+                transitionDuration: const Duration(milliseconds: 220),
+                pageBuilder: (_, animation, _) => FadeTransition(
+                  opacity: animation,
+                  child: const PlannerAiChatScreen(),
+                ),
               ),
             ),
           ),

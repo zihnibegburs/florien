@@ -2,51 +2,94 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+const currentOnboardingVersion = '1';
+
+class OnboardingAnswer {
+  const OnboardingAnswer({
+    required this.questionId,
+    required this.answerId,
+    required this.answeredAt,
+  });
+
+  final String questionId;
+  final String answerId;
+  final DateTime answeredAt;
+
+  Map<String, dynamic> toJson() => {
+    'questionId': questionId,
+    'answerId': answerId,
+    'answeredAt': answeredAt.toIso8601String(),
+  };
+
+  factory OnboardingAnswer.fromJson(
+    String questionId,
+    Map<String, dynamic> json,
+  ) => OnboardingAnswer(
+    questionId: questionId,
+    answerId: json['answerId'] as String,
+    answeredAt: DateTime.parse(json['answeredAt'] as String),
+  );
+}
+
 class OnboardingPreferences {
   const OnboardingPreferences({
     this.completed = false,
-    this.productUpdatesEnabled = true,
-    this.primaryNeed,
-    this.neuroProfile,
-    this.paywallSeen = false,
+    this.onboardingVersion = currentOnboardingVersion,
+    this.answers = const {},
   });
 
   final bool completed;
-  final bool productUpdatesEnabled;
-  final String? primaryNeed;
-  final String? neuroProfile;
-  final bool paywallSeen;
+  final String onboardingVersion;
+  final Map<String, OnboardingAnswer> answers;
+
+  String? answerIdFor(String questionId) => answers[questionId]?.answerId;
 
   OnboardingPreferences copyWith({
     bool? completed,
-    bool? productUpdatesEnabled,
-    String? primaryNeed,
-    String? neuroProfile,
-    bool? paywallSeen,
+    String? onboardingVersion,
+    Map<String, OnboardingAnswer>? answers,
   }) => OnboardingPreferences(
     completed: completed ?? this.completed,
-    productUpdatesEnabled: productUpdatesEnabled ?? this.productUpdatesEnabled,
-    primaryNeed: primaryNeed ?? this.primaryNeed,
-    neuroProfile: neuroProfile ?? this.neuroProfile,
-    paywallSeen: paywallSeen ?? this.paywallSeen,
+    onboardingVersion: onboardingVersion ?? this.onboardingVersion,
+    answers: answers ?? this.answers,
   );
 
   Map<String, dynamic> toJson() => {
     'completed': completed,
-    'productUpdatesEnabled': productUpdatesEnabled,
-    'primaryNeed': primaryNeed,
-    'neuroProfile': neuroProfile,
-    'paywallSeen': paywallSeen,
+    'onboardingVersion': onboardingVersion,
+    'answers': answers.map(
+      (questionId, answer) => MapEntry(questionId, answer.toJson()),
+    ),
   };
 
-  factory OnboardingPreferences.fromJson(Map<String, dynamic> json) =>
-      OnboardingPreferences(
-        completed: json['completed'] as bool? ?? false,
-        productUpdatesEnabled: json['productUpdatesEnabled'] as bool? ?? true,
-        primaryNeed: json['primaryNeed'] as String?,
-        neuroProfile: json['neuroProfile'] as String?,
-        paywallSeen: json['paywallSeen'] as bool? ?? false,
-      );
+  factory OnboardingPreferences.fromJson(Map<String, dynamic> json) {
+    final completed = json['completed'] as bool? ?? false;
+    final savedVersion = json['onboardingVersion'] as String?;
+    if (savedVersion != currentOnboardingVersion) {
+      return OnboardingPreferences(completed: completed);
+    }
+
+    final answers = <String, OnboardingAnswer>{};
+    final encodedAnswers = json['answers'];
+    if (encodedAnswers is Map) {
+      for (final entry in encodedAnswers.entries) {
+        if (entry.key is! String || entry.value is! Map) continue;
+        try {
+          final questionId = entry.key as String;
+          answers[questionId] = OnboardingAnswer.fromJson(
+            questionId,
+            Map<String, dynamic>.from(entry.value as Map),
+          );
+        } catch (_) {}
+      }
+    }
+
+    return OnboardingPreferences(
+      completed: completed,
+      onboardingVersion: currentOnboardingVersion,
+      answers: answers,
+    );
+  }
 }
 
 class OnboardingStorage {
