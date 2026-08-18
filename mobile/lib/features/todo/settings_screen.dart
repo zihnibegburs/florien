@@ -6,6 +6,7 @@ import 'package:florien/features/todo/notification_settings_screen.dart';
 import 'package:florien/features/todo/live_activity_settings_screen.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership_screen.dart';
 
 /// Full settings page.
 class SettingsScreen extends ConsumerWidget {
@@ -71,6 +72,15 @@ class SettingsScreen extends ConsumerWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
+            _SettingsRow(
+              icon: Icons.workspace_premium_rounded,
+              label: 'Florien Premium',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PremiumMembershipScreen(),
+                ),
+              ),
+            ),
             _SettingsRow(
               icon: Icons.notifications_none_rounded,
               label: 'Bildirimler',

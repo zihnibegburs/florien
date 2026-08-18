@@ -404,6 +404,7 @@ class _MoodSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final weekStart = _weekStart(now);
+    final today = DateTime(now.year, now.month, now.day);
     final entries = ref.watch(moodEntriesProvider).valueOrNull ?? const [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,7 +429,7 @@ class _MoodSection extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Bu haftanın her günü için nasıl hissettiğini seç.',
+          'Bugün veya geçmiş günler için nasıl hissettiğini seç.',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: context.palette.textSecondary),
@@ -437,18 +438,24 @@ class _MoodSection extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            for (var i = 0; i < _days.length; i++)
+            for (final date in List.generate(
+              _days.length,
+              (index) => weekStart.add(Duration(days: index)),
+            ))
               _MoodDayButton(
-                label: _days[i],
-                date: weekStart.add(Duration(days: i)),
-                entry: _entryForDay(entries, weekStart.add(Duration(days: i))),
-                isToday: _sameDay(now, weekStart.add(Duration(days: i))),
-                onTap: () => _editMood(
-                  context,
-                  ref,
-                  weekStart.add(Duration(days: i)),
-                  _entryForDay(entries, weekStart.add(Duration(days: i))),
-                ),
+                label: _days[date.weekday - DateTime.monday],
+                date: date,
+                entry: _entryForDay(entries, date),
+                isToday: _sameDay(today, date),
+                enabled: !date.isAfter(today),
+                onTap: date.isAfter(today)
+                    ? null
+                    : () => _editMood(
+                        context,
+                        ref,
+                        date,
+                        _entryForDay(entries, date),
+                      ),
               ),
           ],
         ),
@@ -478,6 +485,7 @@ class _MoodSection extends ConsumerWidget {
     DateTime date,
     MoodEntry? entry,
   ) async {
+    if (date.isAfter(DateTime.now())) return;
     final updated = await showModalBottomSheet<MoodEntry>(
       context: context,
       isScrollControlled: true,
@@ -495,6 +503,7 @@ class _MoodDayButton extends StatelessWidget {
     required this.date,
     required this.entry,
     required this.isToday,
+    required this.enabled,
     required this.onTap,
   });
 
@@ -502,55 +511,66 @@ class _MoodDayButton extends StatelessWidget {
   final DateTime date;
   final MoodEntry? entry;
   final bool isToday;
-  final VoidCallback onTap;
+  final bool enabled;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final mood = entry?.mood;
     final color = _moodColor(mood, context);
-    return Column(
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: context.palette.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          child: InkWell(
-            key: ValueKey('mood-day-${date.year}-${date.month}-${date.day}'),
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: mood == null ? context.palette.surface : color,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isToday
-                      ? FlorienColors.primary
-                      : context.palette.border,
-                  width: isToday ? FlorienBorders.medium : FlorienBorders.thin,
-                ),
+    return Semantics(
+      enabled: enabled,
+      child: Opacity(
+        opacity: enabled ? 1 : .35,
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: context.palette.textSecondary,
               ),
-              child: Center(
-                child: Text(
-                  mood?.emoji ?? '+',
-                  style: TextStyle(
-                    fontSize: mood == null ? 22 : 19,
-                    color: context.palette.textPrimary,
+            ),
+            const SizedBox(height: 8),
+            Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                key: ValueKey(
+                  'mood-day-${date.year}-${date.month}-${date.day}',
+                ),
+                onTap: onTap,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: mood == null ? context.palette.surface : color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isToday
+                          ? FlorienColors.primary
+                          : context.palette.border,
+                      width: isToday
+                          ? FlorienBorders.medium
+                          : FlorienBorders.thin,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      mood?.emoji ?? (enabled ? '+' : '—'),
+                      style: TextStyle(
+                        fontSize: mood == null ? 22 : 19,
+                        color: context.palette.textPrimary,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

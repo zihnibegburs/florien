@@ -13,6 +13,7 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		8579399C84F0B5BFE495A128 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */; };
 		8EEC8C49C141BC47C3AA36E0 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */; };
+		903328B4303359AA000634E4 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 903328B3303359AA000634E4 /* StoreKit.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -26,7 +27,6 @@
 		A1SIRI0000000000000003 /* AddFlorienTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */; };
 		A1SIRI0000000000000004 /* FlorienShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* FlorienShortcuts.swift */; };
 		D84D71E2C470CF85FDD9AB84 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */; };
-		FDDEEC2BA9F4D2245DFFF242 /* Pods_FlorienWidgetExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1C57BB3B08253601D684DEA /* Pods_FlorienWidgetExtension.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +71,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0A1B2C3D4E5F60718293A401 /* FlorienWidgetExtensionDebug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionDebug.xcconfig; path = Flutter/FlorienWidgetExtensionDebug.xcconfig; sourceTree = "<group>"; };
+		0A1B2C3D4E5F60718293A402 /* FlorienWidgetExtensionRelease.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionRelease.xcconfig; path = Flutter/FlorienWidgetExtensionRelease.xcconfig; sourceTree = "<group>"; };
+		0A1B2C3D4E5F60718293A403 /* FlorienWidgetExtensionProfile.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionProfile.xcconfig; path = Flutter/FlorienWidgetExtensionProfile.xcconfig; sourceTree = "<group>"; };
 		111356C85BB52F7DB36FA7EC /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		12EC5E9908EDC9B2461106BD /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
@@ -84,6 +87,7 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		8A0CC7B653F7C5EFD6F0D175 /* Pods-FlorienWidgetExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FlorienWidgetExtension.release.xcconfig"; path = "Target Support Files/Pods-FlorienWidgetExtension/Pods-FlorienWidgetExtension.release.xcconfig"; sourceTree = "<group>"; };
+		903328B3303359AA000634E4 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		95013D74551668146B34AD79 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -100,9 +104,6 @@
 		A1FLORIENW0000000000000008 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		A1FLORIENW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtension.xcconfig; path = Flutter/FlorienWidgetExtension.xcconfig; sourceTree = "<group>"; };
-		0A1B2C3D4E5F60718293A401 /* FlorienWidgetExtensionDebug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionDebug.xcconfig; path = Flutter/FlorienWidgetExtensionDebug.xcconfig; sourceTree = "<group>"; };
-		0A1B2C3D4E5F60718293A402 /* FlorienWidgetExtensionRelease.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionRelease.xcconfig; path = Flutter/FlorienWidgetExtensionRelease.xcconfig; sourceTree = "<group>"; };
-		0A1B2C3D4E5F60718293A403 /* FlorienWidgetExtensionProfile.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtensionProfile.xcconfig; path = Flutter/FlorienWidgetExtensionProfile.xcconfig; sourceTree = "<group>"; };
 		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A1SIRI0000000000000005 /* FlorienSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienSharedStorage.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000006 /* FlorienTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienTaskApi.swift; sourceTree = "<group>"; };
@@ -112,7 +113,6 @@
 		B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D84E1B85147BB83B473B8959 /* Pods-FlorienWidgetExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FlorienWidgetExtension.debug.xcconfig"; path = "Target Support Files/Pods-FlorienWidgetExtension/Pods-FlorienWidgetExtension.debug.xcconfig"; sourceTree = "<group>"; };
-		E1C57BB3B08253601D684DEA /* Pods_FlorienWidgetExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FlorienWidgetExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		EFE1C7B93034058957492093 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		F07FBCFAEE94F92F8E85DD53 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -131,6 +131,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8EEC8C49C141BC47C3AA36E0 /* Pods_Runner.framework in Frameworks */,
+				903328B4303359AA000634E4 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,7 +141,6 @@
 			files = (
 				A1FLORIENW0000000000000016 /* SwiftUI.framework in Frameworks */,
 				A1FLORIENW0000000000000015 /* WidgetKit.framework in Frameworks */,
-				FDDEEC2BA9F4D2245DFFF242 /* Pods_FlorienWidgetExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -244,11 +244,11 @@
 		F3845498BD19CC066F2E9B39 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				903328B3303359AA000634E4 /* StoreKit.framework */,
 				A1FLORIENW0000000000000007 /* WidgetKit.framework */,
 				A1FLORIENW0000000000000008 /* SwiftUI.framework */,
 				A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */,
 				B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */,
-				E1C57BB3B08253601D684DEA /* Pods_FlorienWidgetExtension.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -303,7 +303,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1FLORIENW0000000000000014 /* Build configuration list for PBXNativeTarget "FlorienWidgetExtension" */;
 			buildPhases = (
-				06019DCEFD372B3A9C2C3C36 /* [CP] Check Pods Manifest.lock */,
 				A1FLORIENW000000000000000C /* Sources */,
 				A1FLORIENW000000000000000D /* Frameworks */,
 				A1FLORIENW000000000000000E /* Resources */,
@@ -404,28 +403,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		06019DCEFD372B3A9C2C3C36 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FlorienWidgetExtension-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 		2778320380EAFD2443BDDBAC /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;

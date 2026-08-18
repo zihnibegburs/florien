@@ -1678,12 +1678,12 @@ class _DailyTaskCard extends ConsumerWidget {
         : (activeFocus?.progress ?? scheduledProgress);
     final completionButton = IconButton(
       tooltip: task.isCompleted ? 'Tamamlanmadı' : 'Tamamla',
-      iconSize: timelineStyle ? 25 : 22,
+      iconSize: timelineStyle ? 22 : 20,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       constraints: BoxConstraints.tightFor(
-        width: timelineStyle ? 34 : 30,
-        height: timelineStyle ? 34 : 30,
+        width: timelineStyle ? 30 : 26,
+        height: timelineStyle ? 30 : 26,
       ),
       onPressed: () async {
         try {
@@ -1721,7 +1721,7 @@ class _DailyTaskCard extends ConsumerWidget {
         opacity: task.isCompleted ? .55 : 1,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 6),
           decoration: BoxDecoration(
             color: Color.alphaBlend(
               color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
@@ -1739,19 +1739,19 @@ class _DailyTaskCard extends ConsumerWidget {
             onTap: () => _showTaskActions(context, ref),
             borderRadius: BorderRadius.circular(FlorienRadius.lg),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
+              padding: const EdgeInsets.fromLTRB(10, 2, 4, 2),
               child: Row(
                 children: [
                   Container(
                     key: ValueKey('timeline-task-bar-${task.id}'),
-                    width: 4,
-                    height: 26,
+                    width: 3,
+                    height: 22,
                     decoration: BoxDecoration(
                       color: color,
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1761,7 +1761,7 @@ class _DailyTaskCard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1773,7 +1773,7 @@ class _DailyTaskCard extends ConsumerWidget {
                           key: ValueKey('timeline-task-status-${task.id}'),
                           style: TextStyle(
                             color: context.palette.textSecondary,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -1783,7 +1783,7 @@ class _DailyTaskCard extends ConsumerWidget {
                     task: task,
                     color: color,
                     progress: progress,
-                    dimension: 28,
+                    dimension: 24,
                   ),
                   completionButton,
                 ],
@@ -1797,7 +1797,7 @@ class _DailyTaskCard extends ConsumerWidget {
       opacity: task.isCompleted ? .55 : 1,
       duration: const Duration(milliseconds: 180),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
           color: Color.alphaBlend(
             color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
@@ -1812,21 +1812,21 @@ class _DailyTaskCard extends ConsumerWidget {
         child: ListTile(
           dense: true,
           visualDensity: const VisualDensity(vertical: -4),
-          minTileHeight: 46,
+          minTileHeight: 42,
           minVerticalPadding: 0,
-          contentPadding: const EdgeInsets.fromLTRB(12, 0, 6, 0),
+          contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
           leading: _DailyTaskIcon(
             task: task,
             color: color,
             progress: progress,
-            dimension: 28,
+            dimension: 24,
           ),
           title: Text(
             task.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
@@ -1842,7 +1842,7 @@ class _DailyTaskCard extends ConsumerWidget {
             key: ValueKey('daily-task-status-${task.id}'),
             style: TextStyle(
               color: context.palette.textSecondary,
-              fontSize: 12,
+              fontSize: 11,
               decoration: task.isCompleted
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/core/services/premium_purchase_service.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,6 +20,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String? _primaryNeed;
   String? _neuroProfile;
   bool _finishing = false;
+
+  Future<void> _subscribeToPremium() async {
+    await ref.read(premiumMembershipProvider.notifier).buyPremium();
+  }
 
   Future<void> _finish() async {
     if (_primaryNeed == null || _neuroProfile == null) return;
@@ -39,6 +45,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final onboarding = ref.watch(onboardingPreferencesProvider);
+    final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     return Theme(
       data: FlorienTheme.dark,
       child: Builder(
@@ -48,7 +55,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           error: (_, _) => _OnboardingFrame(
             step: _step,
             onBack: _step == 0 ? null : _back,
-            child: _content(context),
+            child: _content(context, premium),
           ),
           data: (preferences) {
             if (preferences.completed) {
@@ -62,7 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             return _OnboardingFrame(
               step: _step,
               onBack: _step == 0 ? null : _back,
-              child: _content(context),
+              child: _content(context, premium),
             );
           },
         ),
@@ -70,7 +77,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _content(BuildContext context) => AnimatedSwitcher(
+  Widget _content(
+    BuildContext context,
+    PremiumMembership? premium,
+  ) => AnimatedSwitcher(
     duration: const Duration(milliseconds: 260),
     transitionBuilder: (child, animation) => FadeTransition(
       opacity: animation,
@@ -124,13 +134,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       3 => _PaywallStep(
         key: const ValueKey('onboarding-paywall'),
         onContinueFree: _next,
-        onSubscribe: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pro aboneliği yakında bu ekrandan açılacak.'),
-            ),
-          );
-        },
+        onSubscribe: _subscribeToPremium,
+        onRestore: () =>
+            ref.read(premiumMembershipProvider.notifier).restorePurchases(),
+        onSelectPlan: (productId) =>
+            ref.read(premiumMembershipProvider.notifier).selectPlan(productId),
+        isPremium: premium?.isPremium == true,
+        isProcessing: premium?.isPurchasing == true,
+        membership: premium,
+        message: premium?.message,
       ),
       _ => _WelcomeStep(
         key: const ValueKey('onboarding-welcome'),
@@ -388,10 +400,22 @@ class _PaywallStep extends StatelessWidget {
     super.key,
     required this.onContinueFree,
     required this.onSubscribe,
+    required this.onRestore,
+    required this.onSelectPlan,
+    required this.isPremium,
+    required this.isProcessing,
+    this.membership,
+    this.message,
   });
 
   final VoidCallback onContinueFree;
-  final VoidCallback onSubscribe;
+  final Future<void> Function() onSubscribe;
+  final Future<void> Function() onRestore;
+  final ValueChanged<String> onSelectPlan;
+  final bool isPremium;
+  final bool isProcessing;
+  final PremiumMembership? membership;
+  final String? message;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -450,10 +474,50 @@ class _PaywallStep extends StatelessWidget {
         const SizedBox(height: 22),
         SizedBox(
           width: double.infinity,
-          child: FilledButton(
-            onPressed: onSubscribe,
-            child: const Text('Pro’yu keşfet'),
+          child: Column(
+            children: [
+              for (final product in membership?.products ?? const [])
+                _PaywallPlanTile(
+                  productId: product.id,
+                  price: product.price,
+                  selected: product.id == membership?.selectedProductId,
+                  onTap: () => onSelectPlan(product.id),
+                ),
+            ],
           ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed:
+                isProcessing || isPremium || membership?.selectedProduct == null
+                ? null
+                : onSubscribe,
+            child: Text(
+              isPremium
+                  ? 'Premium aktif'
+                  : isProcessing
+                  ? 'İşleniyor...'
+                  : membership?.selectedProduct == null
+                  ? 'Premium yakında'
+                  : '${membership!.selectedProduct!.price} karşılığında Premium ol',
+            ),
+          ),
+        ),
+        if (message != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            message!,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: context.palette.textSecondary,
+            ),
+          ),
+        ],
+        TextButton(
+          onPressed: isProcessing ? null : onRestore,
+          child: const Text('Satın alımları geri yükle'),
         ),
         const SizedBox(height: 10),
         Center(
@@ -472,6 +536,61 @@ class _PaywallStep extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+}
+
+class _PaywallPlanTile extends StatelessWidget {
+  const _PaywallPlanTile({
+    required this.productId,
+    required this.price,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String productId;
+  final String price;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(FlorienRadius.md),
+    child: Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: selected ? FlorienColors.primary : context.palette.surface,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  premiumPlanTitle(productId),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  premiumPlanPeriod(productId),
+                  style: TextStyle(color: context.palette.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Text(price, style: const TextStyle(fontWeight: FontWeight.w800)),
+        ],
+      ),
     ),
   );
 }

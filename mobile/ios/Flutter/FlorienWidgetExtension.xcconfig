@@ -1,1 +1,2 @@
+// Keep the native WidgetKit extension version aligned with Flutter builds.
 #include "Generated.xcconfig"

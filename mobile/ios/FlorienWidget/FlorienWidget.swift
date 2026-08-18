@@ -1,8 +1,6 @@
 import ActivityKit
-import AppIntents
 import SwiftUI
 import WidgetKit
-import home_widget
 
 private let appGroupId = "group.com.florien.app"
 private let sharedDefault = UserDefaults(suiteName: appGroupId)!
@@ -180,22 +178,10 @@ private struct FlorienTaskListWidgetView: View {
                             .lineLimit(1)
                         Spacer(minLength: 0)
                         if family != .systemSmall {
-                            if #available(iOS 17.0, *) {
-                                Button(intent: FlorienWidgetCompletionIntent(
-                                    url: completionURL,
-                                    appGroup: appGroupId
-                                )) {
-                                    Image(systemName: "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(FlorienWidgetStyle.muted)
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                Link(destination: completionURL) {
-                                    Image(systemName: "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(FlorienWidgetStyle.muted)
-                                }
+                            Link(destination: completionURL) {
+                                Image(systemName: "circle")
+                                    .font(.title3)
+                                    .foregroundStyle(FlorienWidgetStyle.muted)
                             }
                         }
                     }
@@ -485,30 +471,6 @@ private enum FlorienWidgetURL {
         return components.url!
     }
 }
-
-@available(iOS 17.0, *)
-private struct FlorienWidgetCompletionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Görevi tamamla"
-
-    @Parameter(title: "Widget URL") var url: URL?
-    @Parameter(title: "App Group") var appGroup: String?
-
-    init() {}
-
-    init(url: URL, appGroup: String) {
-        self.url = url
-        self.appGroup = appGroup
-    }
-
-    func perform() async throws -> some IntentResult {
-        await HomeWidgetBackgroundWorker.run(url: url, appGroup: appGroup ?? appGroupId)
-        return .result()
-    }
-}
-
-@available(iOS 17.0, *)
-@available(iOSApplicationExtension, unavailable)
-extension FlorienWidgetCompletionIntent: ForegroundContinuableIntent {}
 
 private enum FlorienWidgetStyle {
     static let ink = Color(red: 0.16, green: 0.15, blue: 0.18)

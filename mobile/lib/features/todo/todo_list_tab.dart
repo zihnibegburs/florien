@@ -1337,47 +1337,46 @@ class _TodoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (completedTarget)
-            Row(
-              children: [
-                Material(
-                  color: section.color.withValues(alpha: .12),
+          Row(
+            children: [
+              Material(
+                color: section.color.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                child: InkWell(
+                  onTap: onToggle,
                   borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                  child: InkWell(
-                    onTap: onToggle,
-                    borderRadius: BorderRadius.circular(FlorienRadius.sm),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(section.icon, size: 16, color: section.color),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${section.label} (${tasks.length})',
-                            style: TextStyle(
-                              color: context.palette.textPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: .4,
-                            ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(section.icon, size: 16, color: section.color),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${section.label} (${tasks.length})',
+                          style: TextStyle(
+                            color: context.palette.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: .4,
                           ),
-                          Icon(
-                            collapsed
-                                ? Icons.keyboard_arrow_down_rounded
-                                : Icons.keyboard_arrow_up_rounded,
-                            color: context.palette.textSecondary,
-                          ),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          collapsed
+                              ? Icons.keyboard_arrow_down_rounded
+                              : Icons.keyboard_arrow_up_rounded,
+                          color: context.palette.textSecondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
           if (!collapsed) ...[
             const SizedBox(height: 8),
             if (tasks.isEmpty && allowAdd)
@@ -1572,7 +1571,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       duration: const Duration(milliseconds: 180),
       opacity: task.isCompleted ? .58 : 1,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
           color: Color.alphaBlend(
             color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
@@ -1589,15 +1588,16 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
             ListTile(
               dense: true,
               visualDensity: const VisualDensity(vertical: -4),
+              minTileHeight: widget.showDuration ? 42 : 38,
               minVerticalPadding: 0,
-              contentPadding: const EdgeInsets.fromLTRB(12, 2, 6, 2),
-              leading: TaskIconBadge.forTask(icon: task.icon, size: 28),
+              contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
+              leading: TaskIconBadge.forTask(icon: task.icon, size: 24),
               title: Text(
                 task.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   decoration: task.isCompleted
                       ? TextDecoration.lineThrough
@@ -1610,7 +1610,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                       '${task.durationMinutes} dk',
                       style: TextStyle(
                         color: context.palette.textSecondary,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w500,
                         decoration: task.isCompleted
                             ? TextDecoration.lineThrough
@@ -1626,7 +1626,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
                 compact: true,
-                size: 28,
+                size: 24,
                 filled: task.isCompleted,
                 onPressed: () => _toggleCompletion(task),
               ),

@@ -7,6 +7,8 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/focus_timer_tab.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
@@ -276,6 +278,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
+    final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     final alarms = ref.read(taskAlarmServiceProvider);
     return Scaffold(
       backgroundColor: context.palette.background,
@@ -305,6 +308,19 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                   const Text('Florien'),
                 ],
               ),
+              actions: [
+                if (premium != null && !premium.isPremium)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _PremiumHeaderButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PremiumMembershipScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             )
           : null,
       body: IndexedStack(
@@ -380,4 +396,52 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       ),
     );
   }
+}
+
+class _PremiumHeaderButton extends StatelessWidget {
+  const _PremiumHeaderButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Material(
+      color: FlorienColors.primary,
+      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(FlorienRadius.sm),
+        child: Container(
+          height: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(FlorienRadius.sm),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.workspace_premium_rounded,
+                size: 17,
+                color: FlorienColors.onPrimary,
+              ),
+              SizedBox(width: 5),
+              Text(
+                'Premium ol',
+                style: TextStyle(
+                  color: FlorienColors.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

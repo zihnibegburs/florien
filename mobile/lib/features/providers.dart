@@ -217,6 +217,15 @@ class MoodEntriesNotifier extends AsyncNotifier<List<MoodEntry>> {
   }
 
   Future<void> saveEntry(MoodEntry entry) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (entry.day.isAfter(today)) {
+      throw ArgumentError.value(
+        entry.date,
+        'entry.date',
+        'Ruh hali ve günlük yansıma gelecekteki bir güne kaydedilemez.',
+      );
+    }
     final current = state.valueOrNull ?? const <MoodEntry>[];
     final updated = _upsert(current, entry.copyWith(healthSynced: false));
     await _persist(updated);
