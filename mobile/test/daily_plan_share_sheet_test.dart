@@ -62,8 +62,17 @@ void main() {
 
     await tester.tap(find.text('Paylaşımı aç'));
     await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('daily-share-status-menu-share-task')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('daily-share-status-incomplete-share-task')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-share-continue')));
     await tester.pumpAndSettle();
+    expect(find.text('1 tamamlanamadı'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('daily-share-theme-florien')),
       findsOneWidget,
@@ -98,6 +107,7 @@ void main() {
     expect(shareCall?.method, 'shareFiles');
     final arguments = shareCall?.arguments as Map<Object?, Object?>;
     expect(arguments['text'], contains('Raporu tamamla'));
+    expect(arguments['text'], contains('Tamamlanamadı'));
     expect(arguments['mimeTypes'], contains('image/png'));
     expect(arguments['originWidth'], greaterThan(0));
     expect(arguments['originHeight'], greaterThan(0));
