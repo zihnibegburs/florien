@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/todo/achievement_collection.dart';
+import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/todo/settings_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Insights / statistics tab inspired by the reference layout.
 class StatisticsTab extends ConsumerWidget {
@@ -39,13 +43,16 @@ class StatisticsTab extends ConsumerWidget {
                   FlorienSpacing.screen,
                   0,
                 ),
-                child: _StatsHeader(name: name),
+                child: _StatsHeader(
+                  name: name,
+                  onProfileTap: () => showProfileSwitcher(context, ref),
+                ),
               ),
             ),
             const SliverToBoxAdapter(
               child: SizedBox(height: FlorienSpacing.xxl),
             ),
-            const SliverToBoxAdapter(child: _BadgeCarousel()),
+            const SliverToBoxAdapter(child: AchievementSection()),
             const SliverToBoxAdapter(
               child: SizedBox(height: FlorienSpacing.xxl),
             ),
@@ -72,6 +79,18 @@ class StatisticsTab extends ConsumerWidget {
                 child: _MoodSection(),
               ),
             ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: FlorienSpacing.xxxl),
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: FlorienSpacing.screen,
+                ),
+                child: StatisticsReviewCard(),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 140)),
           ],
         ),
       ),
@@ -80,29 +99,50 @@ class StatisticsTab extends ConsumerWidget {
 }
 
 class _StatsHeader extends StatelessWidget {
-  const _StatsHeader({required this.name});
+  const _StatsHeader({required this.name, required this.onProfileTap});
 
   final String name;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: context.palette.surface,
+        Material(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(FlorienRadius.pill),
+          child: InkWell(
+            key: const ValueKey('statistics-profile-switcher'),
+            onTap: onProfileTap,
             borderRadius: BorderRadius.circular(FlorienRadius.pill),
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.thin,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 11, 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                border: Border.all(
+                  color: context.palette.border,
+                  width: FlorienBorders.thin,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                ],
+              ),
             ),
-          ),
-          child: Text(
-            name,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         const Spacer(),
@@ -154,109 +194,6 @@ class _RoundHeaderButton extends StatelessWidget {
           onTap: onPressed,
           child: SizedBox.square(dimension: 44, child: Icon(icon, size: 20)),
         ),
-      ),
-    );
-  }
-}
-
-class _BadgeCarousel extends StatelessWidget {
-  const _BadgeCarousel();
-
-  static const _badges = [
-    _BadgeData('Odak', Icons.timelapse_rounded, FlorienColors.accent, 8),
-    _BadgeData('Akış', Icons.auto_awesome_rounded, FlorienColors.paleBlue, 11),
-    _BadgeData(
-      'Radiance',
-      Icons.local_florist_rounded,
-      FlorienColors.softPink,
-      14,
-    ),
-    _BadgeData('Ritim', Icons.bolt_rounded, FlorienColors.primary, 9),
-    _BadgeData('Denge', Icons.spa_rounded, FlorienColors.mint, 6),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 148,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: FlorienSpacing.screen),
-        itemCount: _badges.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 14),
-        itemBuilder: (context, index) {
-          final badge = _badges[index];
-          final featured = index == 2;
-          return _BadgeOrb(badge: badge, featured: featured);
-        },
-      ),
-    );
-  }
-}
-
-class _BadgeData {
-  const _BadgeData(this.title, this.icon, this.color, this.tasks);
-
-  final String title;
-  final IconData icon;
-  final Color color;
-  final int tasks;
-}
-
-class _BadgeOrb extends StatelessWidget {
-  const _BadgeOrb({required this.badge, required this.featured});
-
-  final _BadgeData badge;
-  final bool featured;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = featured ? 88.0 : 64.0;
-    return SizedBox(
-      width: featured ? 108 : 84,
-      child: Column(
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  badge.color,
-                  Color.lerp(badge.color, FlorienColors.aiAccent, 0.35)!,
-                ],
-              ),
-              border: Border.all(
-                color: context.palette.border,
-                width: featured ? FlorienBorders.medium : FlorienBorders.thin,
-              ),
-            ),
-            child: Icon(
-              badge.icon,
-              size: featured ? 36 : 26,
-              color: FlorienColors.onPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            badge.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          Text(
-            '${badge.tasks} görev',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: context.palette.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -392,6 +329,225 @@ class _StatColumn extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+typedef ReviewStoreOpener = Future<bool> Function();
+
+class StatisticsReviewCard extends StatefulWidget {
+  const StatisticsReviewCard({super.key, this.openStore});
+
+  final ReviewStoreOpener? openStore;
+
+  @override
+  State<StatisticsReviewCard> createState() => _StatisticsReviewCardState();
+}
+
+class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
+  int _rating = 0;
+  bool _openingStore = false;
+
+  Future<void> _selectRating(int rating) async {
+    if (_openingStore) return;
+    setState(() => _rating = rating);
+
+    final openStore = await _showThankYouDialog(rating);
+    if (!mounted || openStore != true) return;
+
+    await _openStore();
+  }
+
+  Future<bool?> _showThankYouDialog(int rating) => showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      final recommendsStore = rating >= 4;
+      return Dialog(
+        key: const ValueKey('statistics-rating-thanks-dialog'),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: context.palette.surface,
+            borderRadius: BorderRadius.circular(FlorienRadius.lg),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.medium,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: FlorienColors.primary,
+                  borderRadius: BorderRadius.circular(FlorienRadius.md),
+                  border: Border.all(
+                    color: context.palette.border,
+                    width: FlorienBorders.thin,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: FlorienColors.onPrimary,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Teşekkürler!',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                recommendsStore
+                    ? 'Florien’i mağazada değerlendirerek bize destek olmak ister misin?'
+                    : 'Geri bildirimin Florien’i senin için daha iyi yapmamıza yardımcı olacak.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.palette.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              if (recommendsStore) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const ValueKey('statistics-rating-open-store'),
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('Mağazada değerlendir'),
+                  ),
+                ),
+                TextButton(
+                  key: const ValueKey('statistics-rating-dismiss'),
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Şimdi değil'),
+                ),
+              ] else
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const ValueKey('statistics-rating-dismiss'),
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Tamam'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  Future<void> _openStore() async {
+    setState(() => _openingStore = true);
+    final opened = await (widget.openStore ?? openFlorienStoreReview)();
+    if (!mounted) return;
+    setState(() => _openingStore = false);
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mağaza şu anda açılamadı. Lütfen tekrar dene.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+    decoration: BoxDecoration(
+      color: context.palette.surface,
+      borderRadius: BorderRadius.circular(FlorienRadius.lg),
+      border: Border.all(
+        color: context.palette.border,
+        width: FlorienBorders.thin,
+      ),
+    ),
+    child: Column(
+      children: [
+        Text(
+          'Bizi değerlendirin',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Florien deneyimini kaç yıldızla değerlendirirsin?',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: context.palette.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var rating = 1; rating <= 5; rating++) ...[
+              Semantics(
+                button: true,
+                selected: rating <= _rating,
+                label: '$rating yıldız',
+                child: InkWell(
+                  key: ValueKey('statistics-rating-$rating'),
+                  onTap: _openingStore ? null : () => _selectRating(rating),
+                  borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: rating <= _rating
+                          ? FlorienColors.primary
+                          : context.palette.surfaceMuted,
+                      borderRadius: BorderRadius.circular(FlorienRadius.sm),
+                      border: Border.all(
+                        color: context.palette.border,
+                        width: FlorienBorders.thin,
+                      ),
+                    ),
+                    child: Icon(
+                      rating <= _rating
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      color: context.palette.textPrimary,
+                      size: 27,
+                    ),
+                  ),
+                ),
+              ),
+              if (rating < 5) const SizedBox(width: 6),
+            ],
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Future<bool> openFlorienStoreReview() async {
+  const appStoreReview =
+      'https://apps.apple.com/app/id6799938907?action=write-review';
+  const playStoreMarket = 'market://details?id=com.florien.app';
+  const playStoreWeb =
+      'https://play.google.com/store/apps/details?id=com.florien.app';
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    if (await _launchExternal(Uri.parse(playStoreMarket))) return true;
+    return _launchExternal(Uri.parse(playStoreWeb));
+  }
+  return _launchExternal(Uri.parse(appStoreReview));
+}
+
+Future<bool> _launchExternal(Uri uri) async {
+  try {
+    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
   }
 }
 

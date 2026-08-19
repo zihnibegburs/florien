@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_ai_animation.dart';
 
 class PlannerAiVoiceCaptureScreen extends StatefulWidget {
   const PlannerAiVoiceCaptureScreen({super.key});
@@ -198,12 +199,22 @@ class _PlannerAiVoiceCaptureScreenState
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              _isListening
-                                  ? Icons.graphic_eq_rounded
-                                  : Icons.mic_rounded,
-                              size: 46,
-                              color: FlorienColors.onPrimary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: FlorienAiAnimation(
+                                key: const ValueKey(
+                                  'planner-ai-voice-animation',
+                                ),
+                                size: _isListening ? 116 : 102,
+                                animate: _isListening,
+                                speed: florienAiVoiceAnimationSpeed(
+                                  isListening: _isListening,
+                                  soundLevel: _soundLevel,
+                                ),
+                                semanticLabel: _isListening
+                                    ? 'Florien AI seni dinliyor'
+                                    : 'Florien AI sesli giriş',
+                              ),
                             ),
                           ),
                         ),

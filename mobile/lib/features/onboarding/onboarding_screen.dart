@@ -154,7 +154,7 @@ const _onboardingQuestions = [
   ),
 ];
 
-const _alwaysRestartOnboardingForTesting = true;
+const _alwaysShowOnboardingOnLaunch = true;
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -224,7 +224,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _start() => setState(() => _step = 1);
 
   String _routeAfterOnboarding() =>
-      ref.read(authStateProvider).valueOrNull == null ? '/login' : '/todo';
+      ref.read(authStateProvider).valueOrNull == null ? '/login' : '/paywall';
 
   void _back() {
     _selectionToken++;
@@ -257,7 +257,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             body: Center(child: Text('Onboarding yüklenemedi.')),
           ),
           data: (preferences) {
-            if (_alwaysRestartOnboardingForTesting && !_testSessionPrepared) {
+            if (_alwaysShowOnboardingOnLaunch && !_testSessionPrepared) {
               _testSessionPrepared = true;
               if (preferences.completed || preferences.answers.isNotEmpty) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {

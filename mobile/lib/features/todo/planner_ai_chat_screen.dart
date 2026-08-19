@@ -3,16 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
+import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai.dart';
+import 'package:florien/core/widgets/florien_ai_animation.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
-import 'package:florien/features/todo/planner_ai_voice_capture_screen.dart';
 
 class PlannerAiChatScreen extends ConsumerStatefulWidget {
-  const PlannerAiChatScreen({super.key});
+  const PlannerAiChatScreen({super.key, this.speechInput});
+
+  final SpeechInput? speechInput;
 
   @override
   ConsumerState<PlannerAiChatScreen> createState() =>
@@ -29,28 +32,128 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
           'Merhaba! Yapmak istediklerini anlat; onları net, uygulanabilir görevlere dönüştüreyim.',
     ),
   ];
+  late final SpeechInput _speechInput;
   bool _sending = false;
+  bool _voicePanelOpen = false;
+  bool _isListening = false;
+  double _soundLevel = 0.12;
+  String _voiceTranscript = '';
+  String? _voiceError;
+  int _voiceSession = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _speechInput = widget.speechInput ?? SpeechInputService();
+  }
 
   @override
   void dispose() {
+    unawaited(_speechInput.dispose());
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _openVoiceInput() async {
-    final existingText = _controller.text.trim();
-    final spokenText = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const PlannerAiVoiceCaptureScreen()),
+    FocusScope.of(context).unfocus();
+    if (!_voicePanelOpen) {
+      setState(() {
+        _voicePanelOpen = true;
+        _voiceTranscript = '';
+        _voiceError = null;
+        _soundLevel = 0.12;
+      });
+    }
+    await _startVoiceListening();
+  }
+
+  Future<void> _startVoiceListening() async {
+    if (_isListening) return;
+    final session = ++_voiceSession;
+    if (!_voicePanelOpen) {
+      setState(() => _voicePanelOpen = true);
+    }
+    setState(() => _voiceError = null);
+
+    final started = await _speechInput.start(
+      onText: (text) {
+        if (!mounted || !_voicePanelOpen || session != _voiceSession) return;
+        setState(() => _voiceTranscript = text);
+      },
+      onListeningChanged: (isListening) {
+        if (!mounted || !_voicePanelOpen || session != _voiceSession) return;
+        setState(() => _isListening = isListening);
+      },
+      onError: (message) {
+        if (!mounted || !_voicePanelOpen || session != _voiceSession) return;
+        setState(() {
+          _isListening = false;
+          _voiceError = message;
+        });
+      },
+      onSoundLevelChanged: (level) {
+        if (!mounted || !_voicePanelOpen || session != _voiceSession) return;
+        final normalized = level < 0
+            ? ((level + 55) / 55).clamp(0.08, 1.0)
+            : (level / 18).clamp(0.08, 1.0);
+        setState(() => _soundLevel = normalized.toDouble());
+      },
     );
-    if (!mounted || spokenText == null || spokenText.trim().isEmpty) return;
+
+    if (!mounted || !_voicePanelOpen || session != _voiceSession) {
+      if (started) await _speechInput.stop();
+      return;
+    }
+    if (!started) setState(() => _isListening = false);
+  }
+
+  Future<void> _toggleVoiceListening() async {
+    if (_isListening) {
+      ++_voiceSession;
+      await _speechInput.stop();
+      if (!mounted || !_voicePanelOpen) return;
+      setState(() => _isListening = false);
+      return;
+    }
+    await _startVoiceListening();
+  }
+
+  Future<void> _closeVoiceInput() async {
+    ++_voiceSession;
+    await _speechInput.stop();
+    if (!mounted) return;
+    setState(() {
+      _voicePanelOpen = false;
+      _isListening = false;
+      _voiceTranscript = '';
+      _voiceError = null;
+      _soundLevel = 0.12;
+    });
+  }
+
+  Future<void> _acceptVoiceInput() async {
+    final spokenText = _voiceTranscript.trim();
+    if (spokenText.isEmpty) return;
+    ++_voiceSession;
+    await _speechInput.stop();
+    if (!mounted) return;
+
+    final existingText = _controller.text.trim();
     final text = existingText.isEmpty
-        ? spokenText.trim()
-        : '$existingText ${spokenText.trim()}';
+        ? spokenText
+        : '$existingText $spokenText';
     _controller.value = TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
     );
+    setState(() {
+      _voicePanelOpen = false;
+      _isListening = false;
+      _voiceTranscript = '';
+      _voiceError = null;
+      _soundLevel = 0.12;
+    });
   }
 
   Future<void> _send() async {
@@ -218,10 +321,13 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         width: FlorienBorders.thin,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      size: 19,
-                      color: FlorienColors.onPrimary,
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: FlorienAiAnimation(
+                        size: 36,
+                        speed: 0.8,
+                        semanticLabel: 'Florien AI',
+                      ),
                     ),
                   ),
                 ],
@@ -251,6 +357,25 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                     },
                   ),
                 ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: _voicePanelOpen
+                      ? _InlineVoiceCapturePanel(
+                          isListening: _isListening,
+                          soundLevel: _soundLevel,
+                          transcript: _voiceTranscript,
+                          error: _voiceError,
+                          onToggleListening: () =>
+                              unawaited(_toggleVoiceListening()),
+                          onClose: () => unawaited(_closeVoiceInput()),
+                          onAccept: () => unawaited(_acceptVoiceInput()),
+                        )
+                      : const SizedBox.shrink(
+                          key: ValueKey('planner-ai-voice-panel-closed'),
+                        ),
+                ),
                 FlorienAiInput(
                   controller: _controller,
                   enabled: !_sending,
@@ -258,10 +383,187 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                   inputKey: const ValueKey('planner-ai-input'),
                   sendKey: const ValueKey('planner-ai-send'),
                   voiceKey: const ValueKey('planner-ai-voice'),
-                  onVoiceTap: _openVoiceInput,
+                  isListening: _voicePanelOpen,
+                  onVoiceTap: () {
+                    if (_voicePanelOpen) {
+                      unawaited(_closeVoiceInput());
+                    } else {
+                      unawaited(_openVoiceInput());
+                    }
+                  },
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineVoiceCapturePanel extends StatelessWidget {
+  const _InlineVoiceCapturePanel({
+    required this.isListening,
+    required this.soundLevel,
+    required this.transcript,
+    required this.error,
+    required this.onToggleListening,
+    required this.onClose,
+    required this.onAccept,
+  });
+
+  final bool isListening;
+  final double soundLevel;
+  final String transcript;
+  final String? error;
+  final VoidCallback onToggleListening;
+  final VoidCallback onClose;
+  final VoidCallback onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasTranscript = transcript.trim().isNotEmpty;
+    final status =
+        error ??
+        (isListening
+            ? 'Konuş, seni dinliyorum…'
+            : hasTranscript
+            ? 'Metni ekleyebilir veya dinlemeye devam edebilirsin.'
+            : 'Hazır olduğunda dinlemeyi başlat.');
+
+    return Padding(
+      key: const ValueKey('planner-ai-inline-voice-panel'),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(1.4),
+        decoration: BoxDecoration(
+          gradient: FlorienColors.aiGradient,
+          borderRadius: BorderRadius.circular(FlorienRadius.xl),
+        ),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
+          decoration: BoxDecoration(
+            color: context.palette.surface,
+            borderRadius: BorderRadius.circular(FlorienRadius.xl - 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      isListening ? 'Sesli konuşma açık' : 'Sesli konuşma',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey('planner-ai-inline-voice-close'),
+                    tooltip: 'Sesli konuşmayı kapat',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Semantics(
+                    button: true,
+                    label: isListening
+                        ? 'Dinlemeyi durdur'
+                        : 'Dinlemeyi başlat',
+                    child: InkWell(
+                      key: const ValueKey('planner-ai-inline-voice-toggle'),
+                      onTap: onToggleListening,
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: FlorienAiAnimation(
+                          key: const ValueKey(
+                            'planner-ai-inline-voice-animation',
+                          ),
+                          size: 82,
+                          animate: isListening,
+                          speed: florienAiVoiceAnimationSpeed(
+                            isListening: isListening,
+                            soundLevel: soundLevel,
+                          ),
+                          semanticLabel: isListening
+                              ? 'Florien AI dinliyor'
+                              : 'Florien AI dinlemeye hazır',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasTranscript ? transcript : status,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: error == null
+                                ? context.palette.textPrimary
+                                : context.palette.error,
+                            fontSize: 14,
+                            fontWeight: hasTranscript
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (hasTranscript) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            status,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: context.palette.textSecondary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const ValueKey(
+                        'planner-ai-inline-voice-listen-toggle',
+                      ),
+                      onPressed: onToggleListening,
+                      icon: Icon(
+                        isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                        size: 18,
+                      ),
+                      label: Text(isListening ? 'Durdur' : 'Dinle'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const ValueKey('planner-ai-inline-voice-accept'),
+                      onPressed: hasTranscript ? onAccept : null,
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Metni ekle'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

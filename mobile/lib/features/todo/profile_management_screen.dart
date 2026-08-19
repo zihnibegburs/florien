@@ -64,13 +64,13 @@ class _ProfileManagementScreenState
     required String title,
     String initialValue = '',
   }) async {
-    final controller = TextEditingController(text: initialValue);
+    var profileName = initialValue;
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: TextField(
-          controller: controller,
+        content: TextFormField(
+          initialValue: initialValue,
           autofocus: true,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
@@ -82,7 +82,8 @@ class _ProfileManagementScreenState
               fontWeight: FontWeight.w700,
             ),
           ),
-          onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          onChanged: (value) => profileName = value,
+          onFieldSubmitted: (value) => Navigator.of(dialogContext).pop(value),
         ),
         actions: [
           TextButton(
@@ -90,13 +91,12 @@ class _ProfileManagementScreenState
             child: const Text('Vazgeç'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            onPressed: () => Navigator.of(dialogContext).pop(profileName),
             child: const Text('Kaydet'),
           ),
         ],
       ),
     );
-    controller.dispose();
     final trimmed = result?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
@@ -322,3 +322,169 @@ class _ProfileCard extends StatelessWidget {
 }
 
 enum _ProfileAction { rename, delete }
+
+const _manageProfilesResult = '__manage_profiles__';
+
+Future<void> showProfileSwitcher(BuildContext context, WidgetRef ref) async {
+  final notifier = ref.read(appProfilesProvider.notifier);
+  final selectedProfileId = await showModalBottomSheet<String>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _ProfileSwitcherSheet(),
+  );
+  if (selectedProfileId == null || !context.mounted) return;
+  if (selectedProfileId == _manageProfilesResult) {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ProfileManagementScreen()),
+    );
+    return;
+  }
+
+  try {
+    await notifier.select(selectedProfileId);
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))),
+    );
+  }
+}
+
+class _ProfileSwitcherSheet extends ConsumerWidget {
+  const _ProfileSwitcherSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profiles = ref.watch(appProfilesProvider);
+    return Container(
+      key: const ValueKey('profile-switcher-sheet'),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+      decoration: BoxDecoration(
+        color: context.palette.surface,
+        borderRadius: BorderRadius.circular(FlorienRadius.xl),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.medium,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: context.palette.border,
+              borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Profil değiştir',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Kapat',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 320),
+            child: profiles.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+              error: (_, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Profiller yüklenemedi.',
+                  style: TextStyle(color: context.palette.error),
+                ),
+              ),
+              data: (state) => ListView.separated(
+                shrinkWrap: true,
+                itemCount: state.profiles.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final profile = state.profiles[index];
+                  final selected = profile.id == state.activeProfileId;
+                  return Material(
+                    color: selected
+                        ? FlorienColors.primary
+                        : context.palette.surfaceMuted,
+                    borderRadius: BorderRadius.circular(FlorienRadius.md),
+                    child: InkWell(
+                      key: ValueKey('switch-profile-${profile.id}'),
+                      onTap: () => Navigator.of(context).pop(profile.id),
+                      borderRadius: BorderRadius.circular(FlorienRadius.md),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 13,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(FlorienRadius.md),
+                          border: Border.all(
+                            color: context.palette.border,
+                            width: FlorienBorders.thin,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              selected
+                                  ? Icons.person_rounded
+                                  : Icons.person_outline_rounded,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                profile.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            Icon(
+                              selected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.circle_outlined,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const ValueKey('manage-profiles-button'),
+              onPressed: () => Navigator.of(context).pop(_manageProfilesResult),
+              icon: const Icon(Icons.manage_accounts_outlined),
+              label: const Text('Profilleri yönet'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

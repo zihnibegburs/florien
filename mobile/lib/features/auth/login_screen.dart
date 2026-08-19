@@ -16,14 +16,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _loginWithGoogle() async {
     await ref.read(authStateProvider.notifier).loginWithGoogle();
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/todo');
+      context.go('/paywall');
     }
   }
 
   Future<void> _loginWithApple() async {
     await ref.read(authStateProvider.notifier).loginWithApple();
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/todo');
+      context.go('/paywall');
     }
   }
 

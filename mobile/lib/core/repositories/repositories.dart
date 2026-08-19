@@ -207,16 +207,23 @@ class TaskRepository {
     final localNow = now.toLocal();
     final today = DateTime(localNow.year, localNow.month, localNow.day);
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
-    final snapshot = await _tasks
+    final weeklySnapshotFuture = _tasks
         .where(
           'completedAt',
           isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart.toUtc()),
         )
         .get();
+    final totalSnapshotFuture = _tasks
+        .where('status', isEqualTo: 'COMPLETED')
+        .where('parentTaskId', isNull: true)
+        .count()
+        .get();
+    final weeklySnapshot = await weeklySnapshotFuture;
+    final totalSnapshot = await totalSnapshotFuture;
 
     var todayCount = 0;
     var weekCount = 0;
-    for (final document in snapshot.docs) {
+    for (final document in weeklySnapshot.docs) {
       final data = document.data();
       if (data['parentTaskId'] != null || data['status'] != 'COMPLETED') {
         continue;
@@ -231,7 +238,11 @@ class TaskRepository {
       weekCount++;
       if (!completedAt.isBefore(today)) todayCount++;
     }
-    return CompletionCounts(today: todayCount, thisWeek: weekCount);
+    return CompletionCounts(
+      today: todayCount,
+      thisWeek: weekCount,
+      total: totalSnapshot.count ?? 0,
+    );
   }
 
   Future<TaskModel> scheduleFromInbox(

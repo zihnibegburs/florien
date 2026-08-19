@@ -2,11 +2,28 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-class SpeechInputService {
+abstract interface class SpeechInput {
+  bool get isListening;
+
+  Future<bool> start({
+    required void Function(String text) onText,
+    required void Function(bool isListening) onListeningChanged,
+    required void Function(String message) onError,
+    void Function(double soundLevel)? onSoundLevelChanged,
+  });
+
+  Future<void> stop();
+
+  Future<void> dispose();
+}
+
+class SpeechInputService implements SpeechInput {
   final SpeechToText _speech = SpeechToText();
 
+  @override
   bool get isListening => _speech.isListening;
 
+  @override
   Future<bool> start({
     required void Function(String text) onText,
     required void Function(bool isListening) onListeningChanged,
@@ -46,10 +63,12 @@ class SpeechInputService {
     }
   }
 
+  @override
   Future<void> stop() async {
     if (_speech.isListening) await _speech.stop();
   }
 
+  @override
   Future<void> dispose() => _speech.stop();
 
   void _onResult(

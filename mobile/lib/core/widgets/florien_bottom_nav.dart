@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_ai_animation.dart';
 
 class FlorienBottomNavigation extends StatelessWidget {
   const FlorienBottomNavigation({
@@ -168,10 +169,13 @@ class FlorienAiFab extends StatelessWidget {
                 width: FlorienBorders.thin,
               ),
             ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: FlorienColors.onPrimary,
-              size: 24,
+            child: const Padding(
+              padding: EdgeInsets.all(3),
+              child: FlorienAiAnimation(
+                size: 50,
+                speed: 0.85,
+                semanticLabel: 'Florien AI asistanı',
+              ),
             ),
           ),
         ),

@@ -392,10 +392,15 @@ class TimelineModel {
 }
 
 class CompletionCounts {
-  const CompletionCounts({required this.today, required this.thisWeek});
+  const CompletionCounts({
+    required this.today,
+    required this.thisWeek,
+    this.total = 0,
+  });
 
   final int today;
   final int thisWeek;
+  final int total;
 }
 
 class FocusSessionModel {

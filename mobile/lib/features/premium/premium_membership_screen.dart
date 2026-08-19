@@ -5,7 +5,9 @@ import 'package:florien/core/services/premium_purchase_service.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 
 class PremiumMembershipScreen extends ConsumerWidget {
-  const PremiumMembershipScreen({super.key});
+  const PremiumMembershipScreen({super.key, this.onContinue});
+
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -101,6 +103,16 @@ class PremiumMembershipScreen extends ConsumerWidget {
                       .restorePurchases(),
             child: const Text('Satın alımları geri yükle'),
           ),
+          if (onContinue != null) ...[
+            const SizedBox(height: FlorienSpacing.sm),
+            TextButton(
+              key: const ValueKey('paywall-continue'),
+              onPressed: onContinue,
+              child: Text(
+                value?.isPremium == true ? 'Devam et' : 'Şimdilik geç',
+              ),
+            ),
+          ],
         ],
       ),
     );

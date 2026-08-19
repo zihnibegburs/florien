@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('test mode restarts a previously completed onboarding', (
+  testWidgets('each launch restarts a previously completed onboarding', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({

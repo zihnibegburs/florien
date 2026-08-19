@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
+import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
@@ -20,6 +21,44 @@ class _FakePlannerAiGateway implements PlannerAiGateway {
       ],
     );
   }
+}
+
+class _FakeSpeechInput implements SpeechInput {
+  bool _isListening = false;
+  void Function(String text)? _onText;
+  void Function(bool isListening)? _onListeningChanged;
+  void Function(double soundLevel)? _onSoundLevelChanged;
+
+  @override
+  bool get isListening => _isListening;
+
+  @override
+  Future<bool> start({
+    required void Function(String text) onText,
+    required void Function(bool isListening) onListeningChanged,
+    required void Function(String message) onError,
+    void Function(double soundLevel)? onSoundLevelChanged,
+  }) async {
+    _onText = onText;
+    _onListeningChanged = onListeningChanged;
+    _onSoundLevelChanged = onSoundLevelChanged;
+    _isListening = true;
+    onListeningChanged(true);
+    return true;
+  }
+
+  @override
+  Future<void> stop() async {
+    _isListening = false;
+    _onListeningChanged?.call(false);
+  }
+
+  @override
+  Future<void> dispose() => stop();
+
+  void emitText(String text) => _onText?.call(text);
+
+  void emitSoundLevel(double level) => _onSoundLevelChanged?.call(level);
 }
 
 class _AiInboxNotifier extends InboxNotifier {
@@ -105,5 +144,59 @@ void main() {
       'Kitap oku',
     ]);
     expect(find.text('Eklendi'), findsOneWidget);
+  });
+
+  testWidgets('voice input stays inline and appends transcript', (
+    tester,
+  ) async {
+    final speechInput = _FakeSpeechInput();
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: PlannerAiChatScreen(speechInput: speechInput),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-voice')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(
+      find.byKey(const ValueKey('planner-ai-inline-voice-panel')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('planner-ai-inline-voice-animation')),
+      findsOneWidget,
+    );
+    expect(find.text('Plan Asistanı'), findsOneWidget);
+
+    speechInput.emitSoundLevel(-8);
+    speechInput.emitText('Yarın yürüyüş yapacağım');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Yarın yürüyüş yapacağım'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('planner-ai-inline-voice-accept')),
+    );
+    await tester.pumpAndSettle();
+
+    final input = tester.widget<TextField>(
+      find.byKey(const ValueKey('planner-ai-input')),
+    );
+    expect(input.controller?.text, 'Yarın yürüyüş yapacağım');
+    expect(
+      find.byKey(const ValueKey('planner-ai-inline-voice-panel')),
+      findsNothing,
+    );
   });
 }

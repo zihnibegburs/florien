@@ -32,9 +32,11 @@ dependencies:
   flutter_onnxruntime: ^1.8.3
   flutter_icon_park: ^0.0.1
   share_plus: ^10.1.4
+  url_launcher: ^6.3.2
   in_app_purchase: ^3.3.0
   audio_session: ^0.2.4
   just_audio: ^0.10.6
+  lottie: ^3.3.3
 
 dev_dependencies:
   flutter_test:
@@ -48,3 +50,6 @@ flutter:
     - assets/brand/
     - assets/task_icons/
     - assets/focus_music/
+    - assets/achievements/
+    - assets/achievements/assets/
+    - assets/ai/

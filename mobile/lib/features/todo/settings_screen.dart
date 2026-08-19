@@ -16,6 +16,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode =
         ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
+    final activeProfileName =
+        ref.watch(activeAppProfileProvider)?.name ?? 'Profilim';
 
     return Scaffold(
       key: const ValueKey('settings-screen'),
@@ -122,6 +124,13 @@ class SettingsScreen extends ConsumerWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
+            _SettingsRow(
+              key: const ValueKey('settings-profile-switcher'),
+              icon: Icons.switch_account_outlined,
+              label: activeProfileName,
+              trailingLabel: 'Değiştir',
+              onTap: () => showProfileSwitcher(context, ref),
+            ),
             _SettingsRow(
               icon: Icons.person_add_alt_1_outlined,
               label: 'Yeni profil ekle',
@@ -349,6 +358,7 @@ class _AppearanceChoice extends StatelessWidget {
 
 class _SettingsRow extends StatelessWidget {
   const _SettingsRow({
+    super.key,
     required this.icon,
     required this.label,
     this.trailingLabel,

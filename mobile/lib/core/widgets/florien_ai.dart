@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_ai_animation.dart';
 
 class FlorienAiMessageBubble extends StatelessWidget {
   const FlorienAiMessageBubble({
@@ -146,12 +147,20 @@ class FlorienAiInput extends StatelessWidget {
                         width: FlorienBorders.thin,
                       ),
                     ),
-                    child: Icon(
-                      isListening
-                          ? Icons.stop_rounded
-                          : Icons.graphic_eq_rounded,
-                      color: FlorienColors.onPrimary,
-                    ),
+                    child: isListening
+                        ? const Padding(
+                            padding: EdgeInsets.all(3),
+                            child: FlorienAiAnimation(
+                              size: 40,
+                              speed: 1.4,
+                              animate: true,
+                              semanticLabel: 'Sesli AI aktif',
+                            ),
+                          )
+                        : const Icon(
+                            Icons.graphic_eq_rounded,
+                            color: FlorienColors.onPrimary,
+                          ),
                   ),
                 ),
               ),

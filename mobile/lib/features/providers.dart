@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
+import 'package:florien/core/models/achievement.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/repositories/repositories.dart';
@@ -13,6 +14,7 @@ import 'package:florien/core/services/live_activity_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/storage/achievement_progress_storage.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/mood_storage.dart';
 import 'package:florien/core/storage/profile_storage.dart';
@@ -596,6 +598,31 @@ final completionCountsProvider = FutureProvider.autoDispose<CompletionCounts>((
     return const CompletionCounts(today: 1, thisWeek: 1);
   }
 });
+
+final achievementProgressStorageProvider = Provider<AchievementProgressStorage>(
+  (ref) => AchievementProgressStorage(),
+);
+
+final achievementCatalogProvider = FutureProvider<AchievementCatalog>(
+  (ref) => AchievementCatalog.load(),
+);
+
+final achievementProgressProvider =
+    FutureProvider.autoDispose<AchievementProgress>((ref) async {
+      final catalog = await ref.watch(achievementCatalogProvider.future);
+      final counts = await ref.watch(completionCountsProvider.future);
+      final profileScope = ref.watch(activeProfileScopeProvider);
+      final completedTaskCount = await ref
+          .watch(achievementProgressStorageProvider)
+          .preserveCompletedTaskCount(
+            profileScope: profileScope,
+            currentCount: counts.total,
+          );
+      return AchievementProgress(
+        catalog: catalog,
+        completedTaskCount: completedTaskCount,
+      );
+    });
 
 final manualCompletionSummaryProvider =
     Provider<Future<CompletionCounts> Function(String)>((ref) {

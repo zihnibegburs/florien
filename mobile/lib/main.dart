@@ -18,6 +18,7 @@ import 'package:florien/features/auth/register_screen.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
+import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
 import 'package:home_widget/home_widget.dart';
@@ -199,7 +200,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/email-login';
       if (isOnboardingRoute) return null;
       if (!loggedIn && !isAuthRoute) return '/login';
-      if (loggedIn && isAuthRoute) return '/todo';
+      if (loggedIn && isAuthRoute) return '/paywall';
       return null;
     },
     routes: [
@@ -210,6 +211,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
+      GoRoute(
+        path: '/paywall',
+        builder: (context, _) =>
+            PremiumMembershipScreen(onContinue: () => context.go('/todo')),
+      ),
       GoRoute(path: '/todo', builder: (_, _) => const TodoHomeScreen()),
     ],
   );
