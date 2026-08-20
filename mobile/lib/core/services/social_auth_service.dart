@@ -43,6 +43,16 @@ class GoogleAuthService {
       await _googleSignIn.signOut();
     } catch (_) {}
   }
+
+  Future<void> disconnect() async {
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {
+      // There may be no active Google account to revoke, but the local
+      // account selection still needs to be cleared.
+      await signOut();
+    }
+  }
 }
 
 class AppleAuthService {

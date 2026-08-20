@@ -12,6 +12,7 @@ import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/premium/premium_upsell_button.dart';
+import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/focus_timer_tab.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
@@ -139,11 +140,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || revision != _widgetLaunchRevision) return;
           FocusManager.instance.primaryFocus?.unfocus();
-          Navigator.of(context, rootNavigator: true).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const PlannerAiChatScreen(),
-            ),
-          );
+          unawaited(_openPlannerAi(rootNavigator: true));
         });
       case HomeWidgetLaunchAction.taskComplete:
         _selectTab(command.isDailyPlan ? 1 : 0);
@@ -296,6 +293,24 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     return launch;
   }
 
+  Future<void> _openPlannerAi({bool rootNavigator = false}) async {
+    final allowed = await requirePremiumAccess(
+      context,
+      ref,
+      PremiumFeature.aiChat,
+    );
+    if (!allowed || !mounted) return;
+    await Navigator.of(context, rootNavigator: rootNavigator).push(
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (_, animation, _) => FadeTransition(
+          opacity: animation,
+          child: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
@@ -311,23 +326,9 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: context.palette.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: context.palette.border,
-                          width: FlorienBorders.thin,
-                        ),
-                      ),
-                      child: const Center(
-                        child: FlorienLogo(
-                          key: ValueKey('todo-home-brand-icon'),
-                          size: 25,
-                        ),
-                      ),
+                    const FlorienLogo(
+                      key: ValueKey('todo-home-brand-icon'),
+                      size: 34,
                     ),
                     const SizedBox(width: 10),
                     const Text('Florien'),
@@ -387,6 +388,10 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             onFocusAlarmCompleted: (title) =>
                 alarms.completeFocusTimerAlarm(title: title),
             onFocusAlarmCancelled: alarms.cancelFocusTimerAlarm,
+            alarmAvailable: premium?.isPremium == true,
+            onPremiumAlarmPressed: () => unawaited(
+              requirePremiumAccess(context, ref, PremiumFeature.reminders),
+            ),
             onSessionClosed: () {
               if (ref.read(focusTaskLaunchProvider) != null) {
                 ref.read(focusTaskLaunchProvider.notifier).state = null;
@@ -427,15 +432,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           trailing: FlorienAiFab(
             key: const ValueKey('planner-ai-chat-button'),
             tooltip: 'Plan asistanını aç',
-            onPressed: () => Navigator.of(context).push(
-              PageRouteBuilder<void>(
-                transitionDuration: const Duration(milliseconds: 220),
-                pageBuilder: (_, animation, _) => FadeTransition(
-                  opacity: animation,
-                  child: const PlannerAiChatScreen(),
-                ),
-              ),
-            ),
+            onPressed: _openPlannerAi,
           ),
         ),
       ),

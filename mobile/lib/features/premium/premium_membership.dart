@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:florien/core/services/premium_purchase_service.dart';
@@ -12,6 +15,7 @@ class PremiumMembership {
     this.isPremium = false,
     this.isPurchasing = false,
     this.message,
+    this.paywallConfig = const {},
   });
 
   final bool storeAvailable;
@@ -20,6 +24,7 @@ class PremiumMembership {
   final bool isPremium;
   final bool isPurchasing;
   final String? message;
+  final Map<String, dynamic> paywallConfig;
 
   ProductDetails? get selectedProduct => productFor(selectedProductId);
 
@@ -37,6 +42,7 @@ class PremiumMembership {
     bool? isPremium,
     bool? isPurchasing,
     String? message,
+    Map<String, dynamic>? paywallConfig,
     bool clearMessage = false,
   }) => PremiumMembership(
     storeAvailable: storeAvailable ?? this.storeAvailable,
@@ -45,11 +51,15 @@ class PremiumMembership {
     isPremium: isPremium ?? this.isPremium,
     isPurchasing: isPurchasing ?? this.isPurchasing,
     message: clearMessage ? null : (message ?? this.message),
+    paywallConfig: paywallConfig ?? this.paywallConfig,
   );
 }
 
 final premiumPurchaseServiceProvider = Provider<PremiumPurchaseService>(
-  (ref) => PremiumPurchaseService(),
+  (ref) => PremiumPurchaseService(
+    functions: ref.watch(cloudFunctionsProvider),
+    firestore: ref.watch(firestoreProvider),
+  ),
 );
 
 final premiumMembershipProvider =
@@ -64,17 +74,21 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
   @override
   Future<PremiumMembership> build() async {
     _service = ref.read(premiumPurchaseServiceProvider);
+    final strings = ref.read(stringsProvider);
+    final paywallConfigFuture = _loadPaywallConfig();
     _purchaseSubscription = _service.purchaseStream.listen(
       _handlePurchaseUpdates,
-      onError: (_, _) => _setMessage('Satın alma bilgisi alınamadı.'),
+      onError: (_, _) => _setMessage(strings.purchaseInfoUnavailable),
     );
     ref.onDispose(() => _purchaseSubscription?.cancel());
 
     final isAvailable = await _service.isAvailable();
+    final paywallConfig = await paywallConfigFuture;
     if (!isAvailable) {
-      return const PremiumMembership(
+      return PremiumMembership(
         storeAvailable: false,
-        message: 'Mağaza şu anda kullanılamıyor.',
+        message: strings.storeUnavailable,
+        paywallConfig: paywallConfig,
       );
     }
 
@@ -82,9 +96,10 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     if (response.productDetails.isEmpty) {
       return PremiumMembership(
         storeAvailable: true,
+        paywallConfig: paywallConfig,
         message: response.notFoundIDs.isNotEmpty
-            ? 'Premium abonelikleri mağazada henüz yapılandırılmadı.'
-            : 'Premium bilgisi alınamadı.',
+            ? strings.premiumProductsNotConfigured
+            : strings.premiumInfoUnavailable,
       );
     }
 
@@ -93,7 +108,19 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       storeAvailable: true,
       products: _sortProducts(response.productDetails),
       selectedProductId: premiumMonthlyProductId,
+      paywallConfig: paywallConfig,
     );
+  }
+
+  Future<Map<String, dynamic>> _loadPaywallConfig() async {
+    try {
+      return await _service.loadPaywallConfig().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => const {},
+      );
+    } catch (_) {
+      return const {};
+    }
   }
 
   Future<void> selectPlan(String productId) async {
@@ -103,10 +130,11 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
   }
 
   Future<void> buyPremium() async {
+    final strings = ref.read(stringsProvider);
     final membership = state.valueOrNull;
     final product = membership?.selectedProduct;
     if (membership == null || !membership.storeAvailable || product == null) {
-      _setMessage('Premium ürünü şu anda satın alınamıyor.');
+      _setMessage(strings.premiumProductUnavailable);
       return;
     }
     state = AsyncData(
@@ -115,11 +143,12 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     try {
       await _service.buy(product);
     } catch (_) {
-      _setMessage('Satın alma başlatılamadı. Lütfen tekrar dene.');
+      _setMessage(strings.purchaseCouldNotStart);
     }
   }
 
   Future<void> restorePurchases() async {
+    final strings = ref.read(stringsProvider);
     final membership = state.valueOrNull;
     if (membership == null || !membership.storeAvailable) return;
     state = AsyncData(
@@ -129,39 +158,73 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       await _service.restore();
       state = AsyncData(state.requireValue.copyWith(isPurchasing: false));
     } catch (_) {
-      _setMessage('Satın alımlar geri yüklenemedi.');
+      _setMessage(strings.purchasesCouldNotRestore);
     }
   }
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
+    final strings = ref.read(stringsProvider);
     var membership =
         state.valueOrNull ?? const PremiumMembership(storeAvailable: true);
 
     for (final purchase in purchases) {
       if (!premiumProductIds.contains(purchase.productID)) continue;
+      var verified = false;
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          membership = membership.copyWith(
-            isPremium: true,
-            isPurchasing: false,
-            clearMessage: true,
-          );
+          try {
+            await _service.verify(purchase);
+            verified = true;
+            membership = membership.copyWith(
+              isPremium: true,
+              isPurchasing: false,
+              clearMessage: true,
+            );
+          } on FirebaseFunctionsException catch (error) {
+            membership = membership.copyWith(
+              isPremium: false,
+              isPurchasing: false,
+              message: _premiumVerificationMessage(error, strings),
+            );
+          } catch (_) {
+            membership = membership.copyWith(
+              isPremium: false,
+              isPurchasing: false,
+              message: strings.premiumCouldNotVerify,
+            );
+          }
         case PurchaseStatus.pending:
           membership = membership.copyWith(isPurchasing: true);
         case PurchaseStatus.error:
         case PurchaseStatus.canceled:
           membership = membership.copyWith(
             isPurchasing: false,
-            message: purchase.error?.message ?? 'Satın alma tamamlanamadı.',
+            message:
+                purchase.error?.message ?? strings.purchaseCouldNotComplete,
           );
       }
-      if (purchase.pendingCompletePurchase) {
+      if (verified && purchase.pendingCompletePurchase) {
         await _service.complete(purchase);
       }
     }
 
     state = AsyncData(membership);
+  }
+
+  String _premiumVerificationMessage(
+    FirebaseFunctionsException error,
+    S strings,
+  ) {
+    final details = error.details;
+    final reason = details is Map ? details['reason']?.toString() : null;
+    return switch (reason) {
+      'PREMIUM_PURCHASE_ALREADY_CLAIMED' =>
+        strings.premiumPurchaseAlreadyClaimed,
+      'PREMIUM_VERIFICATION_UNAVAILABLE' =>
+        strings.premiumVerificationUnavailable,
+      _ => strings.activePremiumCouldNotVerify,
+    };
   }
 
   void _setMessage(String message) {

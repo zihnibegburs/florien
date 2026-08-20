@@ -84,10 +84,22 @@ class AuthRepository {
     final user = _auth.currentUser;
     if (user == null) return null;
     try {
-      await user.getIdToken();
-      await _profiles.ensureUserDocument(user: user);
-      return authResponseFromUser(user);
-    } catch (_) {
+      // Firebase can keep a valid cached ID token for a deleted account.
+      // Reload first so a Console-side deletion is detected immediately.
+      await user.reload();
+      final refreshedUser = _auth.currentUser;
+      if (refreshedUser == null) return null;
+      await refreshedUser.getIdToken(true);
+      await _profiles.ensureUserDocument(user: refreshedUser);
+      return authResponseFromUser(refreshedUser);
+    } on FirebaseAuthException catch (error) {
+      const invalidUserCodes = {
+        'user-not-found',
+        'user-disabled',
+        'invalid-user-token',
+        'user-token-expired',
+      };
+      if (!invalidUserCodes.contains(error.code)) rethrow;
       await _auth.signOut();
       return null;
     }

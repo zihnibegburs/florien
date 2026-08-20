@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/mood_entry.dart';
+import 'package:florien/core/services/review_feedback_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/achievement_collection.dart';
@@ -333,11 +334,14 @@ class _StatColumn extends StatelessWidget {
 }
 
 typedef ReviewStoreOpener = Future<bool> Function();
+typedef ReviewFeedbackSubmitter =
+    Future<void> Function(int rating, String issue, String suggestion);
 
 class StatisticsReviewCard extends StatefulWidget {
-  const StatisticsReviewCard({super.key, this.openStore});
+  const StatisticsReviewCard({super.key, this.openStore, this.submitFeedback});
 
   final ReviewStoreOpener? openStore;
+  final ReviewFeedbackSubmitter? submitFeedback;
 
   @override
   State<StatisticsReviewCard> createState() => _StatisticsReviewCardState();
@@ -357,61 +361,73 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
     await _openStore();
   }
 
-  Future<bool?> _showThankYouDialog(int rating) => showDialog<bool>(
-    context: context,
-    builder: (dialogContext) {
-      final recommendsStore = rating >= 4;
-      return Dialog(
-        key: const ValueKey('statistics-rating-thanks-dialog'),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(FlorienRadius.lg),
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.medium,
-            ),
+  Future<bool?> _showThankYouDialog(int rating) async {
+    if (rating <= 3) {
+      final submitted = await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            _LowRatingFeedbackDialog(rating: rating, onSubmit: _submitFeedback),
+      );
+      if (submitted == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Geri bildirimin bize ulaştı. Teşekkür ederiz!'),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: FlorienColors.primary,
-                  borderRadius: BorderRadius.circular(FlorienRadius.md),
-                  border: Border.all(
-                    color: context.palette.border,
-                    width: FlorienBorders.thin,
+        );
+      }
+      return false;
+    }
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          key: const ValueKey('statistics-rating-thanks-dialog'),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: context.palette.surface,
+              borderRadius: BorderRadius.circular(FlorienRadius.lg),
+              border: Border.all(
+                color: context.palette.border,
+                width: FlorienBorders.medium,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: FlorienColors.primary,
+                    borderRadius: BorderRadius.circular(FlorienRadius.md),
+                    border: Border.all(
+                      color: context.palette.border,
+                      width: FlorienBorders.thin,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    color: FlorienColors.onPrimary,
+                    size: 34,
                   ),
                 ),
-                child: const Icon(
-                  Icons.star_rounded,
-                  color: FlorienColors.onPrimary,
-                  size: 34,
+                const SizedBox(height: 14),
+                Text(
+                  'Teşekkürler!',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Teşekkürler!',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                recommendsStore
-                    ? 'Florien’i mağazada değerlendirerek bize destek olmak ister misin?'
-                    : 'Geri bildirimin Florien’i senin için daha iyi yapmamıza yardımcı olacak.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: context.palette.textSecondary,
+                const SizedBox(height: 6),
+                Text(
+                  'Florien’i mağazada değerlendirerek bize destek olmak ister misin?',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: context.palette.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              if (recommendsStore) ...[
+                const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -426,21 +442,23 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
                   onPressed: () => Navigator.of(dialogContext).pop(false),
                   child: const Text('Şimdi değil'),
                 ),
-              ] else
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    key: const ValueKey('statistics-rating-dismiss'),
-                    onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('Tamam'),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
+  }
+
+  Future<void> _submitFeedback(int rating, String issue, String suggestion) {
+    final submit = widget.submitFeedback;
+    if (submit != null) return submit(rating, issue, suggestion);
+    return ReviewFeedbackService().submit(
+      rating: rating,
+      issue: issue,
+      suggestion: suggestion,
+    );
+  }
 
   Future<void> _openStore() async {
     setState(() => _openingStore = true);
@@ -525,6 +543,137 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
           ],
         ),
       ],
+    ),
+  );
+}
+
+class _LowRatingFeedbackDialog extends StatefulWidget {
+  const _LowRatingFeedbackDialog({
+    required this.rating,
+    required this.onSubmit,
+  });
+
+  final int rating;
+  final ReviewFeedbackSubmitter onSubmit;
+
+  @override
+  State<_LowRatingFeedbackDialog> createState() =>
+      _LowRatingFeedbackDialogState();
+}
+
+class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
+  final _issue = TextEditingController();
+  final _suggestion = TextEditingController();
+  bool _sending = false;
+  String? _error;
+
+  bool get _canSubmit =>
+      _issue.text.trim().isNotEmpty || _suggestion.text.trim().isNotEmpty;
+
+  @override
+  void dispose() {
+    _issue.dispose();
+    _suggestion.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_canSubmit || _sending) return;
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    try {
+      await widget.onSubmit(
+        widget.rating,
+        _issue.text.trim(),
+        _suggestion.text.trim(),
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      debugPrint('Review feedback could not be submitted: $error');
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _error = 'Geri bildirimin gönderilemedi. Lütfen tekrar dene.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+    key: const ValueKey('statistics-rating-thanks-dialog'),
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(
+            Icons.forum_rounded,
+            color: FlorienColors.aiAccent,
+            size: 42,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Teşekkürler!',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Deneyimini iyileştirebilmemiz için bize biraz daha anlatır mısın?',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.palette.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            key: const ValueKey('statistics-rating-issue'),
+            controller: _issue,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: reviewFeedbackMaxCharacters,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Yaşadığın sorun nedir?',
+              hintText: 'Örneğin: Görev eklerken zorlandım…',
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: const ValueKey('statistics-rating-suggestion'),
+            controller: _suggestion,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: reviewFeedbackMaxCharacters,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Önerin nedir?',
+              hintText: 'Florien’i nasıl iyileştirebiliriz?',
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 4),
+            Text(_error!, style: TextStyle(color: context.palette.error)),
+          ],
+          const SizedBox(height: 12),
+          FilledButton(
+            key: const ValueKey('statistics-rating-submit-feedback'),
+            onPressed: _canSubmit && !_sending ? _submit : null,
+            child: Text(_sending ? 'Gönderiliyor…' : 'Geri bildirimi gönder'),
+          ),
+          TextButton(
+            key: const ValueKey('statistics-rating-dismiss'),
+            onPressed: _sending ? null : () => Navigator.of(context).pop(false),
+            child: const Text('Şimdi değil'),
+          ),
+        ],
+      ),
     ),
   );
 }

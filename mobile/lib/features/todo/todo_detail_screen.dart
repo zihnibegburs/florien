@@ -7,6 +7,8 @@ import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_gate.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
@@ -69,9 +71,13 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     super.dispose();
   }
 
-  void _addSubtask() {
+  Future<void> _addSubtask() async {
     final value = _subtask.text.trim();
     if (value.isEmpty) return;
+    if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
+      return;
+    }
+    if (!mounted) return;
     if (_subtasks.length >= TaskModel.userSubtaskLimit) {
       _showSubtaskLimitWarning();
       return;
@@ -100,6 +106,10 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
         _subtasks.length >= TaskModel.userSubtaskLimit) {
       return;
     }
+    if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
+      return;
+    }
+    if (!mounted) return;
 
     setState(() => _generatingSubtasks = true);
     try {
@@ -169,6 +179,11 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final lists = ref.watch(todoListsProvider).valueOrNull ?? const [];
+    final isPremium = ref.watch(
+      premiumMembershipProvider.select(
+        (membership) => membership.valueOrNull?.isPremium == true,
+      ),
+    );
     var listName = 'To-do';
     if (_todoListId != null) {
       for (final list in lists) {
@@ -340,7 +355,9 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                             _subtasks.length < TaskModel.userSubtaskLimit
                         ? IconButton.filledTonal(
                             key: const ValueKey('todo-ai-subtasks-button'),
-                            tooltip: 'AI ile alt görev oluştur',
+                            tooltip: isPremium
+                                ? 'AI ile alt görev oluştur'
+                                : 'Alt görevler Premium',
                             onPressed: _generatingSubtasks
                                 ? null
                                 : _generateSubtasks,
@@ -351,7 +368,11 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Icon(Icons.auto_awesome_rounded),
+                                : Icon(
+                                    isPremium
+                                        ? Icons.auto_awesome_rounded
+                                        : Icons.lock_outline_rounded,
+                                  ),
                           )
                         : null,
                     expanded: _subtasksExpanded,
@@ -387,8 +408,12 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
                           tooltip: 'Alt görev ekle',
-                          onPressed: _addSubtask,
-                          icon: const Icon(Icons.add_rounded),
+                          onPressed: () => _addSubtask(),
+                          icon: Icon(
+                            isPremium
+                                ? Icons.add_rounded
+                                : Icons.lock_outline_rounded,
+                          ),
                         ),
                       ],
                     ),

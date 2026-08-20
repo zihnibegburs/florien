@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_gate.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 
 class CalendarConnectionsScreen extends ConsumerStatefulWidget {
   const CalendarConnectionsScreen({super.key});
@@ -19,6 +21,14 @@ class _CalendarConnectionsScreenState
 
   Future<void> _connect(CalendarProvider provider) async {
     if (_connecting != null) return;
+    if (!await requirePremiumAccess(
+      context,
+      ref,
+      PremiumFeature.calendarImport,
+    )) {
+      return;
+    }
+    if (!mounted) return;
     setState(() => _connecting = provider);
     try {
       final connection = await ref
@@ -60,6 +70,11 @@ class _CalendarConnectionsScreenState
             ?.map((connection) => connection.provider)
             .toSet() ??
         const <CalendarProvider>{};
+    final isPremium = ref.watch(
+      premiumMembershipProvider.select(
+        (membership) => membership.valueOrNull?.isPremium == true,
+      ),
+    );
 
     return Scaffold(
       key: const ValueKey('calendar-connections-screen'),
@@ -121,6 +136,7 @@ class _CalendarConnectionsScreenState
               provider: CalendarProvider.apple,
               isConnected: connectedProviders.contains(CalendarProvider.apple),
               isLoading: _connecting == CalendarProvider.apple,
+              isPremium: isPremium,
               onTap: () => _connect(CalendarProvider.apple),
             ),
             const SizedBox(height: 14),
@@ -128,6 +144,7 @@ class _CalendarConnectionsScreenState
               provider: CalendarProvider.google,
               isConnected: connectedProviders.contains(CalendarProvider.google),
               isLoading: _connecting == CalendarProvider.google,
+              isPremium: isPremium,
               onTap: () => _connect(CalendarProvider.google),
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
@@ -177,12 +194,14 @@ class _CalendarConnectButton extends StatelessWidget {
     required this.provider,
     required this.isConnected,
     required this.isLoading,
+    required this.isPremium,
     required this.onTap,
   });
 
   final CalendarProvider provider;
   final bool isConnected;
   final bool isLoading;
+  final bool isPremium;
   final VoidCallback onTap;
 
   @override
@@ -229,6 +248,9 @@ class _CalendarConnectButton extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+              ] else if (!isPremium) ...[
+                const SizedBox(width: 12),
+                const Icon(Icons.lock_outline_rounded, size: 20),
               ],
             ],
           ),

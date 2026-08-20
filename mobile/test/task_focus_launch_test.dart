@@ -6,6 +6,7 @@ import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
 const _todoTask = TaskModel(
@@ -33,6 +34,18 @@ class _EmptyInboxNotifier extends InboxNotifier {
 class _EmptyListsNotifier extends TodoListsNotifier {
   @override
   Future<List<TodoListDefinition>> build() async => const [];
+}
+
+class _ActivePremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false, isPremium: true);
+}
+
+class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false);
 }
 
 void main() {
@@ -177,7 +190,7 @@ void main() {
           status: TaskStatus.inProgress,
           sortOrder: 0,
           isInbox: false,
-          isTimed: true,
+          isTimed: false,
           dayPeriod: dayPeriodForLocalTime(now),
         );
         dailyTasks.add(task);
@@ -237,6 +250,24 @@ void main() {
     expect(find.text('Plan Asistanı'), findsOneWidget);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
   });
+
+  testWidgets('planner AI chat opens Premium for a free account', (
+    tester,
+  ) async {
+    await _pumpHome(
+      tester,
+      inboxOverride: _EmptyInboxNotifier.new,
+      dailyTasks: const [],
+      premium: false,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('AI plan asistanı'), findsOneWidget);
+    expect(find.byKey(const ValueKey('planner-ai-input')), findsNothing);
+  });
 }
 
 Future<void> _pumpHome(
@@ -245,6 +276,7 @@ Future<void> _pumpHome(
   required List<TaskModel> dailyTasks,
   ValueChanged<TaskModel>? onStarted,
   Future<FocusTaskLaunch> Function(int)? onStandaloneFocusStarted,
+  bool premium = true,
 }) async {
   await tester.binding.setSurfaceSize(const Size(430, 1100));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -264,6 +296,11 @@ Future<void> _pumpHome(
             onStandaloneFocusStarted,
           ),
         completeFocusedTaskProvider.overrideWithValue((_) async {}),
+        premiumMembershipProvider.overrideWith(
+          premium
+              ? _ActivePremiumMembershipNotifier.new
+              : _NonPremiumMembershipNotifier.new,
+        ),
       ],
       child: MaterialApp(
         theme: FlorienTheme.light,

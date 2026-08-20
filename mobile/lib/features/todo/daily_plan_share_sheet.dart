@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -756,18 +757,10 @@ class _DailyShareCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: shareTheme.surface.withValues(alpha: .9),
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: shareTheme.border),
-              ),
-              child: Image.asset(
-                'assets/brand/florien-symbol-color.png',
-                fit: BoxFit.contain,
+            FlorienLogo(
+              size: 44,
+              backgroundBrightness: ThemeData.estimateBrightnessForColor(
+                shareTheme.background,
               ),
             ),
             const SizedBox(width: 11),

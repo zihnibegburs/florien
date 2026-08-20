@@ -5,6 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/todo/calendar_connections_screen.dart';
 import 'package:florien/features/todo/settings_screen.dart';
+import 'package:florien/features/premium/premium_membership.dart';
+
+class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false);
+}
 
 void main() {
   setUp(() {
@@ -16,6 +23,11 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: const SettingsScreen(),
@@ -29,5 +41,10 @@ void main() {
     expect(find.byType(CalendarConnectionsScreen), findsOneWidget);
     expect(find.text('Apple Takvimini Bağla'), findsOneWidget);
     expect(find.text('Google Takvimini Bağla'), findsOneWidget);
+
+    await tester.tap(find.text('Apple Takvimini Bağla'));
+    await tester.pumpAndSettle();
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('Takvim aktarma'), findsOneWidget);
   });
 }

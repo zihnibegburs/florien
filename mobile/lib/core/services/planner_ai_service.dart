@@ -2,6 +2,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:florien/core/models/models.dart';
 
+const _maxAiInputCharacters = 2000;
+
 class PlannerChatTurn {
   const PlannerChatTurn({required this.role, required this.content});
 
@@ -69,7 +71,13 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
       debugPrint(
         'assistBreakdown failed: ${error.code} ${error.message}\n$stackTrace',
       );
-      throw PlannerAiException(_breakdownMessageFor(error));
+      throw PlannerAiException(
+        aiFunctionsErrorMessage(
+          code: error.code,
+          details: error.details,
+          breakdown: true,
+        ),
+      );
     }
   }
 }
@@ -88,14 +96,17 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
     final callable = _functions.httpsCallable('assistPlannerChat');
     late final HttpsCallableResult<dynamic> result;
     try {
+      final payloadTurns = _latestConversationWithinInputLimit(conversation);
       result = await callable.call(<String, Object?>{
-        'messages': conversation.map((turn) => turn.toJson()).toList(),
+        'messages': payloadTurns.map((turn) => turn.toJson()).toList(),
       });
     } on FirebaseFunctionsException catch (error, stackTrace) {
       debugPrint(
         'assistPlannerChat failed: ${error.code} ${error.message}\n$stackTrace',
       );
-      throw PlannerAiException(_messageFor(error));
+      throw PlannerAiException(
+        aiFunctionsErrorMessage(code: error.code, details: error.details),
+      );
     }
     final raw = result.data;
     if (raw is! Map) {
@@ -128,8 +139,49 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
   }
 }
 
-String _messageFor(FirebaseFunctionsException error) {
-  return switch (error.code) {
+List<PlannerChatTurn> _latestConversationWithinInputLimit(
+  List<PlannerChatTurn> conversation,
+) {
+  final selected = <PlannerChatTurn>[];
+  var usedCharacters = 0;
+  for (final turn in conversation.reversed) {
+    final contentLength = turn.content.runes.length;
+    if (selected.isEmpty ||
+        usedCharacters + contentLength <= _maxAiInputCharacters) {
+      selected.add(turn);
+      usedCharacters += contentLength;
+    } else {
+      break;
+    }
+  }
+  return selected.reversed.toList(growable: false);
+}
+
+String aiFunctionsErrorMessage({
+  required String code,
+  Object? details,
+  bool breakdown = false,
+}) {
+  final reason = details is Map ? details['reason']?.toString() : null;
+  final retrySuffix = _retrySuffix(details);
+  final protectedMessage = switch (reason) {
+    'PREMIUM_REQUIRED' =>
+      'Bu AI özelliğini kullanmak için Premium üyelik gerekiyor.',
+    'AI_RATE_LIMIT_MINUTE' =>
+      'Çok hızlı AI isteği gönderdin. Bir dakika bekleyip tekrar dene.$retrySuffix',
+    'AI_RATE_LIMIT_HOURLY' =>
+      'Saatlik AI kullanım sınırına ulaştın.$retrySuffix',
+    'AI_DAILY_LIMIT_REACHED' =>
+      'Günlük AI kullanım sınırına ulaştın.$retrySuffix',
+    'AI_MONTHLY_LIMIT_REACHED' =>
+      'Aylık AI kullanım sınırına ulaştın.$retrySuffix',
+    'AI_INPUT_TOO_LONG' =>
+      'AI isteği en fazla $_maxAiInputCharacters karakter olabilir.',
+    _ => null,
+  };
+  if (protectedMessage != null) return protectedMessage;
+
+  return switch (code) {
     'unauthenticated' => 'Plan asistanı için giriş yapmış olman gerekiyor.',
     'not-found' =>
       'Plan asistanı fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
@@ -138,18 +190,18 @@ String _messageFor(FirebaseFunctionsException error) {
     'unavailable' || 'deadline-exceeded' =>
       'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
     _ =>
-      'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+      breakdown
+          ? 'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.'
+          : 'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
   };
 }
 
-String _breakdownMessageFor(FirebaseFunctionsException error) {
-  return switch (error.code) {
-    'unauthenticated' => 'AI alt görevleri için giriş yapmış olman gerekiyor.',
-    'not-found' =>
-      'AI alt görev fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
-    'failed-precondition' => 'AI alt görevleri şu an yapılandırılmamış.',
-    'unavailable' || 'deadline-exceeded' =>
-      'AI alt görevleri şu an yanıt vermiyor. Biraz sonra tekrar dene.',
-    _ => 'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
-  };
+String _retrySuffix(Object? details) {
+  if (details is! Map) return '';
+  final retryAt = DateTime.tryParse(details['retryAt']?.toString() ?? '');
+  if (retryAt == null) return '';
+  final local = retryAt.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return ' $hour:$minute sonrasında tekrar deneyebilirsin.';
 }

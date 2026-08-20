@@ -23,6 +23,8 @@ class FocusTimerTab extends StatefulWidget {
     this.onFocusAlarmScheduled,
     this.onFocusAlarmCompleted,
     this.onFocusAlarmCancelled,
+    this.alarmAvailable = true,
+    this.onPremiumAlarmPressed,
   });
 
   final FocusTaskLaunch? launchRequest;
@@ -36,6 +38,8 @@ class FocusTimerTab extends StatefulWidget {
   onFocusAlarmScheduled;
   final Future<void> Function(String title)? onFocusAlarmCompleted;
   final Future<void> Function()? onFocusAlarmCancelled;
+  final bool alarmAvailable;
+  final VoidCallback? onPremiumAlarmPressed;
 
   @override
   State<FocusTimerTab> createState() => _FocusTimerTabState();
@@ -52,7 +56,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   DateTime? _sessionStartedAt;
   DateTime? _plannedEndAt;
   Timer? _timer;
-  bool _alarmEnabled = true;
+  bool _alarmEnabled = false;
   double _setupLastAngle = 0;
   double _setupDragProgress = 0;
   String? _taskId;
@@ -60,6 +64,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   String _taskIcon = TaskIcons.defaultName;
   String _taskColor = '#6C5CE7';
   bool _taskCompletionRequested = false;
+  Future<void>? _taskCompletionFuture;
   bool _automaticTask = false;
   bool _creatingStandaloneTask = false;
   bool _isFinishing = false;
@@ -76,6 +81,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   @override
   void initState() {
     super.initState();
+    _alarmEnabled = widget.alarmAvailable;
     _focusMusicPlayer = AudioPlayer();
     unawaited(_focusMusicPlayer.setLoopMode(LoopMode.one));
     unawaited(_focusMusicPlayer.setVolume(.58));
@@ -135,6 +141,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   @override
   void didUpdateWidget(covariant FocusTimerTab oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.alarmAvailable && !widget.alarmAvailable && _alarmEnabled) {
+      _alarmEnabled = false;
+      unawaited(_cancelFocusAlarm());
+    }
     if (widget.resetSignal != oldWidget.resetSignal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _closeSession();
@@ -312,6 +322,13 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         });
       } catch (error) {
         debugPrint('Standalone focus task could not be persisted: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Odak görevi kaydedilemedi. Tekrar deneyin.'),
+            ),
+          );
+        }
       } finally {
         if (mounted) setState(() => _creatingStandaloneTask = false);
       }
@@ -337,7 +354,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         _publishTaskProgress();
         final taskId = _taskId;
         if (taskId != null && !_automaticTask) {
-          unawaited(_markTaskCompleted(taskId));
+          unawaited(_completeTaskAfterTimer(taskId));
         }
         if (_alarmEnabled) {
           unawaited(_completeFocusAlarm());
@@ -370,6 +387,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _taskIcon = TaskIcons.defaultName;
       _taskColor = '#6C5CE7';
       _taskCompletionRequested = false;
+      _taskCompletionFuture = null;
       _automaticTask = false;
       _isFinishing = false;
     });
@@ -410,6 +428,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _taskIcon = request.icon;
       _taskColor = request.color;
       _taskCompletionRequested = false;
+      _taskCompletionFuture = null;
       _automaticTask = request.automatic;
     });
     unawaited(_toggleTimer());
@@ -442,6 +461,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   }
 
   void _toggleAlarm() {
+    if (!widget.alarmAvailable) {
+      widget.onPremiumAlarmPressed?.call();
+      return;
+    }
     setState(() => _alarmEnabled = !_alarmEnabled);
     if (_alarmEnabled) {
       unawaited(_scheduleFocusAlarm());
@@ -503,11 +526,37 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   }
 
   Future<void> _markTaskCompleted(String taskId) async {
-    if (_taskCompletionRequested || widget.onTaskCompleted == null) return;
+    final existing = _taskCompletionFuture;
+    if (existing != null) return existing;
+    final complete = widget.onTaskCompleted;
+    if (_taskCompletionRequested || complete == null) return;
     _taskCompletionRequested = true;
-    await widget.onTaskCompleted!(taskId);
-    if (mounted && _taskId == taskId) {
-      widget.onTaskProgressChanged?.call(null);
+    final future = _runTaskCompletion(taskId, complete);
+    _taskCompletionFuture = future;
+    return future;
+  }
+
+  Future<void> _runTaskCompletion(
+    String taskId,
+    Future<void> Function(String taskId) complete,
+  ) async {
+    try {
+      await complete(taskId);
+      if (mounted && _taskId == taskId) {
+        widget.onTaskProgressChanged?.call(null);
+      }
+    } catch (error) {
+      _taskCompletionRequested = false;
+      _taskCompletionFuture = null;
+      rethrow;
+    }
+  }
+
+  Future<void> _completeTaskAfterTimer(String taskId) async {
+    try {
+      await _markTaskCompleted(taskId);
+    } catch (error) {
+      debugPrint('Focus task could not be completed: $error');
     }
   }
 
@@ -753,6 +802,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                               alignment: Alignment.centerRight,
                               child: _AlarmToggleButton(
                                 enabled: _alarmEnabled,
+                                available: widget.alarmAvailable,
                                 onTap: _toggleAlarm,
                               ),
                             ),
@@ -787,7 +837,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                       isFinished: _remainingSeconds <= 0,
                       onAddMinute: _addMinute,
                       onToggle: () => unawaited(_toggleTimer()),
-                      onFinish: () => unawaited(_finishSessionWithAnimation()),
+                      onFinish: () => unawaited(_completeAndCloseSession()),
                       onComplete: () => unawaited(_completeAndCloseSession()),
                       isCelebrating: _isFinishing,
                       celebrationScale: _completionScale,
@@ -1527,16 +1577,23 @@ class _DurationMenuItem extends StatelessWidget {
 }
 
 class _AlarmToggleButton extends StatelessWidget {
-  const _AlarmToggleButton({required this.enabled, required this.onTap});
+  const _AlarmToggleButton({
+    required this.enabled,
+    required this.available,
+    required this.onTap,
+  });
 
   final bool enabled;
+  final bool available;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     toggled: enabled,
-    label: enabled ? 'Alarm açık' : 'Alarm kapalı',
+    label: !available
+        ? 'Alarm Premium'
+        : (enabled ? 'Alarm açık' : 'Alarm kapalı'),
     child: Material(
       color: enabled
           ? Theme.of(context).colorScheme.primaryContainer
@@ -1557,7 +1614,11 @@ class _AlarmToggleButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                enabled ? Icons.alarm_on_rounded : Icons.alarm_off_rounded,
+                !available
+                    ? Icons.lock_outline_rounded
+                    : enabled
+                    ? Icons.alarm_on_rounded
+                    : Icons.alarm_off_rounded,
                 size: 19,
                 color: enabled
                     ? Theme.of(context).colorScheme.onPrimaryContainer
@@ -1565,7 +1626,11 @@ class _AlarmToggleButton extends StatelessWidget {
               ),
               const SizedBox(width: 7),
               Text(
-                enabled ? 'Alarm açık' : 'Alarm kapalı',
+                !available
+                    ? 'Alarm Premium'
+                    : enabled
+                    ? 'Alarm açık'
+                    : 'Alarm kapalı',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

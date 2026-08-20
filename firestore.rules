@@ -1,20 +1,99 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function hasPremium(userId) {
+      return owns(userId) &&
+        get(/databases/$(database)/documents/users/$(userId)/private/aiAccess)
+          .data.premiumUntil > request.time;
+    }
+
+    function freeTaskCreateAllowed() {
+      return request.resource.data.get('parentTaskId', null) == null &&
+        request.resource.data.get('alarmAt', null) == null &&
+        request.resource.data.get('isTimed', false) != true;
+    }
+
+    function freeTaskUpdateAllowed() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return !(changed.hasAny(['parentTaskId']) &&
+          request.resource.data.get('parentTaskId', null) != null) &&
+        !(changed.hasAny(['alarmAt']) &&
+          request.resource.data.get('alarmAt', null) != null) &&
+        !(changed.hasAny(['isTimed', 'scheduledAt']) &&
+          request.resource.data.get('isTimed', false) == true);
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if owns(userId);
 
       match /tasks/{taskId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, delete: if owns(userId);
+        allow create: if owns(userId) &&
+          (hasPremium(userId) || freeTaskCreateAllowed());
+        allow update: if owns(userId) &&
+          (hasPremium(userId) || freeTaskUpdateAllowed());
       }
 
       match /onboarding_surveys/{surveyVersion} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
-      match /profiles/{profileId}/tasks/{taskId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /review_feedback/{feedbackId} {
+        allow create: if owns(userId) &&
+          request.resource.data.keys().hasOnly([
+            'rating', 'issue', 'suggestion', 'createdAt'
+          ]) &&
+          request.resource.data.rating is int &&
+          request.resource.data.rating >= 1 &&
+          request.resource.data.rating <= 3 &&
+          request.resource.data.issue is string &&
+          request.resource.data.issue.size() <= 500 &&
+          request.resource.data.suggestion is string &&
+          request.resource.data.suggestion.size() <= 500 &&
+          (request.resource.data.issue.size() > 0 ||
+            request.resource.data.suggestion.size() > 0) &&
+          request.resource.data.createdAt == request.time;
+        allow read, update, delete: if false;
       }
+
+      match /app_data/{documentId} {
+        allow read, write: if owns(userId);
+      }
+
+      match /profiles/{profileId}/tasks/{taskId} {
+        allow read, delete: if owns(userId);
+        allow create, update: if hasPremium(userId);
+      }
+
+
+      match /profiles/{profileId}/app_data/{documentId} {
+        allow read: if owns(userId);
+        allow write: if owns(userId) &&
+          (profileId == 'primary' || hasPremium(userId));
+      }
+
+      // Server-verified Premium entitlement and atomic AI usage counters.
+      // Firebase Admin SDK bypasses rules; clients must never read or mutate it.
+      match /private/{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    // Prevent one store transaction from being claimed by multiple accounts.
+    // Only Cloud Functions (Admin SDK) may access these ownership records.
+    match /premiumTransactions/{transactionHash} {
+      allow read, write: if false;
+    }
+
+    // Public-to-signed-in, read-only UI copy. Admins update this document
+    // through the Firebase Console or Admin SDK.
+    match /appConfig/premiumPaywall {
+      allow read: if request.auth != null;
+      allow write: if false;
     }
   }
 }

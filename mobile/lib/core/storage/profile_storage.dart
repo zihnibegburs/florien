@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppProfile {
@@ -31,8 +32,12 @@ class AppProfilesState {
 }
 
 class ProfileStorage {
+  ProfileStorage({FirebaseFirestore? firestore}) : _firestore = firestore;
+
   static const _profilesPrefix = 'app_profiles_v1_';
   static const _activeProfilePrefix = 'active_app_profile_v1_';
+
+  final FirebaseFirestore? _firestore;
 
   Future<AppProfilesState> load({
     required String ownerId,
@@ -43,12 +48,25 @@ class ProfileStorage {
     final activeKey = '$_activeProfilePrefix$ownerId';
     final profiles = _readProfiles(prefs.getString(profilesKey));
 
+    final remote = await _loadRemote(ownerId);
+    if (remote != null) {
+      await _save(
+        prefs,
+        profilesKey,
+        activeKey,
+        remote.profiles,
+        remote.activeProfileId,
+      );
+      return remote;
+    }
+
     if (profiles.isEmpty) {
       final initial = AppProfile(
         id: 'primary',
         name: _normaliseName(fallbackName),
       );
       await _save(prefs, profilesKey, activeKey, [initial], initial.id);
+      await _saveRemote(ownerId, [initial], initial.id);
       return AppProfilesState(profiles: [initial], activeProfileId: initial.id);
     }
 
@@ -59,6 +77,7 @@ class ProfileStorage {
     if (selectedId != activeId) {
       await prefs.setString(activeKey, selectedId);
     }
+    await _saveRemote(ownerId, profiles, selectedId);
     return AppProfilesState(profiles: profiles, activeProfileId: selectedId);
   }
 
@@ -149,6 +168,7 @@ class ProfileStorage {
       profiles,
       activeProfileId,
     );
+    await _saveRemote(ownerId, profiles, activeProfileId);
     return AppProfilesState(
       profiles: profiles,
       activeProfileId: activeProfileId,
@@ -172,5 +192,58 @@ class ProfileStorage {
   String _normaliseName(String value) {
     final name = value.trim();
     return name.isEmpty ? 'Profilim' : name;
+  }
+
+  DocumentReference<Map<String, dynamic>>? _remoteRef(String ownerId) {
+    final firestore = _firestore;
+    if (firestore == null || ownerId == 'guest') return null;
+    return firestore
+        .collection('users')
+        .doc(ownerId)
+        .collection('app_data')
+        .doc('profiles');
+  }
+
+  Future<AppProfilesState?> _loadRemote(String ownerId) async {
+    final ref = _remoteRef(ownerId);
+    if (ref == null) return null;
+    try {
+      final data = (await ref.get()).data();
+      final rawProfiles = data?['profiles'];
+      if (rawProfiles is! List) return null;
+      final profiles = rawProfiles
+          .whereType<Map>()
+          .map(
+            (item) => AppProfile.fromJson(
+              item.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          )
+          .where((profile) => profile.name.trim().isNotEmpty)
+          .toList();
+      if (profiles.isEmpty) return null;
+      final storedActiveId = data?['activeProfileId']?.toString();
+      final activeId = profiles.any((profile) => profile.id == storedActiveId)
+          ? storedActiveId!
+          : profiles.first.id;
+      return AppProfilesState(profiles: profiles, activeProfileId: activeId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveRemote(
+    String ownerId,
+    List<AppProfile> profiles,
+    String activeProfileId,
+  ) async {
+    final ref = _remoteRef(ownerId);
+    if (ref == null) return;
+    try {
+      await ref.set({
+        'profiles': profiles.map((profile) => profile.toJson()).toList(),
+        'activeProfileId': activeProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
   }
 }

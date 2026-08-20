@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_gate.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 
 class ProfileManagementScreen extends ConsumerStatefulWidget {
   const ProfileManagementScreen({super.key});
@@ -17,6 +19,14 @@ class _ProfileManagementScreenState
   bool _saving = false;
 
   Future<void> _addProfile() async {
+    if (!await requirePremiumAccess(
+      context,
+      ref,
+      PremiumFeature.multipleProfiles,
+    )) {
+      return;
+    }
+    if (!mounted) return;
     final name = await _askForName(title: 'Yeni profil');
     if (name == null) return;
     await _perform(() => ref.read(appProfilesProvider.notifier).create(name));
@@ -121,6 +131,11 @@ class _ProfileManagementScreenState
   @override
   Widget build(BuildContext context) {
     final profiles = ref.watch(appProfilesProvider);
+    final isPremium = ref.watch(
+      premiumMembershipProvider.select(
+        (membership) => membership.valueOrNull?.isPremium == true,
+      ),
+    );
 
     return Scaffold(
       key: const ValueKey('profile-management-screen'),
@@ -215,7 +230,11 @@ class _ProfileManagementScreenState
             FilledButton.icon(
               key: const ValueKey('add-profile-button'),
               onPressed: _saving ? null : _addProfile,
-              icon: const Icon(Icons.person_add_alt_1_outlined),
+              icon: Icon(
+                isPremium
+                    ? Icons.person_add_alt_1_outlined
+                    : Icons.lock_outline_rounded,
+              ),
               label: const Text('Yeni profil ekle'),
             ),
           ],

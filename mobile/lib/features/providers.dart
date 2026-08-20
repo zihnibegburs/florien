@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/firebase/onboarding_firestore_storage.dart';
@@ -144,7 +146,7 @@ final calendarConnectionsProvider = FutureProvider<List<CalendarConnection>>(
 );
 
 final profileStorageProvider = Provider<ProfileStorage>(
-  (ref) => ProfileStorage(),
+  (ref) => ProfileStorage(firestore: ref.watch(optionalFirestoreProvider)),
 );
 
 final appProfilesProvider =
@@ -157,15 +159,17 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
   late String _fallbackName;
 
   @override
-  Future<AppProfilesState> build() {
+  Future<AppProfilesState> build() async {
     final auth = ref.watch(authStateProvider).valueOrNull;
     _ownerId = auth?.userId ?? 'guest';
     _fallbackName = auth?.firstName.isNotEmpty == true
         ? auth!.firstName
         : 'Profilim';
-    return ref
+    final profiles = await ref
         .read(profileStorageProvider)
         .load(ownerId: _ownerId, fallbackName: _fallbackName);
+    if (auth != null) await _migrateLocalData(profiles);
+    return profiles;
   }
 
   Future<void> create(String name) => _save(
@@ -236,6 +240,41 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
     ref.invalidate(completionCountsProvider);
     ref.invalidate(moodEntriesProvider);
   }
+
+  Future<void> _migrateLocalData(AppProfilesState state) async {
+    for (final profile in state.profiles) {
+      final scope = '$_ownerId:${profile.id}';
+      await _bestEffort(
+        () => ref.read(todoListStorageProvider).load(profileScope: scope),
+      );
+      await _bestEffort(() => ref.read(moodStorageProvider).load(scope));
+      await _bestEffort(
+        () => ref
+            .read(achievementProgressStorageProvider)
+            .preserveCompletedTaskCount(profileScope: scope, currentCount: 0),
+      );
+      await _bestEffort(
+        () => ref
+            .read(achievementProgressStorageProvider)
+            .loadCelebratedThreshold(scope),
+      );
+    }
+    final settings = ref.read(settingsStorageProvider);
+    await _bestEffort(settings.getImportedCalendarEventIds);
+    for (final provider in CalendarProvider.values) {
+      await _bestEffort(
+        () => settings.getCalendarConnectionDetail(provider.name),
+      );
+    }
+  }
+
+  Future<void> _bestEffort(Future<Object?> Function() operation) async {
+    try {
+      await operation();
+    } catch (_) {
+      // Local data remains intact and will be retried on the next app start.
+    }
+  }
 }
 
 final activeAppProfileProvider = Provider<AppProfile?>(
@@ -248,7 +287,9 @@ final activeProfileScopeProvider = Provider<String>((ref) {
   return '$ownerId:$profileId';
 });
 
-final moodStorageProvider = Provider<MoodStorage>((ref) => MoodStorage());
+final moodStorageProvider = Provider<MoodStorage>(
+  (ref) => MoodStorage(firestore: ref.watch(optionalFirestoreProvider)),
+);
 
 final appleHealthMoodServiceProvider = Provider<AppleHealthMoodService>(
   (ref) => AppleHealthMoodService(),
@@ -388,7 +429,15 @@ final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(
 
 class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   @override
-  Future<AuthResponse?> build() => ref.read(authRepositoryProvider).getMe();
+  Future<AuthResponse?> build() async {
+    final hadCachedFirebaseUser =
+        ref.read(firebaseAuthProvider).currentUser != null;
+    final current = await ref.read(authRepositoryProvider).getMe();
+    if (hadCachedFirebaseUser && current == null) {
+      await ref.read(googleAuthServiceProvider).disconnect();
+    }
+    return current;
+  }
 
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
@@ -461,6 +510,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     state = const AsyncLoading();
     try {
       await ref.read(authRepositoryProvider).deleteAccount();
+      await ref.read(googleAuthServiceProvider).disconnect();
       state = const AsyncData(null);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
@@ -469,15 +519,37 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }
 
   void _refreshPreferences() {
-    if (state.valueOrNull == null) return;
+    final userId = state.valueOrNull?.userId;
+    if (userId == null) return;
     ref.invalidate(onboardingPreferencesProvider);
+    ref.invalidate(appProfilesProvider);
     ref.invalidate(appLanguageProvider);
     ref.invalidate(appThemeModeProvider);
+    unawaited(_syncGuestOnboarding(userId));
+    unawaited(_warmPersistentData());
+  }
+
+  Future<void> _syncGuestOnboarding(String userId) async {
+    try {
+      await ref
+          .read(onboardingPreferencesRepositoryProvider)
+          .loadAuthenticated(userId);
+    } catch (_) {
+      // The local guest copy remains available for the next sync attempt.
+    }
+  }
+
+  Future<void> _warmPersistentData() async {
+    try {
+      await ref.read(appProfilesProvider.future);
+    } catch (_) {
+      // Storage providers retry migration when their screens are opened.
+    }
   }
 }
 
 final todoListStorageProvider = Provider<TodoListStorage>(
-  (ref) => TodoListStorage(),
+  (ref) => TodoListStorage(firestore: ref.watch(optionalFirestoreProvider)),
 );
 
 final todoListsProvider =
@@ -598,7 +670,10 @@ final createStandaloneFocusTaskProvider =
           icon: 'timer',
           durationMinutes: duration,
           scheduledAt: scheduledAt,
-          isTimed: true,
+          // A manually started focus is a daily activity, not a task pinned
+          // to an exact clock time. Keeping this false also lets standard
+          // users persist the task under the exact-time Premium rule.
+          isTimed: false,
           isInbox: false,
           dayPeriod: dayPeriodForLocalTime(scheduledAt),
         );
@@ -633,7 +708,9 @@ final completionCountsProvider = FutureProvider.autoDispose<CompletionCounts>((
 });
 
 final achievementProgressStorageProvider = Provider<AchievementProgressStorage>(
-  (ref) => AchievementProgressStorage(),
+  (ref) => AchievementProgressStorage(
+    firestore: ref.watch(optionalFirestoreProvider),
+  ),
 );
 
 final achievementCatalogProvider = FutureProvider<AchievementCatalog>(

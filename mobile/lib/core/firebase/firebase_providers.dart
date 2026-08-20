@@ -11,6 +11,24 @@ final firestoreProvider = Provider<FirebaseFirestore>(
   (ref) => FirebaseFirestore.instance,
 );
 
+/// Firebase-backed caches remain optional in unit/widget tests and before
+/// Firebase initialization. Production iOS resolves these to live instances.
+final optionalFirestoreProvider = Provider<FirebaseFirestore?>((ref) {
+  try {
+    return ref.watch(firestoreProvider);
+  } catch (_) {
+    return null;
+  }
+});
+
+final optionalFirebaseAuthProvider = Provider<FirebaseAuth?>((ref) {
+  try {
+    return ref.watch(firebaseAuthProvider);
+  } catch (_) {
+    return null;
+  }
+});
+
 final cloudFunctionsProvider = Provider<FirebaseFunctions>(
   (ref) => FirebaseFunctions.instanceFor(region: 'us-central1'),
 );

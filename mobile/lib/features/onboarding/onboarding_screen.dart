@@ -410,50 +410,44 @@ class _OpeningStep extends StatelessWidget {
   final VoidCallback onStart;
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Center(
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: FlorienColors.aiGradient,
-            border: Border.all(
-              color: context.palette.textPrimary,
-              width: FlorienBorders.thin,
-            ),
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: FlorienLogo(
+            size: 126,
+            imageKey: ValueKey('onboarding-opening-logo'),
           ),
-          child: const FlorienLogo(size: 92),
         ),
-      ),
-      const SizedBox(height: 36),
-      Text(
-        'Bazen plan yapmak bile yorucu gelebilir.',
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-          fontSize: 34,
-          fontWeight: FontWeight.w800,
+        const SizedBox(height: 36),
+        Text(
+          'Bazen plan yapmak bile yorucu gelebilir.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            fontSize: 34,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-      ),
-      const SizedBox(height: 16),
-      Text(
-        'Seni daha iyi anlamak için birkaç kısa sorumuz var.',
-        textAlign: TextAlign.center,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyLarge?.copyWith(color: context.palette.textSecondary),
-      ),
-      const SizedBox(height: 40),
-      FilledButton.icon(
-        key: const ValueKey('onboarding-start'),
-        onPressed: onStart,
-        icon: const Icon(Icons.arrow_forward_rounded),
-        label: const Text('Başlayalım'),
-      ),
-    ],
-  );
+        const SizedBox(height: 16),
+        Text(
+          'Seni daha iyi anlamak için birkaç kısa sorumuz var.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: context.palette.textSecondary),
+        ),
+        const SizedBox(height: 40),
+        FilledButton.icon(
+          key: const ValueKey('onboarding-start'),
+          onPressed: onStart,
+          icon: const Icon(Icons.arrow_forward_rounded),
+          label: const Text('Başlayalım'),
+        ),
+      ],
+    );
+  }
 }
 
 class _QuestionStep extends StatelessWidget {

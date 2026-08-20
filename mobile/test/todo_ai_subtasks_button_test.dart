@@ -6,6 +6,7 @@ import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
 
 class _NoListsNotifier extends TodoListsNotifier {
@@ -21,6 +22,18 @@ class _FakeTaskBreakdownService implements TaskBreakdownService {
   ];
 }
 
+class _ActivePremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false, isPremium: true);
+}
+
+class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false);
+}
+
 void main() {
   testWidgets('AI alt görev butonu başlıkla görünür ve görev ekler', (
     tester,
@@ -31,6 +44,9 @@ void main() {
           todoListsProvider.overrideWith(_NoListsNotifier.new),
           taskBreakdownServiceProvider.overrideWithValue(
             _FakeTaskBreakdownService(),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
           ),
         ],
         child: MaterialApp(
@@ -87,7 +103,12 @@ void main() {
   testWidgets('kullanıcı beşten fazla alt görev ekleyebilir', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [todoListsProvider.overrideWith(_NoListsNotifier.new)],
+        overrides: [
+          todoListsProvider.overrideWith(_NoListsNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
+        ],
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: TodoDetailScreen(
@@ -113,7 +134,12 @@ void main() {
   testWidgets('otuz birinci alt görev için uyarı gösterilir', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [todoListsProvider.overrideWith(_NoListsNotifier.new)],
+        overrides: [
+          todoListsProvider.overrideWith(_NoListsNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
+        ],
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: TodoDetailScreen(
@@ -133,5 +159,44 @@ void main() {
     await tester.pump();
 
     expect(find.text('En fazla 30 alt görev ekleyebilirsin.'), findsOneWidget);
+  });
+
+  testWidgets('free account opens Premium before creating a subtask', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          todoListsProvider.overrideWith(_NoListsNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const TodoDetailScreen(
+            initialTitle: 'Sunum hazırla',
+            initialDuration: 15,
+            todoListId: null,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('todo-subtasks-section-toggle')),
+    );
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const ValueKey('todo-detail-subtask-input')),
+      'Ücretsiz alt görev',
+    );
+    await tester.tap(find.byTooltip('Alt görev ekle'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('Alt görevler'), findsOneWidget);
+    expect(find.text('Ücretsiz alt görev'), findsNothing);
   });
 }

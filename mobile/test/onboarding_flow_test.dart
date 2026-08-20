@@ -32,6 +32,32 @@ void main() {
       tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
       FlorienPalette.light.background,
     );
+    final logo = tester.widget<Image>(
+      find.byKey(const ValueKey('onboarding-opening-logo')),
+    );
+    expect(
+      _assetNameOf(logo),
+      'assets/brand/florien-logo-light-background.png',
+    );
+  });
+
+  testWidgets('onboarding opening logo follows the dark theme', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          darkTheme: FlorienTheme.dark,
+          themeMode: ThemeMode.dark,
+          home: const OnboardingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final logo = tester.widget<Image>(
+      find.byKey(const ValueKey('onboarding-opening-logo')),
+    );
+    expect(_assetNameOf(logo), 'assets/brand/florien-logo-dark-background.png');
   });
 
   testWidgets('completed onboarding remains saved and continues to login', (
@@ -163,4 +189,12 @@ void main() {
       'diagnosed',
     );
   });
+}
+
+String _assetNameOf(Image image) {
+  final provider = image.image;
+  final assetProvider = provider is ResizeImage
+      ? provider.imageProvider
+      : provider;
+  return (assetProvider as AssetImage).assetName;
 }

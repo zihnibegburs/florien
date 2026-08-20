@@ -17,6 +17,16 @@ class _MemoryOnboardingRemoteStorage implements OnboardingRemoteStorage {
   }
 }
 
+class _FailingOnboardingRemoteStorage implements OnboardingRemoteStorage {
+  @override
+  Future<OnboardingPreferences> load(String userId) async =>
+      const OnboardingPreferences();
+
+  @override
+  Future<void> save(String userId, OnboardingPreferences preferences) =>
+      Future<void>.error(StateError('offline'));
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -95,4 +105,26 @@ void main() {
       expect((await local.load('guest')).hasProgress, isFalse);
     },
   );
+
+  test('keeps the guest survey when Firestore migration fails', () async {
+    final local = OnboardingStorage();
+    final preferences = OnboardingPreferences(
+      answers: {
+        'ONB-Q1': OnboardingAnswer(
+          questionId: 'ONB-Q1',
+          answerId: 'mind_overload',
+          answeredAt: DateTime(2026, 8, 18, 15, 30),
+        ),
+      },
+    );
+    await local.save('guest', preferences);
+    final repository = OnboardingPreferencesRepository(
+      local: local,
+      remote: _FailingOnboardingRemoteStorage(),
+    );
+
+    await expectLater(repository.loadAuthenticated('user-1'), throwsStateError);
+
+    expect((await local.load('guest')).answerIdFor('ONB-Q1'), 'mind_overload');
+  });
 }

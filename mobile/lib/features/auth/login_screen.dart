@@ -58,20 +58,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       constraints: const BoxConstraints(maxWidth: 460),
                       child: Column(
                         children: [
-                          Container(
-                            width: 112,
-                            height: 112,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: FlorienColors.aiGradient,
-                              border: Border.all(
-                                color: context.palette.textPrimary,
-                                width: FlorienBorders.thin,
-                              ),
-                            ),
-                            child: const FlorienLogo(size: 96),
-                          ),
+                          const FlorienLogo(size: 112),
                           const SizedBox(height: 28),
                           Text(
                             'Florien',

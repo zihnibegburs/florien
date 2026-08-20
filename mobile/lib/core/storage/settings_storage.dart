@@ -1,3 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,13 +29,22 @@ class LiveActivityPreferences {
 }
 
 class SettingsStorage {
+  SettingsStorage({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore,
+      _auth = auth;
+
   static const _languageKey = 'app_language';
   static const _themeModeKey = 'app_theme_mode';
   static const _taskRemindersEnabledKey = 'task_reminders_enabled';
   static const _notificationSoundEnabledKey = 'notification_sound_enabled';
   static const _notificationVibrationEnabledKey =
       'notification_vibration_enabled';
+  static const _notificationPermissionIntroKey =
+      'notification_permission_intro_completed';
   static const _liveFocusKey = 'live_activity_focus_enabled';
+
+  final FirebaseFirestore? _firestore;
+  final FirebaseAuth? _auth;
 
   Future<String> getLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -92,6 +104,16 @@ class SettingsStorage {
     await prefs.setBool(_notificationVibrationEnabledKey, enabled);
   }
 
+  Future<bool> isNotificationPermissionIntroCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_scopedKey(_notificationPermissionIntroKey)) ?? false;
+  }
+
+  Future<void> markNotificationPermissionIntroCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_scopedKey(_notificationPermissionIntroKey), true);
+  }
+
   Future<LiveActivityPreferences> getLiveActivityPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     return LiveActivityPreferences(
@@ -109,21 +131,73 @@ class SettingsStorage {
 
   Future<Set<String>> getImportedCalendarEventIds() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(_importedCalendarEventsKey)?.toSet() ?? {};
+    final localKey = _scopedKey(_importedCalendarEventsKey);
+    final legacy = prefs.getStringList(_importedCalendarEventsKey);
+    final local = (prefs.getStringList(localKey) ?? legacy ?? const <String>[])
+        .toSet();
+    if (legacy != null) {
+      await prefs.setStringList(localKey, local.toList());
+      await prefs.remove(_importedCalendarEventsKey);
+    }
+    final ref = _calendarRemoteRef();
+    if (ref == null) return local;
+    try {
+      final data = (await ref.get()).data();
+      final remote =
+          (data?['importedEventIds'] as List?)
+              ?.map((value) => value.toString())
+              .toSet() ??
+          <String>{};
+      final merged = {...local, ...remote};
+      await prefs.setStringList(localKey, merged.toList());
+      await prefs.remove(_importedCalendarEventsKey);
+      if (merged.length != remote.length) await _saveImportedIds(merged);
+      return merged;
+    } catch (_) {
+      return local;
+    }
   }
 
   Future<void> markCalendarEventsImported(Iterable<String> ids) async {
     if (ids.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    final current =
-        prefs.getStringList(_importedCalendarEventsKey)?.toSet() ?? {};
+    final current = await getImportedCalendarEventIds();
     current.addAll(ids);
-    await prefs.setStringList(_importedCalendarEventsKey, current.toList());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _scopedKey(_importedCalendarEventsKey),
+      current.toList(),
+    );
+    await _saveImportedIds(current);
   }
 
   Future<String?> getCalendarConnectionDetail(String provider) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('$_calendarConnectionPrefix$provider');
+    final legacyKey = '$_calendarConnectionPrefix$provider';
+    final localKey = _scopedKey(legacyKey);
+    final legacy = prefs.getString(legacyKey);
+    final local = prefs.getString(localKey) ?? legacy;
+    if (legacy != null && local != null) {
+      await prefs.setString(localKey, local);
+      await prefs.remove(legacyKey);
+    }
+    final ref = _calendarRemoteRef();
+    if (ref == null) return local;
+    try {
+      final data = (await ref.get()).data();
+      final connections = data?['connections'];
+      final remote = connections is Map
+          ? connections[provider]?.toString()
+          : null;
+      if (remote != null && remote.isNotEmpty) {
+        await prefs.setString(localKey, remote);
+        await prefs.remove(legacyKey);
+        return remote;
+      }
+      if (local != null) await _saveConnection(provider, local);
+      return local;
+    } catch (_) {
+      return local;
+    }
   }
 
   Future<void> setCalendarConnectionDetail(
@@ -131,15 +205,67 @@ class SettingsStorage {
     String detail,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$_calendarConnectionPrefix$provider', detail);
+    await prefs.setString(
+      _scopedKey('$_calendarConnectionPrefix$provider'),
+      detail,
+    );
+    await _saveConnection(provider, detail);
   }
 
   Future<void> clearCalendarConnection(String provider) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('$_calendarConnectionPrefix$provider');
+    final legacyKey = '$_calendarConnectionPrefix$provider';
+    await prefs.remove(legacyKey);
+    await prefs.remove(_scopedKey(legacyKey));
+    final ref = _calendarRemoteRef();
+    if (ref == null) return;
+    try {
+      await ref.update({'connections.$provider': FieldValue.delete()});
+    } catch (_) {}
+  }
+
+  String _scopedKey(String base) {
+    final uid = _auth?.currentUser?.uid;
+    return uid == null ? '${base}_guest' : '${base}_$uid';
+  }
+
+  DocumentReference<Map<String, dynamic>>? _calendarRemoteRef() {
+    final firestore = _firestore;
+    final uid = _auth?.currentUser?.uid;
+    if (firestore == null || uid == null) return null;
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('app_data')
+        .doc('calendar');
+  }
+
+  Future<void> _saveImportedIds(Set<String> ids) async {
+    final ref = _calendarRemoteRef();
+    if (ref == null) return;
+    try {
+      await ref.set({
+        'importedEventIds': ids.toList(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {}
+  }
+
+  Future<void> _saveConnection(String provider, String detail) async {
+    final ref = _calendarRemoteRef();
+    if (ref == null) return;
+    try {
+      await ref.set({
+        'connections': {provider: detail},
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {}
   }
 }
 
 final settingsStorageProvider = Provider<SettingsStorage>(
-  (ref) => SettingsStorage(),
+  (ref) => SettingsStorage(
+    firestore: ref.watch(optionalFirestoreProvider),
+    auth: ref.watch(optionalFirebaseAuthProvider),
+  ),
 );

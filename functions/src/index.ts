@@ -1,10 +1,19 @@
 import * as admin from "firebase-admin";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import { error as logError } from "firebase-functions/logger";
+import {
+  AI_MAX_OUTPUT_TOKENS,
+  normalizeAiInput,
+  protectAiGeneration,
+  requireAuthenticatedUid,
+} from "./ai-protection";
+import { verifyAndPersistPremium } from "./premium-verification";
 
 admin.initializeApp();
 
 const groqApiKey = defineSecret("GROQ_API_KEY");
+const appleIapCredentials = defineSecret("APPLE_IAP_CREDENTIALS");
 
 const COLORS = ["#6C63FF", "#FF6B9D", "#4ECDC4", "#FFE66D", "#FF8B5A", "#2ECC71"];
 const GROQ_BASE = "https://api.groq.com/openai/v1";
@@ -23,6 +32,19 @@ export const deleteAccount = onCall(async (request) => {
   await admin.auth().deleteUser(uid);
   return { deleted: true };
 });
+
+export const verifyPremiumPurchase = onCall(
+  { secrets: [appleIapCredentials] },
+  async (request) => {
+    const uid = requireAuthenticatedUid(request.auth?.uid);
+    return verifyAndPersistPremium(
+      uid,
+      request.data?.source,
+      request.data?.verificationData,
+      appleIapCredentials.value()
+    );
+  }
+);
 
 type GroqChatResponse = {
   choices?: Array<{ message?: { content?: string } }>;
@@ -48,7 +70,7 @@ async function callGroq(
     },
     body: JSON.stringify({
       model: GROQ_MODEL,
-      max_completion_tokens: 4096,
+      max_completion_tokens: AI_MAX_OUTPUT_TOKENS,
       reasoning_effort: "low",
       response_format: { type: "json_object" },
       messages: [
@@ -62,8 +84,8 @@ async function callGroq(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new HttpsError("internal", `Groq API error: ${response.status} ${text}`);
+    logError("Groq API request failed", { status: response.status });
+    throw new HttpsError("internal", "AI provider request failed.");
   }
 
   const json = (await response.json()) as GroqChatResponse;
@@ -92,14 +114,11 @@ function extractJson(content: string): string {
 }
 
 export const assistBreakdown = onCall({ secrets: [groqApiKey] }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Authentication required.");
-  }
-
-  const task = String(request.data?.task ?? "").trim();
-  if (!task) {
-    throw new HttpsError("invalid-argument", "task is required");
-  }
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  const task = await protectAiGeneration(
+    uid,
+    () => normalizeAiInput(request.data?.task, "task")
+  );
 
   const prompt = `Sen ADHD dostu bir görev planlama asistanısın. Kullanıcının görevini küçük, yapılabilir adımlara böl.
 En fazla 5 adım üret. Her adım için gerçekçi süre (dakika) tahmin et. Türkçe yanıt ver.
@@ -134,16 +153,15 @@ Görev: ${task}`;
 });
 
 export const assistPlan = onCall({ secrets: [groqApiKey] }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Authentication required.");
-  }
-
-  const input = String(request.data?.input ?? "").trim();
-  if (!input) {
-    throw new HttpsError("invalid-argument", "input is required");
-  }
-
-  const planDate = String(request.data?.date ?? new Date().toISOString().slice(0, 10));
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  const input = await protectAiGeneration(
+    uid,
+    () => normalizeAiInput(request.data?.input, "input")
+  );
+  const requestedDate = typeof request.data?.date === "string" ?
+    request.data.date.trim() : "";
+  const planDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) ?
+    requestedDate : new Date().toISOString().slice(0, 10);
 
   const prompt = `Sen ADHD dostu bir günlük planlama asistanısın. Kullanıcının yazdığı düşünceleri yapılandırılmış günlük plana çevir.
 Tarih: ${planDate}
@@ -186,25 +204,30 @@ ${input}`;
 export const assistPlannerChat = onCall(
   { secrets: [groqApiKey] },
   async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Authentication required.");
-    }
-
-    const messagesRaw: unknown[] = Array.isArray(request.data?.messages) ?
-      request.data.messages as unknown[] : [];
-    const messages = messagesRaw
-      .slice(-12)
-      .map((node: unknown) => {
-        const item = node as Record<string, unknown>;
-        const role = item.role === "assistant" ? "assistant" : "user";
-        const content = String(item.content ?? "").trim().slice(0, 1200);
-        return content ? { role, content } : null;
-      })
-      .filter((item): item is { role: string; content: string } => item != null);
-
-    if (messages.length === 0) {
-      throw new HttpsError("invalid-argument", "messages is required");
-    }
+    const uid = requireAuthenticatedUid(request.auth?.uid);
+    const messages = await protectAiGeneration(uid, () => {
+      const messagesRaw: unknown[] = Array.isArray(request.data?.messages) ?
+        request.data.messages as unknown[] : [];
+      const normalized = messagesRaw
+        .slice(-12)
+        .map((node: unknown) => {
+          if (node == null || typeof node !== "object") return null;
+          const item = node as Record<string, unknown>;
+          if (typeof item.content !== "string") return null;
+          const role = item.role === "assistant" ? "assistant" : "user";
+          const content = item.content
+            .normalize("NFKC")
+            .replace(/\r\n?/g, "\n")
+            .trim();
+          return content ? { role, content } : null;
+        })
+        .filter((item): item is { role: string; content: string } => item != null);
+      normalizeAiInput(
+        normalized.map((message) => message.content).join("\n"),
+        "messages"
+      );
+      return normalized;
+    });
 
     const transcript = messages
       .map((message) => `${message.role}: ${message.content}`)

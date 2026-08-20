@@ -66,6 +66,9 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: const []),
           ),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -248,6 +251,9 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: const []),
           ),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
           todoListsProvider.overrideWith(_AvailableListsNotifier.new),
         ],
         child: MaterialApp(
@@ -318,6 +324,9 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: const []),
           ),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -356,6 +365,80 @@ void main() {
       find.byKey(const ValueKey('daily-five-minute-picker')),
     );
     expect(picker.minuteInterval, 5);
+  });
+
+  testWidgets('free account opens Premium for an exact task time', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('Görev için özel saat'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-start-time')), findsNothing);
+  });
+
+  testWidgets('free account opens Premium before enabling a task alarm', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('daily-quick-title')),
+      'Doktor randevusu',
+    );
+    await tester.tap(find.byKey(const ValueKey('daily-details-chip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alarm'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('Alarm ve hatırlatıcılar'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-time')), findsNothing);
   });
 
   testWidgets('daily grouping switches between list and timeline views', (
@@ -752,6 +835,54 @@ void main() {
       findsOneWidget,
     );
     expect(header, findsOneWidget);
+  });
+
+  testWidgets('daily planner can pick any date and quickly return to today', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('daily-open-date-picker')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('daily-date-picker-trigger')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-date-picker-sheet')),
+      findsOneWidget,
+    );
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    tester
+        .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
+        .onDateChanged(tomorrow);
+    await tester.pump();
+    await tester.tap(find.byTooltip('Seçilen tarihe git'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('daily-return-today')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('daily-return-today')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('daily-open-date-picker')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('daily task copy opens a prefilled detailed creation page', (

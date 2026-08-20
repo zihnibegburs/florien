@@ -1,6 +1,7 @@
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,6 +45,18 @@ class _TestProfilesNotifier extends AppProfilesNotifier {
   }
 }
 
+class _ActivePremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false, isPremium: true);
+}
+
+class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false);
+}
+
 class _ProfileSwitcherHarness extends ConsumerWidget {
   const _ProfileSwitcherHarness();
 
@@ -72,7 +85,12 @@ void main() {
     final notifier = _TestProfilesNotifier();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [appProfilesProvider.overrideWith(() => notifier)],
+        overrides: [
+          appProfilesProvider.overrideWith(() => notifier),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
+        ],
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: const ProfileManagementScreen(),
@@ -133,5 +151,31 @@ void main() {
       'İş',
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('creating an additional profile opens Premium', (tester) async {
+    final notifier = _TestProfilesNotifier();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appProfilesProvider.overrideWith(() => notifier),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const ProfileManagementScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('add-profile-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.text('Birden fazla profil'), findsOneWidget);
+    expect(notifier.createdName, isNull);
   });
 }

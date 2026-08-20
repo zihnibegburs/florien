@@ -78,4 +78,59 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('ratings up to three can submit issue and suggestion feedback', (
+    tester,
+  ) async {
+    int? submittedRating;
+    String? submittedIssue;
+    String? submittedSuggestion;
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          body: StatisticsReviewCard(
+            submitFeedback: (rating, issue, suggestion) async {
+              submittedRating = rating;
+              submittedIssue = issue;
+              submittedSuggestion = suggestion;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('statistics-rating-2')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Yaşadığın sorun nedir?'), findsOneWidget);
+    expect(find.text('Önerin nedir?'), findsOneWidget);
+    final submit = find.byKey(
+      const ValueKey('statistics-rating-submit-feedback'),
+    );
+    expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('statistics-rating-issue')),
+      'Takvim bağlantısını bulamadım',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('statistics-rating-suggestion')),
+      'Ayarlar ekranında daha görünür olabilir',
+    );
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+
+    expect(submittedRating, 2);
+    expect(submittedIssue, 'Takvim bağlantısını bulamadım');
+    expect(submittedSuggestion, 'Ayarlar ekranında daha görünür olabilir');
+    expect(
+      find.text('Geri bildirimin bize ulaştı. Teşekkür ederiz!'),
+      findsOneWidget,
+    );
+  });
 }

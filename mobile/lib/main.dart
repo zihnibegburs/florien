@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/liquid_glass.dart';
 import 'package:florien/features/auth/email_login_screen.dart';
@@ -18,6 +19,7 @@ import 'package:florien/features/auth/register_screen.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
+import 'package:florien/features/onboarding/notification_permission_screen.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
@@ -36,12 +38,7 @@ Future<void> main() async {
       florienWidgetBackgroundCallback,
     );
   }
-  runApp(
-    ProviderScope(
-      overrides: [forceOnboardingForTestingProvider.overrideWithValue(true)],
-      child: const FlorienApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: FlorienApp()));
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(
       TaskIconClassifier.instance.initialize().onError((error, stackTrace) {
@@ -218,8 +215,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/onboarding', builder: (_, _) => const OnboardingScreen()),
       GoRoute(
         path: '/paywall',
+        builder: (context, _) => PremiumMembershipScreen(
+          onContinue: () async {
+            final completed = await ref
+                .read(settingsStorageProvider)
+                .isNotificationPermissionIntroCompleted();
+            if (!context.mounted) return;
+            context.go(completed ? '/todo' : '/notification-permission');
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/notification-permission',
         builder: (context, _) =>
-            PremiumMembershipScreen(onContinue: () => context.go('/todo')),
+            NotificationPermissionScreen(onComplete: () => context.go('/todo')),
       ),
       GoRoute(path: '/todo', builder: (_, _) => const TodoHomeScreen()),
     ],
