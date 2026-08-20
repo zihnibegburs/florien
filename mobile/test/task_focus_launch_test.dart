@@ -54,7 +54,8 @@ void main() {
     );
 
     await tester.tap(find.text(_todoTask.title));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Görevi başlat'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -85,9 +86,11 @@ void main() {
     );
 
     await tester.tap(find.text('Günlük'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text(dailyTask.title));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Görevi başlat'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -228,7 +231,8 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Plan Asistanı'), findsOneWidget);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
@@ -267,7 +271,8 @@ Future<void> _pumpHome(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 void _expectActiveTaskFocus(

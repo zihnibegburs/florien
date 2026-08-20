@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
 
@@ -75,8 +76,11 @@ void main() {
     await tester.ensureVisible(find.byKey(buttonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(buttonKey));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
     expect(find.text('İlk adımı hazırla'), findsOneWidget);
+    expect(find.text('Başla'), findsNothing);
+    await tester.pump(subtaskCreationStagger);
     expect(find.text('Başla'), findsOneWidget);
   });
 

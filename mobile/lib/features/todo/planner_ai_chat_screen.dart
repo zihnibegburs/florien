@@ -7,6 +7,7 @@ import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
+import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -36,6 +37,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   bool _sending = false;
   bool _voicePanelOpen = false;
   bool _isListening = false;
+  bool _isApplyingVoiceInput = false;
   double _soundLevel = 0.12;
   String _voiceTranscript = '';
   String? _voiceError;
@@ -60,6 +62,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     if (!_voicePanelOpen) {
       setState(() {
         _voicePanelOpen = true;
+        _isApplyingVoiceInput = false;
         _voiceTranscript = '';
         _voiceError = null;
         _soundLevel = 0.12;
@@ -126,6 +129,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     setState(() {
       _voicePanelOpen = false;
       _isListening = false;
+      _isApplyingVoiceInput = false;
       _voiceTranscript = '';
       _voiceError = null;
       _soundLevel = 0.12;
@@ -134,7 +138,11 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 
   Future<void> _acceptVoiceInput() async {
     final spokenText = _voiceTranscript.trim();
-    if (spokenText.isEmpty) return;
+    if (spokenText.isEmpty || _isApplyingVoiceInput) return;
+    setState(() {
+      _isApplyingVoiceInput = true;
+      _isListening = false;
+    });
     ++_voiceSession;
     await _speechInput.stop();
     if (!mounted) return;
@@ -150,6 +158,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     setState(() {
       _voicePanelOpen = false;
       _isListening = false;
+      _isApplyingVoiceInput = false;
       _voiceTranscript = '';
       _voiceError = null;
       _soundLevel = 0.12;
@@ -310,25 +319,10 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                     icon: const Icon(Icons.arrow_back_rounded),
                   ),
                   const Expanded(child: Center(child: Text('Plan Asistanı'))),
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      gradient: FlorienColors.aiGradient,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: context.palette.border,
-                        width: FlorienBorders.thin,
-                      ),
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(2),
-                      child: FlorienAiAnimation(
-                        size: 36,
-                        speed: 0.8,
-                        semanticLabel: 'Florien AI',
-                      ),
-                    ),
+                  const FlorienAiMark(
+                    size: 42,
+                    imageKey: ValueKey('planner-ai-header-image'),
+                    semanticLabel: 'Florien AI',
                   ),
                 ],
               ),
@@ -358,12 +352,13 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                   ),
                 ),
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
+                  duration: const Duration(milliseconds: 260),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
                   child: _voicePanelOpen
-                      ? _InlineVoiceCapturePanel(
+                      ? _InlineVoiceCaptureArea(
                           isListening: _isListening,
+                          isApplying: _isApplyingVoiceInput,
                           soundLevel: _soundLevel,
                           transcript: _voiceTranscript,
                           error: _voiceError,
@@ -372,25 +367,16 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                           onClose: () => unawaited(_closeVoiceInput()),
                           onAccept: () => unawaited(_acceptVoiceInput()),
                         )
-                      : const SizedBox.shrink(
-                          key: ValueKey('planner-ai-voice-panel-closed'),
+                      : FlorienAiInput(
+                          key: const ValueKey('planner-ai-text-input-mode'),
+                          controller: _controller,
+                          enabled: !_sending,
+                          onSend: () => unawaited(_send()),
+                          inputKey: const ValueKey('planner-ai-input'),
+                          sendKey: const ValueKey('planner-ai-send'),
+                          voiceKey: const ValueKey('planner-ai-voice'),
+                          onVoiceTap: () => unawaited(_openVoiceInput()),
                         ),
-                ),
-                FlorienAiInput(
-                  controller: _controller,
-                  enabled: !_sending,
-                  onSend: () => unawaited(_send()),
-                  inputKey: const ValueKey('planner-ai-input'),
-                  sendKey: const ValueKey('planner-ai-send'),
-                  voiceKey: const ValueKey('planner-ai-voice'),
-                  isListening: _voicePanelOpen,
-                  onVoiceTap: () {
-                    if (_voicePanelOpen) {
-                      unawaited(_closeVoiceInput());
-                    } else {
-                      unawaited(_openVoiceInput());
-                    }
-                  },
                 ),
               ],
             ),
@@ -401,9 +387,10 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   }
 }
 
-class _InlineVoiceCapturePanel extends StatelessWidget {
-  const _InlineVoiceCapturePanel({
+class _InlineVoiceCaptureArea extends StatelessWidget {
+  const _InlineVoiceCaptureArea({
     required this.isListening,
+    required this.isApplying,
     required this.soundLevel,
     required this.transcript,
     required this.error,
@@ -413,6 +400,7 @@ class _InlineVoiceCapturePanel extends StatelessWidget {
   });
 
   final bool isListening;
+  final bool isApplying;
   final double soundLevel;
   final String transcript;
   final String? error;
@@ -425,147 +413,120 @@ class _InlineVoiceCapturePanel extends StatelessWidget {
     final hasTranscript = transcript.trim().isNotEmpty;
     final status =
         error ??
-        (isListening
+        (isApplying
+            ? 'Metnin ekleniyor…'
+            : isListening
             ? 'Konuş, seni dinliyorum…'
             : hasTranscript
             ? 'Metni ekleyebilir veya dinlemeye devam edebilirsin.'
             : 'Hazır olduğunda dinlemeyi başlat.');
 
     return Padding(
-      key: const ValueKey('planner-ai-inline-voice-panel'),
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-      child: Container(
-        padding: const EdgeInsets.all(1.4),
-        decoration: BoxDecoration(
-          gradient: FlorienColors.aiGradient,
-          borderRadius: BorderRadius.circular(FlorienRadius.xl),
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(FlorienRadius.xl - 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      key: const ValueKey('planner-ai-inline-voice-area'),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            alignment: Alignment.center,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      isListening ? 'Sesli konuşma açık' : 'Sesli konuşma',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+              Semantics(
+                button: !isApplying,
+                label: isListening ? 'Dinlemeyi durdur' : 'Dinlemeyi başlat',
+                child: InkWell(
+                  key: const ValueKey('planner-ai-inline-voice-toggle'),
+                  onTap: isApplying ? null : onToggleListening,
+                  customBorder: const CircleBorder(),
+                  child: FlorienAiAnimation(
+                    key: const ValueKey('planner-ai-inline-voice-animation'),
+                    assetName: florienListeningAnimationAsset,
+                    tintColor: FlorienColors.aiAccent,
+                    lottieKey: const ValueKey('florien-listening-lottie'),
+                    size: 176,
+                    animate: isListening || isApplying,
+                    speed: florienAiVoiceAnimationSpeed(
+                      isListening: isListening,
+                      soundLevel: soundLevel,
                     ),
+                    semanticLabel: isApplying
+                        ? 'Florien AI metni ekliyor'
+                        : isListening
+                        ? 'Florien AI dinliyor'
+                        : 'Florien AI dinlemeye hazır',
                   ),
-                  IconButton(
-                    key: const ValueKey('planner-ai-inline-voice-close'),
-                    tooltip: 'Sesli konuşmayı kapat',
-                    visualDensity: VisualDensity.compact,
-                    onPressed: onClose,
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                  ),
-                ],
+                ),
               ),
-              Row(
-                children: [
-                  Semantics(
-                    button: true,
-                    label: isListening
-                        ? 'Dinlemeyi durdur'
-                        : 'Dinlemeyi başlat',
-                    child: InkWell(
-                      key: const ValueKey('planner-ai-inline-voice-toggle'),
-                      onTap: onToggleListening,
-                      customBorder: const CircleBorder(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: FlorienAiAnimation(
-                          key: const ValueKey(
-                            'planner-ai-inline-voice-animation',
-                          ),
-                          size: 82,
-                          animate: isListening,
-                          speed: florienAiVoiceAnimationSpeed(
-                            isListening: isListening,
-                            soundLevel: soundLevel,
-                          ),
-                          semanticLabel: isListening
-                              ? 'Florien AI dinliyor'
-                              : 'Florien AI dinlemeye hazır',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          hasTranscript ? transcript : status,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: error == null
-                                ? context.palette.textPrimary
-                                : context.palette.error,
-                            fontSize: 14,
-                            fontWeight: hasTranscript
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            height: 1.3,
-                          ),
-                        ),
-                        if (hasTranscript) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            status,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: context.palette.textSecondary,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      key: const ValueKey(
-                        'planner-ai-inline-voice-listen-toggle',
-                      ),
-                      onPressed: onToggleListening,
-                      icon: Icon(
-                        isListening ? Icons.stop_rounded : Icons.mic_rounded,
-                        size: 18,
-                      ),
-                      label: Text(isListening ? 'Durdur' : 'Dinle'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton.icon(
-                      key: const ValueKey('planner-ai-inline-voice-accept'),
-                      onPressed: hasTranscript ? onAccept : null,
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('Metni ekle'),
-                    ),
-                  ),
-                ],
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  key: const ValueKey('planner-ai-inline-voice-close'),
+                  tooltip: 'Sesli konuşmayı kapat',
+                  onPressed: isApplying ? null : onClose,
+                  icon: const Icon(Icons.close_rounded),
+                ),
               ),
             ],
           ),
-        ),
+          Text(
+            hasTranscript ? transcript : status,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: error == null
+                  ? context.palette.textPrimary
+                  : context.palette.error,
+              fontSize: 15,
+              fontWeight: hasTranscript ? FontWeight.w700 : FontWeight.w600,
+              height: 1.3,
+            ),
+          ),
+          if (hasTranscript) ...[
+            const SizedBox(height: 4),
+            Text(
+              status,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const ValueKey('planner-ai-inline-voice-listen-toggle'),
+                  onPressed: isApplying ? null : onToggleListening,
+                  icon: Icon(
+                    isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                    size: 18,
+                  ),
+                  label: Text(isListening ? 'Durdur' : 'Dinle'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  key: const ValueKey('planner-ai-inline-voice-accept'),
+                  onPressed: hasTranscript && !isApplying ? onAccept : null,
+                  icon: isApplying
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_rounded, size: 18),
+                  label: Text(isApplying ? 'Ekleniyor' : 'Metni ekle'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

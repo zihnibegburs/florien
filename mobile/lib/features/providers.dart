@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/firebase/onboarding_firestore_storage.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/achievement.dart';
@@ -34,19 +35,43 @@ final onboardingStorageProvider = Provider<OnboardingStorage>(
   (ref) => OnboardingStorage(),
 );
 
+final onboardingRemoteStorageProvider = Provider<OnboardingRemoteStorage>(
+  (ref) => OnboardingFirestoreStorage(ref.watch(firestoreProvider)),
+);
+
+final onboardingPreferencesRepositoryProvider =
+    Provider<OnboardingPreferencesRepository>(
+      (ref) => OnboardingPreferencesRepository(
+        local: ref.watch(onboardingStorageProvider),
+        remote: ref.watch(onboardingRemoteStorageProvider),
+      ),
+    );
+
 final onboardingPreferencesProvider =
     AsyncNotifierProvider<OnboardingPreferencesNotifier, OnboardingPreferences>(
       OnboardingPreferencesNotifier.new,
     );
 
+/// Override in test builds to restart onboarding on every app launch.
+final forceOnboardingForTestingProvider = Provider<bool>((ref) => false);
+
 class OnboardingPreferencesNotifier
     extends AsyncNotifier<OnboardingPreferences> {
-  late String _ownerId;
+  String? _userId;
 
   @override
-  Future<OnboardingPreferences> build() {
-    _ownerId = ref.watch(authStateProvider).valueOrNull?.userId ?? 'guest';
-    return ref.read(onboardingStorageProvider).load(_ownerId);
+  Future<OnboardingPreferences> build() async {
+    if (ref.watch(forceOnboardingForTestingProvider)) {
+      return const OnboardingPreferences();
+    }
+    _userId = ref.watch(authStateProvider).valueOrNull?.userId;
+    final userId = _userId;
+    if (userId == null) {
+      return ref.read(onboardingStorageProvider).load('guest');
+    }
+    return ref
+        .read(onboardingPreferencesRepositoryProvider)
+        .loadAuthenticated(userId);
   }
 
   Future<void> recordOnboardingAnswer({
@@ -79,7 +104,14 @@ class OnboardingPreferencesNotifier
     final previous = state;
     state = AsyncData(preferences);
     try {
-      await ref.read(onboardingStorageProvider).save(_ownerId, preferences);
+      final userId = _userId;
+      if (userId == null) {
+        await ref.read(onboardingStorageProvider).save('guest', preferences);
+      } else {
+        await ref
+            .read(onboardingPreferencesRepositoryProvider)
+            .saveAuthenticated(userId, preferences);
+      }
     } catch (error, stackTrace) {
       state = previous;
       Error.throwWithStackTrace(error, stackTrace);
@@ -438,6 +470,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
 
   void _refreshPreferences() {
     if (state.valueOrNull == null) return;
+    ref.invalidate(onboardingPreferencesProvider);
     ref.invalidate(appLanguageProvider);
     ref.invalidate(appThemeModeProvider);
   }

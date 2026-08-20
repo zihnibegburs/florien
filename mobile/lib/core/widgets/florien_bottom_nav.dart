@@ -1,6 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/widgets/florien_ai_animation.dart';
+
+const florienAiFabImageAsset = 'assets/ai/florien_ai_glass_star.png';
+
+class FlorienAiMark extends StatelessWidget {
+  const FlorienAiMark({
+    super.key,
+    this.size = 58,
+    this.imageKey,
+    this.semanticLabel = 'Florien AI asistanı',
+  });
+
+  final double size;
+  final Key? imageKey;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Ink(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(2.5),
+        child: ClipOval(
+          child: Semantics(
+            image: true,
+            label: semanticLabel,
+            child: Transform.scale(
+              scale: 1.9,
+              child: Image.asset(
+                florienAiFabImageAsset,
+                key: imageKey,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class FlorienBottomNavigation extends StatelessWidget {
   const FlorienBottomNavigation({
@@ -158,25 +206,8 @@ class FlorienAiFab extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
-          child: Ink(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: FlorienColors.aiGradient,
-              border: Border.all(
-                color: context.palette.border,
-                width: FlorienBorders.thin,
-              ),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(3),
-              child: FlorienAiAnimation(
-                size: 50,
-                speed: 0.85,
-                semanticLabel: 'Florien AI asistanı',
-              ),
-            ),
+          child: const FlorienAiMark(
+            imageKey: ValueKey('florien-ai-fab-image'),
           ),
         ),
       ),

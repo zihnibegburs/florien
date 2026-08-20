@@ -71,7 +71,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('AI FAB uses the supplied animation and remains tappable', (
+  testWidgets('AI FAB uses the supplied image and remains tappable', (
     tester,
   ) async {
     var tapped = false;
@@ -81,9 +81,14 @@ void main() {
         home: Scaffold(body: FlorienAiFab(onPressed: () => tapped = true)),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
 
-    expect(find.byType(FlorienAiAnimation), findsOneWidget);
+    expect(find.byKey(const ValueKey('florien-ai-fab-image')), findsOneWidget);
+    final image = tester.widget<Image>(
+      find.byKey(const ValueKey('florien-ai-fab-image')),
+    );
+    expect((image.image as AssetImage).assetName, florienAiFabImageAsset);
+    expect(find.byType(FlorienAiAnimation), findsNothing);
     await tester.tap(find.byType(FlorienAiFab));
     expect(tapped, isTrue);
   });

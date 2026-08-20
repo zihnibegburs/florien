@@ -42,6 +42,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(
+      tester
+          .widget<Icon>(find.byIcon(Icons.check_circle_outline_rounded))
+          .color,
+      FlorienColors.accent,
+    );
+
     await tester.tap(find.byTooltip('Yeni liste oluştur'));
     await tester.pumpAndSettle();
     expect(find.text('Yeni liste'), findsOneWidget);

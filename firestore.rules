@@ -8,6 +8,10 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      match /onboarding_surveys/{surveyVersion} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /profiles/{profileId}/tasks/{taskId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }

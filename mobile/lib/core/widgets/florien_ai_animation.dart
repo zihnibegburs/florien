@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:lottie/lottie.dart';
 
 const florienAiAnimationAsset = 'assets/ai/florien_ai_flow.json';
+const florienListeningAnimationAsset = 'assets/ai/florien_listening.json';
 
 double florienAiVoiceAnimationSpeed({
   required bool isListening,
@@ -21,6 +22,9 @@ class FlorienAiAnimation extends StatefulWidget {
     this.animate = false,
     this.fit = BoxFit.contain,
     this.semanticLabel = 'Florien AI',
+    this.assetName = florienAiAnimationAsset,
+    this.tintColor,
+    this.lottieKey = const ValueKey('florien-ai-lottie'),
   });
 
   final double size;
@@ -28,6 +32,9 @@ class FlorienAiAnimation extends StatefulWidget {
   final bool animate;
   final BoxFit fit;
   final String semanticLabel;
+  final String assetName;
+  final Color? tintColor;
+  final Key lottieKey;
 
   @override
   State<FlorienAiAnimation> createState() => _FlorienAiAnimationState();
@@ -103,19 +110,34 @@ class _FlorienAiAnimationState extends State<FlorienAiAnimation>
 
   @override
   Widget build(BuildContext context) {
+    final tintColor = widget.tintColor;
     return Semantics(
       image: true,
       label: widget.semanticLabel,
       child: SizedBox.square(
         dimension: widget.size,
         child: Lottie.asset(
-          florienAiAnimationAsset,
-          key: const ValueKey('florien-ai-lottie'),
+          widget.assetName,
+          key: widget.lottieKey,
           controller: _controller,
           onLoaded: _onLoaded,
           repeat: false,
           fit: widget.fit,
           frameRate: FrameRate.composition,
+          delegates: tintColor == null
+              ? null
+              : LottieDelegates(
+                  values: [
+                    ValueDelegate.color(const [
+                      '**',
+                      'Fill 1',
+                    ], value: tintColor),
+                    ValueDelegate.strokeColor(const [
+                      '**',
+                      'Stroke 1',
+                    ], value: tintColor),
+                  ],
+                ),
         ),
       ),
     );

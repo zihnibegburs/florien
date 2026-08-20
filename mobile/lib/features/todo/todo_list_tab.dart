@@ -1322,7 +1322,7 @@ class _TodoSectionData {
 const _defaultSection = _TodoSectionData(
   'YAPILACAK',
   'Yapılacak',
-  FlorienColors.primary,
+  FlorienColors.accent,
   Icons.check_circle_outline_rounded,
 );
 

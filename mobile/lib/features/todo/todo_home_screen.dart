@@ -11,6 +11,7 @@ import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
+import 'package:florien/features/premium/premium_upsell_button.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/focus_timer_tab.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
@@ -339,7 +340,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                     visible: _scrollChromeVisible,
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: _PremiumHeaderButton(
+                      child: PremiumUpsellButton(
                         onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => const PremiumMembershipScreen(),
@@ -362,6 +363,12 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           DailyPlannerTab(
             quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
             scrollChromeEnabled: _selectedIndex == 1,
+            showPremiumUpsell: premium != null && !premium.isPremium,
+            onPremiumUpsellPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PremiumMembershipScreen(),
+              ),
+            ),
             onScrollChromeVisibilityChanged: (visible) =>
                 _handleScrollChromeVisibility(1, visible),
           ),
@@ -434,52 +441,4 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       ),
     );
   }
-}
-
-class _PremiumHeaderButton extends StatelessWidget {
-  const _PremiumHeaderButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Material(
-      color: FlorienColors.primary,
-      borderRadius: BorderRadius.circular(FlorienRadius.sm),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(FlorienRadius.sm),
-        child: Container(
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(FlorienRadius.sm),
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.thin,
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.workspace_premium_rounded,
-                size: 17,
-                color: FlorienColors.onPrimary,
-              ),
-              SizedBox(width: 5),
-              Text(
-                'Premium ol',
-                style: TextStyle(
-                  color: FlorienColors.onPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }

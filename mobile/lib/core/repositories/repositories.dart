@@ -7,6 +7,7 @@ import 'package:florien/core/firebase/user_profile_service.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
 import 'package:florien/firebase_options.dart';
 
@@ -166,6 +167,56 @@ class TaskRepository {
 
   CollectionReference<Map<String, dynamic>> get _tasks =>
       tasksCol(_db, _uid, profileId);
+
+  Future<List<TaskUsageSummary>> getFrequentlyUsedTasks({
+    int limit = 10,
+  }) async {
+    final snapshot = await _tasks.get();
+    final tasksById = <String, TaskModel>{};
+    final dataById = <String, Map<String, dynamic>>{};
+    final subtasksByParent = <String, List<TaskModel>>{};
+
+    for (final document in snapshot.docs) {
+      final task = TaskModel.fromFirestore(document.id, document.data());
+      tasksById[document.id] = task;
+      dataById[document.id] = document.data();
+      final parentId = task.parentTaskId;
+      if (parentId != null) {
+        subtasksByParent.putIfAbsent(parentId, () => []).add(task);
+      }
+    }
+    for (final subtasks in subtasksByParent.values) {
+      subtasks.sort(
+        (first, second) => first.sortOrder.compareTo(second.sortOrder),
+      );
+    }
+
+    final candidates = <TaskUsageCandidate>[];
+    for (final entry in tasksById.entries) {
+      final task = entry.value;
+      if (task.parentTaskId != null) continue;
+      final data = dataById[entry.key]!;
+      candidates.add(
+        TaskUsageCandidate(
+          task: task.copyWith(subtasks: subtasksByParent[task.id] ?? const []),
+          createdAt: _taskCreatedAt(data, fallback: task.scheduledAt),
+        ),
+      );
+    }
+    return rankFrequentlyUsedTasks(candidates, limit: limit);
+  }
+
+  DateTime _taskCreatedAt(Map<String, dynamic> data, {DateTime? fallback}) {
+    final value = data['createdAt'];
+    if (value is Timestamp) return value.toDate().toLocal();
+    if (value is DateTime) return value.toLocal();
+    if (value is String) {
+      return DateTime.tryParse(value)?.toLocal() ??
+          fallback ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
 
   Future<List<TaskModel>> getInbox() async {
     final snap = await _tasks

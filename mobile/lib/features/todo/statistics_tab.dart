@@ -779,7 +779,8 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
           ),
           const SizedBox(height: 18),
           Text(
-            '${widget.date.day}.${widget.date.month} için nasılsın?',
+            moodReflectionQuestion(widget.date),
+            key: const ValueKey('mood-reflection-question'),
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -847,6 +848,48 @@ bool _sameDay(DateTime first, DateTime second) =>
     first.year == second.year &&
     first.month == second.month &&
     first.day == second.day;
+
+const _turkishMonthNames = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
+
+const _turkishWeekdayNames = [
+  'Pazartesi',
+  'Salı',
+  'Çarşamba',
+  'Perşembe',
+  'Cuma',
+  'Cumartesi',
+  'Pazar',
+];
+
+String moodReflectionQuestion(DateTime date, {DateTime? today}) {
+  final current = today ?? DateTime.now();
+  final currentDay = DateTime(current.year, current.month, current.day);
+  final selectedDay = DateTime(date.year, date.month, date.day);
+  if (_sameDay(selectedDay, currentDay)) return 'Bugün nasılsın?';
+  if (_sameDay(selectedDay, currentDay.subtract(const Duration(days: 1)))) {
+    return 'Dün nasıldın?';
+  }
+
+  final month = _turkishMonthNames[selectedDay.month - 1];
+  final weekday = _turkishWeekdayNames[selectedDay.weekday - 1];
+  final year = selectedDay.year == currentDay.year
+      ? ''
+      : ' ${selectedDay.year}';
+  return '${selectedDay.day} $month$year $weekday günü nasıldın?';
+}
 
 Color _moodColor(MoodLevel? mood, BuildContext context) => switch (mood) {
   MoodLevel.veryLow => FlorienColors.softPink,

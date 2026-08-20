@@ -42,6 +42,8 @@ class OnboardingPreferences {
   final String onboardingVersion;
   final Map<String, OnboardingAnswer> answers;
 
+  bool get hasProgress => completed || answers.isNotEmpty;
+
   String? answerIdFor(String questionId) => answers[questionId]?.answerId;
 
   OnboardingPreferences copyWith({
@@ -115,4 +117,41 @@ class OnboardingStorage {
       jsonEncode(preferences.toJson()),
     );
   }
+
+  Future<void> clear(String ownerId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_keyPrefix$ownerId');
+  }
+}
+
+abstract interface class OnboardingRemoteStorage {
+  Future<OnboardingPreferences> load(String userId);
+
+  Future<void> save(String userId, OnboardingPreferences preferences);
+}
+
+class OnboardingPreferencesRepository {
+  OnboardingPreferencesRepository({
+    required OnboardingStorage local,
+    required OnboardingRemoteStorage remote,
+  }) : _local = local,
+       _remote = remote;
+
+  final OnboardingStorage _local;
+  final OnboardingRemoteStorage _remote;
+
+  Future<OnboardingPreferences> loadAuthenticated(String userId) async {
+    final guestPreferences = await _local.load('guest');
+    if (guestPreferences.hasProgress) {
+      await _remote.save(userId, guestPreferences);
+      await _local.clear('guest');
+      return guestPreferences;
+    }
+    return _remote.load(userId);
+  }
+
+  Future<void> saveAuthenticated(
+    String userId,
+    OnboardingPreferences preferences,
+  ) => _remote.save(userId, preferences);
 }

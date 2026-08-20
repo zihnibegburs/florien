@@ -1,15 +1,40 @@
 import 'dart:convert';
 
+import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('each launch restarts a previously completed onboarding', (
+  testWidgets('onboarding follows the active light theme', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          darkTheme: FlorienTheme.dark,
+          themeMode: ThemeMode.light,
+          home: const OnboardingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final openingContext = tester.element(
+      find.byKey(const ValueKey('onboarding-opening')),
+    );
+    expect(Theme.of(openingContext).brightness, Brightness.light);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      FlorienPalette.light.background,
+    );
+  });
+
+  testWidgets('completed onboarding remains saved and continues to login', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({
@@ -28,16 +53,32 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(375, 667));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    final router = GoRouter(
+      initialLocation: '/onboarding',
+      routes: [
+        GoRoute(
+          path: '/onboarding',
+          builder: (_, _) => const OnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (_, _) => const Scaffold(body: Text('Giriş ekranı')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: OnboardingScreen())),
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Bazen plan yapmak bile yorucu gelebilir.'),
-      findsOneWidget,
-    );
-    expect(find.text('0/7'), findsOneWidget);
+    expect(find.text('Giriş ekranı'), findsOneWidget);
+    final preferences = await SharedPreferences.getInstance();
+    final stored =
+        jsonDecode(preferences.getString('onboarding_preferences_guest')!)
+            as Map<String, dynamic>;
+    expect(stored['completed'], isTrue);
+    expect(stored['answers'], isNotEmpty);
   });
 
   testWidgets('onboarding saves seven answers and advances automatically', (
@@ -46,7 +87,12 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(375, 667));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: OnboardingScreen())),
+      ProviderScope(
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const OnboardingScreen(),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 

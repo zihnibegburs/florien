@@ -27,12 +27,11 @@ class AssetCategoryEmbeddingIndex implements CategorySimilarityIndex {
 
   Future<void> _initialize() async {
     try {
-      final loaded = await Future.wait([
-        rootBundle.load(config.prototypeAsset),
-        rootBundle.loadString(config.prototypeManifestAsset),
-      ]);
-      final data = loaded[0] as ByteData;
-      final manifest = jsonDecode(loaded[1] as String) as Map<String, dynamic>;
+      final data = await rootBundle.load(config.prototypeAsset);
+      final manifestString = await rootBundle.loadString(
+        config.prototypeManifestAsset,
+      );
+      final manifest = jsonDecode(manifestString) as Map<String, dynamic>;
       final bytes = data.buffer.asUint8List(
         data.offsetInBytes,
         data.lengthInBytes,

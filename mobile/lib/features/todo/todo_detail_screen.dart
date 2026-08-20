@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
@@ -112,10 +113,13 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           .where((item) => existing.add(item.toLowerCase()))
           .take(math.min(TaskModel.aiSubtaskLimit, remaining))
           .toList();
-      setState(() {
-        _subtasks.addAll(additions);
-        _subtasksExpanded = true;
-      });
+      if (additions.isEmpty) return;
+      setState(() => _subtasksExpanded = true);
+      await revealSubtasksSequentially(
+        subtasks: additions,
+        canContinue: () => mounted && _title.text.trim() == title,
+        onReveal: (subtask) => setState(() => _subtasks.add(subtask)),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(

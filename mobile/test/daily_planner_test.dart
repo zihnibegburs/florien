@@ -8,6 +8,8 @@ import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
@@ -38,6 +40,18 @@ class _ReadyTaskAlarmService extends TaskAlarmService {
   @override
   Future<TaskAlarmReadiness> prepareTaskAlarm(DateTime alarmAt) async =>
       TaskAlarmReadiness.ready;
+}
+
+class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false);
+}
+
+class _ActivePremiumMembershipNotifier extends PremiumMembershipNotifier {
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: false, isPremium: true);
 }
 
 void main() {
@@ -596,6 +610,78 @@ void main() {
     await tester.tap(find.text('Günlük'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
+  });
+
+  testWidgets('premium upsell is available in todo and daily lists', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inboxProvider.overrideWith(_EmptyInboxNotifier.new),
+          todoListsProvider.overrideWith(_EmptyListsNotifier.new),
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const TodoHomeScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const ValueKey('premium-upsell-button')), findsOneWidget);
+
+    await tester.tap(find.text('Günlük'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const ValueKey('premium-upsell-button')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('premium-upsell-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(PremiumMembershipScreen), findsOneWidget);
+  });
+
+  testWidgets('premium upsell stays hidden for premium users', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inboxProvider.overrideWith(_EmptyInboxNotifier.new),
+          todoListsProvider.overrideWith(_EmptyListsNotifier.new),
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _ActivePremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const TodoHomeScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const ValueKey('premium-upsell-button')), findsNothing);
+
+    await tester.tap(find.text('Günlük'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const ValueKey('premium-upsell-button')), findsNothing);
   });
 
   testWidgets('date selector collapses behind the pinned daily header', (

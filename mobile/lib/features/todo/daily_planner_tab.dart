@@ -4,15 +4,19 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/data/routine_catalog.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
+import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/core/widgets/delayed_scroll_chrome.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/features/premium/premium_upsell_button.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
@@ -162,11 +166,15 @@ class DailyPlannerTab extends ConsumerStatefulWidget {
     super.key,
     this.quickAddSignal = 0,
     this.scrollChromeEnabled = true,
+    this.showPremiumUpsell = false,
+    this.onPremiumUpsellPressed,
     this.onScrollChromeVisibilityChanged,
   });
 
   final int quickAddSignal;
   final bool scrollChromeEnabled;
+  final bool showPremiumUpsell;
+  final VoidCallback? onPremiumUpsellPressed;
   final ValueChanged<bool>? onScrollChromeVisibilityChanged;
 
   @override
@@ -218,6 +226,8 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
               onRescheduleTasks: () => _showRescheduleReview(const []),
               onDiscoverRoutines: _showRoutineDiscovery,
               onShare: () => _showDailyShare(const []),
+              showPremiumUpsell: widget.showPremiumUpsell,
+              onPremiumUpsellPressed: widget.onPremiumUpsellPressed,
               scrollChromeVisible: _scrollChromeVisible,
             ),
             data: (value) => _DailyBody(
@@ -233,6 +243,8 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
               onRescheduleTasks: () => _showRescheduleReview(value.tasks),
               onDiscoverRoutines: _showRoutineDiscovery,
               onShare: () => _showDailyShare(value.tasks),
+              showPremiumUpsell: widget.showPremiumUpsell,
+              onPremiumUpsellPressed: widget.onPremiumUpsellPressed,
               scrollChromeVisible: _scrollChromeVisible,
             ),
           ),
@@ -311,10 +323,41 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   }
 
   Future<void> _showRoutineDiscovery() async {
+    List<TaskUsageSummary> frequentlyUsedTasks = const [];
+    try {
+      frequentlyUsedTasks = await ref
+          .read(taskRepositoryProvider)
+          .getFrequentlyUsedTasks();
+    } catch (error) {
+      debugPrint('Frequently used tasks could not be loaded: $error');
+    }
+    if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RoutineDiscoveryScreen(
-          onTaskSelected: (task, theme) => pushFlorienOverlayRoute<bool>(
+          frequentlyUsedTasks: frequentlyUsedTasks,
+          onFrequentlyUsedTaskSelected: (summary) {
+            final task = summary.task;
+            return pushFlorienOverlayRoute<bool>(
+              context: context,
+              builder: (_) => _DailyTaskDetailScreen(
+                initialDraft: _DailyTaskDraft(
+                  date: _selectedDate,
+                  period: task.dayPeriod,
+                  title: task.title,
+                  description: task.description ?? '',
+                  durationMinutes: task.durationMinutes,
+                  icon: task.icon,
+                  color: task.color,
+                  subtasks: task.subtasks
+                      .map((subtask) => subtask.title)
+                      .toList(),
+                  openDetails: true,
+                ),
+              ),
+            );
+          },
+          onTaskSelected: (task, _) => pushFlorienOverlayRoute<bool>(
             context: context,
             builder: (_) => _DailyTaskDetailScreen(
               initialDraft: _DailyTaskDraft(
@@ -324,7 +367,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
                 description: task.description,
                 durationMinutes: task.durationMinutes,
                 icon: task.icon,
-                color: theme.color,
+                color: readyRoutineTaskColor,
                 presetSubtasks: task.subtasks,
                 openDetails: true,
               ),
@@ -350,6 +393,8 @@ class _DailyBody extends StatelessWidget {
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
     required this.onShare,
+    required this.showPremiumUpsell,
+    required this.onPremiumUpsellPressed,
     required this.scrollChromeVisible,
   });
 
@@ -365,6 +410,8 @@ class _DailyBody extends StatelessWidget {
   final VoidCallback onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
+  final bool showPremiumUpsell;
+  final VoidCallback? onPremiumUpsellPressed;
   final bool scrollChromeVisible;
 
   @override
@@ -414,6 +461,8 @@ class _DailyBody extends StatelessWidget {
                       onRescheduleTasks: onRescheduleTasks,
                       onDiscoverRoutines: onDiscoverRoutines,
                       onShare: onShare,
+                      showPremiumUpsell: showPremiumUpsell,
+                      onPremiumUpsellPressed: onPremiumUpsellPressed,
                     ),
                   ),
                 ),
@@ -467,6 +516,8 @@ class _DailyHeader extends StatelessWidget {
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
     required this.onShare,
+    required this.showPremiumUpsell,
+    required this.onPremiumUpsellPressed,
   });
 
   final DateTime selectedDate;
@@ -477,6 +528,8 @@ class _DailyHeader extends StatelessWidget {
   final VoidCallback onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
+  final bool showPremiumUpsell;
+  final VoidCallback? onPremiumUpsellPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -492,7 +545,22 @@ class _DailyHeader extends StatelessWidget {
               icon: Icons.today_rounded,
               onTap: () => onSelectDate(today),
             ),
-            const Spacer(),
+            if (showPremiumUpsell && onPremiumUpsellPressed != null) ...[
+              const SizedBox(width: 6),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: PremiumUpsellButton(
+                      onPressed: onPremiumUpsellPressed!,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ] else
+              const Spacer(),
             _SquareButton(
               key: const ValueKey('daily-share-plan'),
               tooltip: 'Günü paylaş',
@@ -2867,10 +2935,13 @@ class _DailyTaskDetailScreenState
           .where((item) => existing.add(item.toLowerCase()))
           .take(math.min(TaskModel.aiSubtaskLimit, remaining))
           .toList();
-      setState(() {
-        _subtasks.addAll(additions);
-        _subtasksExpanded = true;
-      });
+      if (additions.isEmpty) return;
+      setState(() => _subtasksExpanded = true);
+      await revealSubtasksSequentially(
+        subtasks: additions,
+        canContinue: () => mounted && _title.text.trim() == title,
+        onReveal: (subtask) => setState(() => _subtasks.add(subtask)),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -3085,7 +3156,9 @@ class _DailyTaskDetailScreenState
                           _subtasks.length < TaskModel.userSubtaskLimit
                       ? IconButton.filledTonal(
                           key: const ValueKey('daily-ai-subtasks-button'),
-                          tooltip: 'AI ile alt görev oluştur',
+                          tooltip: widget.initialDraft.presetSubtasks.isNotEmpty
+                              ? 'Hazır alt görevleri ekle'
+                              : 'AI ile alt görev oluştur',
                           onPressed: _generatingSubtasks
                               ? null
                               : _generateSubtasks,
@@ -3096,7 +3169,11 @@ class _DailyTaskDetailScreenState
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(Icons.auto_awesome_rounded),
+                              : Icon(
+                                  widget.initialDraft.presetSubtasks.isNotEmpty
+                                      ? Icons.playlist_add_check_rounded
+                                      : Icons.auto_awesome_rounded,
+                                ),
                         )
                       : null,
                   expanded: _subtasksExpanded,

@@ -49,12 +49,12 @@ void main() {
     expect(find.byType(CalendarDatePicker), findsOneWidget);
     expect(find.textContaining('Bugün ('), findsOneWidget);
     expect(find.textContaining('Yarın ('), findsOneWidget);
-    expect(find.textContaining('Bu hafta sonu ('), findsOneWidget);
     await tester.drag(
       find.byKey(const ValueKey('schedule-sheet-list')),
       const Offset(0, -260),
     );
     await tester.pumpAndSettle();
+    expect(find.textContaining('Bu hafta sonu ('), findsOneWidget);
     expect(find.textContaining('Gelecek hafta ('), findsOneWidget);
     await tester.drag(
       find.byKey(const ValueKey('schedule-sheet-list')),

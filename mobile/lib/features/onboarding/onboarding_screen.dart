@@ -154,8 +154,6 @@ const _onboardingQuestions = [
   ),
 ];
 
-const _alwaysShowOnboardingOnLaunch = true;
-
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -167,7 +165,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0;
   int _selectionToken = 0;
   bool _initialized = false;
-  bool _testSessionPrepared = false;
   bool _transitioning = false;
   bool _finishing = false;
 
@@ -247,67 +244,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final onboarding = ref.watch(onboardingPreferencesProvider);
-    return Theme(
-      data: FlorienTheme.dark,
-      child: Builder(
-        builder: (context) => onboarding.when(
-          loading: () =>
-              const Scaffold(body: Center(child: CircularProgressIndicator())),
-          error: (_, _) => const Scaffold(
-            body: Center(child: Text('Onboarding yüklenemedi.')),
-          ),
-          data: (preferences) {
-            if (_alwaysShowOnboardingOnLaunch && !_testSessionPrepared) {
-              _testSessionPrepared = true;
-              if (preferences.completed || preferences.answers.isNotEmpty) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  ref
-                      .read(onboardingPreferencesProvider.notifier)
-                      .restartOnboarding();
-                });
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-            }
-            if (preferences.completed) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) context.go(_routeAfterOnboarding());
-              });
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            if (!_initialized) {
-              _initialized = true;
-              _step = _initialStep(preferences);
-            }
-            return _OnboardingFrame(
-              answeredCount: _onboardingQuestions
-                  .where(
-                    (question) => preferences.answerIdFor(question.id) != null,
-                  )
-                  .length,
-              onBack: _step == 0 ? null : _back,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.04, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: _content(preferences),
+    return onboarding.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (_, _) =>
+          const Scaffold(body: Center(child: Text('Onboarding yüklenemedi.'))),
+      data: (preferences) {
+        if (preferences.completed) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.go(_routeAfterOnboarding());
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!_initialized) {
+          _initialized = true;
+          _step = _initialStep(preferences);
+        }
+        return _OnboardingFrame(
+          answeredCount: _onboardingQuestions
+              .where((question) => preferences.answerIdFor(question.id) != null)
+              .length,
+          onBack: _step == 0 ? null : _back,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.04, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
               ),
-            );
-          },
-        ),
-      ),
+            ),
+            child: _content(preferences),
+          ),
+        );
+      },
     );
   }
 

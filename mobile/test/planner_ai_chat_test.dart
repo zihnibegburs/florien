@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +8,8 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_ai_animation.dart';
+import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 
@@ -25,6 +29,7 @@ class _FakePlannerAiGateway implements PlannerAiGateway {
 
 class _FakeSpeechInput implements SpeechInput {
   bool _isListening = false;
+  Completer<void>? _stopGate;
   void Function(String text)? _onText;
   void Function(bool isListening)? _onListeningChanged;
   void Function(double soundLevel)? _onSoundLevelChanged;
@@ -49,6 +54,11 @@ class _FakeSpeechInput implements SpeechInput {
 
   @override
   Future<void> stop() async {
+    final stopGate = _stopGate;
+    if (stopGate != null) {
+      await stopGate.future;
+      _stopGate = null;
+    }
     _isListening = false;
     _onListeningChanged?.call(false);
   }
@@ -59,6 +69,10 @@ class _FakeSpeechInput implements SpeechInput {
   void emitText(String text) => _onText?.call(text);
 
   void emitSoundLevel(double level) => _onSoundLevelChanged?.call(level);
+
+  void delayNextStop() => _stopGate = Completer<void>();
+
+  void completeStop() => _stopGate?.complete();
 }
 
 class _AiInboxNotifier extends InboxNotifier {
@@ -123,6 +137,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('planner-ai-voice')), findsOneWidget);
+    final headerImage = tester.widget<Image>(
+      find.byKey(const ValueKey('planner-ai-header-image')),
+    );
+    expect((headerImage.image as AssetImage).assetName, florienAiFabImageAsset);
 
     await tester.enterText(
       find.byKey(const ValueKey('planner-ai-input')),
@@ -168,15 +186,43 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('planner-ai-voice')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 320));
 
     expect(
-      find.byKey(const ValueKey('planner-ai-inline-voice-panel')),
+      find.byKey(const ValueKey('planner-ai-inline-voice-area')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('planner-ai-text-input-mode')),
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey('planner-ai-inline-voice-animation')),
       findsOneWidget,
+    );
+    final listeningAnimation = tester.widget<FlorienAiAnimation>(
+      find.byKey(const ValueKey('planner-ai-inline-voice-animation')),
+    );
+    expect(listeningAnimation.assetName, florienListeningAnimationAsset);
+    expect(listeningAnimation.tintColor, FlorienColors.aiAccent);
+    expect(listeningAnimation.size, 176);
+    expect(
+      find.byKey(const ValueKey('florien-listening-lottie')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .getCenter(
+            find.byKey(const ValueKey('planner-ai-inline-voice-animation')),
+          )
+          .dy,
+      lessThan(
+        tester
+            .getCenter(
+              find.byKey(const ValueKey('planner-ai-inline-voice-accept')),
+            )
+            .dy,
+      ),
     );
     expect(find.text('Plan Asistanı'), findsOneWidget);
 
@@ -185,9 +231,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Yarın yürüyüş yapacağım'), findsOneWidget);
+    speechInput.delayNextStop();
     await tester.tap(
       find.byKey(const ValueKey('planner-ai-inline-voice-accept')),
     );
+    await tester.pump();
+
+    expect(find.text('Ekleniyor'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-inline-voice-area')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('planner-ai-inline-voice-accept')),
+      findsOneWidget,
+    );
+
+    speechInput.completeStop();
     await tester.pumpAndSettle();
 
     final input = tester.widget<TextField>(
@@ -195,8 +255,12 @@ void main() {
     );
     expect(input.controller?.text, 'Yarın yürüyüş yapacağım');
     expect(
-      find.byKey(const ValueKey('planner-ai-inline-voice-panel')),
+      find.byKey(const ValueKey('planner-ai-inline-voice-area')),
       findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('planner-ai-text-input-mode')),
+      findsOneWidget,
     );
   });
 }

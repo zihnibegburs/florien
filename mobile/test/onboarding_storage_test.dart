@@ -4,6 +4,19 @@ import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _MemoryOnboardingRemoteStorage implements OnboardingRemoteStorage {
+  final Map<String, OnboardingPreferences> values = {};
+
+  @override
+  Future<OnboardingPreferences> load(String userId) async =>
+      values[userId] ?? const OnboardingPreferences();
+
+  @override
+  Future<void> save(String userId, OnboardingPreferences preferences) async {
+    values[userId] = preferences;
+  }
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -50,6 +63,36 @@ void main() {
       expect(restored.completed, isFalse);
       expect(restored.onboardingVersion, currentOnboardingVersion);
       expect(restored.answers, isEmpty);
+    },
+  );
+
+  test(
+    'moves guest survey answers to the authenticated remote store',
+    () async {
+      final local = OnboardingStorage();
+      final remote = _MemoryOnboardingRemoteStorage();
+      final preferences = OnboardingPreferences(
+        completed: true,
+        answers: {
+          'ONB-Q1': OnboardingAnswer(
+            questionId: 'ONB-Q1',
+            answerId: 'mind_overload',
+            answeredAt: DateTime(2026, 8, 18, 15, 30),
+          ),
+        },
+      );
+      await local.save('guest', preferences);
+      final repository = OnboardingPreferencesRepository(
+        local: local,
+        remote: remote,
+      );
+
+      final restored = await repository.loadAuthenticated('user-1');
+
+      expect(restored.completed, isTrue);
+      expect(restored.answerIdFor('ONB-Q1'), 'mind_overload');
+      expect(remote.values['user-1']?.answerIdFor('ONB-Q1'), 'mind_overload');
+      expect((await local.load('guest')).hasProgress, isFalse);
     },
   );
 }

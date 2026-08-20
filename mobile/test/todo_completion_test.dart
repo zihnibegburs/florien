@@ -148,7 +148,7 @@ void main() {
     title = tester.widget<Text>(find.text('Deneme görevi'));
     expect(title.style?.decoration, TextDecoration.none);
     expect(find.text('TAMAMLANDI (1)'), findsNothing);
-    expect(find.text('YAPILACAK (1)'), findsNothing);
+    expect(find.text('YAPILACAK (1)'), findsOneWidget);
     expect(find.text('YÜKSEK (0)'), findsNothing);
   });
 

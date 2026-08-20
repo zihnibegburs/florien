@@ -36,7 +36,12 @@ Future<void> main() async {
       florienWidgetBackgroundCallback,
     );
   }
-  runApp(const ProviderScope(child: FlorienApp()));
+  runApp(
+    ProviderScope(
+      overrides: [forceOnboardingForTestingProvider.overrideWithValue(true)],
+      child: const FlorienApp(),
+    ),
+  );
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(
       TaskIconClassifier.instance.initialize().onError((error, stackTrace) {
