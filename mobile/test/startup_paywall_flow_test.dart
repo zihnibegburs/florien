@@ -53,6 +53,36 @@ class _PremiumPlansNotifier extends PremiumMembershipNotifier {
   );
 }
 
+class _RetryPremiumPlansNotifier extends PremiumMembershipNotifier {
+  bool reloadCalled = false;
+
+  @override
+  Future<PremiumMembership> build() async =>
+      const PremiumMembership(storeAvailable: true);
+
+  @override
+  Future<void> reloadProducts() async {
+    reloadCalled = true;
+    state = AsyncData(
+      PremiumMembership(
+        storeAvailable: true,
+        // Deliberately stale: the model must fall back to the available plan.
+        selectedProductId: premiumMonthlyProductId,
+        products: [
+          ProductDetails(
+            id: premiumYearlyProductId,
+            title: 'Yıllık',
+            description: '',
+            price: '₺799,99',
+            rawPrice: 799.99,
+            currencyCode: 'TRY',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -217,6 +247,55 @@ void main() {
     expect(monthlyDecoration.color, isNot(yearlyDecoration.color));
     expect(monthlyDecoration.border!.top.width, 2);
     expect(yearlyDecoration.border!.top.width, FlorienBorders.thin);
+  });
+
+  testWidgets('missing products show retry and use the available fallback', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifier = _RetryPremiumPlansNotifier();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [premiumMembershipProvider.overrideWith(() => notifier)],
+        child: const MaterialApp(home: PremiumMembershipScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final retry = find.byKey(const ValueKey('retry-premium-products'));
+    await tester.scrollUntilVisible(
+      retry,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Premium yakında'), findsNothing);
+    expect(find.text('Planları tekrar yükle'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('premium-plan-$premiumMonthlyProductId')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('premium-plan-$premiumYearlyProductId')),
+      findsOneWidget,
+    );
+    expect(find.text('App Store fiyatı bekleniyor'), findsNWidgets(2));
+
+    await tester.ensureVisible(retry);
+    await tester.pumpAndSettle();
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+
+    expect(notifier.reloadCalled, isTrue);
+    expect(
+      find.byKey(const ValueKey('premium-plan-$premiumYearlyProductId')),
+      findsOneWidget,
+    );
+    expect(find.text('₺799,99 karşılığında Premium ol'), findsOneWidget);
+    expect(
+      notifier.state.requireValue.selectedProduct?.id,
+      premiumYearlyProductId,
+    );
   });
 
   testWidgets('plan cards follow the selected English language', (

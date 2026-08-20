@@ -4,44 +4,14 @@ import 'package:florien/core/models/achievement.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 
-class AchievementSection extends ConsumerStatefulWidget {
+class AchievementSection extends ConsumerWidget {
   const AchievementSection({super.key});
 
   @override
-  ConsumerState<AchievementSection> createState() => _AchievementSectionState();
-}
-
-class _AchievementSectionState extends ConsumerState<AchievementSection> {
-  String? _scheduledCelebration;
-
-  void _scheduleCelebration(AchievementProgress progress, String profileScope) {
-    final achievement = progress.highestUnlocked;
-    if (achievement == null) return;
-    final celebrationKey = '$profileScope:${achievement.threshold}';
-    if (_scheduledCelebration == celebrationKey) return;
-    _scheduledCelebration = celebrationKey;
-    final storage = ref.read(achievementProgressStorageProvider);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final celebrated = await storage.loadCelebratedThreshold(profileScope);
-      if (!mounted || celebrated >= achievement.threshold) return;
-      await showAchievementCelebration(context, achievement);
-      await storage.markCelebrated(
-        profileScope: profileScope,
-        threshold: achievement.threshold,
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final profileScope = ref.watch(activeProfileScopeProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(achievementProgressProvider);
     return progress.when(
-      data: (value) {
-        _scheduleCelebration(value, profileScope);
-        return AchievementCollection(progress: value);
-      },
+      data: (value) => AchievementCollection(progress: value),
       loading: () => const SizedBox(
         height: 214,
         child: Center(child: CircularProgressIndicator()),

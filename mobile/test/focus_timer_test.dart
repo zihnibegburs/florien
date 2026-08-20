@@ -171,7 +171,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Alarm açık'), findsOneWidget);
+    expect(find.text('− 1 dk'), findsOneWidget);
     expect(find.text('+ 1 dk'), findsOneWidget);
+    expect(find.text('Sonlandır'), findsOneWidget);
     expect(find.byIcon(Icons.hourglass_bottom_rounded), findsOneWidget);
     expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
     expect(find.byKey(const ValueKey('focus-paused-indicator')), findsNothing);
@@ -330,6 +332,101 @@ void main() {
     expect(find.text('Alarm açık'), findsNothing);
   });
 
+  testWidgets('active dial does not complete if dragged back before release', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: const Scaffold(body: FocusTimerTab()),
+      ),
+    );
+
+    await tester.tap(find.text('Odaklanmaya başla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('5 dk.'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final dial = find.byKey(const ValueKey('active-focus-dial'));
+    final center = tester.getCenter(dial);
+    final gesture = await tester.startGesture(center + const Offset(0, -120));
+    for (var step = 1; step <= 48; step++) {
+      final angle = -math.pi / 2 + math.pi * 2 * step / 48;
+      await gesture.moveTo(
+        center + Offset(math.cos(angle) * 120, math.sin(angle) * 120),
+      );
+      await tester.pump(const Duration(milliseconds: 2));
+    }
+
+    // Çember sona ulaştıktan sonra parmak bırakılmadan geri dönülüyor.
+    await gesture.moveTo(center + const Offset(-120, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byKey(const ValueKey('focus-dial-celebration')), findsNothing);
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+    expect(find.text('Sonlandır'), findsOneWidget);
+  });
+
+  testWidgets('minus one minute finishes when reduced total is below elapsed', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: const Scaffold(body: FocusTimerTab()),
+      ),
+    );
+
+    await tester.tap(find.text('Odaklanmaya başla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('5 dk.'));
+    await tester.pump(const Duration(seconds: 61));
+
+    for (var tap = 0; tap < 4; tap++) {
+      await tester.tap(find.text('− 1 dk'));
+      await tester.pump();
+    }
+
+    expect(
+      find.byKey(const ValueKey('focus-dial-celebration')),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('timer-setup')), findsOneWidget);
+  });
+
+  testWidgets('focus session can be finished with a separate button', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: const Scaffold(body: FocusTimerTab()),
+      ),
+    );
+
+    await tester.tap(find.text('Odaklanmaya başla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('5 dk.'));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('finish-focus-session')));
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('focus-dial-celebration')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('setup dial stops at the top instead of wrapping', (
     tester,
   ) async {
@@ -405,5 +502,30 @@ void main() {
         center +
         Offset(math.cos(expectedAngle) * 133, math.sin(expectedAngle) * 133);
     expect((handleAfter - expectedHandle).distance, lessThan(3));
+  });
+
+  testWidgets('music menu uses compact icon rows and one autoplay control', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: const Scaffold(body: FocusTimerTab()),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('focus-music-menu')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gece Akışı'), findsOneWidget);
+    expect(find.text('Kafa Toparlama'), findsOneWidget);
+    expect(find.text('Müzik yok'), findsOneWidget);
+    expect(find.text('Otomatik oynat'), findsOneWidget);
+    expect(find.text('Açık'), findsNothing);
+    expect(find.text('Kapalı'), findsNothing);
+    expect(find.byIcon(Icons.music_note_rounded), findsNWidgets(7));
+    expect(find.byType(Switch), findsOneWidget);
   });
 }

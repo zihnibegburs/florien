@@ -1083,7 +1083,7 @@ void main() {
     expect(savedInput?.subtasks, ['İlk adım']);
   });
 
-  testWidgets('manually completing a daily task opens its count page', (
+  testWidgets('manually completing a daily task celebrates in place', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 1100));
@@ -1130,14 +1130,21 @@ void main() {
         matching: find.byIcon(Icons.circle_outlined),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(completedTaskId, task.id);
     expect(
-      find.byKey(const ValueKey('completion-celebration-page')),
+      find.byKey(const ValueKey('task-completion-confetti')),
       findsOneWidget,
     );
-    expect(find.text('Bugün\n2 görev tamamladınız 🎉'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('completion-celebration-page')),
+      findsNothing,
+    );
+    expect(find.text(task.title), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('daily task asks for a todo list before moving', (tester) async {

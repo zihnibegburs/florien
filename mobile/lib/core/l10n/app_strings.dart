@@ -126,6 +126,20 @@ class S {
     'Notification permission could not be requested. You can try again later in Settings.',
     'Bildirim izni istenemedi. Daha sonra Ayarlar’dan tekrar deneyebilirsin.',
   );
+  String get updatesIntroTitle => _text(
+    'Would you like to hear from Florien?',
+    'Florien’den haberdar olmak ister misin?',
+  );
+  String get updatesIntroDescription => _text(
+    'Be the first to hear about new features, helpful tips and special campaigns.',
+    'Yeni özellikleri, faydalı ipuçlarını ve özel kampanyaları ilk sen duy.',
+  );
+  String get updatesIntroPrivacy => _text(
+    'We will only contact you when there is something worthwhile. You can change this preference anytime.',
+    'Yalnızca paylaşmaya değer bir şey olduğunda haber veririz. Tercihini istediğin zaman değiştirebilirsin.',
+  );
+  String get allowUpdates => _text('Yes, keep me updated', 'Evet, haber ver');
+  String get declineUpdates => _text('No, thanks', 'Hayır, teşekkürler');
   String get purchaseInfoUnavailable => _text(
     'Purchase information could not be loaded.',
     'Satın alma bilgisi alınamadı.',
@@ -138,6 +152,14 @@ class S {
     'Premium subscriptions have not been configured in the store yet.',
     'Premium abonelikleri mağazada henüz yapılandırılmadı.',
   );
+  String get premiumProductsTemporarilyUnavailable => _text(
+    'Premium plans could not be loaded from the App Store right now.',
+    'Premium planları şu anda App Store’dan yüklenemedi.',
+  );
+  String get retryStoreProducts =>
+      _text('Try loading plans again', 'Planları tekrar yükle');
+  String get storePricePending =>
+      _text('Waiting for App Store price', 'App Store fiyatı bekleniyor');
   String get premiumInfoUnavailable => _text(
     'Premium information is unavailable.',
     'Premium bilgisi alınamadı.',

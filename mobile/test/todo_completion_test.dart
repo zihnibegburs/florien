@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:florien/core/models/achievement.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _pendingTask = TaskModel(
   id: 'task-1',
@@ -114,20 +116,21 @@ void main() {
     );
 
     await tester.tap(completionButton);
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(
-      find.byKey(const ValueKey('completion-celebration-page')),
+      find.byKey(const ValueKey('task-completion-confetti')),
       findsOneWidget,
     );
-    expect(find.text('Bugün\n3 görev tamamladınız 🎉'), findsOneWidget);
-    await tester.tap(find.text('Bu hafta'));
-    await tester.pumpAndSettle();
-    expect(find.text('Bu hafta\n7 görev tamamladınız 🎉'), findsOneWidget);
-    await tester.tap(find.byTooltip('Kapat'));
+    expect(
+      find.byKey(const ValueKey('completion-celebration-page')),
+      findsNothing,
+    );
+    expect(find.text('Deneme görevi'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    expect(find.text('Deneme görevi'), findsOneWidget);
     expect(find.text('TAMAMLANDI (1)'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Deneme görevi')).dy,
@@ -150,6 +153,61 @@ void main() {
     expect(find.text('TAMAMLANDI (1)'), findsNothing);
     expect(find.text('YAPILACAK (1)'), findsOneWidget);
     expect(find.text('YÜKSEK (0)'), findsNothing);
+  });
+
+  testWidgets('achievement popup appears only at the completion threshold', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final catalog = await AchievementCatalog.load();
+    await tester.binding.setSurfaceSize(const Size(430, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inboxProvider.overrideWith(_CompletionInboxNotifier.new),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
+          activeProfileScopeProvider.overrideWithValue('guest:test'),
+          achievementCatalogProvider.overrideWith((ref) => catalog),
+          manualCompletionSummaryProvider.overrideWithValue(
+            (_) async =>
+                const CompletionCounts(today: 1, thisWeek: 1, total: 1),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: TodoListTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final taskTile = find.ancestor(
+      of: find.text('Deneme görevi'),
+      matching: find.byType(ListTile),
+    );
+    await tester.tap(
+      find.descendant(
+        of: taskTile,
+        matching: find.byIcon(Icons.circle_outlined),
+      ),
+    );
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('task-completion-confetti')),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('achievement-celebration')),
+      findsOneWidget,
+    );
+    expect(find.text('İlk adım'), findsOneWidget);
+    await tester.tap(find.text('Harika'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('todo delete action removes the selected task', (tester) async {

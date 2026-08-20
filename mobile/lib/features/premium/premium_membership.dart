@@ -26,7 +26,10 @@ class PremiumMembership {
   final String? message;
   final Map<String, dynamic> paywallConfig;
 
-  ProductDetails? get selectedProduct => productFor(selectedProductId);
+  ProductDetails? get selectedProduct =>
+      productFor(selectedProductId) ?? products.firstOrNull;
+
+  String? get effectiveSelectedProductId => selectedProduct?.id;
 
   ProductDetails? productFor(String? productId) {
     for (final product in products) {
@@ -69,10 +72,15 @@ final premiumMembershipProvider =
 
 class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  Completer<PremiumMembership>? _initialMembership;
   late final PremiumPurchaseService _service;
 
   @override
   Future<PremiumMembership> build() async {
+    final firebaseUser = ref.watch(firebaseUserProvider).valueOrNull;
+    await _purchaseSubscription?.cancel();
+    final initialMembership = Completer<PremiumMembership>();
+    _initialMembership = initialMembership;
     _service = ref.read(premiumPurchaseServiceProvider);
     final strings = ref.read(stringsProvider);
     final paywallConfigFuture = _loadPaywallConfig();
@@ -85,31 +93,80 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     final isAvailable = await _service.isAvailable();
     final paywallConfig = await paywallConfigFuture;
     if (!isAvailable) {
-      return PremiumMembership(
-        storeAvailable: false,
-        message: strings.storeUnavailable,
-        paywallConfig: paywallConfig,
+      return _completeInitialMembership(
+        PremiumMembership(
+          storeAvailable: false,
+          message: strings.storeUnavailable,
+          paywallConfig: paywallConfig,
+        ),
+        initialMembership,
       );
     }
 
-    final response = await _service.loadProducts();
-    if (response.productDetails.isEmpty) {
-      return PremiumMembership(
+    final products = await _loadProductsWithRetry();
+    if (products.isEmpty) {
+      final membership = PremiumMembership(
         storeAvailable: true,
         paywallConfig: paywallConfig,
-        message: response.notFoundIDs.isNotEmpty
-            ? strings.premiumProductsNotConfigured
-            : strings.premiumInfoUnavailable,
+        message: strings.premiumProductsTemporarilyUnavailable,
       );
+      _completeInitialMembership(membership, initialMembership);
+      if (firebaseUser != null) unawaited(_service.restore());
+      return membership;
     }
 
-    unawaited(_service.restore());
-    return PremiumMembership(
+    final membership = PremiumMembership(
       storeAvailable: true,
-      products: _sortProducts(response.productDetails),
-      selectedProductId: premiumMonthlyProductId,
+      products: products,
+      selectedProductId: _availableSelection(products),
       paywallConfig: paywallConfig,
     );
+    _completeInitialMembership(membership, initialMembership);
+    if (firebaseUser != null) unawaited(_service.restore());
+    return membership;
+  }
+
+  PremiumMembership _completeInitialMembership(
+    PremiumMembership membership,
+    Completer<PremiumMembership> initial,
+  ) {
+    if (!initial.isCompleted) initial.complete(membership);
+    return membership;
+  }
+
+  Future<List<ProductDetails>> _loadProductsWithRetry() async {
+    var firstProducts = const <ProductDetails>[];
+    try {
+      firstProducts = (await _service.loadProducts()).productDetails;
+    } catch (_) {}
+    if (firstProducts.length == premiumProductIds.length) {
+      return _sortProducts(firstProducts);
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    var secondProducts = const <ProductDetails>[];
+    try {
+      secondProducts = (await _service.loadProducts()).productDetails;
+    } catch (_) {}
+    final productsById = <String, ProductDetails>{
+      for (final product in firstProducts) product.id: product,
+      for (final product in secondProducts) product.id: product,
+    };
+    return _sortProducts(productsById.values.toList(growable: false));
+  }
+
+  String? _availableSelection(
+    List<ProductDetails> products, [
+    String? preferred,
+  ]) {
+    if (preferred != null &&
+        products.any((product) => product.id == preferred)) {
+      return preferred;
+    }
+    if (products.any((product) => product.id == premiumMonthlyProductId)) {
+      return premiumMonthlyProductId;
+    }
+    return products.firstOrNull?.id;
   }
 
   Future<Map<String, dynamic>> _loadPaywallConfig() async {
@@ -127,6 +184,41 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     final membership = state.valueOrNull;
     if (membership == null || membership.productFor(productId) == null) return;
     state = AsyncData(membership.copyWith(selectedProductId: productId));
+  }
+
+  Future<void> reloadProducts() async {
+    final strings = ref.read(stringsProvider);
+    final membership = state.valueOrNull;
+    if (membership == null || !membership.storeAvailable) return;
+    state = AsyncData(
+      membership.copyWith(isPurchasing: true, clearMessage: true),
+    );
+    try {
+      final products = await _loadProductsWithRetry();
+      final current = state.requireValue;
+      if (products.isEmpty) {
+        state = AsyncData(
+          current.copyWith(
+            isPurchasing: false,
+            message: strings.premiumProductsTemporarilyUnavailable,
+          ),
+        );
+        return;
+      }
+      state = AsyncData(
+        current.copyWith(
+          products: products,
+          selectedProductId: _availableSelection(
+            products,
+            current.selectedProductId,
+          ),
+          isPurchasing: false,
+          clearMessage: true,
+        ),
+      );
+    } catch (_) {
+      _setMessage(strings.premiumProductsTemporarilyUnavailable);
+    }
   }
 
   Future<void> buyPremium() async {
@@ -164,8 +256,13 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
     final strings = ref.read(stringsProvider);
+    final currentMembership = state.valueOrNull;
+    final initialMembership = _initialMembership;
     var membership =
-        state.valueOrNull ?? const PremiumMembership(storeAvailable: true);
+        currentMembership ??
+        (initialMembership == null
+            ? const PremiumMembership(storeAvailable: true)
+            : await initialMembership.future);
 
     for (final purchase in purchases) {
       if (!premiumProductIds.contains(purchase.productID)) continue;

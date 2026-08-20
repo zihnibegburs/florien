@@ -1958,7 +1958,7 @@ class _DailyTaskCard extends ConsumerWidget {
           } else {
             final counts = await ref.read(dailyTaskCompleterProvider)(task.id);
             if (!context.mounted) return;
-            await showCompletionCelebration(context, counts);
+            await showTaskCompletionFeedback(context, ref, counts);
           }
         } on StateError {
           if (!context.mounted) return;

@@ -20,6 +20,7 @@ import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
 import 'package:florien/features/onboarding/notification_permission_screen.dart';
+import 'package:florien/features/onboarding/updates_permission_screen.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
@@ -217,18 +218,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/paywall',
         builder: (context, _) => PremiumMembershipScreen(
           onContinue: () async {
-            final completed = await ref
-                .read(settingsStorageProvider)
+            final storage = ref.read(settingsStorageProvider);
+            final notificationCompleted = await storage
                 .isNotificationPermissionIntroCompleted();
             if (!context.mounted) return;
-            context.go(completed ? '/todo' : '/notification-permission');
+            if (!notificationCompleted) {
+              context.go('/notification-permission');
+              return;
+            }
+            final updatesCompleted = await storage
+                .isUpdatesConsentIntroCompleted();
+            if (!context.mounted) return;
+            context.go(updatesCompleted ? '/todo' : '/updates-permission');
           },
         ),
       ),
       GoRoute(
         path: '/notification-permission',
+        builder: (context, _) => NotificationPermissionScreen(
+          onComplete: () async {
+            final completed = await ref
+                .read(settingsStorageProvider)
+                .isUpdatesConsentIntroCompleted();
+            if (!context.mounted) return;
+            context.go(completed ? '/todo' : '/updates-permission');
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/updates-permission',
         builder: (context, _) =>
-            NotificationPermissionScreen(onComplete: () => context.go('/todo')),
+            UpdatesPermissionScreen(onComplete: () => context.go('/todo')),
       ),
       GoRoute(path: '/todo', builder: (_, _) => const TodoHomeScreen()),
     ],

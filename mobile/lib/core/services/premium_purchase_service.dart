@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 const premiumMonthlyProductId = 'com.florien.app.subscription.monthly';
@@ -24,8 +25,16 @@ class PremiumPurchaseService {
 
   Future<bool> isAvailable() => _store.isAvailable();
 
-  Future<ProductDetailsResponse> loadProducts() =>
-      _store.queryProductDetails(premiumProductIds);
+  Future<ProductDetailsResponse> loadProducts() async {
+    final response = await _store.queryProductDetails(premiumProductIds);
+    debugPrint(
+      '[PremiumStore] requested=${premiumProductIds.join(',')} '
+      'returned=${response.productDetails.map((item) => item.id).join(',')} '
+      'notFound=${response.notFoundIDs.join(',')} '
+      'error=${response.error?.code ?? 'none'}',
+    );
+    return response;
+  }
 
   Future<Map<String, dynamic>> loadPaywallConfig() async {
     final firestore = _firestore;

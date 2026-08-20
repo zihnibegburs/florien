@@ -29,6 +29,11 @@ final optionalFirebaseAuthProvider = Provider<FirebaseAuth?>((ref) {
   }
 });
 
+final firebaseUserProvider = StreamProvider<User?>((ref) {
+  final auth = ref.watch(optionalFirebaseAuthProvider);
+  return auth?.authStateChanges() ?? Stream<User?>.value(null);
+});
+
 final cloudFunctionsProvider = Provider<FirebaseFunctions>(
   (ref) => FirebaseFunctions.instanceFor(region: 'us-central1'),
 );

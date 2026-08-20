@@ -5,51 +5,26 @@ import 'package:florien/features/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NotificationPermissionScreen extends ConsumerStatefulWidget {
-  const NotificationPermissionScreen({super.key, required this.onComplete});
+class UpdatesPermissionScreen extends ConsumerStatefulWidget {
+  const UpdatesPermissionScreen({super.key, required this.onComplete});
 
   final VoidCallback onComplete;
 
   @override
-  ConsumerState<NotificationPermissionScreen> createState() =>
-      _NotificationPermissionScreenState();
+  ConsumerState<UpdatesPermissionScreen> createState() =>
+      _UpdatesPermissionScreenState();
 }
 
-class _NotificationPermissionScreenState
-    extends ConsumerState<NotificationPermissionScreen> {
-  bool _requesting = false;
-  String? _error;
+class _UpdatesPermissionScreenState
+    extends ConsumerState<UpdatesPermissionScreen> {
+  bool _saving = false;
 
-  Future<void> _allow() async {
-    if (_requesting) return;
-    setState(() {
-      _requesting = true;
-      _error = null;
-    });
-    try {
-      await ref.read(taskAlarmServiceProvider).setTaskRemindersEnabled(true);
-      await _finish();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _requesting = false;
-        _error = ref.read(stringsProvider).notificationPermissionError;
-      });
-    }
-  }
-
-  Future<void> _skip() async {
-    if (_requesting) return;
-    await ref.read(settingsStorageProvider).setTaskRemindersEnabled(false);
-    await _finish();
-  }
-
-  Future<void> _finish() async {
-    await ref
-        .read(settingsStorageProvider)
-        .markNotificationPermissionIntroCompleted();
+  Future<void> _finish(bool enabled) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    await ref.read(settingsStorageProvider).setMarketingUpdatesEnabled(enabled);
     if (!mounted) return;
-    setState(() => _requesting = false);
+    setState(() => _saving = false);
     widget.onComplete();
   }
 
@@ -57,7 +32,7 @@ class _NotificationPermissionScreenState
   Widget build(BuildContext context) {
     final strings = ref.watch(stringsProvider);
     return Scaffold(
-      key: const ValueKey('notification-permission-screen'),
+      key: const ValueKey('updates-permission-screen'),
       backgroundColor: context.palette.background,
       body: SafeArea(
         child: Center(
@@ -79,7 +54,7 @@ class _NotificationPermissionScreenState
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: Text(
-                        '1 / 2',
+                        '2 / 2',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -89,10 +64,10 @@ class _NotificationPermissionScreenState
                   const SizedBox(height: FlorienSpacing.sm),
                   Semantics(
                     image: true,
-                    label: strings.notificationIntroTitle,
+                    label: strings.updatesIntroTitle,
                     child: Image.asset(
-                      'assets/onboarding/perm-01-reminder-illustration.png',
-                      key: const ValueKey('reminder-permission-illustration'),
+                      'assets/onboarding/onb-01-updates-illustration.png',
+                      key: const ValueKey('updates-permission-illustration'),
                       height: 280,
                       width: double.infinity,
                       fit: BoxFit.contain,
@@ -100,7 +75,7 @@ class _NotificationPermissionScreenState
                   ),
                   const SizedBox(height: FlorienSpacing.lg),
                   Text(
-                    strings.notificationIntroTitle,
+                    strings.updatesIntroTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.w900,
@@ -109,7 +84,7 @@ class _NotificationPermissionScreenState
                   ),
                   const SizedBox(height: FlorienSpacing.md),
                   Text(
-                    strings.notificationIntroDescription,
+                    strings.updatesIntroDescription,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: context.palette.textSecondary,
@@ -126,45 +101,37 @@ class _NotificationPermissionScreenState
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.tune_rounded, size: 20),
+                        const Icon(Icons.favorite_border_rounded, size: 20),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            strings.notificationIntroPrivacy,
+                            strings.updatesIntroPrivacy,
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (_error != null) ...[
-                    const SizedBox(height: FlorienSpacing.md),
-                    Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: context.palette.error),
-                    ),
-                  ],
                   const SizedBox(height: FlorienSpacing.xxxl),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      key: const ValueKey('allow-notifications'),
-                      onPressed: _requesting ? null : _allow,
-                      icon: _requesting
+                      key: const ValueKey('allow-updates'),
+                      onPressed: _saving ? null : () => _finish(true),
+                      icon: _saving
                           ? const SizedBox.square(
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.notifications_rounded),
-                      label: Text(strings.allowNotifications),
+                          : const Icon(Icons.mark_email_read_outlined),
+                      label: Text(strings.allowUpdates),
                     ),
                   ),
                   const SizedBox(height: FlorienSpacing.sm),
                   TextButton(
-                    key: const ValueKey('skip-notifications'),
-                    onPressed: _requesting ? null : _skip,
-                    child: Text(strings.skipForNow),
+                    key: const ValueKey('decline-updates'),
+                    onPressed: _saving ? null : () => _finish(false),
+                    child: Text(strings.declineUpdates),
                   ),
                 ],
               ),

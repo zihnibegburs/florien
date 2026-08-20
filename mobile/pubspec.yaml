@@ -48,6 +48,7 @@ flutter:
   assets:
     - assets/icons/app_icon.png
     - assets/brand/
+    - assets/onboarding/
     - assets/task_icons/
     - assets/focus_music/
     - assets/achievements/

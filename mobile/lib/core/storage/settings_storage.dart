@@ -41,6 +41,8 @@ class SettingsStorage {
       'notification_vibration_enabled';
   static const _notificationPermissionIntroKey =
       'notification_permission_intro_completed';
+  static const _updatesConsentIntroKey = 'updates_consent_intro_completed';
+  static const _marketingUpdatesEnabledKey = 'marketing_updates_enabled';
   static const _liveFocusKey = 'live_activity_focus_enabled';
 
   final FirebaseFirestore? _firestore;
@@ -112,6 +114,33 @@ class SettingsStorage {
   Future<void> markNotificationPermissionIntroCompleted() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_scopedKey(_notificationPermissionIntroKey), true);
+  }
+
+  Future<bool> isUpdatesConsentIntroCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_scopedKey(_updatesConsentIntroKey)) ?? false;
+  }
+
+  Future<bool> isMarketingUpdatesEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_scopedKey(_marketingUpdatesEnabledKey)) ?? false;
+  }
+
+  Future<void> setMarketingUpdatesEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_scopedKey(_marketingUpdatesEnabledKey), enabled);
+    await prefs.setBool(_scopedKey(_updatesConsentIntroKey), true);
+
+    final ref = _preferencesRemoteRef();
+    if (ref == null) return;
+    try {
+      await ref.set({
+        'marketingUpdatesEnabled': enabled,
+        'marketingConsentUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (_) {
+      // The device preference remains authoritative until the next update.
+    }
   }
 
   Future<LiveActivityPreferences> getLiveActivityPreferences() async {
@@ -238,6 +267,17 @@ class SettingsStorage {
         .doc(uid)
         .collection('app_data')
         .doc('calendar');
+  }
+
+  DocumentReference<Map<String, dynamic>>? _preferencesRemoteRef() {
+    final firestore = _firestore;
+    final uid = _auth?.currentUser?.uid;
+    if (firestore == null || uid == null) return null;
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('app_data')
+        .doc('preferences');
   }
 
   Future<void> _saveImportedIds(Set<String> ids) async {

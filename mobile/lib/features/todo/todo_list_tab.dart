@@ -1755,7 +1755,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       await notifier.completeTask(target.id);
       final counts = await ref.read(manualCompletionSummaryProvider)(target.id);
       if (!mounted) return;
-      await showCompletionCelebration(context, counts);
+      await showTaskCompletionFeedback(context, ref, counts);
     }
   }
 

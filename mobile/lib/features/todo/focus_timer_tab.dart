@@ -460,6 +460,34 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     unawaited(_scheduleFocusAlarm());
   }
 
+  void _removeMinute() {
+    final elapsedSeconds = math.max(
+      0,
+      _sessionTotalSeconds - _remainingSeconds,
+    );
+    final reducedTotalSeconds = math.max(0, _sessionTotalSeconds - 60);
+    if (reducedTotalSeconds <= elapsedSeconds) {
+      setState(() {
+        _sessionTotalSeconds = math.max(1, elapsedSeconds);
+        _remainingSeconds = 0;
+        _plannedEndAt = DateTime.now();
+      });
+      _publishTaskProgress();
+      unawaited(_completeAndCloseSession());
+      return;
+    }
+
+    setState(() {
+      _sessionTotalSeconds = reducedTotalSeconds;
+      _remainingSeconds = reducedTotalSeconds - elapsedSeconds;
+      _plannedEndAt = (_plannedEndAt ?? DateTime.now()).subtract(
+        const Duration(minutes: 1),
+      );
+    });
+    _publishTaskProgress();
+    unawaited(_scheduleFocusAlarm());
+  }
+
   void _toggleAlarm() {
     if (!widget.alarmAvailable) {
       widget.onPremiumAlarmPressed?.call();
@@ -835,6 +863,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                       progress: elapsedProgress.clamp(.025, 1),
                       isRunning: _isRunning,
                       isFinished: _remainingSeconds <= 0,
+                      onRemoveMinute: _removeMinute,
                       onAddMinute: _addMinute,
                       onToggle: () => unawaited(_toggleTimer()),
                       onFinish: () => unawaited(_completeAndCloseSession()),
@@ -931,6 +960,7 @@ class _ActiveTimer extends StatefulWidget {
     required this.progress,
     required this.isRunning,
     required this.isFinished,
+    required this.onRemoveMinute,
     required this.onAddMinute,
     required this.onToggle,
     required this.onFinish,
@@ -948,6 +978,7 @@ class _ActiveTimer extends StatefulWidget {
   final double progress;
   final bool isRunning;
   final bool isFinished;
+  final VoidCallback onRemoveMinute;
   final VoidCallback onAddMinute;
   final VoidCallback onToggle;
   final VoidCallback onFinish;
@@ -1045,10 +1076,21 @@ class _ActiveTimerState extends State<_ActiveTimer>
   }
 
   void _endRotation() {
-    if (_completedRotation) {
+    final maxRotation = (1 - _baseProgress) * math.pi * 2;
+    final endedAtCompletion =
+        maxRotation == 0 || _rotation >= maxRotation - .0001;
+    if (endedAtCompletion) {
       widget.onComplete();
       return;
     }
+    _returnToTimerProgress();
+  }
+
+  void _cancelRotation() {
+    _returnToTimerProgress();
+  }
+
+  void _returnToTimerProgress() {
     _returnFrom = _displayProgress ?? widget.progress;
     _returnTo = widget.progress;
     _returnController.forward(from: 0).whenComplete(() {
@@ -1113,6 +1155,7 @@ class _ActiveTimerState extends State<_ActiveTimer>
                 onRotationStart: _startRotation,
                 onRotationUpdate: _updateRotation,
                 onRotationEnd: _endRotation,
+                onRotationCancel: _cancelRotation,
                 child: AnimatedContainer(
                   key: const ValueKey('active-focus-icon-circle'),
                   duration: const Duration(milliseconds: 180),
@@ -1214,32 +1257,57 @@ class _ActiveTimerState extends State<_ActiveTimer>
                   key: ValueKey('focus-timer-controls-hidden'),
                   height: 54,
                 )
-              : Row(
+              : Column(
                   key: const ValueKey('focus-timer-controls'),
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TextButton(
-                      onPressed: widget.onAddMinute,
-                      child: const Text(
-                        '+ 1 dk',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: widget.onRemoveMinute,
+                          child: const Text(
+                            '− 1 dk',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        _TimerControlButton(
+                          icon: widget.isFinished
+                              ? Icons.replay_rounded
+                              : widget.isRunning
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          label: '',
+                          onTap: widget.isFinished
+                              ? widget.onFinish
+                              : widget.onToggle,
+                          compact: true,
+                        ),
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: widget.onAddMinute,
+                          child: const Text(
+                            '+ 1 dk',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    _TimerControlButton(
-                      icon: widget.isFinished
-                          ? Icons.replay_rounded
-                          : widget.isRunning
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      label: '',
-                      onTap: widget.isFinished
-                          ? widget.onFinish
-                          : widget.onToggle,
-                      compact: true,
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      key: const ValueKey('finish-focus-session'),
+                      onPressed: widget.onFinish,
+                      icon: const Icon(Icons.stop_circle_outlined, size: 19),
+                      label: const Text(
+                        'Sonlandır',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ],
                 ),
@@ -1396,6 +1464,7 @@ class _TimerDial extends StatelessWidget {
     this.onRotationStart,
     this.onRotationUpdate,
     this.onRotationEnd,
+    this.onRotationCancel,
   });
 
   final double progress;
@@ -1406,6 +1475,7 @@ class _TimerDial extends StatelessWidget {
   final void Function(Offset, Size)? onRotationStart;
   final void Function(Offset, Size)? onRotationUpdate;
   final VoidCallback? onRotationEnd;
+  final VoidCallback? onRotationCancel;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -1425,7 +1495,9 @@ class _TimerDial extends StatelessWidget {
             : (event) =>
                   onRotationUpdate!(event.localPosition, Size.square(size)),
         onPointerUp: onRotationEnd == null ? null : (_) => onRotationEnd!(),
-        onPointerCancel: onRotationEnd == null ? null : (_) => onRotationEnd!(),
+        onPointerCancel: onRotationCancel == null
+            ? null
+            : (_) => onRotationCancel!(),
         child: SizedBox.square(
           dimension: size,
           child: CustomPaint(
@@ -1663,14 +1735,16 @@ class _FocusMusicMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
+    key: const ValueKey('focus-music-menu'),
     tooltip: 'Odak müziğini ayarla',
     position: PopupMenuPosition.under,
-    offset: const Offset(0, 6),
+    offset: const Offset(0, 5),
     color: context.palette.surface,
-    elevation: 5,
-    constraints: const BoxConstraints(minWidth: 248, maxWidth: 288),
+    elevation: 2,
+    surfaceTintColor: Colors.transparent,
+    constraints: const BoxConstraints(minWidth: 232, maxWidth: 268),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
       side: BorderSide(
         color: context.palette.border,
         width: FlorienBorders.thin,
@@ -1679,75 +1753,56 @@ class _FocusMusicMenuButton extends StatelessWidget {
     onSelected: onSelected,
     itemBuilder: (context) => [
       for (final track in _focusMusicTracks)
-        CheckedPopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: _FocusMusicMenuValue.track(track.id),
-          checked: selectedMusic?.id == track.id,
-          height: 44,
-          child: Text(
-            track.title,
-            style: const TextStyle(fontWeight: FontWeight.w700),
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          child: _MusicMenuItemContent(
+            icon: Icons.music_note_rounded,
+            label: track.title,
+            selected: selectedMusic?.id == track.id,
           ),
         ),
-      CheckedPopupMenuItem<String>(
-        value: _FocusMusicMenuValue.none,
-        checked: selectedMusic == null,
-        height: 44,
-        child: const Text(
-          'Müzik yok',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      const PopupMenuDivider(height: 16),
       PopupMenuItem<String>(
-        enabled: false,
-        height: 38,
-        child: Row(
-          children: [
-            Icon(
-              Icons.play_circle_outline_rounded,
-              size: 19,
-              color: context.palette.textSecondary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Otomatik oynatma',
-              style: TextStyle(
-                color: context.palette.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
+        value: _FocusMusicMenuValue.none,
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        child: _MusicMenuItemContent(
+          icon: Icons.music_off_rounded,
+          label: 'Müzik yok',
+          selected: selectedMusic == null,
         ),
       ),
-      CheckedPopupMenuItem<String>(
-        value: _FocusMusicMenuValue.autoPlayOn,
-        checked: autoPlay,
-        height: 44,
-        child: const Text(
-          'Açık',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      CheckedPopupMenuItem<String>(
-        value: _FocusMusicMenuValue.autoPlayOff,
-        checked: !autoPlay,
-        height: 44,
-        child: const Text(
-          'Kapalı',
-          style: TextStyle(fontWeight: FontWeight.w700),
+      const PopupMenuDivider(height: 9),
+      PopupMenuItem<String>(
+        value: autoPlay
+            ? _FocusMusicMenuValue.autoPlayOff
+            : _FocusMusicMenuValue.autoPlayOn,
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        child: _MusicMenuItemContent(
+          icon: Icons.play_circle_outline_rounded,
+          label: 'Otomatik oynat',
+          selected: false,
+          trailing: IgnorePointer(
+            child: Switch.adaptive(
+              value: autoPlay,
+              onChanged: (_) {},
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
         ),
       ),
     ],
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 166),
+      constraints: const BoxConstraints(maxWidth: 178),
       child: DecoratedBox(
         decoration: ShapeDecoration(
-          color: context.palette.surface,
+          color: context.palette.surfaceMuted,
           shape: StadiumBorder(side: BorderSide(color: context.palette.border)),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+          padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1764,10 +1819,74 @@ class _FocusMusicMenuButton extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: context.palette.textSecondary,
+              ),
             ],
           ),
         ),
       ),
+    ),
+  );
+}
+
+class _MusicMenuItemContent extends StatelessWidget {
+  const _MusicMenuItemContent({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 140),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    decoration: BoxDecoration(
+      color: selected
+          ? Theme.of(context).colorScheme.primaryContainer
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: selected
+              ? Theme.of(context).colorScheme.onPrimaryContainer
+              : context.palette.textSecondary,
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              color: context.palette.textPrimary,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          SizedBox(width: 38, height: 28, child: FittedBox(child: trailing))
+        else if (selected)
+          Icon(
+            Icons.check_rounded,
+            size: 18,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+      ],
     ),
   );
 }

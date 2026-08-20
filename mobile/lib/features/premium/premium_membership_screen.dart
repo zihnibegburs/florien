@@ -177,7 +177,8 @@ class PremiumMembershipScreen extends ConsumerWidget {
                           ),
                         ),
                         selected:
-                            value.products[index].id == value.selectedProductId,
+                            value.products[index].id ==
+                            value.effectiveSelectedProductId,
                         onTap: () => ref
                             .read(premiumMembershipProvider.notifier)
                             .selectPlan(value.products[index].id),
@@ -186,22 +187,88 @@ class PremiumMembershipScreen extends ConsumerWidget {
                   ],
                 ],
               ),
-            ],
-            const SizedBox(height: FlorienSpacing.md),
-            FilledButton(
-              onPressed: isLoading || value.selectedProduct == null
-                  ? null
-                  : () => ref
-                        .read(premiumMembershipProvider.notifier)
-                        .buyPremium(),
-              child: Text(
-                isLoading
-                    ? strings.processing
-                    : value.selectedProduct == null
-                    ? strings.premiumComingSoon
-                    : paywallCopy.purchaseCta(value.selectedProduct!.price),
+              const SizedBox(height: FlorienSpacing.md),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () => ref
+                          .read(premiumMembershipProvider.notifier)
+                          .buyPremium(),
+                child: Text(
+                  isLoading
+                      ? strings.processing
+                      : paywallCopy.purchaseCta(value.selectedProduct!.price),
+                ),
               ),
-            ),
+            ] else if (value.storeAvailable) ...[
+              Text(
+                paywallCopy.planSectionTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: FlorienSpacing.sm),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final productId in const [
+                    premiumMonthlyProductId,
+                    premiumYearlyProductId,
+                  ]) ...[
+                    if (productId == premiumYearlyProductId)
+                      const SizedBox(width: FlorienSpacing.sm),
+                    Expanded(
+                      child: _PremiumPlanTile(
+                        productId: productId,
+                        title: paywallCopy.titleFor(productId),
+                        period: paywallCopy.periodFor(productId),
+                        badge: paywallCopy.badgeFor(productId),
+                        price: '—',
+                        dailyPrice: strings.storePricePending,
+                        selected: false,
+                        onTap: null,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: FlorienSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(FlorienSpacing.lg),
+                decoration: BoxDecoration(
+                  color: context.palette.surface,
+                  borderRadius: BorderRadius.circular(FlorienRadius.lg),
+                  border: Border.all(
+                    color: context.palette.border,
+                    width: FlorienBorders.thin,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.cloud_off_rounded,
+                      color: context.palette.textSecondary,
+                    ),
+                    const SizedBox(height: FlorienSpacing.sm),
+                    Text(
+                      strings.premiumProductsTemporarilyUnavailable,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: FlorienSpacing.sm),
+                    TextButton.icon(
+                      key: const ValueKey('retry-premium-products'),
+                      onPressed: isLoading
+                          ? null
+                          : () => ref
+                                .read(premiumMembershipProvider.notifier)
+                                .reloadProducts(),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: Text(strings.retryStoreProducts),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
           const SizedBox(height: FlorienSpacing.sm),
           TextButton(
@@ -332,7 +399,7 @@ class _PremiumPlanTile extends StatelessWidget {
   final String price;
   final String dailyPrice;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

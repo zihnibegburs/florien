@@ -48,7 +48,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(
+      find.byKey(const ValueKey('reminder-permission-illustration')),
+      findsOneWidget,
+    );
     expect(find.text('Bildirimlere izin ver'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('allow-notifications')),
+    );
     await tester.tap(find.byKey(const ValueKey('allow-notifications')));
     await tester.pumpAndSettle();
 
@@ -76,6 +83,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('skip-notifications')),
+    );
     await tester.tap(find.byKey(const ValueKey('skip-notifications')));
     await tester.pumpAndSettle();
 
