@@ -20,5 +20,3 @@ logging:
 florien:
   jwt:
     secret: ${FLORIEN_JWT_SECRET}
-  groq:
-    api-key: ${GROQ_API_KEY:}

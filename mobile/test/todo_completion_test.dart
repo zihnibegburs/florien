@@ -119,7 +119,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.byKey(const ValueKey('task-completion-confetti')),
+      find.byKey(const ValueKey('task-completion-bubbles')),
       findsOneWidget,
     );
     expect(
@@ -194,7 +194,7 @@ void main() {
     );
     await tester.pump();
     expect(
-      find.byKey(const ValueKey('task-completion-confetti')),
+      find.byKey(const ValueKey('task-completion-bubbles')),
       findsOneWidget,
     );
 

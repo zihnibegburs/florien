@@ -22,7 +22,6 @@ dependencies:
   firebase_auth: ^5.5.2
   cloud_firestore: ^5.6.6
   cloud_functions: ^5.4.0
-  confetti: ^0.8.0
   home_widget: ^0.9.3
   live_activities: ^2.3.0
   speech_to_text: ^7.4.0
@@ -50,6 +49,7 @@ flutter:
     - assets/brand/
     - assets/onboarding/
     - assets/task_icons/
+    - assets/focus/
     - assets/focus_music/
     - assets/achievements/
     - assets/achievements/assets/

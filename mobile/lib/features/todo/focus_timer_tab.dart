@@ -11,11 +11,15 @@ import 'package:florien/features/providers.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const _focusCompletionIconAsset = 'assets/focus/focus-default-check.png';
+const _focusDefaultIconAsset = 'assets/focus/focus-default-hourglass.png';
+
 class FocusTimerTab extends StatefulWidget {
   const FocusTimerTab({
     super.key,
     this.launchRequest,
     this.resetSignal = 0,
+    this.finishSignal = 0,
     this.onStandaloneFocusStarted,
     this.onTaskProgressChanged,
     this.onTaskCompleted,
@@ -29,6 +33,7 @@ class FocusTimerTab extends StatefulWidget {
 
   final FocusTaskLaunch? launchRequest;
   final int resetSignal;
+  final int finishSignal;
   final Future<FocusTaskLaunch> Function(int durationMinutes)?
   onStandaloneFocusStarted;
   final ValueChanged<ActiveFocusTask?>? onTaskProgressChanged;
@@ -66,6 +71,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _taskCompletionRequested = false;
   Future<void>? _taskCompletionFuture;
   bool _automaticTask = false;
+  bool _usesDefaultFocusIcon = false;
   bool _creatingStandaloneTask = false;
   bool _isFinishing = false;
   bool _focusAlarmScheduled = false;
@@ -148,6 +154,14 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     if (widget.resetSignal != oldWidget.resetSignal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _closeSession();
+      });
+      return;
+    }
+    if (widget.finishSignal != oldWidget.finishSignal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _sessionActive) {
+          unawaited(_completeAndCloseSession());
+        }
       });
       return;
     }
@@ -319,6 +333,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
           _taskColor = launch.color;
           _taskCompletionRequested = false;
           _automaticTask = false;
+          _usesDefaultFocusIcon = true;
         });
       } catch (error) {
         debugPrint('Standalone focus task could not be persisted: $error');
@@ -389,6 +404,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _taskCompletionRequested = false;
       _taskCompletionFuture = null;
       _automaticTask = false;
+      _usesDefaultFocusIcon = false;
       _isFinishing = false;
     });
     widget.onTaskProgressChanged?.call(null);
@@ -430,6 +446,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _taskCompletionRequested = false;
       _taskCompletionFuture = null;
       _automaticTask = request.automatic;
+      _usesDefaultFocusIcon = false;
     });
     unawaited(_toggleTimer());
   }
@@ -546,6 +563,9 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     widget.onTaskProgressChanged?.call(
       ActiveFocusTask(
         taskId: taskId,
+        title: _taskTitle ?? 'Odaklanma',
+        icon: _taskIcon,
+        usesDefaultFocusIcon: _usesDefaultFocusIcon,
         totalSeconds: _sessionTotalSeconds,
         remainingSeconds: _remainingSeconds,
         isRunning: _isRunning,
@@ -855,7 +875,9 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                   ? _ActiveTimer(
                       key: const ValueKey('active-timer'),
                       title: _taskTitle ?? 'Odaklan',
-                      taskIcon: _taskTitle == null ? null : _taskIcon,
+                      taskIcon: _usesDefaultFocusIcon || _taskTitle == null
+                          ? null
+                          : _taskIcon,
                       taskColor: _taskColor,
                       remainingLabel: _remainingLabel,
                       timeRange:
@@ -1102,6 +1124,7 @@ class _ActiveTimerState extends State<_ActiveTimer>
   Widget build(BuildContext context) {
     final isPaused =
         !widget.isRunning && !widget.isFinished && !widget.isCelebrating;
+    final showCompletionIcon = widget.isFinished || widget.isCelebrating;
     return Column(
       children: [
         const SizedBox(height: 72),
@@ -1164,8 +1187,10 @@ class _ActiveTimerState extends State<_ActiveTimer>
                   height: 212,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.taskIcon == null
-                        ? const Color(0xFFFFDFC5)
+                    color: showCompletionIcon
+                        ? const Color(0xFFFFF5B8)
+                        : widget.taskIcon == null
+                        ? const Color(0xFFF0ECFF)
                         : FlorienColors.fromHex(
                             widget.taskColor,
                           ).withValues(alpha: .18),
@@ -1176,22 +1201,43 @@ class _ActiveTimerState extends State<_ActiveTimer>
                       AnimatedOpacity(
                         duration: const Duration(milliseconds: 180),
                         opacity: isPaused ? .72 : 1,
-                        child: widget.taskIcon == null
-                            ? Icon(
-                                Icons.hourglass_bottom_rounded,
-                                key: const ValueKey('active-focus-task-icon'),
-                                size: 94,
-                                color: const Color(0xFF9A6037),
-                              )
-                            : TaskIconBadge.forTask(
-                                icon: widget.taskIcon!,
-                                size: 148,
-                                iconSize: 112,
-                                circular: true,
-                                iconKey: const ValueKey(
-                                  'active-focus-task-icon',
-                                ),
-                              ),
+                        child: SizedBox(
+                          key: const ValueKey('active-focus-task-icon'),
+                          width: 148,
+                          height: 148,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            switchInCurve: Curves.easeOutBack,
+                            switchOutCurve: Curves.easeIn,
+                            child: showCompletionIcon
+                                ? Image.asset(
+                                    _focusCompletionIconAsset,
+                                    key: const ValueKey(
+                                      'focus-completion-check',
+                                    ),
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                  )
+                                : widget.taskIcon == null
+                                ? Image.asset(
+                                    _focusDefaultIconAsset,
+                                    key: const ValueKey(
+                                      'focus-default-hourglass',
+                                    ),
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
+                                  )
+                                : TaskIconBadge.forTask(
+                                    key: ValueKey(
+                                      'active-task-icon-${widget.taskIcon}',
+                                    ),
+                                    icon: widget.taskIcon!,
+                                    size: 148,
+                                    iconSize: 112,
+                                    circular: true,
+                                  ),
+                          ),
+                        ),
                       ),
                       Positioned(
                         right: 14,
@@ -1340,38 +1386,11 @@ class _FocusDialCelebration extends StatelessWidget {
                 height: 268,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: FlorienColors.success.withValues(alpha: .12),
+                  color: FlorienColors.primaryLight.withValues(alpha: .12),
                   border: Border.all(
-                    color: FlorienColors.success.withValues(alpha: .35),
+                    color: FlorienColors.focusAccent.withValues(alpha: .35),
                     width: FlorienBorders.medium,
                   ),
-                ),
-              ),
-            ),
-            ScaleTransition(
-              scale: scale,
-              child: Container(
-                width: 184,
-                height: 184,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: context.palette.surface.withValues(alpha: .9),
-                  border: Border.all(
-                    color: context.palette.border,
-                    width: FlorienBorders.thin,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: FlorienColors.success.withValues(alpha: .2),
-                      blurRadius: 28,
-                      spreadRadius: 4,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  size: 84,
-                  color: FlorienColors.success,
                 ),
               ),
             ),

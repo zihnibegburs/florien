@@ -33,8 +33,6 @@ services:
           property: password
       - key: FLORIEN_JWT_SECRET
         generateValue: true
-      - key: GROQ_API_KEY
-        sync: false
       - key: REDIS_URL
         sync: false
 

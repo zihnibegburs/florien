@@ -209,6 +209,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
     return SafeArea(
       child: DelayedScrollChrome(
         enabled: widget.scrollChromeEnabled,
+        hideOffset: 120,
         onVisibilityChanged: _handleScrollChromeVisibility,
         child: RefreshIndicator(
           onRefresh: () async =>
@@ -459,7 +460,7 @@ class _DailyBody extends StatelessWidget {
       key: const ValueKey('daily-planner-page'),
       paintOrder: SliverPaintOrder.firstIsTop,
       physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
+        parent: ClampingScrollPhysics(),
       ),
       slivers: [
         SliverAppBar(
@@ -467,7 +468,7 @@ class _DailyBody extends StatelessWidget {
           primary: false,
           automaticallyImplyLeading: false,
           floating: true,
-          snap: true,
+          snap: false,
           pinned: true,
           toolbarHeight: 0,
           collapsedHeight: 64,
@@ -477,33 +478,46 @@ class _DailyBody extends StatelessWidget {
           scrolledUnderElevation: 0,
           backgroundColor: context.palette.background,
           surfaceTintColor: Colors.transparent,
-          flexibleSpace: ClipRect(
-            child: OverflowBox(
-              alignment: Alignment.topCenter,
-              minHeight: 232,
-              maxHeight: 232,
-              child: ColoredBox(
-                color: context.palette.background,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-                  child: ScrollChromeVisibility(
-                    key: const ValueKey('daily-scroll-chrome-header'),
-                    visible: scrollChromeVisible,
-                    child: _DailyHeader(
-                      selectedDate: selectedDate,
-                      onSelectDate: onSelectDate,
-                      onOpenDatePicker: onOpenDatePicker,
-                      onAdd: () => onAdd(DayPeriod.anytime),
-                      grouping: grouping,
-                      onGroupingChanged: onGroupingChanged,
-                      onRescheduleTasks: onRescheduleTasks,
-                      onDiscoverRoutines: onDiscoverRoutines,
-                      onShare: onShare,
-                      showPremiumUpsell: showPremiumUpsell,
-                      onPremiumUpsellPressed: onPremiumUpsellPressed,
-                    ),
-                  ),
+          flexibleSpace: ColoredBox(
+            color: context.palette.background,
+            child: ClipRect(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                layoutBuilder: (currentChild, previousChildren) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: [...previousChildren, ?currentChild],
                 ),
+                child: scrollChromeVisible
+                    ? OverflowBox(
+                        key: const ValueKey('daily-scroll-chrome-header'),
+                        alignment: Alignment.topCenter,
+                        minHeight: 232,
+                        maxHeight: 232,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+                          child: _DailyHeader(
+                            selectedDate: selectedDate,
+                            onSelectDate: onSelectDate,
+                            onOpenDatePicker: onOpenDatePicker,
+                            onAdd: () => onAdd(DayPeriod.anytime),
+                            grouping: grouping,
+                            onGroupingChanged: onGroupingChanged,
+                            onRescheduleTasks: onRescheduleTasks,
+                            onDiscoverRoutines: onDiscoverRoutines,
+                            onShare: onShare,
+                            showPremiumUpsell: showPremiumUpsell,
+                            onPremiumUpsellPressed: onPremiumUpsellPressed,
+                          ),
+                        ),
+                      )
+                    : Padding(
+                        key: const ValueKey('daily-focused-header'),
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 6),
+                        child: _DailyFocusedHeader(
+                          selectedDate: selectedDate,
+                          onAdd: () => onAdd(DayPeriod.anytime),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -542,6 +556,37 @@ class _DailyBody extends StatelessWidget {
       ],
     );
   }
+}
+
+class _DailyFocusedHeader extends StatelessWidget {
+  const _DailyFocusedHeader({required this.selectedDate, required this.onAdd});
+
+  final DateTime selectedDate;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          _focusedDateLabel(selectedDate),
+          key: const ValueKey('daily-focused-date'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ),
+      _SquareButton(
+        key: const ValueKey('daily-focused-add'),
+        tooltip: 'Günlük görev ekle',
+        icon: Icons.add_rounded,
+        emphasized: true,
+        onTap: onAdd,
+      ),
+    ],
+  );
 }
 
 class _DailyHeader extends StatelessWidget {
@@ -4509,6 +4554,9 @@ String _durationLabel(int minutes) => switch (minutes) {
 
 String _shortDate(DateTime date) =>
     '${date.day} ${_monthName(date.month).substring(0, 3)} ${date.year}';
+
+String _focusedDateLabel(DateTime date) =>
+    '${date.day} ${_monthName(date.month)} ${date.year}';
 
 String _weekdayName(DateTime date) => const [
   'Pazartesi',

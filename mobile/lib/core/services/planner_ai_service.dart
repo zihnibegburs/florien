@@ -51,9 +51,12 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
   @override
   Future<List<String>> generateSubtasks(String title) async {
     try {
-      final result = await _functions.httpsCallable('assistBreakdown').call(
-        <String, Object?>{'task': title},
-      );
+      final result = await _functions
+          .httpsCallable(
+            'assistBreakdown',
+            options: HttpsCallableOptions(timeout: const Duration(seconds: 40)),
+          )
+          .call(<String, Object?>{'task': title});
       final raw = result.data;
       if (raw is! Map) throw const PlannerAiException('Geçersiz AI yanıtı.');
       final steps = raw['steps'] as List? ?? const [];
@@ -78,6 +81,13 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
           breakdown: true,
         ),
       );
+    } on PlannerAiException {
+      rethrow;
+    } catch (error, stackTrace) {
+      debugPrint('assistBreakdown response failed: $error\n$stackTrace');
+      throw const PlannerAiException(
+        'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
+      );
     }
   }
 }
@@ -93,7 +103,10 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
 
   @override
   Future<PlannerAiReply> send(List<PlannerChatTurn> conversation) async {
-    final callable = _functions.httpsCallable('assistPlannerChat');
+    final callable = _functions.httpsCallable(
+      'assistPlannerChat',
+      options: HttpsCallableOptions(timeout: const Duration(seconds: 40)),
+    );
     late final HttpsCallableResult<dynamic> result;
     try {
       final payloadTurns = _latestConversationWithinInputLimit(conversation);
@@ -108,34 +121,39 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
         aiFunctionsErrorMessage(code: error.code, details: error.details),
       );
     }
-    final raw = result.data;
-    if (raw is! Map) {
+    try {
+      final raw = result.data;
+      if (raw is! Map) throw const FormatException('AI response is not a map');
+      final data = Map<String, dynamic>.from(raw);
+      final tasksRaw = data['tasks'] is List ? data['tasks'] as List : const [];
+      final tasks = tasksRaw
+          .whereType<Map>()
+          .map((node) {
+            final item = Map<String, dynamic>.from(node);
+            final title = item['title']?.toString().trim() ?? '';
+            if (title.isEmpty) return null;
+            final duration = (item['durationMinutes'] as num?)?.toInt() ?? 30;
+            return PlannerTaskSuggestion(
+              title: title,
+              durationMinutes: duration.clamp(5, 24 * 60),
+            );
+          })
+          .whereType<PlannerTaskSuggestion>()
+          .take(8)
+          .toList(growable: false);
+      final message = (data['reply']?.toString() ?? '').trim();
+      return PlannerAiReply(
+        message: message.isEmpty
+            ? 'Planlamak istediğin şeyi biraz daha anlatır mısın?'
+            : message,
+        tasks: tasks,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('assistPlannerChat response failed: $error\n$stackTrace');
       throw const PlannerAiException(
-        'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+        'Plan asistanının yanıtını anlayamadım. Tekrar deneyebilir misin?',
       );
     }
-    final data = Map<String, dynamic>.from(raw);
-    final tasksRaw = data['tasks'] as List? ?? const [];
-    final tasks = tasksRaw
-        .map((node) {
-          final item = Map<String, dynamic>.from(node as Map);
-          final title = (item['title'] as String? ?? '').trim();
-          if (title.isEmpty) return null;
-          final duration = (item['durationMinutes'] as num?)?.toInt() ?? 30;
-          return PlannerTaskSuggestion(
-            title: title,
-            durationMinutes: duration.clamp(5, 24 * 60),
-          );
-        })
-        .whereType<PlannerTaskSuggestion>()
-        .toList(growable: false);
-    final message = (data['reply']?.toString() ?? '').trim();
-    return PlannerAiReply(
-      message: message.isEmpty
-          ? 'Planlamak istediğin şeyi biraz daha anlatır mısın?'
-          : message,
-      tasks: tasks,
-    );
   }
 }
 
@@ -177,6 +195,16 @@ String aiFunctionsErrorMessage({
       'Aylık AI kullanım sınırına ulaştın.$retrySuffix',
     'AI_INPUT_TOO_LONG' =>
       'AI isteği en fazla $_maxAiInputCharacters karakter olabilir.',
+    'AI_PROVIDER_TIMEOUT' =>
+      'Plan asistanı yanıt vermek için fazla bekletti. Tekrar deneyebilirsin.',
+    'AI_PROVIDER_QUOTA_EXCEEDED' =>
+      'Plan asistanı şu anda yoğun. Biraz sonra tekrar deneyebilir misin?',
+    'AI_MODEL_UNAVAILABLE' || 'AI_CONFIGURATION_UNAVAILABLE' =>
+      'Plan asistanı geçici olarak kullanılamıyor. Biraz sonra tekrar dene.',
+    'AI_PROVIDER_UNAVAILABLE' =>
+      'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
+    'AI_MALFORMED_RESPONSE' =>
+      'Plan asistanının yanıtını anlayamadım. Tekrar deneyebilir misin?',
     _ => null,
   };
   if (protectedMessage != null) return protectedMessage;
@@ -186,7 +214,9 @@ String aiFunctionsErrorMessage({
     'not-found' =>
       'Plan asistanı fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
     'failed-precondition' =>
-      'Plan asistanı API anahtarı (GROQ_API_KEY) yapılandırılmamış.',
+      'Plan asistanı geçici olarak kullanılamıyor. Biraz sonra tekrar dene.',
+    'resource-exhausted' =>
+      'Plan asistanı şu anda yoğun. Biraz sonra tekrar deneyebilir misin?',
     'unavailable' || 'deadline-exceeded' =>
       'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
     _ =>

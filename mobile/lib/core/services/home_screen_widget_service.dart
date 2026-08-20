@@ -7,6 +7,7 @@ import 'package:home_widget/home_widget.dart';
 enum HomeWidgetLaunchAction {
   focus,
   focusScreen,
+  focusStop,
   today,
   todo,
   todoAdd,
@@ -185,6 +186,9 @@ abstract final class HomeScreenWidgetService {
       ),
       '/focus/screen' => const HomeWidgetLaunchCommand(
         action: HomeWidgetLaunchAction.focusScreen,
+      ),
+      '/focus/stop' => const HomeWidgetLaunchCommand(
+        action: HomeWidgetLaunchAction.focusStop,
       ),
       '/today' => const HomeWidgetLaunchCommand(
         action: HomeWidgetLaunchAction.today,

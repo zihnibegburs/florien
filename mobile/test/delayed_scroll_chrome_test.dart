@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('hides after a long drag and returns after release', (
+  testWidgets('hides after the focus offset and stays hidden after release', (
     tester,
   ) async {
     var visible = true;
@@ -20,20 +20,19 @@ void main() {
     );
 
     final gesture = await tester.startGesture(const Offset(200, 220));
-    await gesture.moveBy(const Offset(0, -100));
+    await gesture.moveBy(const Offset(0, -120));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 499));
-    expect(visible, isTrue);
-
-    await tester.pump(const Duration(milliseconds: 1));
     expect(visible, isFalse);
 
     await gesture.up();
-    await tester.pump(const Duration(milliseconds: 499));
+    await tester.pump(const Duration(milliseconds: 600));
     expect(visible, isFalse);
 
-    await tester.pump(const Duration(milliseconds: 1));
+    final revealGesture = await tester.startGesture(const Offset(200, 120));
+    await revealGesture.moveBy(const Offset(0, 30));
+    await tester.pump();
     expect(visible, isTrue);
+    await revealGesture.up();
   });
 
   testWidgets('does not hide after a short drag', (tester) async {
@@ -51,11 +50,9 @@ void main() {
     );
 
     final gesture = await tester.startGesture(const Offset(200, 220));
-    await gesture.moveBy(const Offset(0, -100));
+    await gesture.moveBy(const Offset(0, -60));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
     await gesture.up();
-    await tester.pump(const Duration(milliseconds: 600));
 
     expect(visible, isTrue);
   });
@@ -75,11 +72,45 @@ void main() {
     );
 
     final gesture = await tester.startGesture(const Offset(200, 220));
-    await gesture.moveBy(const Offset(0, -100));
+    await gesture.moveBy(const Offset(0, -120));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
     await gesture.up();
 
     expect(visible, isTrue);
+  });
+
+  testWidgets('does not immediately hide again after revealing far down', (
+    tester,
+  ) async {
+    var visible = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          height: 300,
+          child: DelayedScrollChrome(
+            onVisibilityChanged: (value) => visible = value,
+            child: ListView(children: const [SizedBox(height: 1600)]),
+          ),
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -220));
+    await tester.pump();
+    expect(visible, isFalse);
+
+    final revealGesture = await tester.startGesture(const Offset(200, 120));
+    await revealGesture.moveBy(const Offset(0, 32));
+    await tester.pump();
+    expect(visible, isTrue);
+    await revealGesture.up();
+
+    final shortUpwardGesture = await tester.startGesture(
+      const Offset(200, 220),
+    );
+    await shortUpwardGesture.moveBy(const Offset(0, -12));
+    await tester.pump();
+    expect(visible, isTrue);
+    await shortUpwardGesture.up();
   });
 }

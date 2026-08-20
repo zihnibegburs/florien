@@ -1,24 +1,19 @@
 import * as admin from "firebase-admin";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import { error as logError } from "firebase-functions/logger";
 import {
-  AI_MAX_OUTPUT_TOKENS,
   normalizeAiInput,
   protectAiGeneration,
   requireAuthenticatedUid,
 } from "./ai-protection";
+import { callGeminiJson } from "./gemini-ai";
 import { verifyAndPersistPremium } from "./premium-verification";
 
 admin.initializeApp();
 
-const groqApiKey = defineSecret("GROQ_API_KEY");
 const appleIapCredentials = defineSecret("APPLE_IAP_CREDENTIALS");
 
 const COLORS = ["#6C63FF", "#FF6B9D", "#4ECDC4", "#FFE66D", "#FF8B5A", "#2ECC71"];
-const GROQ_BASE = "https://api.groq.com/openai/v1";
-// llama-3.3-70b-versatile shuts down 2026-08-16 (free/dev already failing).
-const GROQ_MODEL = "openai/gpt-oss-120b";
 
 export const deleteAccount = onCall(async (request) => {
   if (!request.auth) {
@@ -46,74 +41,7 @@ export const verifyPremiumPurchase = onCall(
   }
 );
 
-type GroqChatResponse = {
-  choices?: Array<{ message?: { content?: string } }>;
-};
-
-async function callGroq(
-  apiKey: string,
-  userPrompt: string,
-  systemPrompt = "Sen yardımcı bir planlama asistanısın. Her zaman geçerli JSON döndür."
-): Promise<Record<string, unknown>> {
-  if (!apiKey) {
-    throw new HttpsError(
-      "failed-precondition",
-      "GROQ_API_KEY secret is not configured."
-    );
-  }
-
-  const response = await fetch(`${GROQ_BASE}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      max_completion_tokens: AI_MAX_OUTPUT_TOKENS,
-      reasoning_effort: "low",
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    logError("Groq API request failed", { status: response.status });
-    throw new HttpsError("internal", "AI provider request failed.");
-  }
-
-  const json = (await response.json()) as GroqChatResponse;
-  const message = json.choices?.[0]?.message;
-  const content =
-    (message?.content ?? "").trim() ||
-    String((message as { reasoning?: string } | undefined)?.reasoning ?? "").trim();
-  if (!content) {
-    throw new HttpsError("internal", "Groq returned an empty response.");
-  }
-  try {
-    return JSON.parse(extractJson(content)) as Record<string, unknown>;
-  } catch {
-    throw new HttpsError("internal", "Groq returned invalid JSON.");
-  }
-}
-
-function extractJson(content: string): string {
-  const trimmed = content.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start >= 0 && end > start) {
-    return trimmed.slice(start, end + 1);
-  }
-  return trimmed;
-}
-
-export const assistBreakdown = onCall({ secrets: [groqApiKey] }, async (request) => {
+export const assistBreakdown = onCall(async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   const task = await protectAiGeneration(
     uid,
@@ -127,14 +55,37 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin yazma:
 
 Görev: ${task}`;
 
-  const root = await callGroq(groqApiKey.value(), prompt);
+  const root = await callGeminiJson({
+    userPrompt: prompt,
+    responseSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["steps"],
+      properties: {
+        steps: {
+          type: "array",
+          maxItems: 5,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["title", "durationMinutes"],
+            properties: {
+              title: { type: "string", maxLength: 120 },
+              durationMinutes: { type: "integer", minimum: 5, maximum: 1440 },
+            },
+          },
+        },
+      },
+    },
+  });
   const stepsRaw = Array.isArray(root.steps) ? root.steps : [];
   const steps = stepsRaw
     .map((node, i) => {
       const item = node as Record<string, unknown>;
-      const title = String(item.title ?? "").trim();
+      const title = String(item.title ?? "").trim().slice(0, 120);
       if (!title) return null;
-      const duration = Math.max(5, Number(item.durationMinutes ?? 15) || 15);
+      const requestedDuration = Number(item.durationMinutes ?? 15) || 15;
+      const duration = Math.min(1440, Math.max(5, requestedDuration));
       return {
         title,
         durationMinutes: duration,
@@ -152,7 +103,7 @@ Görev: ${task}`;
   return { originalTask: task, steps, totalMinutes };
 });
 
-export const assistPlan = onCall({ secrets: [groqApiKey] }, async (request) => {
+export const assistPlan = onCall(async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   const input = await protectAiGeneration(
     uid,
@@ -173,18 +124,50 @@ SADECE aşağıdaki JSON formatında yanıt ver:
 Kullanıcı yazdığı:
 ${input}`;
 
-  const root = await callGroq(groqApiKey.value(), prompt);
-  const summary = String(root.summary ?? "Günlük plan");
+  const root = await callGeminiJson({
+    userPrompt: prompt,
+    responseSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["summary", "tasks"],
+      properties: {
+        summary: { type: "string", maxLength: 240 },
+        tasks: {
+          type: "array",
+          maxItems: 12,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["title", "durationMinutes", "suggestedTime"],
+            properties: {
+              title: { type: "string", maxLength: 120 },
+              durationMinutes: { type: "integer", minimum: 5, maximum: 1440 },
+              suggestedTime: {
+                type: "string",
+                pattern: "^([01]\\d|2[0-3]):[0-5]\\d$",
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  const summary = String(root.summary ?? "Günlük plan").trim().slice(0, 240) ||
+    "Günlük plan";
   const tasksRaw = Array.isArray(root.tasks) ? root.tasks : [];
   const tasks = tasksRaw
+    .slice(0, 12)
     .map((node, i) => {
       const item = node as Record<string, unknown>;
-      const title = String(item.title ?? "").trim();
+      const title = String(item.title ?? "").trim().slice(0, 120);
       if (!title) return null;
+      const requestedDuration = Number(item.durationMinutes ?? 30) || 30;
+      const rawTime = String(item.suggestedTime ?? "09:00");
       return {
         title,
-        durationMinutes: Math.max(5, Number(item.durationMinutes ?? 30) || 30),
-        suggestedTime: String(item.suggestedTime ?? "09:00"),
+        durationMinutes: Math.min(1440, Math.max(5, requestedDuration)),
+        suggestedTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime) ?
+          rawTime : "09:00",
         color: COLORS[i % COLORS.length],
       };
     })
@@ -202,7 +185,6 @@ ${input}`;
 });
 
 export const assistPlannerChat = onCall(
-  { secrets: [groqApiKey] },
   async (request) => {
     const uid = requireAuthenticatedUid(request.auth?.uid);
     const messages = await protectAiGeneration(uid, () => {
@@ -266,13 +248,39 @@ Kullanıcının saydığı her ayrı iş için 1 görev öner; bir işin içini 
 KONUŞMA:
 ${transcript}`;
 
-    const root = await callGroq(
-      groqApiKey.value(),
-      prompt,
-      systemPrompt
-    );
+    const root = await callGeminiJson({
+      userPrompt: prompt,
+      systemPrompt,
+      responseSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["reply", "tasks"],
+        properties: {
+          reply: { type: "string", maxLength: 1000 },
+          tasks: {
+            type: "array",
+            maxItems: 8,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["title", "durationMinutes"],
+              properties: {
+                title: { type: "string", maxLength: 120 },
+                durationMinutes: {
+                  type: "integer",
+                  minimum: 5,
+                  maximum: 1440,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
     const reply = String(root.reply ??
-      "Planlamak istediğin şeyi biraz daha anlatır mısın?").trim();
+      "Planlamak istediğin şeyi biraz daha anlatır mısın?")
+      .trim()
+      .slice(0, 1000);
     const tasksRaw = Array.isArray(root.tasks) ? root.tasks : [];
     const tasks = tasksRaw
       .slice(0, 8)

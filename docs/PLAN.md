@@ -22,7 +22,7 @@
 | Takvim Senkronizasyonu | Google, Apple, Outlook entegrasyonu | P2 |
 | Widget'lar | Ana ekran / kilit ekranı widget'ları | P2 |
 | Kişiselleştirme | 3000+ renk, emoji, özel ikon, ses | P1 |
-| AI Co-Planner | Sınırsız AI planlama, zaman tahmini | P2 |
+| AI Co-Planner | Premium AI planlama, zaman tahmini | P2 |
 | Haftalık Görünüm | Web/masaüstü haftalık plan | P2 |
 | Çoklu Profil | 5 kullanıcıya kadar aile paylaşımı | P3 |
 | Mood Check-in | Günlük ruh hali takibi ve analiz | P2 |
@@ -58,7 +58,7 @@
 | Backend | Spring Boot 3.2, Spring Security, JWT |
 | Database | PostgreSQL 16 |
 | Cache/Queue | Redis 7 |
-| AI (Phase 6) | OpenAI API / Ollama |
+| AI (Phase 6) | Firebase + Gemini |
 | Push (Phase 4) | Firebase Cloud Messaging |
 
 ---
@@ -105,13 +105,14 @@
 - Tema (açık/koyu/yüksek kontrast)
 - Kullanıcı profil ayarları
 
-### Phase 6 — AI Co-Planner ✅ (Ollama)
-- [x] Görev parçalama (checklist oluşturma) — `POST /api/v1/ai/breakdown`
-- [x] Doğal dil ile günlük plan — `POST /api/v1/ai/plan`
+### Phase 6 — AI Co-Planner ✅ (Firebase + Gemini)
+- [x] Görev parçalama (checklist oluşturma) — `assistBreakdown`
+- [x] Doğal dil ile günlük plan — `assistPlan`
+- [x] Plan asistanı sohbeti — `assistPlannerChat`
 - [x] Zaman tahmini (her adım/görev için dakika)
 - [x] Flutter AI ekranı (Gün Planla / Görev Böl)
 - [x] Planı güne tek tıkla ekleme
-- [x] Ollama entegrasyonu (yerel LLM)
+- [x] Firebase Cloud Functions üzerinden Gemini entegrasyonu
 - [ ] Öncelik önerisi (ileride)
 - [ ] Sesli giriş (ileride)
 

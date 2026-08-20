@@ -638,12 +638,18 @@ final dailyPlannerQuickAddSignalProvider = StateProvider<int>((ref) => 0);
 class ActiveFocusTask {
   const ActiveFocusTask({
     required this.taskId,
+    required this.title,
+    required this.icon,
+    required this.usesDefaultFocusIcon,
     required this.totalSeconds,
     required this.remainingSeconds,
     required this.isRunning,
   });
 
   final String taskId;
+  final String title;
+  final String icon;
+  final bool usesDefaultFocusIcon;
   final int totalSeconds;
   final int remainingSeconds;
   final bool isRunning;
@@ -657,6 +663,7 @@ class ActiveFocusTask {
 final activeFocusTaskProvider = StateProvider<ActiveFocusTask?>((ref) => null);
 
 final focusTimerResetSignalProvider = StateProvider<int>((ref) => 0);
+final focusTimerFinishSignalProvider = StateProvider<int>((ref) => 0);
 
 final createStandaloneFocusTaskProvider =
     Provider<Future<FocusTaskLaunch> Function(int)>((ref) {

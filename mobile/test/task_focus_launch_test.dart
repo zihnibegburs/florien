@@ -31,6 +31,23 @@ class _EmptyInboxNotifier extends InboxNotifier {
   Future<List<TaskModel>> build() async => const [];
 }
 
+class _ScrollableInboxNotifier extends InboxNotifier {
+  @override
+  Future<List<TaskModel>> build() async => List.generate(
+    18,
+    (index) => TaskModel(
+      id: 'scroll-todo-$index',
+      title: 'Liste görevi $index',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 15,
+      status: TaskStatus.pending,
+      sortOrder: index,
+      isInbox: true,
+    ),
+  );
+}
+
 class _EmptyListsNotifier extends TodoListsNotifier {
   @override
   Future<List<TodoListDefinition>> build() async => const [];
@@ -214,6 +231,10 @@ void main() {
 
     expect(createdDuration, 5);
     _expectActiveTaskFocus(tester, title: 'Odaklan', remaining: '5:00');
+    expect(
+      find.byKey(const ValueKey('focus-default-hourglass')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Günlük'));
     await tester.pump(const Duration(milliseconds: 400));
@@ -249,6 +270,38 @@ void main() {
 
     expect(find.text('Plan Asistanı'), findsOneWidget);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
+  });
+
+  testWidgets('todo scroll focus keeps only the date and add action', (
+    tester,
+  ) async {
+    await _pumpHome(
+      tester,
+      inboxOverride: _ScrollableInboxNotifier.new,
+      dailyTasks: const [],
+    );
+
+    await tester.drag(
+      find.byKey(const ValueKey('todo-task-list')),
+      const Offset(0, -180),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const ValueKey('todo-focused-date')), findsOneWidget);
+    expect(find.byKey(const ValueKey('todo-focused-add')), findsOneWidget);
+    expect(find.byType(FlorienBottomNavigation), findsNothing);
+    expect(find.byTooltip('Liste seçenekleri'), findsNothing);
+
+    await tester.drag(
+      find.byKey(const ValueKey('todo-task-list')),
+      const Offset(0, 40),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(FlorienBottomNavigation), findsOneWidget);
+    expect(find.byTooltip('Liste seçenekleri'), findsOneWidget);
   });
 
   testWidgets('planner AI chat opens Premium for a free account', (

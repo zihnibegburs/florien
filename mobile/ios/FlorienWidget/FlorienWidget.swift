@@ -198,23 +198,7 @@ private struct FlorienWidgetTaskIcon: View {
     let icon: String
 
     private var symbolName: String {
-        switch icon {
-        case "meeting", "groups": return "person.2.fill"
-        case "email": return "envelope.fill"
-        case "phone_call": return "phone.fill"
-        case "study", "school", "menu_book", "reading": return "book.fill"
-        case "shopping", "groceries", "shopping_bag": return "cart.fill"
-        case "breakfast", "lunch", "dinner", "restaurant", "cooking": return "fork.knife"
-        case "running", "directions_run": return "figure.run"
-        case "walking", "directions_walk": return "figure.walk"
-        case "gym", "fitness", "workout": return "dumbbell.fill"
-        case "cleaning": return "sparkles"
-        case "meditation", "self_improvement": return "figure.mind.and.body"
-        case "work", "project", "presentation": return "briefcase.fill"
-        case "appointment", "doctor", "health": return "cross.case.fill"
-        case "timer": return "timer"
-        default: return "checklist"
-        }
+        florienTaskSymbolName(for: icon)
     }
 
     var body: some View {
@@ -225,6 +209,67 @@ private struct FlorienWidgetTaskIcon: View {
                 .foregroundStyle(FlorienWidgetStyle.ink)
         }
         .frame(width: 22, height: 22)
+    }
+}
+
+private func florienTaskSymbolName(for icon: String) -> String {
+    switch icon {
+    case "meeting", "groups": return "person.2.fill"
+    case "email": return "envelope.fill"
+    case "phone_call": return "phone.fill"
+    case "work", "project", "presentation": return "briefcase.fill"
+    case "deadline", "timer": return "timer"
+    case "coding", "code": return "chevron.left.forwardslash.chevron.right"
+    case "bug_fix": return "ladybug.fill"
+    case "research", "search": return "magnifyingglass"
+    case "study", "school", "homework", "menu_book", "reading": return "book.fill"
+    case "exam", "writing", "note_taking": return "pencil"
+    case "language_learning": return "character.book.closed.fill"
+    case "childcare", "child_care": return "person.2.fill"
+    case "sleep", "bedtime": return "moon.zzz.fill"
+    case "shopping", "groceries", "shopping_bag", "online_order": return "cart.fill"
+    case "clothes_shopping": return "tshirt.fill"
+    case "electronics_shopping": return "headphones"
+    case "gift", "birthday": return "gift.fill"
+    case "return_item", "pickup", "delivery": return "shippingbox.fill"
+    case "breakfast", "lunch", "dinner", "restaurant", "cooking": return "fork.knife"
+    case "coffee", "drinks": return "cup.and.saucer.fill"
+    case "food_order", "meal_prep", "baking": return "takeoutbag.and.cup.and.straw.fill"
+    case "appointment": return "calendar"
+    case "doctor", "health", "hospital", "checkup": return "cross.case.fill"
+    case "dentist": return "mouth.fill"
+    case "medicine", "medication", "pharmacy", "vaccination": return "pills.fill"
+    case "therapy", "medical_test": return "heart.text.square.fill"
+    case "meditation", "self_improvement", "yoga": return "figure.mind.and.body"
+    case "running", "directions_run": return "figure.run"
+    case "walking", "directions_walk": return "figure.walk"
+    case "gym", "fitness", "workout", "stretching": return "dumbbell.fill"
+    case "cycling": return "bicycle"
+    case "swimming": return "figure.pool.swim"
+    case "sport": return "sportscourt.fill"
+    case "travel", "trip_planning", "sightseeing": return "map.fill"
+    case "flight": return "airplane"
+    case "hotel", "vacation": return "building.2.fill"
+    case "luggage", "passport", "visa": return "suitcase.fill"
+    case "reservation": return "ticket.fill"
+    case "car", "directions_car", "driving": return "car.fill"
+    case "car_maintenance", "car_repair": return "wrench.and.screwdriver.fill"
+    case "fuel": return "fuelpump.fill"
+    case "car_wash": return "drop.fill"
+    case "parking": return "parkingsign.circle.fill"
+    case "public_transport", "taxi": return "bus.fill"
+    case "train": return "tram.fill"
+    case "home", "home_repair", "furniture", "moving", "organizing": return "house.fill"
+    case "cleaning", "laundry", "dishes": return "sparkles"
+    case "gardening", "yard": return "leaf.fill"
+    case "bills": return "doc.text.fill"
+    case "finance": return "wallet.pass.fill"
+    case "payment", "subscription": return "creditcard.fill"
+    case "banking": return "building.columns.fill"
+    case "family", "friends": return "person.2.fill"
+    case "pet", "pets": return "pawprint.fill"
+    case "entertainment", "movie", "music", "videocam": return "film.fill"
+    default: return "checklist"
     }
 }
 
@@ -452,6 +497,7 @@ private enum FlorienWidgetURL {
     static let dailyAdd = URL(string: "florien://widget/daily/add?homeWidget=1")!
     static let ai = URL(string: "florien://widget/ai?homeWidget=1")!
     static let focusScreen = URL(string: "florien://widget/focus/screen?homeWidget=1")!
+    static let focusStop = URL(string: "florien://widget/focus/stop?homeWidget=1")!
 
     static func focus(minutes: Int) -> URL {
         URL(string: "florien://widget/focus?minutes=\(minutes)&homeWidget=1")!
@@ -534,6 +580,8 @@ extension LiveActivitiesAppAttributes {
 private struct FlorienLiveActivityData {
     let activityKind: String
     let taskTitle: String
+    let taskIcon: String
+    let usesDefaultFocusIcon: Bool
     let remaining: String
     let statusLabel: String
     let accentColor: Color
@@ -545,6 +593,8 @@ private struct FlorienLiveActivityData {
         let key = context.attributes.prefixedKey
         activityKind = sharedDefault.string(forKey: key("activityKind")) ?? "focus"
         taskTitle = sharedDefault.string(forKey: key("taskTitle")) ?? "Florien"
+        taskIcon = sharedDefault.string(forKey: key("taskIcon")) ?? ""
+        usesDefaultFocusIcon = sharedDefault.integer(forKey: key("usesDefaultFocusIcon")) == 1
         remaining = sharedDefault.string(forKey: key("remaining")) ?? "--:--"
         statusLabel = sharedDefault.string(forKey: key("statusLabel")) ?? "Florien"
         let colorHex = sharedDefault.string(forKey: key("color")) ?? "#8FB6A0"
@@ -561,14 +611,6 @@ private struct FlorienLiveActivityData {
             : Date().addingTimeInterval(30 * 60)
     }
 
-    var iconName: String {
-        switch activityKind {
-        case "nextPlan": return "calendar"
-        case "dailyProgress": return "chart.bar.fill"
-        case "reminder": return "alarm.fill"
-        default: return isPaused ? "pause.fill" : "timer"
-        }
-    }
 }
 
 @available(iOS 16.1, *)
@@ -578,7 +620,7 @@ struct FlorienLiveActivityWidget: Widget {
             let data = FlorienLiveActivityData(context: context)
 
             FlorienLockScreenLiveActivityView(data: data)
-                .widgetURL(URL(string: "florien://focus")!)
+                .widgetURL(FlorienWidgetURL.focusScreen)
         } dynamicIsland: { context in
             let data = FlorienLiveActivityData(context: context)
 
@@ -604,21 +646,41 @@ struct FlorienLiveActivityWidget: Widget {
                         .multilineTextAlignment(.center)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    ProgressView(timerInterval: data.timerStartDate...data.timerEndDate, countsDown: true)
-                        .tint(data.accentColor)
-                        .opacity(data.isPaused ? 0.35 : 1)
+                    HStack(spacing: 12) {
+                        ProgressView(timerInterval: data.timerStartDate...data.timerEndDate, countsDown: true)
+                            .tint(data.accentColor)
+                            .opacity(data.isPaused ? 0.35 : 1)
+                        Link(destination: FlorienWidgetURL.focusStop) {
+                            Image(systemName: "stop.fill")
+                                .font(.caption.bold())
+                                .foregroundStyle(FlorienWidgetStyle.ink)
+                                .padding(7)
+                                .background(FlorienWidgetStyle.primary, in: Circle())
+                        }
+                        .accessibilityLabel("Odaklanmayı durdur")
+                    }
                 }
             } compactLeading: {
-                Image(systemName: data.iconName)
-                    .foregroundStyle(data.accentColor)
+                FlorienDynamicIslandAppIcon()
             } compactTrailing: {
                 FlorienTimerLabel(data: data, font: .caption2.monospacedDigit().bold())
             } minimal: {
-                Image(systemName: data.iconName)
-                    .foregroundStyle(data.accentColor)
+                FlorienDynamicIslandAppIcon()
             }
-            .widgetURL(URL(string: "florien://focus")!)
+            .widgetURL(FlorienWidgetURL.focusScreen)
         }
+    }
+}
+
+@available(iOS 16.1, *)
+private struct FlorienDynamicIslandAppIcon: View {
+    var body: some View {
+        Image("florien-live-activity-icon")
+            .resizable()
+            .renderingMode(.original)
+            .scaledToFit()
+            .frame(width: 20, height: 20)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 }
 
@@ -635,6 +697,7 @@ private struct FlorienLockScreenLiveActivityView: View {
                     .trim(from: 0, to: progress)
                     .stroke(data.accentColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
+                FlorienLiveActivityFocusIcon(data: data)
             }
             .frame(width: 52, height: 52)
 
@@ -650,6 +713,20 @@ private struct FlorienLockScreenLiveActivityView: View {
             }
 
             Spacer(minLength: 0)
+
+            Link(destination: FlorienWidgetURL.focusStop) {
+                VStack(spacing: 4) {
+                    Image(systemName: "stop.fill")
+                        .font(.caption.bold())
+                    Text("Durdur")
+                        .font(.caption2.bold())
+                }
+                .foregroundStyle(FlorienWidgetStyle.ink)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(FlorienWidgetStyle.primary, in: Capsule())
+            }
+            .accessibilityLabel("Odaklanmayı durdur")
         }
         .padding()
     }
@@ -658,6 +735,36 @@ private struct FlorienLockScreenLiveActivityView: View {
         let total = max(data.timerEndDate.timeIntervalSince(data.timerStartDate), 1)
         let remaining = max(data.timerEndDate.timeIntervalSinceNow, 0)
         return CGFloat(1 - (remaining / total))
+    }
+}
+
+@available(iOS 16.1, *)
+private struct FlorienLiveActivityFocusIcon: View {
+    let data: FlorienLiveActivityData
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(centerBackground)
+            if data.usesDefaultFocusIcon {
+                Image("focus-default-hourglass")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(8)
+            } else {
+                Image(systemName: florienTaskSymbolName(for: data.taskIcon))
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(data.accentColor)
+            }
+        }
+        .frame(width: 44, height: 44)
+    }
+
+    private var centerBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.16, green: 0.15, blue: 0.18)
+            : Color(red: 1.0, green: 0.99, blue: 0.97)
     }
 }
 

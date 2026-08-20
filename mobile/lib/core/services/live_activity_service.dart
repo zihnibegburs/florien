@@ -20,6 +20,8 @@ class FlorienLiveActivityService {
 
   Future<void> syncFocus({
     required String title,
+    required String? taskIcon,
+    required bool usesDefaultFocusIcon,
     required int remainingSeconds,
     required int totalSeconds,
     required bool isRunning,
@@ -32,7 +34,8 @@ class FlorienLiveActivityService {
       return;
     }
     final now = DateTime.now();
-    final signature = '$title:$totalSeconds:$isRunning';
+    final signature =
+        '$title:$taskIcon:$usesDefaultFocusIcon:$totalSeconds:$isRunning';
     if (_lastFocusSignature == signature &&
         _lastFocusUpdateAt != null &&
         now.difference(_lastFocusUpdateAt!) < const Duration(seconds: 30)) {
@@ -46,6 +49,8 @@ class FlorienLiveActivityService {
       _data(
         kind: 'focus',
         title: title,
+        taskIcon: taskIcon,
+        usesDefaultFocusIcon: usesDefaultFocusIcon,
         subtitle: isRunning ? 'Odaklanma sürüyor' : 'Odaklanma duraklatıldı',
         remaining: _durationLabel(remainingSeconds),
         start: now.subtract(Duration(seconds: totalSeconds - remainingSeconds)),
@@ -60,6 +65,12 @@ class FlorienLiveActivityService {
     await _end(_nextPlanId, 'next-plan');
     await _end(_dailyProgressId, 'daily-progress');
     await _end(_reminderId, 'upcoming-reminder');
+  }
+
+  Future<void> endFocus() async {
+    await _end(_focusId, 'focus');
+    _lastFocusUpdateAt = null;
+    _lastFocusSignature = null;
   }
 
   Future<void> syncDailyPlan({
@@ -111,6 +122,8 @@ class FlorienLiveActivityService {
   Map<String, dynamic> _data({
     required String kind,
     required String title,
+    required String? taskIcon,
+    required bool usesDefaultFocusIcon,
     required String subtitle,
     required String remaining,
     required DateTime start,
@@ -119,6 +132,8 @@ class FlorienLiveActivityService {
   }) => {
     'activityKind': kind,
     'taskTitle': title,
+    'taskIcon': taskIcon ?? '',
+    'usesDefaultFocusIcon': usesDefaultFocusIcon ? 1 : 0,
     'statusLabel': subtitle,
     'remaining': remaining,
     'timerStartDate': start.millisecondsSinceEpoch,

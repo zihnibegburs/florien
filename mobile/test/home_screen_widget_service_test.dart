@@ -59,6 +59,12 @@ void main() {
       )?.action,
       HomeWidgetLaunchAction.focusScreen,
     );
+    expect(
+      HomeScreenWidgetService.commandFromUri(
+        Uri.parse('florien://widget/focus/stop?homeWidget=1'),
+      )?.action,
+      HomeWidgetLaunchAction.focusStop,
+    );
   });
 
   test('parses task completion links from list widgets', () {

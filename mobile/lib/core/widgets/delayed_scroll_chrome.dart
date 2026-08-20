@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 
 class DelayedScrollChrome extends StatefulWidget {
@@ -8,24 +6,26 @@ class DelayedScrollChrome extends StatefulWidget {
     required this.child,
     required this.onVisibilityChanged,
     this.enabled = true,
-    this.delay = const Duration(milliseconds: 500),
+    this.hideOffset = 96,
+    this.revealTravel = 24,
   });
 
   final Widget child;
   final ValueChanged<bool> onVisibilityChanged;
   final bool enabled;
-  final Duration delay;
+  final double hideOffset;
+  final double revealTravel;
 
   @override
   State<DelayedScrollChrome> createState() => _DelayedScrollChromeState();
 }
 
 class _DelayedScrollChromeState extends State<DelayedScrollChrome> {
-  Timer? _hideTimer;
-  Timer? _showTimer;
   bool _dragging = false;
   bool _scrollable = false;
   bool _visible = true;
+  double _upwardTravel = 0;
+  double _downwardTravel = 0;
 
   @override
   void didUpdateWidget(covariant DelayedScrollChrome oldWidget) {
@@ -33,17 +33,8 @@ class _DelayedScrollChromeState extends State<DelayedScrollChrome> {
     if (oldWidget.enabled && !widget.enabled) _reset(notify: false);
   }
 
-  @override
-  void dispose() {
-    _hideTimer?.cancel();
-    _showTimer?.cancel();
-    super.dispose();
-  }
-
   bool _handleScroll(ScrollNotification notification) {
-    if (!widget.enabled ||
-        notification.depth != 0 ||
-        notification.metrics.axis != Axis.vertical) {
+    if (!widget.enabled || notification.metrics.axis != Axis.vertical) {
       return false;
     }
 
@@ -56,48 +47,53 @@ class _DelayedScrollChromeState extends State<DelayedScrollChrome> {
       return false;
     }
 
-    final isUserDrag = switch (notification) {
-      ScrollStartNotification(:final dragDetails) => dragDetails != null,
-      ScrollUpdateNotification(:final dragDetails) => dragDetails != null,
-      OverscrollNotification(:final dragDetails) => dragDetails != null,
-      _ => false,
-    };
-    if (isUserDrag) {
-      _dragging = true;
-      _scheduleHide();
+    if (notification case ScrollStartNotification(:final dragDetails)) {
+      _dragging = dragDetails != null;
+      _upwardTravel = 0;
+      _downwardTravel = 0;
+    } else if (notification case ScrollUpdateNotification(
+      :final dragDetails,
+      :final scrollDelta,
+    )) {
+      if (dragDetails != null) _dragging = true;
+      if (_dragging) _handleDelta(scrollDelta ?? 0, notification.metrics);
+    } else if (notification case OverscrollNotification(
+      :final dragDetails,
+      :final overscroll,
+    )) {
+      if (dragDetails != null) _dragging = true;
+      if (_dragging) _handleDelta(overscroll, notification.metrics);
+    } else if (notification is ScrollEndNotification) {
+      _dragging = false;
+      _upwardTravel = 0;
+      _downwardTravel = 0;
     }
     return false;
   }
 
-  void _scheduleHide() {
-    _showTimer?.cancel();
-    if (!_visible || _hideTimer?.isActive == true) return;
-    _hideTimer = Timer(widget.delay, () {
-      _hideTimer = null;
-      if (_dragging && _scrollable && widget.enabled) _setVisible(false);
-    });
-  }
-
-  void _handlePointerReleased(PointerEvent event) {
-    if (!_dragging) return;
-    _dragging = false;
-    _hideTimer?.cancel();
-    _hideTimer = null;
-    if (_visible) return;
-    _showTimer?.cancel();
-    _showTimer = Timer(widget.delay, () {
-      _showTimer = null;
-      if (widget.enabled) _setVisible(true);
-    });
+  void _handleDelta(double delta, ScrollMetrics metrics) {
+    if (delta > 0) {
+      _downwardTravel = 0;
+      _upwardTravel += delta;
+      if (_visible && _upwardTravel >= widget.hideOffset) {
+        _setVisible(false);
+      }
+      return;
+    }
+    if (delta >= 0 || _visible) return;
+    _upwardTravel = 0;
+    _downwardTravel += -delta;
+    if (_downwardTravel >= widget.revealTravel || metrics.pixels <= 0) {
+      _setVisible(true);
+      _downwardTravel = 0;
+    }
   }
 
   void _reset({bool notify = true}) {
     _dragging = false;
     _scrollable = false;
-    _hideTimer?.cancel();
-    _showTimer?.cancel();
-    _hideTimer = null;
-    _showTimer = null;
+    _upwardTravel = 0;
+    _downwardTravel = 0;
     _setVisible(true, notify: notify);
   }
 
@@ -108,14 +104,11 @@ class _DelayedScrollChromeState extends State<DelayedScrollChrome> {
   }
 
   @override
-  Widget build(BuildContext context) => Listener(
-    onPointerUp: _handlePointerReleased,
-    onPointerCancel: _handlePointerReleased,
-    child: NotificationListener<ScrollNotification>(
-      onNotification: _handleScroll,
-      child: widget.child,
-    ),
-  );
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollNotification>(
+        onNotification: _handleScroll,
+        child: widget.child,
+      );
 }
 
 class ScrollChromeVisibility extends StatelessWidget {
@@ -129,13 +122,20 @@ class ScrollChromeVisibility extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    ignoring: !visible,
-    child: AnimatedOpacity(
-      opacity: visible ? 1 : 0,
+  Widget build(BuildContext context) => ClipRect(
+    child: AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      child: child,
+      reverseDuration: const Duration(milliseconds: 150),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => SizeTransition(
+        sizeFactor: animation,
+        axisAlignment: -1,
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+      child: visible
+          ? KeyedSubtree(key: const ValueKey(true), child: child)
+          : const SizedBox.shrink(key: ValueKey(false)),
     ),
   );
 }

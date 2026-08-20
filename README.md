@@ -18,7 +18,6 @@ flutterfire configure
 cd ..
 firebase deploy --only firestore:rules,firestore:indexes
 cd functions && npm install && npm run build
-firebase functions:secrets:set GROQ_API_KEY
 firebase functions:secrets:set APPLE_IAP_CREDENTIALS
 firebase deploy --only functions
 
@@ -33,7 +32,7 @@ Florien/
 ├── docs/PLAN.md          # Ürün / faz planı
 ├── firebase.json         # Firestore + Functions
 ├── firestore.rules
-├── functions/            # AI assist (Groq) Cloud Functions
+├── functions/            # Protected Gemini AI Cloud Functions
 ├── backend/              # Eski Spring Boot API (deprecated)
 └── mobile/               # Flutter uygulaması
 ```
@@ -72,6 +71,11 @@ AI callable'ları kullanıcı kimliğini ve server-verified Premium entitlement'
 kontrol eder. Kullanım rezervasyonu `users/{uid}/private/aiAccess` üzerinde tek
 Firestore transaction'ıyla yapılır. Sabit limitler: 5/dakika, 30/saat,
 100/gün ve 3.000/ay.
+
+AI üretimi API anahtarı olmadan Cloud Functions servis hesabıyla Gemini
+üzerinden çalışır. Merkezi model seçimi `functions/src/ai-config.ts`
+dosyasındadır. Functions runtime servis hesabında Vertex AI User yetkisi ve
+projede Vertex AI API etkin olmalıdır.
 
 Premium kapsamı: AI plan sohbeti, alt görev oluşturma, birden fazla profil,
 Apple/Google takvim aktarma, alarm/hatırlatıcı ve göreve özel saat seçimi.

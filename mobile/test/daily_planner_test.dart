@@ -802,11 +802,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final page = tester.widget<CustomScrollView>(
+      find.byKey(const ValueKey('daily-planner-page')),
+    );
+    expect(page.paintOrder, SliverPaintOrder.firstIsTop);
+    expect(
+      (page.physics! as AlwaysScrollableScrollPhysics).parent,
+      isA<ClampingScrollPhysics>(),
+    );
     final appBar = tester.widget<SliverAppBar>(
       find.byKey(const ValueKey('daily-floating-date-header')),
     );
     expect(appBar.floating, isTrue);
-    expect(appBar.snap, isTrue);
+    expect(appBar.snap, isFalse);
     expect(appBar.pinned, isTrue);
     expect(appBar.collapsedHeight, 64);
     expect(appBar.clipBehavior, Clip.hardEdge);
@@ -822,8 +830,10 @@ void main() {
       find.byKey(const ValueKey('daily-floating-date-header')),
       findsOneWidget,
     );
-    expect(header, findsOneWidget);
-    expect(tester.getTopLeft(header).dy, greaterThanOrEqualTo(0));
+    expect(find.byKey(const ValueKey('daily-focused-header')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-focused-date')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-focused-add')), findsOneWidget);
+    expect(header, findsNothing);
 
     await tester.drag(
       find.byKey(const ValueKey('daily-planner-page')),
@@ -835,6 +845,7 @@ void main() {
       findsOneWidget,
     );
     expect(header, findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-focused-header')), findsNothing);
   });
 
   testWidgets('daily planner can pick any date and quickly return to today', (
@@ -1134,7 +1145,7 @@ void main() {
 
     expect(completedTaskId, task.id);
     expect(
-      find.byKey(const ValueKey('task-completion-confetti')),
+      find.byKey(const ValueKey('task-completion-bubbles')),
       findsOneWidget,
     );
     expect(

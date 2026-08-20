@@ -41,11 +41,6 @@ florien:
     expiration-ms: 86400000
   google:
     client-id: ${GOOGLE_CLIENT_ID:444356161269-9ukhho3o8jbtum1ht8ea9v6nungmoau3.apps.googleusercontent.com}
-  groq:
-    api-key: ${GROQ_API_KEY:}
-    base-url: https://api.groq.com/openai/v1
-    model: openai/gpt-oss-120b
-    timeout-seconds: 60
 
 logging:
   level:

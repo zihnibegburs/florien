@@ -1,6 +1,6 @@
 {
   "name": "florien-functions",
-  "description": "Florien Cloud Functions — AI assist via Groq",
+  "description": "Florien Cloud Functions — protected Gemini AI assistance",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
@@ -12,6 +12,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@google/genai": "^2.18.0",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.3.0",
     "google-auth-library": "^9.15.1"

@@ -34,6 +34,9 @@ void main() {
     );
     await tester.pump();
     expect(progress?.taskId, 'finishing-task');
+    expect(progress?.title, 'Bitecek görev');
+    expect(progress?.icon, 'task');
+    expect(progress?.usesDefaultFocusIcon, isFalse);
 
     await tester.pump(const Duration(seconds: 60));
     await tester.pump();
@@ -76,6 +79,43 @@ void main() {
 
     expect(progress, isNull);
     expect(find.byKey(const ValueKey('timer-setup')), findsOneWidget);
+  });
+
+  testWidgets('finish signal completes an active task timer', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    String? completedTaskId;
+    const launch = FocusTaskLaunch(
+      taskId: 'live-activity-task',
+      title: 'Canlı etkinlik görevi',
+      durationMinutes: 15,
+      icon: 'work',
+      color: '#6C5CE7',
+    );
+
+    Widget buildTimer(int finishSignal) => MaterialApp(
+      theme: FlorienTheme.light,
+      home: Scaffold(
+        body: FocusTimerTab(
+          launchRequest: launch,
+          finishSignal: finishSignal,
+          onTaskCompleted: (taskId) async => completedTaskId = taskId,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(buildTimer(0));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+
+    await tester.pumpWidget(buildTimer(1));
+    await tester.pump();
+
+    expect(completedTaskId, launch.taskId);
+    expect(
+      find.byKey(const ValueKey('focus-completion-check')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('automatic scheduled focus uses its remaining range', (
@@ -174,7 +214,10 @@ void main() {
     expect(find.text('− 1 dk'), findsOneWidget);
     expect(find.text('+ 1 dk'), findsOneWidget);
     expect(find.text('Sonlandır'), findsOneWidget);
-    expect(find.byIcon(Icons.hourglass_bottom_rounded), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('focus-default-hourglass')),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
     expect(find.byKey(const ValueKey('focus-paused-indicator')), findsNothing);
 
@@ -313,6 +356,17 @@ void main() {
     expect(
       find.byKey(const ValueKey('focus-dial-celebration')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('focus-completion-check')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('focus-dial-celebration')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey('focus-top-controls-hidden')),
