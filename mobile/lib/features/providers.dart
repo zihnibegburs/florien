@@ -55,18 +55,12 @@ final onboardingPreferencesProvider =
       OnboardingPreferencesNotifier.new,
     );
 
-/// Override in test builds to restart onboarding on every app launch.
-final forceOnboardingForTestingProvider = Provider<bool>((ref) => false);
-
 class OnboardingPreferencesNotifier
     extends AsyncNotifier<OnboardingPreferences> {
   String? _userId;
 
   @override
   Future<OnboardingPreferences> build() async {
-    if (ref.watch(forceOnboardingForTestingProvider)) {
-      return const OnboardingPreferences();
-    }
     _userId = ref.watch(authStateProvider).valueOrNull?.userId;
     final userId = _userId;
     if (userId == null) {
@@ -692,6 +686,17 @@ class FocusTaskLaunch {
 }
 
 final focusTaskLaunchProvider = StateProvider<FocusTaskLaunch?>((ref) => null);
+
+/// Requests the AI shell surface while the planner chat route is already open.
+enum PlannerAiChatMode { chat, todo, daily, focus }
+
+final plannerAiModeRequestProvider = StateProvider<PlannerAiChatMode?>(
+  (ref) => null,
+);
+
+final scheduledFocusLaunchProvider = StateProvider<FocusTaskLaunch?>(
+  (ref) => null,
+);
 
 final homeWidgetLaunchProvider = StateProvider<HomeWidgetLaunchCommand?>(
   (ref) => null,

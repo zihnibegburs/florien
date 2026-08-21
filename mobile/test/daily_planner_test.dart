@@ -667,7 +667,7 @@ void main() {
     },
   );
 
-  testWidgets('daily destination is between todo and focus', (tester) async {
+  testWidgets('daily destination is between todo and stats', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -689,7 +689,8 @@ void main() {
 
     expect(find.text('To-do'), findsWidgets);
     expect(find.text('Günlük'), findsOneWidget);
-    expect(find.text('Odaklan'), findsOneWidget);
+    expect(find.text('İstatistik'), findsOneWidget);
+    expect(find.text('Odaklan'), findsNothing);
 
     await tester.tap(find.text('Günlük'));
     await tester.pumpAndSettle();

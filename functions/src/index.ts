@@ -15,6 +15,7 @@ import {
 admin.initializeApp();
 
 const appleIapCredentials = defineSecret("APPLE_IAP_CREDENTIALS");
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 const COLORS = ["#6C63FF", "#FF6B9D", "#4ECDC4", "#FFE66D", "#FF8B5A", "#2ECC71"];
 
@@ -49,7 +50,9 @@ export const getPremiumStatus = onCall(async (request) => {
   return getPremiumEntitlement(uid);
 });
 
-export const assistBreakdown = onCall(async (request) => {
+export const assistBreakdown = onCall(
+  { secrets: [geminiApiKey] },
+  async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   const task = await protectAiGeneration(
     uid,
@@ -64,6 +67,7 @@ SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir metin yazma:
 Görev: ${task}`;
 
   const root = await callGeminiJson({
+    apiKey: geminiApiKey.value(),
     userPrompt: prompt,
     responseSchema: {
       type: "object",
@@ -109,9 +113,12 @@ Görev: ${task}`;
 
   const totalMinutes = steps.reduce((sum, s) => sum + s.durationMinutes, 0);
   return { originalTask: task, steps, totalMinutes };
-});
+  }
+);
 
-export const assistPlan = onCall(async (request) => {
+export const assistPlan = onCall(
+  { secrets: [geminiApiKey] },
+  async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   const input = await protectAiGeneration(
     uid,
@@ -133,6 +140,7 @@ Kullanıcı yazdığı:
 ${input}`;
 
   const root = await callGeminiJson({
+    apiKey: geminiApiKey.value(),
     userPrompt: prompt,
     responseSchema: {
       type: "object",
@@ -190,9 +198,11 @@ ${input}`;
 
   const totalMinutes = tasks.reduce((sum, t) => sum + t.durationMinutes, 0);
   return { date: planDate, summary, tasks, totalMinutes };
-});
+  }
+);
 
 export const assistPlannerChat = onCall(
+  { secrets: [geminiApiKey] },
   async (request) => {
     const uid = requireAuthenticatedUid(request.auth?.uid);
     const messages = await protectAiGeneration(uid, () => {
@@ -257,6 +267,7 @@ KONUŞMA:
 ${transcript}`;
 
     const root = await callGeminiJson({
+      apiKey: geminiApiKey.value(),
       userPrompt: prompt,
       systemPrompt,
       responseSchema: {

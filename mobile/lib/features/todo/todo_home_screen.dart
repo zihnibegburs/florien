@@ -14,7 +14,6 @@ import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/premium/premium_upsell_button.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
-import 'package:florien/features/todo/focus_timer_tab.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 import 'package:florien/features/todo/statistics_tab.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
@@ -38,10 +37,10 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   _widgetTimelineSubscription;
   late final ProviderSubscription<AsyncValue<List<TaskModel>>>
   _widgetInboxSubscription;
-  FocusTaskLaunch? _scheduledFocusLaunch;
   Timer? _scheduledFocusClock;
   bool _refreshingScheduledFocus = false;
   int _widgetLaunchRevision = 0;
+  bool _plannerAiOpen = false;
 
   @override
   void initState() {
@@ -50,8 +49,13 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       _,
       request,
     ) {
-      if (request != null && mounted && _selectedIndex != 2) {
-        _selectTab(2);
+      if (request != null && mounted) {
+        unawaited(
+          _openPlannerAi(
+            initialMode: PlannerAiChatMode.focus,
+            gateAiPremium: false,
+          ),
+        );
       }
     });
     _homeWidgetLaunchSubscription = ref.listenManual(
@@ -146,7 +150,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             icon: task.icon,
             color: task.color,
           );
-          _selectTab(2);
         } catch (_) {
           _selectTab(1);
         }
@@ -175,9 +178,21 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     switch (command.action) {
       case HomeWidgetLaunchAction.focus:
       case HomeWidgetLaunchAction.focusScreen:
-        _selectTab(2);
+        unawaited(
+          _openPlannerAi(
+            initialMode: PlannerAiChatMode.focus,
+            gateAiPremium: false,
+            rootNavigator: true,
+          ),
+        );
       case HomeWidgetLaunchAction.focusStop:
-        _selectTab(2);
+        unawaited(
+          _openPlannerAi(
+            initialMode: PlannerAiChatMode.focus,
+            gateAiPremium: false,
+            rootNavigator: true,
+          ),
+        );
         await ref.read(liveActivityServiceProvider).endFocus();
         ref.read(focusTimerFinishSignalProvider.notifier).state++;
       case HomeWidgetLaunchAction.today:
@@ -217,6 +232,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       rootNavigator: true,
     ).popUntil((route) => route.isFirst);
     await WidgetsBinding.instance.endOfFrame;
+    _plannerAiOpen = false;
   }
 
   Future<void> _completeWidgetTask(String taskId) async {
@@ -271,11 +287,12 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           automatic: true,
         );
       }
-      if (_sameScheduledLaunch(_scheduledFocusLaunch, next)) return;
-      setState(() => _scheduledFocusLaunch = next);
+      final current = ref.read(scheduledFocusLaunchProvider);
+      if (_sameScheduledLaunch(current, next)) return;
+      ref.read(scheduledFocusLaunchProvider.notifier).state = next;
     } catch (_) {
-      if (mounted && _scheduledFocusLaunch != null) {
-        setState(() => _scheduledFocusLaunch = null);
+      if (ref.read(scheduledFocusLaunchProvider) != null) {
+        ref.read(scheduledFocusLaunchProvider.notifier).state = null;
       }
     } finally {
       _refreshingScheduledFocus = false;
@@ -288,17 +305,14 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       a?.endsAt == b?.endsAt;
 
   Future<void> _completeFocusedTask(String taskId) async {
-    if (_scheduledFocusLaunch?.taskId == taskId && mounted) {
-      setState(() => _scheduledFocusLaunch = null);
+    if (ref.read(scheduledFocusLaunchProvider)?.taskId == taskId) {
+      ref.read(scheduledFocusLaunchProvider.notifier).state = null;
     }
     await ref.read(completeFocusedTaskProvider)(taskId);
     if (mounted) unawaited(_refreshScheduledFocus());
   }
 
-  Future<void> _syncDailyLiveActivities(
-    DateTime date,
-    List<TaskModel> tasks,
-  ) async {
+  Future<void> _syncDailyLiveActivities(DateTime date, List<TaskModel> tasks) async {
     final preferences = await ref.read(liveActivityPreferencesProvider.future);
     await ref
         .read(liveActivityServiceProvider)
@@ -341,29 +355,47 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     return launch;
   }
 
-  Future<void> _openPlannerAi({bool rootNavigator = false}) async {
-    final allowed = await requirePremiumAccess(
-      context,
-      ref,
-      PremiumFeature.aiChat,
-    );
-    if (!allowed || !mounted) return;
-    await Navigator.of(context, rootNavigator: rootNavigator).push(
-      PageRouteBuilder<void>(
-        transitionDuration: const Duration(milliseconds: 220),
-        pageBuilder: (_, animation, _) => FadeTransition(
-          opacity: animation,
-          child: const PlannerAiChatScreen(),
+  Future<void> _openPlannerAi({
+    bool rootNavigator = false,
+    PlannerAiChatMode initialMode = PlannerAiChatMode.chat,
+    bool gateAiPremium = true,
+  }) async {
+    if (_plannerAiOpen) {
+      ref.read(plannerAiModeRequestProvider.notifier).state = initialMode;
+      return;
+    }
+    if (gateAiPremium) {
+      final allowed = await requirePremiumAccess(
+        context,
+        ref,
+        PremiumFeature.aiChat,
+      );
+      if (!allowed || !mounted) return;
+    }
+    _plannerAiOpen = true;
+    try {
+      await Navigator.of(context, rootNavigator: rootNavigator).push(
+        PageRouteBuilder<void>(
+          transitionDuration: const Duration(milliseconds: 220),
+          pageBuilder: (_, animation, _) => FadeTransition(
+            opacity: animation,
+            child: PlannerAiChatScreen(
+              initialMode: initialMode,
+              onStandaloneFocusStarted: _createStandaloneFocusTask,
+              onTaskProgressChanged: _onFocusTaskProgressChanged,
+              onTaskCompleted: _completeFocusedTask,
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      _plannerAiOpen = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final requestedFocus = ref.watch(focusTaskLaunchProvider);
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
-    final alarms = ref.read(taskAlarmServiceProvider);
     return Scaffold(
       backgroundColor: context.palette.background,
       appBar: _selectedIndex == 0
@@ -410,32 +442,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
               ),
             ),
           ),
-          FocusTimerTab(
-            launchRequest: requestedFocus ?? _scheduledFocusLaunch,
-            resetSignal: ref.watch(focusTimerResetSignalProvider),
-            finishSignal: ref.watch(focusTimerFinishSignalProvider),
-            onStandaloneFocusStarted: _createStandaloneFocusTask,
-            onTaskProgressChanged: _onFocusTaskProgressChanged,
-            onTaskCompleted: _completeFocusedTask,
-            onFocusAlarmScheduled: (alarmAt, title) async {
-              await alarms.scheduleFocusTimerAlarm(
-                title: title,
-                alarmAt: alarmAt,
-              );
-            },
-            onFocusAlarmCompleted: (title) =>
-                alarms.completeFocusTimerAlarm(title: title),
-            onFocusAlarmCancelled: alarms.cancelFocusTimerAlarm,
-            alarmAvailable: premium?.hasActivePremium == true,
-            onPremiumAlarmPressed: () => unawaited(
-              requirePremiumAccess(context, ref, PremiumFeature.reminders),
-            ),
-            onSessionClosed: () {
-              if (ref.read(focusTaskLaunchProvider) != null) {
-                ref.read(focusTaskLaunchProvider.notifier).state = null;
-              }
-            },
-          ),
           const StatisticsTab(),
         ],
       ),
@@ -453,11 +459,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             label: 'Günlük',
             icon: Icons.calendar_today_outlined,
             selectedIcon: Icons.calendar_today_rounded,
-          ),
-          FlorienNavDestination(
-            label: 'Odaklan',
-            icon: Icons.timelapse_outlined,
-            selectedIcon: Icons.timelapse_rounded,
           ),
           FlorienNavDestination(
             label: 'İstatistik',

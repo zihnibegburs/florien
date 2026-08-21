@@ -9,14 +9,31 @@ import 'package:florien/core/widgets/florien_ai.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
+import 'package:florien/features/premium/premium_gate.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
+import 'package:florien/features/todo/focus_timer_tab.dart';
+import 'package:florien/features/todo/planner_ai_surface_cards.dart';
+import 'package:florien/core/models/models.dart';
 
 class PlannerAiChatScreen extends ConsumerStatefulWidget {
-  const PlannerAiChatScreen({super.key, this.speechInput});
+  const PlannerAiChatScreen({
+    super.key,
+    this.speechInput,
+    this.initialMode = PlannerAiChatMode.chat,
+    this.onStandaloneFocusStarted,
+    this.onTaskProgressChanged,
+    this.onTaskCompleted,
+  });
 
   final SpeechInput? speechInput;
+  final PlannerAiChatMode initialMode;
+  final Future<FocusTaskLaunch> Function(int durationMinutes)?
+  onStandaloneFocusStarted;
+  final ValueChanged<ActiveFocusTask?>? onTaskProgressChanged;
+  final Future<void> Function(String taskId)? onTaskCompleted;
 
   @override
   ConsumerState<PlannerAiChatScreen> createState() =>
@@ -34,6 +51,8 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     ),
   ];
   late final SpeechInput _speechInput;
+  late PlannerAiChatMode _mode;
+  late final ProviderSubscription<PlannerAiChatMode?> _modeRequestSubscription;
   bool _sending = false;
   bool _voicePanelOpen = false;
   bool _isListening = false;
@@ -43,19 +62,83 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   String? _voiceError;
   int _voiceSession = 0;
 
+  bool get _isFocusMode => _mode == PlannerAiChatMode.focus;
+  bool get _showModeSwitcher => !_voicePanelOpen && !_isFocusMode;
+
   @override
   void initState() {
     super.initState();
+    _mode = widget.initialMode;
     _speechInput = widget.speechInput ?? SpeechInputService();
+    _modeRequestSubscription = ref.listenManual(plannerAiModeRequestProvider, (
+      _,
+      request,
+    ) {
+      if (request == null || !mounted) return;
+      ref.read(plannerAiModeRequestProvider.notifier).state = null;
+      unawaited(_selectMode(request, allowDeselect: false));
+    });
   }
 
   @override
   void dispose() {
+    _modeRequestSubscription.close();
     unawaited(_speechInput.dispose());
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
+
+  Future<void> _selectMode(
+    PlannerAiChatMode mode, {
+    bool allowDeselect = true,
+  }) async {
+    if (mode == _mode) {
+      if (!allowDeselect || mode == PlannerAiChatMode.chat) return;
+      setState(() => _mode = PlannerAiChatMode.chat);
+      return;
+    }
+    if (mode != PlannerAiChatMode.focus && mode != PlannerAiChatMode.chat) {
+      final allowed = await requirePremiumAccess(
+        context,
+        ref,
+        PremiumFeature.aiChat,
+      );
+      if (!allowed || !mounted) return;
+    }
+    if (_voicePanelOpen) {
+      await _closeVoiceInput();
+    }
+    if (!mounted) return;
+    setState(() => _mode = mode);
+    if (mode != PlannerAiChatMode.focus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
+  }
+
+  Future<void> _focusTaskFromSurface(TaskModel task) async {
+    try {
+      await ref.read(startTaskFocusProvider)(task);
+    } catch (_) {
+      // Launch still proceeds so the focus surface can open.
+    }
+    if (!mounted) return;
+    ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
+      taskId: task.id,
+      title: task.title,
+      durationMinutes: task.durationMinutes,
+      icon: task.icon,
+      color: task.color,
+    );
+    setState(() => _mode = PlannerAiChatMode.focus);
+  }
+
+  String get _headerTitle => switch (_mode) {
+    PlannerAiChatMode.chat => 'Florien AI',
+    PlannerAiChatMode.focus => 'Odak',
+    PlannerAiChatMode.daily => 'Günlük plan',
+    PlannerAiChatMode.todo => 'To-do',
+  };
 
   Future<void> _openVoiceInput() async {
     FocusScope.of(context).unfocus();
@@ -286,6 +369,11 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final requestedFocus = ref.watch(focusTaskLaunchProvider);
+    final scheduledFocus = ref.watch(scheduledFocusLaunchProvider);
+    final premium = ref.watch(premiumMembershipProvider).valueOrNull;
+    final alarms = ref.read(taskAlarmServiceProvider);
+
     return Theme(
       data: FlorienTheme.dark,
       child: Builder(
@@ -318,7 +406,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                     ),
                     icon: const Icon(Icons.arrow_back_rounded),
                   ),
-                  const Expanded(child: Center(child: Text('Plan Asistanı'))),
+                  Expanded(child: Center(child: Text(_headerTitle))),
                   const FlorienAiMark(
                     size: 42,
                     imageKey: ValueKey('planner-ai-header-image'),
@@ -333,53 +421,231 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
             child: Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
-                    key: const ValueKey('planner-ai-message-list'),
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-                    itemCount: _messages.length + (_sending ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _messages.length) {
-                        return const _TypingBubble();
-                      }
-                      final message = _messages[index];
-                      return _ChatMessageBubble(
-                        message: message,
-                        onApprove: () => unawaited(_approveTasks(index)),
-                        onReject: () => _rejectTasks(index),
-                      );
-                    },
+                  child: IndexedStack(
+                    index: _isFocusMode ? 1 : 0,
+                    children: [
+                      ListView(
+                        key: const ValueKey('planner-ai-message-list'),
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+                        children: [
+                          for (var index = 0; index < _messages.length; index++)
+                            _ChatMessageBubble(
+                              message: _messages[index],
+                              onApprove: () => unawaited(_approveTasks(index)),
+                              onReject: () => _rejectTasks(index),
+                            ),
+                          if (_sending) const _TypingBubble(),
+                          if (_mode == PlannerAiChatMode.todo)
+                            PlannerAiTodoCard(
+                              onFocusTask: (task) =>
+                                  unawaited(_focusTaskFromSurface(task)),
+                            ),
+                          if (_mode == PlannerAiChatMode.daily)
+                            PlannerAiDailyCard(
+                              onFocusTask: (task) =>
+                                  unawaited(_focusTaskFromSurface(task)),
+                            ),
+                        ],
+                      ),
+                      FocusTimerTab(
+                        key: const ValueKey('planner-ai-focus-timer'),
+                        aiShellLayout: true,
+                        launchRequest: _isFocusMode
+                            ? (requestedFocus ?? scheduledFocus)
+                            : null,
+                        resetSignal: ref.watch(focusTimerResetSignalProvider),
+                        finishSignal: ref.watch(
+                          focusTimerFinishSignalProvider,
+                        ),
+                        onStandaloneFocusStarted:
+                            widget.onStandaloneFocusStarted,
+                        onTaskProgressChanged: widget.onTaskProgressChanged,
+                        onTaskCompleted: widget.onTaskCompleted,
+                        onFocusAlarmScheduled: (alarmAt, title) async {
+                          await alarms.scheduleFocusTimerAlarm(
+                            title: title,
+                            alarmAt: alarmAt,
+                          );
+                        },
+                        onFocusAlarmCompleted: (title) =>
+                            alarms.completeFocusTimerAlarm(title: title),
+                        onFocusAlarmCancelled: alarms.cancelFocusTimerAlarm,
+                        alarmAvailable: premium?.hasActivePremium == true,
+                        onPremiumAlarmPressed: () => unawaited(
+                          requirePremiumAccess(
+                            context,
+                            ref,
+                            PremiumFeature.reminders,
+                          ),
+                        ),
+                        onSessionClosed: () {
+                          if (ref.read(focusTaskLaunchProvider) != null) {
+                            ref.read(focusTaskLaunchProvider.notifier).state =
+                                null;
+                          }
+                          if (!mounted) return;
+                          setState(() => _mode = PlannerAiChatMode.chat);
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => _scrollToBottom(),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  child: _voicePanelOpen
-                      ? _InlineVoiceCaptureArea(
-                          isListening: _isListening,
-                          isApplying: _isApplyingVoiceInput,
-                          soundLevel: _soundLevel,
-                          transcript: _voiceTranscript,
-                          error: _voiceError,
-                          onToggleListening: () =>
-                              unawaited(_toggleVoiceListening()),
-                          onClose: () => unawaited(_closeVoiceInput()),
-                          onAccept: () => unawaited(_acceptVoiceInput()),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  child: _showModeSwitcher
+                      ? _AiModeSwitcher(
+                          selected: _mode,
+                          onSelected: (mode) => unawaited(_selectMode(mode)),
                         )
-                      : FlorienAiInput(
-                          key: const ValueKey('planner-ai-text-input-mode'),
-                          controller: _controller,
-                          enabled: !_sending,
-                          onSend: () => unawaited(_send()),
-                          inputKey: const ValueKey('planner-ai-input'),
-                          sendKey: const ValueKey('planner-ai-send'),
-                          voiceKey: const ValueKey('planner-ai-voice'),
-                          onVoiceTap: () => unawaited(_openVoiceInput()),
-                        ),
+                      : const SizedBox(width: double.infinity),
                 ),
+                if (!_isFocusMode)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: _voicePanelOpen
+                        ? _InlineVoiceCaptureArea(
+                            isListening: _isListening,
+                            isApplying: _isApplyingVoiceInput,
+                            soundLevel: _soundLevel,
+                            transcript: _voiceTranscript,
+                            error: _voiceError,
+                            onToggleListening: () =>
+                                unawaited(_toggleVoiceListening()),
+                            onClose: () => unawaited(_closeVoiceInput()),
+                            onAccept: () => unawaited(_acceptVoiceInput()),
+                          )
+                        : FlorienAiInput(
+                            key: const ValueKey('planner-ai-text-input-mode'),
+                            controller: _controller,
+                            enabled: !_sending,
+                            onSend: () => unawaited(_send()),
+                            inputKey: const ValueKey('planner-ai-input'),
+                            sendKey: const ValueKey('planner-ai-send'),
+                            voiceKey: const ValueKey('planner-ai-voice'),
+                            onVoiceTap: () => unawaited(_openVoiceInput()),
+                          ),
+                  ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AiModeSwitcher extends StatelessWidget {
+  const _AiModeSwitcher({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final PlannerAiChatMode selected;
+  final ValueChanged<PlannerAiChatMode> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: const ValueKey('planner-ai-mode-switcher'),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(FlorienRadius.pill),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: Row(
+          children: [
+            for (final mode in const [
+              PlannerAiChatMode.todo,
+              PlannerAiChatMode.daily,
+              PlannerAiChatMode.focus,
+            ])
+              Expanded(
+                child: _AiModeChip(
+                  mode: mode,
+                  selected: selected == mode,
+                  onTap: () => onSelected(mode),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AiModeChip extends StatelessWidget {
+  const _AiModeChip({
+    required this.mode,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final PlannerAiChatMode mode;
+  final bool selected;
+  final VoidCallback onTap;
+
+  String get _label => switch (mode) {
+    PlannerAiChatMode.chat => 'Sohbet',
+    PlannerAiChatMode.todo => 'To-do',
+    PlannerAiChatMode.daily => 'Günlük plan',
+    PlannerAiChatMode.focus => 'Odak',
+  };
+
+  IconData get _icon => switch (mode) {
+    PlannerAiChatMode.chat => Icons.chat_bubble_outline_rounded,
+    PlannerAiChatMode.todo => Icons.check_box_outlined,
+    PlannerAiChatMode.daily => Icons.calendar_today_outlined,
+    PlannerAiChatMode.focus => Icons.timelapse_outlined,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? FlorienColors.primary : Colors.transparent,
+      borderRadius: BorderRadius.circular(FlorienRadius.pill),
+      child: InkWell(
+        key: ValueKey('planner-ai-mode-${mode.name}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FlorienRadius.pill),
+        child: SizedBox(
+          height: 54,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _icon,
+                size: 18,
+                color: selected
+                    ? FlorienColors.onPrimary
+                    : context.palette.textSecondary,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? FlorienColors.onPrimary
+                      : context.palette.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
       ),

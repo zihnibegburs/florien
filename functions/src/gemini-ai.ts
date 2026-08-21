@@ -1,9 +1,8 @@
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI } from "@google/genai";
 import { HttpsError } from "firebase-functions/v2/https";
 import { error as logError } from "firebase-functions/logger";
 import {
   AI_REQUEST_TIMEOUT_MS,
-  GEMINI_LOCATION,
   GEMINI_MODEL_NAME,
 } from "./ai-config";
 import { AI_MAX_OUTPUT_TOKENS } from "./ai-protection";
@@ -12,35 +11,25 @@ type GeminiJsonRequest = {
   userPrompt: string;
   systemPrompt?: string;
   responseSchema: Record<string, unknown>;
+  apiKey: string;
 };
 
 let geminiClient: GoogleGenAI | undefined;
+let geminiClientApiKey: string | undefined;
 
-function firebaseProjectId(): string {
-  const direct = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT;
-  if (direct) return direct;
-  try {
-    const config = JSON.parse(process.env.FIREBASE_CONFIG ?? "{}") as {
-      projectId?: string;
-    };
-    if (config.projectId) return config.projectId;
-  } catch {
-    // The consistent configuration error below is safer than leaking JSON.
+function client(apiKey: string): GoogleGenAI {
+  const key = apiKey.trim();
+  if (!key) {
+    throw new HttpsError(
+      "failed-precondition",
+      "AI service is not configured.",
+      { reason: "AI_CONFIGURATION_UNAVAILABLE" }
+    );
   }
-  throw new HttpsError(
-    "failed-precondition",
-    "AI service is not configured.",
-    { reason: "AI_CONFIGURATION_UNAVAILABLE" }
-  );
-}
-
-function client(): GoogleGenAI {
-  geminiClient ??= new GoogleGenAI({
-    enterprise: true,
-    project: firebaseProjectId(),
-    location: GEMINI_LOCATION,
-    apiVersion: "v1",
-  });
+  if (geminiClient == null || geminiClientApiKey !== key) {
+    geminiClient = new GoogleGenAI({ apiKey: key });
+    geminiClientApiKey = key;
+  }
   return geminiClient;
 }
 
@@ -50,7 +39,7 @@ export async function callGeminiJson(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
   try {
-    const response = await client().models.generateContent({
+    const response = await client(request.apiKey).models.generateContent({
       model: GEMINI_MODEL_NAME,
       contents: request.userPrompt,
       config: {
@@ -61,10 +50,6 @@ export async function callGeminiJson(
         temperature: 0.2,
         responseMimeType: "application/json",
         responseJsonSchema: request.responseSchema,
-        thinkingConfig: {
-          thinkingLevel: ThinkingLevel.MINIMAL,
-          includeThoughts: false,
-        },
       },
     });
     const content = response.text?.trim() ?? "";
@@ -109,6 +94,11 @@ function mapGeminiError(error: unknown): HttpsError {
     if (error.status === 400 || error.status === 404) {
       return new HttpsError("failed-precondition", "AI model unavailable.", {
         reason: "AI_MODEL_UNAVAILABLE",
+      });
+    }
+    if (error.status === 401 || error.status === 403) {
+      return new HttpsError("failed-precondition", "AI service is not configured.", {
+        reason: "AI_CONFIGURATION_UNAVAILABLE",
       });
     }
     if (error.status === 408 || error.status === 504) {

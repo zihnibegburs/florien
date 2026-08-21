@@ -137,6 +137,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('planner-ai-voice')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-mode-switcher')),
+      findsOneWidget,
+    );
     final headerImage = tester.widget<Image>(
       find.byKey(const ValueKey('planner-ai-header-image')),
     );
@@ -197,6 +201,10 @@ void main() {
       findsNothing,
     );
     expect(
+      find.byKey(const ValueKey('planner-ai-mode-switcher')),
+      findsNothing,
+    );
+    expect(
       find.byKey(const ValueKey('planner-ai-inline-voice-animation')),
       findsOneWidget,
     );
@@ -224,7 +232,7 @@ void main() {
             .dy,
       ),
     );
-    expect(find.text('Plan Asistanı'), findsOneWidget);
+    expect(find.text('Florien AI'), findsWidgets);
 
     speechInput.emitSoundLevel(-8);
     speechInput.emitText('Yarın yürüyüş yapacağım');
@@ -260,6 +268,10 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey('planner-ai-text-input-mode')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('planner-ai-mode-switcher')),
       findsOneWidget,
     );
   });

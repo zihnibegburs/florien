@@ -29,6 +29,7 @@ class FocusTimerTab extends StatefulWidget {
     this.onFocusAlarmCancelled,
     this.alarmAvailable = true,
     this.onPremiumAlarmPressed,
+    this.aiShellLayout = false,
   });
 
   final FocusTaskLaunch? launchRequest;
@@ -45,6 +46,7 @@ class FocusTimerTab extends StatefulWidget {
   final Future<void> Function()? onFocusAlarmCancelled;
   final bool alarmAvailable;
   final VoidCallback? onPremiumAlarmPressed;
+  final bool aiShellLayout;
 
   @override
   State<FocusTimerTab> createState() => _FocusTimerTabState();
@@ -810,6 +812,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.aiShellLayout) {
+      return _buildAiShellLayout(context);
+    }
+
     final setupProgress = _selectedMinutes / 60;
     final elapsedProgress = _sessionTotalSeconds == 0
         ? 0.0
@@ -906,6 +912,384 @@ class _FocusTimerTabState extends State<FocusTimerTab>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAiShellLayout(BuildContext context) {
+    return IgnorePointer(
+      ignoring: _isFinishing,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 353),
+              child: Container(
+                key: ValueKey(
+                  _sessionActive ? 'active-timer' : 'timer-setup',
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF303034),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: const Color(0xFF62626A)),
+                ),
+                padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
+                child: _sessionActive
+                    ? _AiActiveFocusCard(
+                        title: _taskTitle ?? 'Odaklan',
+                        remainingLabel: _remainingLabel,
+                        isRunning: _isRunning,
+                        soundTitle: _selectedMusic?.title ?? 'Ses yok',
+                        soundPlaying: _focusMusicPlayer.playing,
+                        selectedMusic: _selectedMusic,
+                        autoPlay: _musicAutoPlay,
+                        onRemoveMinute: _removeMinute,
+                        onAddMinute: _addMinute,
+                        onToggleSound: () => unawaited(_toggleAiSound()),
+                        onMusicSelected: (value) =>
+                            unawaited(_handleMusicMenuSelection(value)),
+                        onToggle: () => unawaited(_toggleTimer()),
+                        onFinish: () => unawaited(_completeAndCloseSession()),
+                      )
+                    : _AiFocusSetupCard(
+                        selectedMinutes: _selectedMinutes,
+                        onDecrease: () => _setDuration(_selectedMinutes - 1),
+                        onIncrease: () => _setDuration(_selectedMinutes + 1),
+                        onStart: () => unawaited(_toggleTimer()),
+                        starting: _creatingStandaloneTask,
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleAiSound() async {
+    if (_selectedMusic == null) {
+      final first = _focusMusicTracks.firstOrNull;
+      if (first == null) return;
+      await _handleMusicMenuSelection(_FocusMusicMenuValue.track(first.id));
+      return;
+    }
+    if (_focusMusicPlayer.playing) {
+      _musicActiveForSession = false;
+      await _pauseFocusMusic();
+      return;
+    }
+    _musicActiveForSession = true;
+    await _playSelectedMusic(showError: true);
+  }
+}
+
+class _AiFocusSetupCard extends StatelessWidget {
+  const _AiFocusSetupCard({
+    required this.selectedMinutes,
+    required this.onDecrease,
+    required this.onIncrease,
+    required this.onStart,
+    required this.starting,
+  });
+
+  final int selectedMinutes;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+  final VoidCallback onStart;
+  final bool starting;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Odaklan',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 34),
+        Text(
+          '$selectedMinutes:00',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 62,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -2.5,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 9),
+        Text(
+          'odak süresi',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 15,
+            color: context.palette.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 26),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: selectedMinutes <= 1 ? null : onDecrease,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: context.palette.textPrimary,
+                  backgroundColor: const Color(0xFF38383D),
+                  side: BorderSide(color: context.palette.border),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('-1 dk'),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: selectedMinutes >= 180 ? null : onIncrease,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: context.palette.textPrimary,
+                  backgroundColor: const Color(0xFF38383D),
+                  side: BorderSide(color: context.palette.border),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('+1 dk'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: starting ? null : onStart,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            backgroundColor: FlorienColors.primary,
+            foregroundColor: FlorienColors.onPrimary,
+            shape: const StadiumBorder(),
+          ),
+          child: Text(starting ? 'Hazırlanıyor…' : 'Odaklanmaya başla'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AiActiveFocusCard extends StatelessWidget {
+  const _AiActiveFocusCard({
+    required this.title,
+    required this.remainingLabel,
+    required this.isRunning,
+    required this.soundTitle,
+    required this.soundPlaying,
+    required this.selectedMusic,
+    required this.autoPlay,
+    required this.onRemoveMinute,
+    required this.onAddMinute,
+    required this.onToggleSound,
+    required this.onMusicSelected,
+    required this.onToggle,
+    required this.onFinish,
+  });
+
+  final String title;
+  final String remainingLabel;
+  final bool isRunning;
+  final String soundTitle;
+  final bool soundPlaying;
+  final _FocusMusicTrack? selectedMusic;
+  final bool autoPlay;
+  final VoidCallback onRemoveMinute;
+  final VoidCallback onAddMinute;
+  final VoidCallback onToggleSound;
+  final ValueChanged<String> onMusicSelected;
+  final VoidCallback onToggle;
+  final VoidCallback onFinish;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          key: const ValueKey('active-focus-title'),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Icon(
+          Icons.hourglass_top_rounded,
+          key: ValueKey('active-focus-task-icon'),
+          size: 22,
+        ),
+        const SizedBox(height: 26),
+        Text(
+          remainingLabel,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 62,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -2.5,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 9),
+        Text(
+          isRunning ? 'kaldı' : 'duraklatıldı',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 15,
+            color: context.palette.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 26),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: onRemoveMinute,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: context.palette.textPrimary,
+                  backgroundColor: const Color(0xFF38383D),
+                  side: BorderSide(color: context.palette.border),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('-1 dk'),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: onAddMinute,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  foregroundColor: context.palette.textPrimary,
+                  backgroundColor: const Color(0xFF38383D),
+                  side: BorderSide(color: context.palette.border),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('+1 dk'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF38383D),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF505057)),
+          ),
+          child: Row(
+            children: [
+              Material(
+                color: FlorienColors.primary,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onToggleSound,
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(
+                      soundPlaying
+                          ? Icons.volume_up_rounded
+                          : Icons.volume_off_rounded,
+                      color: FlorienColors.onPrimary,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      soundTitle,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      soundPlaying ? 'Ses açık' : 'Ses kapalı',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: context.palette.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _FocusMusicMenuButton(
+                selectedMusic: selectedMusic,
+                autoPlay: autoPlay,
+                isPlaying: soundPlaying,
+                onSelected: onMusicSelected,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    'Değiştir',
+                    style: TextStyle(
+                      color: FlorienColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onToggle,
+                icon: Icon(
+                  isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  size: 20,
+                ),
+                label: Text(isRunning ? 'Duraklat' : 'Devam et'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  backgroundColor: FlorienColors.primary,
+                  foregroundColor: FlorienColors.onPrimary,
+                  shape: const StadiumBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: onFinish,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  foregroundColor: context.palette.textPrimary,
+                  backgroundColor: const Color(0xFF343438),
+                  side: BorderSide(color: context.palette.border),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('Odağı bitir'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1745,12 +2129,14 @@ class _FocusMusicMenuButton extends StatelessWidget {
     required this.autoPlay,
     required this.isPlaying,
     required this.onSelected,
+    this.child,
   });
 
   final _FocusMusicTrack? selectedMusic;
   final bool autoPlay;
   final bool isPlaying;
   final ValueChanged<String> onSelected;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
@@ -1813,42 +2199,48 @@ class _FocusMusicMenuButton extends StatelessWidget {
         ),
       ),
     ],
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 178),
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: context.palette.surfaceMuted,
-          shape: StadiumBorder(side: BorderSide(color: context.palette.border)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isPlaying ? Icons.graphic_eq_rounded : Icons.music_note_rounded,
-                size: 19,
+    child:
+        child ??
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 178),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: context.palette.surfaceMuted,
+              shape: StadiumBorder(
+                side: BorderSide(color: context.palette.border),
               ),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  selectedMusic?.title ?? 'Müzik',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPlaying
+                        ? Icons.graphic_eq_rounded
+                        : Icons.music_note_rounded,
+                    size: 19,
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      selectedMusic?.title ?? 'Müzik',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: context.palette.textSecondary,
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: context.palette.textSecondary,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
   );
 }
 
