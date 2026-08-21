@@ -33,6 +33,7 @@ dependencies:
   share_plus: ^10.1.4
   url_launcher: ^6.3.2
   in_app_purchase: ^3.3.0
+  in_app_purchase_storekit: ^0.4.11
   audio_session: ^0.2.4
   just_audio: ^0.10.6
   lottie: ^3.3.3

@@ -66,6 +66,7 @@ premiumTransactions/{sha256}              # Admin SDK only; purchase ownership
 | `assistPlan` | Doğal dilden günlük plan |
 | `assistPlannerChat` | Planner kapsamlı sohbet ve onaylanabilir To-do taslakları |
 | `verifyPremiumPurchase` | Apple/Google satın alımını doğrula ve private entitlement yaz |
+| `getPremiumStatus` | Sunucudaki aktif Premium durumunu istemciye döndür |
 
 AI callable'ları kullanıcı kimliğini ve server-verified Premium entitlement'ı
 kontrol eder. Kullanım rezervasyonu `users/{uid}/private/aiAccess` üzerinde tek

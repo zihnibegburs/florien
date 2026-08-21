@@ -416,7 +416,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                       icon: const Icon(Icons.add_rounded),
                     ),
                   )
-                else if (premium != null && !premium.isPremium)
+                else if (premium != null && !premium.hasActivePremium)
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: PremiumUpsellButton(
@@ -442,7 +442,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           DailyPlannerTab(
             quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
             scrollChromeEnabled: _selectedIndex == 1,
-            showPremiumUpsell: premium != null && !premium.isPremium,
+            showPremiumUpsell: premium != null && !premium.hasActivePremium,
             onPremiumUpsellPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const PremiumMembershipScreen(),
@@ -467,7 +467,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             onFocusAlarmCompleted: (title) =>
                 alarms.completeFocusTimerAlarm(title: title),
             onFocusAlarmCancelled: alarms.cancelFocusTimerAlarm,
-            alarmAvailable: premium?.isPremium == true,
+            alarmAvailable: premium?.hasActivePremium == true,
             onPremiumAlarmPressed: () => unawaited(
               requirePremiumAccess(context, ref, PremiumFeature.reminders),
             ),

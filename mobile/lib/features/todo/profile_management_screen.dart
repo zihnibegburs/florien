@@ -133,7 +133,7 @@ class _ProfileManagementScreenState
     final profiles = ref.watch(appProfilesProvider);
     final isPremium = ref.watch(
       premiumMembershipProvider.select(
-        (membership) => membership.valueOrNull?.isPremium == true,
+        (membership) => membership.valueOrNull?.hasActivePremium == true,
       ),
     );
 

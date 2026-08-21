@@ -181,7 +181,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     final lists = ref.watch(todoListsProvider).valueOrNull ?? const [];
     final isPremium = ref.watch(
       premiumMembershipProvider.select(
-        (membership) => membership.valueOrNull?.isPremium == true,
+        (membership) => membership.valueOrNull?.hasActivePremium == true,
       ),
     );
     var listName = 'To-do';

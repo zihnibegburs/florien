@@ -988,12 +988,6 @@ class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
                                         widget.onDiscoverRoutines();
                                       },
                                     ),
-                                    _DailyMenuTile(
-                                      key: const ValueKey('daily-menu-mode'),
-                                      icon: Icons.favorite_border_rounded,
-                                      label: 'Günlük modu',
-                                      onTap: () {},
-                                    ),
                                   ],
                                 ),
                               ),
@@ -1021,7 +1015,7 @@ class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
                     ),
                     if (_groupingOpen)
                       Positioned(
-                        top: 205,
+                        top: 151,
                         left: 8,
                         right: 0,
                         child: _DailyMenuCard(
@@ -3214,7 +3208,7 @@ class _DailyTaskDetailScreenState
   Widget build(BuildContext context) {
     final isPremium = ref.watch(
       premiumMembershipProvider.select(
-        (membership) => membership.valueOrNull?.isPremium == true,
+        (membership) => membership.valueOrNull?.hasActivePremium == true,
       ),
     );
     return Scaffold(

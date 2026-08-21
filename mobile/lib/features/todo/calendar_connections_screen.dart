@@ -72,7 +72,7 @@ class _CalendarConnectionsScreenState
         const <CalendarProvider>{};
     final isPremium = ref.watch(
       premiumMembershipProvider.select(
-        (membership) => membership.valueOrNull?.isPremium == true,
+        (membership) => membership.valueOrNull?.hasActivePremium == true,
       ),
     );
 

@@ -65,6 +65,12 @@ class S {
     'Your account has been upgraded to Premium.',
     'Hesabın Premium olarak etkinleştirildi.',
   );
+  String get premiumThanksTitle =>
+      _text('Thank you for joining Premium', 'Premium’a katıldığın için teşekkürler');
+  String get premiumThanksDescription => _text(
+    'Your plan is ready. You can keep planning with every Premium feature unlocked.',
+    'Planın hazır. Tüm Premium özelliklerle planlamaya devam edebilirsin.',
+  );
   String get premiumIntro => _text(
     'Choose the support that fits the way you plan.',
     'Planlama şekline uygun desteği seç.',

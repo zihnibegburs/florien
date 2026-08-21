@@ -255,9 +255,11 @@ async function verifyGoogle(purchaseToken: string): Promise<VerifiedPremium> {
     subscriptionState?: string;
     lineItems?: Array<{ productId?: string; expiryTime?: string }>;
   };
+  // Canceled subscriptions remain entitled until expiryTime.
   const activeStates = new Set([
     "SUBSCRIPTION_STATE_ACTIVE",
     "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+    "SUBSCRIPTION_STATE_CANCELED",
   ]);
   if (!activeStates.has(body.subscriptionState ?? "")) {
     throw invalidPurchase("An active Premium subscription was not found.");
@@ -337,4 +339,21 @@ export async function verifyAndPersistPremium(
   if (!verified) throw invalidPurchase("Unsupported purchase provider.");
   const premiumUntil = await persistVerifiedPremium(uid, verified);
   return { premium: true, premiumUntil: premiumUntil.toISOString() };
+}
+
+/** Client-readable premium snapshot (private/aiAccess is not directly readable). */
+export async function getPremiumEntitlement(uid: string): Promise<{
+  premium: boolean;
+  premiumUntil: string | null;
+}> {
+  const snapshot = await aiAccessDocument(uid).get();
+  const premiumUntil = snapshot.data()?.premiumUntil;
+  if (!(premiumUntil instanceof admin.firestore.Timestamp) ||
+      premiumUntil.toMillis() <= Date.now()) {
+    return { premium: false, premiumUntil: null };
+  }
+  return {
+    premium: true,
+    premiumUntil: premiumUntil.toDate().toISOString(),
+  };
 }

@@ -22,6 +22,7 @@ import 'package:florien/features/task_icon/services/task_icon_classifier.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
 import 'package:florien/features/onboarding/notification_permission_screen.dart';
 import 'package:florien/features/onboarding/updates_permission_screen.dart';
+import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 import 'package:florien/firebase_options.dart';
@@ -131,13 +132,36 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_listenForHomeWidgetLaunches());
       unawaited(_prepareNotifications());
+      // Warm StoreKit + purchase stream before the paywall opens.
+      unawaited(_preparePremiumStore());
     });
+  }
+
+  Future<void> _preparePremiumStore() async {
+    try {
+      await ref.read(premiumPurchaseServiceProvider).prepareStore();
+      // Touch the provider so purchaseStream is subscribed early.
+      ref.read(premiumMembershipProvider);
+    } catch (error) {
+      debugPrint('Premium store prepare failed: $error');
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_reconcileNotifications());
+      unawaited(_refreshPremiumEntitlement());
+    }
+  }
+
+  Future<void> _refreshPremiumEntitlement() async {
+    final auth = ref.read(authStateProvider).valueOrNull;
+    if (auth == null) return;
+    try {
+      await ref.read(premiumMembershipProvider.notifier).refreshEntitlement();
+    } catch (error) {
+      debugPrint('Premium entitlement refresh failed: $error');
     }
   }
 

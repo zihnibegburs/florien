@@ -7,7 +7,7 @@ import 'package:florien/features/premium/premium_membership_screen.dart';
 export 'package:florien/features/premium/premium_features.dart';
 
 bool hasActivePremium(WidgetRef ref) =>
-    ref.read(premiumMembershipProvider).valueOrNull?.isPremium == true;
+    ref.read(premiumMembershipProvider).valueOrNull?.hasActivePremium == true;
 
 Future<bool> requirePremiumAccess(
   BuildContext context,

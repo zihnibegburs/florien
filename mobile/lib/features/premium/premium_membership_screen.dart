@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/premium_purchase_service.dart';
+import 'package:florien/core/widgets/florien_buttons.dart';
 import 'package:florien/features/premium/premium_features.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_paywall_copy.dart';
 import 'package:intl/intl.dart';
 
-class PremiumMembershipScreen extends ConsumerWidget {
+class PremiumMembershipScreen extends ConsumerStatefulWidget {
   const PremiumMembershipScreen({
     super.key,
     this.onContinue,
@@ -19,7 +20,59 @@ class PremiumMembershipScreen extends ConsumerWidget {
   final PremiumFeature? highlightedFeature;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PremiumMembershipScreen> createState() =>
+      _PremiumMembershipScreenState();
+}
+
+class _PremiumMembershipScreenState
+    extends ConsumerState<PremiumMembershipScreen> {
+  bool _showThanks = false;
+  bool _sawNonPremium = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(premiumMembershipProvider.notifier).clearStuckPurchasing();
+    });
+  }
+
+  void _handleContinue() {
+    final onContinue = widget.onContinue;
+    if (onContinue != null) {
+      onContinue();
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(premiumMembershipProvider, (previous, next) {
+      final wasPremium = previous?.valueOrNull?.hasActivePremium == true;
+      final isPremium = next.valueOrNull?.hasActivePremium == true;
+      if (!isPremium) {
+        _sawNonPremium = true;
+      }
+      // Only after this visit showed a non-premium state (purchase / restore).
+      if (_sawNonPremium && !wasPremium && isPremium && mounted) {
+        setState(() => _showThanks = true);
+      }
+
+      final previousMessage = previous?.valueOrNull?.message;
+      final nextMessage = next.valueOrNull?.message;
+      if (nextMessage != null &&
+          nextMessage != previousMessage &&
+          mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(nextMessage)));
+      }
+    });
+
     final membership = ref.watch(premiumMembershipProvider);
     final value = membership.valueOrNull;
     final isLoading = membership.isLoading || value?.isPurchasing == true;
@@ -29,10 +82,84 @@ class PremiumMembershipScreen extends ConsumerWidget {
       strings,
     );
 
+    if (_showThanks) {
+      return Scaffold(
+        key: const ValueKey('premium-thanks-screen'),
+        backgroundColor: context.palette.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(FlorienSpacing.screen),
+            child: Column(
+              children: [
+                const Spacer(),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(FlorienSpacing.xxl),
+                  decoration: BoxDecoration(
+                    color: context.palette.surface,
+                    borderRadius: BorderRadius.circular(FlorienRadius.lg),
+                    border: Border.all(
+                      color: context.palette.border,
+                      width: FlorienBorders.thin,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: FlorienColors.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: context.palette.border,
+                            width: FlorienBorders.thin,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium_rounded,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(height: FlorienSpacing.xl),
+                      Text(
+                        strings.premiumThanksTitle,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.4,
+                            ),
+                      ),
+                      const SizedBox(height: FlorienSpacing.md),
+                      Text(
+                        strings.premiumThanksDescription,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: context.palette.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                FlorienPrimaryButton(
+                  key: const ValueKey('premium-thanks-continue'),
+                  label: strings.continueLabel,
+                  onPressed: _handleContinue,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: context.palette.background,
       appBar: AppBar(title: Text(strings.premiumAppBar)),
-      bottomNavigationBar: onContinue == null
+      bottomNavigationBar: widget.onContinue == null
           ? null
           : SafeArea(
               top: false,
@@ -45,9 +172,9 @@ class PremiumMembershipScreen extends ConsumerWidget {
                 ),
                 child: TextButton(
                   key: const ValueKey('paywall-continue'),
-                  onPressed: onContinue,
+                  onPressed: widget.onContinue,
                   child: Text(
-                    value?.isPremium == true
+                    value?.hasActivePremium == true
                         ? strings.continueLabel
                         : strings.skipForNow,
                   ),
@@ -71,7 +198,7 @@ class PremiumMembershipScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  value?.isPremium == true
+                  value?.hasActivePremium == true
                       ? Icons.workspace_premium_rounded
                       : Icons.auto_awesome_rounded,
                   color: context.palette.textPrimary,
@@ -79,7 +206,7 @@ class PremiumMembershipScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: FlorienSpacing.md),
                 Text(
-                  value?.isPremium == true
+                  value?.hasActivePremium == true
                       ? strings.premiumActive
                       : strings.premiumAppBar,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -88,7 +215,7 @@ class PremiumMembershipScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: FlorienSpacing.xs),
                 Text(
-                  value?.isPremium == true
+                  value?.hasActivePremium == true
                       ? strings.premiumActiveDescription
                       : strings.premiumIntro,
                   style: TextStyle(color: context.palette.textSecondary),
@@ -134,7 +261,7 @@ class PremiumMembershipScreen extends ConsumerWidget {
                     strings: strings,
                     highlighted:
                         planComparisonFeatures[index].premiumFeature ==
-                        highlightedFeature,
+                        widget.highlightedFeature,
                   ),
                   if (index != planComparisonFeatures.length - 1)
                     const Divider(height: 1),
@@ -143,7 +270,7 @@ class PremiumMembershipScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: FlorienSpacing.lg),
-          if (value?.isPremium != true && value != null) ...[
+          if (value?.hasActivePremium != true && value != null) ...[
             if (value.products.isNotEmpty) ...[
               Text(
                 paywallCopy.planSectionTitle,
@@ -191,9 +318,11 @@ class PremiumMembershipScreen extends ConsumerWidget {
               FilledButton(
                 onPressed: isLoading
                     ? null
-                    : () => ref
-                          .read(premiumMembershipProvider.notifier)
-                          .buyPremium(),
+                    : () async {
+                        await ref
+                            .read(premiumMembershipProvider.notifier)
+                            .buyPremium();
+                      },
                 child: Text(
                   isLoading
                       ? strings.processing
@@ -226,7 +355,11 @@ class PremiumMembershipScreen extends ConsumerWidget {
                         price: '—',
                         dailyPrice: strings.storePricePending,
                         selected: false,
-                        onTap: null,
+                        onTap: isLoading
+                            ? null
+                            : () => ref
+                                  .read(premiumMembershipProvider.notifier)
+                                  .reloadProducts(),
                       ),
                     ),
                   ],
@@ -254,6 +387,16 @@ class PremiumMembershipScreen extends ConsumerWidget {
                       strings.premiumProductsTemporarilyUnavailable,
                       textAlign: TextAlign.center,
                     ),
+                    if (value.storeDiagnostics != null) ...[
+                      const SizedBox(height: FlorienSpacing.sm),
+                      Text(
+                        value.storeDiagnostics!,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: context.palette.textSecondary,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: FlorienSpacing.sm),
                     TextButton.icon(
                       key: const ValueKey('retry-premium-products'),

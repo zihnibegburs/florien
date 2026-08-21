@@ -508,7 +508,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Görevleri yeniden zamanlama'), findsOneWidget);
     expect(find.text('Rutinleri keşfedin'), findsOneWidget);
-    expect(find.text('Günlük modu'), findsOneWidget);
+    expect(find.text('Günlük modu'), findsNothing);
     expect(find.text('Gruplama seçenekleri'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));

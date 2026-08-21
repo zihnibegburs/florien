@@ -7,7 +7,10 @@ import {
   requireAuthenticatedUid,
 } from "./ai-protection";
 import { callGeminiJson } from "./gemini-ai";
-import { verifyAndPersistPremium } from "./premium-verification";
+import {
+  getPremiumEntitlement,
+  verifyAndPersistPremium,
+} from "./premium-verification";
 
 admin.initializeApp();
 
@@ -40,6 +43,11 @@ export const verifyPremiumPurchase = onCall(
     );
   }
 );
+
+export const getPremiumStatus = onCall(async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  return getPremiumEntitlement(uid);
+});
 
 export const assistBreakdown = onCall(async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
