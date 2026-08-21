@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -27,7 +29,13 @@ class _NotificationPermissionScreenState
       _error = null;
     });
     try {
-      await ref.read(taskAlarmServiceProvider).setTaskRemindersEnabled(true);
+      final granted = await ref
+          .read(taskAlarmServiceProvider)
+          .enableDefaultsAfterPermissionGrant();
+      if (granted) {
+        ref.invalidate(notificationPreferencesProvider);
+        unawaited(ref.read(notificationReconcileProvider)());
+      }
       await _finish();
     } catch (_) {
       if (!mounted) return;
@@ -40,6 +48,8 @@ class _NotificationPermissionScreenState
 
   Future<void> _skip() async {
     if (_requesting) return;
+    // Do not re-prompt; leave type preferences untouched except task reminders off
+    // for users who explicitly skip the intro.
     await ref.read(settingsStorageProvider).setTaskRemindersEnabled(false);
     await _finish();
   }

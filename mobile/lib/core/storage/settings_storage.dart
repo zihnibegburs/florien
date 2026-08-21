@@ -5,16 +5,95 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Allowed lead times for task reminders (minutes before start). `0` = at start.
+const taskReminderLeadOptions = <int>[0, 5, 10, 15, 30, 60];
+
 class NotificationPreferences {
   const NotificationPreferences({
     this.taskRemindersEnabled = true,
+    this.taskReminderLeadMinutes = 10,
+    this.morningSummaryEnabled = true,
+    this.morningSummaryMinutes = 9 * 60,
+    this.motivationEnabled = true,
+    this.motivationMinutes = 14 * 60,
+    this.dailyReviewEnabled = true,
+    this.dailyReviewMinutes = 21 * 60,
+    this.weeklyReviewEnabled = true,
+    this.weeklyReviewMinutes = 19 * 60,
+    this.quietHoursEnabled = true,
+    this.quietHoursStartMinutes = 22 * 60,
+    this.quietHoursEndMinutes = 8 * 60,
     this.soundEnabled = true,
     this.vibrationEnabled = true,
   });
 
   final bool taskRemindersEnabled;
+  final int taskReminderLeadMinutes;
+  final bool morningSummaryEnabled;
+  final int morningSummaryMinutes;
+  final bool motivationEnabled;
+  final int motivationMinutes;
+  final bool dailyReviewEnabled;
+  final int dailyReviewMinutes;
+  final bool weeklyReviewEnabled;
+  final int weeklyReviewMinutes;
+  final bool quietHoursEnabled;
+  final int quietHoursStartMinutes;
+  final int quietHoursEndMinutes;
   final bool soundEnabled;
   final bool vibrationEnabled;
+
+  TimeOfDay get morningSummaryTime => _timeFromMinutes(morningSummaryMinutes);
+  TimeOfDay get motivationTime => _timeFromMinutes(motivationMinutes);
+  TimeOfDay get dailyReviewTime => _timeFromMinutes(dailyReviewMinutes);
+  TimeOfDay get weeklyReviewTime => _timeFromMinutes(weeklyReviewMinutes);
+  TimeOfDay get quietHoursStart => _timeFromMinutes(quietHoursStartMinutes);
+  TimeOfDay get quietHoursEnd => _timeFromMinutes(quietHoursEndMinutes);
+
+  NotificationPreferences copyWith({
+    bool? taskRemindersEnabled,
+    int? taskReminderLeadMinutes,
+    bool? morningSummaryEnabled,
+    int? morningSummaryMinutes,
+    bool? motivationEnabled,
+    int? motivationMinutes,
+    bool? dailyReviewEnabled,
+    int? dailyReviewMinutes,
+    bool? weeklyReviewEnabled,
+    int? weeklyReviewMinutes,
+    bool? quietHoursEnabled,
+    int? quietHoursStartMinutes,
+    int? quietHoursEndMinutes,
+    bool? soundEnabled,
+    bool? vibrationEnabled,
+  }) => NotificationPreferences(
+    taskRemindersEnabled: taskRemindersEnabled ?? this.taskRemindersEnabled,
+    taskReminderLeadMinutes:
+        taskReminderLeadMinutes ?? this.taskReminderLeadMinutes,
+    morningSummaryEnabled:
+        morningSummaryEnabled ?? this.morningSummaryEnabled,
+    morningSummaryMinutes:
+        morningSummaryMinutes ?? this.morningSummaryMinutes,
+    motivationEnabled: motivationEnabled ?? this.motivationEnabled,
+    motivationMinutes: motivationMinutes ?? this.motivationMinutes,
+    dailyReviewEnabled: dailyReviewEnabled ?? this.dailyReviewEnabled,
+    dailyReviewMinutes: dailyReviewMinutes ?? this.dailyReviewMinutes,
+    weeklyReviewEnabled: weeklyReviewEnabled ?? this.weeklyReviewEnabled,
+    weeklyReviewMinutes: weeklyReviewMinutes ?? this.weeklyReviewMinutes,
+    quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,
+    quietHoursStartMinutes:
+        quietHoursStartMinutes ?? this.quietHoursStartMinutes,
+    quietHoursEndMinutes: quietHoursEndMinutes ?? this.quietHoursEndMinutes,
+    soundEnabled: soundEnabled ?? this.soundEnabled,
+    vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+  );
+
+  static TimeOfDay _timeFromMinutes(int minutes) {
+    final clamped = minutes.clamp(0, 24 * 60 - 1);
+    return TimeOfDay(hour: clamped ~/ 60, minute: clamped % 60);
+  }
+
+  static int minutesFromTime(TimeOfDay time) => time.hour * 60 + time.minute;
 }
 
 class LiveActivityPreferences {
@@ -36,6 +115,18 @@ class SettingsStorage {
   static const _languageKey = 'app_language';
   static const _themeModeKey = 'app_theme_mode';
   static const _taskRemindersEnabledKey = 'task_reminders_enabled';
+  static const _taskReminderLeadMinutesKey = 'task_reminder_lead_minutes';
+  static const _morningSummaryEnabledKey = 'morning_summary_enabled';
+  static const _morningSummaryMinutesKey = 'morning_summary_minutes';
+  static const _motivationEnabledKey = 'motivation_enabled';
+  static const _motivationMinutesKey = 'motivation_minutes';
+  static const _dailyReviewEnabledKey = 'daily_review_enabled';
+  static const _dailyReviewMinutesKey = 'daily_review_minutes';
+  static const _weeklyReviewEnabledKey = 'weekly_review_enabled';
+  static const _weeklyReviewMinutesKey = 'weekly_review_minutes';
+  static const _quietHoursEnabledKey = 'quiet_hours_enabled';
+  static const _quietHoursStartMinutesKey = 'quiet_hours_start_minutes';
+  static const _quietHoursEndMinutesKey = 'quiet_hours_end_minutes';
   static const _notificationSoundEnabledKey = 'notification_sound_enabled';
   static const _notificationVibrationEnabledKey =
       'notification_vibration_enabled';
@@ -44,6 +135,7 @@ class SettingsStorage {
   static const _updatesConsentIntroKey = 'updates_consent_intro_completed';
   static const _marketingUpdatesEnabledKey = 'marketing_updates_enabled';
   static const _liveFocusKey = 'live_activity_focus_enabled';
+  static const _lastKnownTimezoneKey = 'last_known_timezone';
 
   final FirebaseFirestore? _firestore;
   final FirebaseAuth? _auth;
@@ -85,25 +177,153 @@ class SettingsStorage {
   Future<NotificationPreferences> getNotificationPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     return NotificationPreferences(
-      taskRemindersEnabled: prefs.getBool(_taskRemindersEnabledKey) ?? true,
-      soundEnabled: prefs.getBool(_notificationSoundEnabledKey) ?? true,
-      vibrationEnabled: prefs.getBool(_notificationVibrationEnabledKey) ?? true,
+      taskRemindersEnabled:
+          prefs.getBool(_scopedKey(_taskRemindersEnabledKey)) ??
+          prefs.getBool(_taskRemindersEnabledKey) ??
+          true,
+      taskReminderLeadMinutes: _readLeadMinutes(prefs),
+      morningSummaryEnabled:
+          prefs.getBool(_scopedKey(_morningSummaryEnabledKey)) ?? true,
+      morningSummaryMinutes:
+          prefs.getInt(_scopedKey(_morningSummaryMinutesKey)) ?? 9 * 60,
+      motivationEnabled:
+          prefs.getBool(_scopedKey(_motivationEnabledKey)) ?? true,
+      motivationMinutes:
+          prefs.getInt(_scopedKey(_motivationMinutesKey)) ?? 14 * 60,
+      dailyReviewEnabled:
+          prefs.getBool(_scopedKey(_dailyReviewEnabledKey)) ?? true,
+      dailyReviewMinutes:
+          prefs.getInt(_scopedKey(_dailyReviewMinutesKey)) ?? 21 * 60,
+      weeklyReviewEnabled:
+          prefs.getBool(_scopedKey(_weeklyReviewEnabledKey)) ?? true,
+      weeklyReviewMinutes:
+          prefs.getInt(_scopedKey(_weeklyReviewMinutesKey)) ?? 19 * 60,
+      quietHoursEnabled:
+          prefs.getBool(_scopedKey(_quietHoursEnabledKey)) ?? true,
+      quietHoursStartMinutes:
+          prefs.getInt(_scopedKey(_quietHoursStartMinutesKey)) ?? 22 * 60,
+      quietHoursEndMinutes:
+          prefs.getInt(_scopedKey(_quietHoursEndMinutesKey)) ?? 8 * 60,
+      soundEnabled:
+          prefs.getBool(_scopedKey(_notificationSoundEnabledKey)) ??
+          prefs.getBool(_notificationSoundEnabledKey) ??
+          true,
+      vibrationEnabled:
+          prefs.getBool(_scopedKey(_notificationVibrationEnabledKey)) ??
+          prefs.getBool(_notificationVibrationEnabledKey) ??
+          true,
+    );
+  }
+
+  int _readLeadMinutes(SharedPreferences prefs) {
+    final raw =
+        prefs.getInt(_scopedKey(_taskReminderLeadMinutesKey)) ??
+        prefs.getInt(_taskReminderLeadMinutesKey) ??
+        10;
+    if (taskReminderLeadOptions.contains(raw)) return raw;
+    return 10;
+  }
+
+  Future<void> saveNotificationPreferences(
+    NotificationPreferences preferences,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+      _scopedKey(_taskRemindersEnabledKey),
+      preferences.taskRemindersEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_taskReminderLeadMinutesKey),
+      preferences.taskReminderLeadMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_morningSummaryEnabledKey),
+      preferences.morningSummaryEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_morningSummaryMinutesKey),
+      preferences.morningSummaryMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_motivationEnabledKey),
+      preferences.motivationEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_motivationMinutesKey),
+      preferences.motivationMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_dailyReviewEnabledKey),
+      preferences.dailyReviewEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_dailyReviewMinutesKey),
+      preferences.dailyReviewMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_weeklyReviewEnabledKey),
+      preferences.weeklyReviewEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_weeklyReviewMinutesKey),
+      preferences.weeklyReviewMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_quietHoursEnabledKey),
+      preferences.quietHoursEnabled,
+    );
+    await prefs.setInt(
+      _scopedKey(_quietHoursStartMinutesKey),
+      preferences.quietHoursStartMinutes,
+    );
+    await prefs.setInt(
+      _scopedKey(_quietHoursEndMinutesKey),
+      preferences.quietHoursEndMinutes,
+    );
+    await prefs.setBool(
+      _scopedKey(_notificationSoundEnabledKey),
+      preferences.soundEnabled,
+    );
+    await prefs.setBool(
+      _scopedKey(_notificationVibrationEnabledKey),
+      preferences.vibrationEnabled,
     );
   }
 
   Future<void> setTaskRemindersEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_taskRemindersEnabledKey, enabled);
+    final current = await getNotificationPreferences();
+    await saveNotificationPreferences(
+      current.copyWith(taskRemindersEnabled: enabled),
+    );
   }
 
   Future<void> setNotificationSoundEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notificationSoundEnabledKey, enabled);
+    final current = await getNotificationPreferences();
+    await saveNotificationPreferences(current.copyWith(soundEnabled: enabled));
   }
 
   Future<void> setNotificationVibrationEnabled(bool enabled) async {
+    final current = await getNotificationPreferences();
+    await saveNotificationPreferences(
+      current.copyWith(vibrationEnabled: enabled),
+    );
+  }
+
+  /// Enables all five notification kinds with default schedule values.
+  Future<NotificationPreferences> enableDefaultNotificationPlan() async {
+    const defaults = NotificationPreferences();
+    await saveNotificationPreferences(defaults);
+    return defaults;
+  }
+
+  Future<String?> getLastKnownTimezone() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notificationVibrationEnabledKey, enabled);
+    return prefs.getString(_scopedKey(_lastKnownTimezoneKey));
+  }
+
+  Future<void> setLastKnownTimezone(String timezone) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_scopedKey(_lastKnownTimezoneKey), timezone);
   }
 
   Future<bool> isNotificationPermissionIntroCompleted() async {

@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_onnxruntime
+  flutter_timezone
   permission_handler_windows
   share_plus
   speech_to_text_windows

@@ -419,6 +419,7 @@ class TaskRepository {
     int durationMinutes = 30,
     DateTime? scheduledAt,
     DateTime? alarmAt,
+    int? reminderLeadMinutes,
     bool isTimed = false,
     bool isInbox = false,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
@@ -442,6 +443,7 @@ class TaskRepository {
           ? Timestamp.fromDate(scheduledAt.toUtc())
           : null,
       'alarmAt': alarmAt != null ? Timestamp.fromDate(alarmAt.toUtc()) : null,
+      'reminderLeadMinutes': reminderLeadMinutes,
       'isTimed': isTimed,
       'status': 'PENDING',
       'sortOrder': 0,
@@ -477,6 +479,7 @@ class TaskRepository {
         durationMinutes: durationMinutes,
         start: scheduledAt,
         alarmAt: alarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
         isTimed: isTimed,
         recurrence: recurrence,
         reward: _normalizeText(reward),
@@ -501,6 +504,7 @@ class TaskRepository {
     required int durationMinutes,
     required DateTime start,
     DateTime? alarmAt,
+    int? reminderLeadMinutes,
     required bool isTimed,
     required RecurrenceSelection recurrence,
     String? reward,
@@ -533,6 +537,7 @@ class TaskRepository {
             : Timestamp.fromDate(
                 _alarmForOccurrence(alarmAt, occurrence).toUtc(),
               ),
+        'reminderLeadMinutes': reminderLeadMinutes,
         'isTimed': isTimed,
         'status': 'PENDING',
         'sortOrder': 0,
@@ -653,6 +658,8 @@ class TaskRepository {
     DateTime? scheduledAt,
     DateTime? alarmAt,
     bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool clearReminderLeadMinutes = false,
     bool? isTimed,
     RecurrenceSelection? recurrence,
     String? reward,
@@ -677,6 +684,9 @@ class TaskRepository {
         'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
       if (alarmAt != null) 'alarmAt': Timestamp.fromDate(alarmAt.toUtc()),
       if (clearAlarmAt) 'alarmAt': null,
+      if (reminderLeadMinutes != null)
+        'reminderLeadMinutes': reminderLeadMinutes,
+      if (clearReminderLeadMinutes) 'reminderLeadMinutes': null,
       if (isTimed != null) 'isTimed': isTimed,
       if (recurrence != null) ...recurrence.toApiJson(),
       if (reward != null) 'reward': _normalizeText(reward) ?? '',
@@ -1057,6 +1067,143 @@ class TaskRepository {
     }
     batch.delete(_tasks.doc(id));
     await batch.commit();
+  }
+
+  /// Timed, incomplete tasks in the local schedule window (for notification reconcile).
+  Future<List<TaskModel>> getUpcomingTimedTasks({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final snap = await _tasks
+        .where(
+          'scheduledAt',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(from.toUtc()),
+        )
+        .where('scheduledAt', isLessThan: Timestamp.fromDate(to.toUtc()))
+        .get();
+    return snap.docs
+        .map((doc) => TaskModel.fromFirestore(doc.id, doc.data()))
+        .where(
+          (task) =>
+              task.isTimed &&
+              task.scheduledAt != null &&
+              !task.isCompleted &&
+              task.status != TaskStatus.skipped,
+        )
+        .toList();
+  }
+
+  Future<TaskModel?> getTaskById(String id) async {
+    final snap = await _tasks.doc(id).get();
+    if (!snap.exists) return null;
+    return TaskModel.fromFirestore(id, snap.data()!);
+  }
+
+  /// Applies an edit to [id] and every later occurrence in the same series.
+  Future<List<String>> updateTaskAndFollowing({
+    required String id,
+    String? title,
+    String? description,
+    bool clearDescription = false,
+    String? color,
+    String? icon,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+    DateTime? alarmAt,
+    bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool clearReminderLeadMinutes = false,
+    bool? isTimed,
+    RecurrenceSelection? recurrence,
+    DayPeriod? dayPeriod,
+    bool? isInbox,
+  }) async {
+    final current = await updateTask(
+      id: id,
+      title: title,
+      description: description,
+      clearDescription: clearDescription,
+      color: color,
+      icon: icon,
+      durationMinutes: durationMinutes,
+      scheduledAt: scheduledAt,
+      alarmAt: alarmAt,
+      clearAlarmAt: clearAlarmAt,
+      reminderLeadMinutes: reminderLeadMinutes,
+      clearReminderLeadMinutes: clearReminderLeadMinutes,
+      isTimed: isTimed,
+      recurrence: recurrence,
+      dayPeriod: dayPeriod,
+      isInbox: isInbox,
+    );
+
+    final seriesId = current.recurrenceSeriesId;
+    final cutoff = current.scheduledAt?.toUtc();
+    if (seriesId == null || cutoff == null) return [current.id];
+
+    final following = await _tasks
+        .where('recurrenceSeriesId', isEqualTo: seriesId)
+        .where('scheduledAt', isGreaterThan: Timestamp.fromDate(cutoff))
+        .get();
+
+    final affected = <String>[current.id];
+    final localStart = current.scheduledAt?.toLocal();
+    var batch = _db.batch();
+    var ops = 0;
+    for (final doc in following.docs) {
+      if (doc.id == id) continue;
+      final existing = TaskModel.fromFirestore(doc.id, doc.data());
+      final existingStart = existing.scheduledAt?.toLocal();
+      DateTime? nextScheduled;
+      if (localStart != null &&
+          existingStart != null &&
+          (isTimed ?? current.isTimed)) {
+        nextScheduled = DateTime(
+          existingStart.year,
+          existingStart.month,
+          existingStart.day,
+          localStart.hour,
+          localStart.minute,
+        );
+      }
+      DateTime? nextAlarm;
+      if (clearAlarmAt) {
+        nextAlarm = null;
+      } else if (alarmAt != null && nextScheduled != null) {
+        nextAlarm = _alarmForOccurrence(alarmAt, nextScheduled);
+      } else if (alarmAt != null && existingStart != null) {
+        nextAlarm = _alarmForOccurrence(alarmAt, existingStart);
+      }
+
+      batch.update(doc.reference, {
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (title != null) 'title': title.trim(),
+        if (description != null) 'description': description,
+        if (clearDescription) 'description': null,
+        if (color != null) 'color': color,
+        if (icon != null) 'icon': icon,
+        if (durationMinutes != null) 'durationMinutes': durationMinutes,
+        if (nextScheduled != null)
+          'scheduledAt': Timestamp.fromDate(nextScheduled.toUtc()),
+        if (nextAlarm != null) 'alarmAt': Timestamp.fromDate(nextAlarm.toUtc()),
+        if (clearAlarmAt) 'alarmAt': null,
+        if (reminderLeadMinutes != null)
+          'reminderLeadMinutes': reminderLeadMinutes,
+        if (clearReminderLeadMinutes) 'reminderLeadMinutes': null,
+        if (isTimed != null) 'isTimed': isTimed,
+        if (dayPeriod != null) 'dayPeriod': _dayPeriodValue(dayPeriod),
+        if (isInbox != null) 'isInbox': isInbox,
+      });
+      affected.add(doc.id);
+      ops++;
+      if (ops >= 400) {
+        await batch.commit();
+        batch = _db.batch();
+        ops = 0;
+      }
+    }
+    if (ops > 0) await batch.commit();
+    return affected;
   }
 
   Future<FocusSessionModel?> getFocusSession() async => null;

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
+import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -118,15 +119,77 @@ class FlorienApp extends ConsumerStatefulWidget {
   ConsumerState<FlorienApp> createState() => _FlorienAppState();
 }
 
-class _FlorienAppState extends ConsumerState<FlorienApp> {
+class _FlorienAppState extends ConsumerState<FlorienApp>
+    with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetLaunchSubscription;
+  bool _notificationHandlersReady = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_listenForHomeWidgetLaunches());
+      unawaited(_prepareNotifications());
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_reconcileNotifications());
+    }
+  }
+
+  Future<void> _prepareNotifications() async {
+    final alarms = ref.read(taskAlarmServiceProvider);
+    await alarms.initialize();
+    alarms.onNotificationOpened = (payload) async {
+      await _dispatchNotificationPayload(payload);
+    };
+    alarms.onNotificationAction = (payload, actionId) async {
+      if (actionId == 'complete' && payload.taskId != null) {
+        try {
+          await ref.read(completeFocusedTaskProvider)(payload.taskId!);
+        } catch (error) {
+          debugPrint('Notification complete action failed: $error');
+        }
+        return;
+      }
+      await _dispatchNotificationPayload(payload);
+    };
+    _notificationHandlersReady = true;
+    final launch = await alarms.consumeLaunchPayload();
+    if (launch != null) await _dispatchNotificationPayload(launch);
+    await _reconcileNotifications();
+  }
+
+  Future<void> _dispatchNotificationPayload(
+    FlorienNotificationPayload payload,
+  ) async {
+    final auth = ref.read(authStateProvider).valueOrNull;
+    if (auth == null) return;
+    if (payload.accountId.isNotEmpty && payload.accountId != auth.userId) {
+      return;
+    }
+    ref.read(routerProvider).go('/todo');
+    ref.read(notificationLaunchProvider.notifier).state =
+        NotificationLaunchCommand(
+          target: payload.target,
+          taskId: payload.taskId,
+          kind: payload.kind,
+        );
+  }
+
+  Future<void> _reconcileNotifications() async {
+    if (!_notificationHandlersReady) return;
+    final auth = ref.read(authStateProvider).valueOrNull;
+    if (auth == null) return;
+    try {
+      await ref.read(notificationReconcileProvider)();
+    } catch (error) {
+      debugPrint('Notification reconcile failed: $error');
+    }
   }
 
   Future<void> _listenForHomeWidgetLaunches() async {
@@ -145,6 +208,7 @@ class _FlorienAppState extends ConsumerState<FlorienApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _widgetLaunchSubscription?.cancel();
     super.dispose();
   }
@@ -175,6 +239,14 @@ class _FlorienAppState extends ConsumerState<FlorienApp> {
     final language = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
     final themeMode =
         ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
+
+    ref.listen(authStateProvider, (previous, next) {
+      final wasLoggedIn = previous?.valueOrNull != null;
+      final isLoggedIn = next.valueOrNull != null;
+      if (!wasLoggedIn && isLoggedIn) {
+        unawaited(_reconcileNotifications());
+      }
+    });
 
     return MaterialApp.router(
       title: 'Florien',

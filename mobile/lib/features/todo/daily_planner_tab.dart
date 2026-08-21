@@ -10,6 +10,7 @@ import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
+import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/core/utils/task_icons.dart';
@@ -45,7 +46,8 @@ class DailyTaskEditInput {
     required this.startsAt,
     required this.endsAt,
     required this.recurrence,
-    required this.alarmAt,
+    required this.reminderLeadMinutes,
+    required this.usesCustomReminder,
     required this.subtasks,
     required this.icon,
   });
@@ -59,7 +61,10 @@ class DailyTaskEditInput {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final RecurrenceSelection recurrence;
-  final DateTime? alarmAt;
+  /// Effective lead minutes used to compute [alarmAt].
+  final int reminderLeadMinutes;
+  /// When false, [reminderLeadMinutes] follows the account default (`null` stored).
+  final bool usesCustomReminder;
   final List<String> subtasks;
   final String icon;
 }
@@ -69,7 +74,6 @@ typedef DailyTaskUpdater =
 
 final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
-  final alarms = ref.watch(taskAlarmServiceProvider);
   return (task, input) async {
     final previousDate = _dateOnly(task.scheduledAt ?? input.date);
     final scheduledAt = input.isTimed
@@ -78,7 +82,14 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
     final durationMinutes = input.isTimed
         ? input.endsAt!.difference(input.startsAt!).inMinutes
         : input.durationMinutes;
-    await repository.updateTask(
+    final prefs = await ref.read(notificationPreferencesProvider.future);
+    final lead = input.usesCustomReminder
+        ? input.reminderLeadMinutes
+        : prefs.taskReminderLeadMinutes;
+    final alarmAt = input.isTimed
+        ? scheduledAt.subtract(Duration(minutes: lead))
+        : null;
+    await repository.updateTaskAndFollowing(
       id: task.id,
       title: input.title,
       description: input.description.trim().isEmpty ? null : input.description,
@@ -86,8 +97,12 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       icon: input.icon,
       durationMinutes: durationMinutes,
       scheduledAt: scheduledAt,
-      alarmAt: input.alarmAt,
-      clearAlarmAt: input.alarmAt == null,
+      alarmAt: alarmAt,
+      clearAlarmAt: alarmAt == null,
+      reminderLeadMinutes: input.usesCustomReminder
+          ? input.reminderLeadMinutes
+          : null,
+      clearReminderLeadMinutes: !input.usesCustomReminder,
       isTimed: input.isTimed,
       recurrence: input.recurrence,
       dayPeriod: input.period,
@@ -95,21 +110,9 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
     );
     await repository.replaceSubtasks(parentId: task.id, titles: input.subtasks);
     try {
-      if (input.alarmAt == null) {
-        await alarms.cancel(task.id);
-      } else {
-        final scheduled = await alarms.schedule(
-          taskId: task.id,
-          title: input.title,
-          alarmAt: input.alarmAt!,
-        );
-        if (!scheduled) {
-          debugPrint('Updated daily task alarm was not scheduled.');
-        }
-      }
+      await ref.read(notificationReconcileProvider)();
     } catch (error) {
-      debugPrint('Updated daily task alarm failed: $error');
-      // Notification setup must not prevent the task update from completing.
+      debugPrint('Updated daily task notifications failed: $error');
     }
     ref.invalidate(dailyTimelineProvider(previousDate));
     ref.invalidate(dailyTimelineProvider(_dateOnly(input.date)));
@@ -121,6 +124,7 @@ final dailyTaskGroupMoverProvider = Provider<DailyTaskGroupMover>((ref) {
   return (task, period, date) async {
     if (period == null) {
       if (!task.isCompleted) await repository.completeTask(task.id);
+      await ref.read(taskAlarmServiceProvider).cancel(task.id);
     } else {
       if (task.isCompleted) await repository.uncompleteTask(task.id);
       if (task.dayPeriod != period || task.isCompleted) {
@@ -132,6 +136,7 @@ final dailyTaskGroupMoverProvider = Provider<DailyTaskGroupMover>((ref) {
       }
     }
     ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    unawaited(ref.read(notificationReconcileProvider)());
   };
 });
 
@@ -150,6 +155,7 @@ final dailyTaskReschedulerProvider = Provider<DailyTaskRescheduler>((ref) {
       ref.invalidate(dailyTimelineProvider(_dateOnly(previousDate)));
     }
     ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    unawaited(ref.read(notificationReconcileProvider)());
   };
 });
 
@@ -157,8 +163,10 @@ final dailyTaskCompleterProvider = Provider<DailyTaskCompleter>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
   return (taskId) async {
     await repository.completeTask(taskId);
+    await ref.read(taskAlarmServiceProvider).cancel(taskId);
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);
+    unawaited(ref.read(notificationReconcileProvider)());
     return ref.read(manualCompletionSummaryProvider)(taskId);
   };
 });
@@ -190,6 +198,42 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   final Set<DayPeriod> _collapsed = {};
   DailyPlannerGrouping _grouping = DailyPlannerGrouping.list;
   bool _scrollChromeVisible = true;
+  late final ProviderSubscription<DateTime?> _dateRequestSubscription;
+  late final ProviderSubscription<int> _reviewLaunchSubscription;
+  int _lastReviewLaunchSignal = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateRequestSubscription = ref.listenManual(
+      dailyPlannerDateRequestProvider,
+      (_, date) {
+        if (date == null || !mounted) return;
+        ref.read(dailyPlannerDateRequestProvider.notifier).state = null;
+        _selectDate(date);
+      },
+      fireImmediately: true,
+    );
+    _lastReviewLaunchSignal = ref.read(dailyReviewLaunchSignalProvider);
+    _reviewLaunchSubscription = ref.listenManual(
+      dailyReviewLaunchSignalProvider,
+      (previous, next) {
+        if (!mounted || next == _lastReviewLaunchSignal) return;
+        _lastReviewLaunchSignal = next;
+        final tasks =
+            ref.read(dailyTimelineProvider(_selectedDate)).valueOrNull?.tasks ??
+            const <TaskModel>[];
+        unawaited(_showRescheduleReview(tasks));
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _dateRequestSubscription.close();
+    _reviewLaunchSubscription.close();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant DailyPlannerTab oldWidget) {
@@ -2000,6 +2044,7 @@ class _DailyTaskCard extends ConsumerWidget {
         try {
           if (task.isCompleted) {
             await ref.read(taskRepositoryProvider).uncompleteTask(task.id);
+            unawaited(ref.read(notificationReconcileProvider)());
           } else {
             final counts = await ref.read(dailyTaskCompleterProvider)(task.id);
             if (!context.mounted) return;
@@ -2270,7 +2315,8 @@ class _DailyTaskCard extends ConsumerWidget {
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmAt: task.alarmAt,
+          reminderLeadMinutes: task.reminderLeadMinutes,
+          usesCustomReminder: task.reminderLeadMinutes != null,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2296,7 +2342,8 @@ class _DailyTaskCard extends ConsumerWidget {
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmAt: task.alarmAt,
+          reminderLeadMinutes: task.reminderLeadMinutes,
+          usesCustomReminder: task.reminderLeadMinutes != null,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2318,7 +2365,8 @@ class _DailyTaskCard extends ConsumerWidget {
             startsAt: draft.startsAt,
             endsAt: draft.endsAt,
             recurrence: draft.recurrence,
-            alarmAt: draft.alarmAt,
+            reminderLeadMinutes: draft.reminderLeadMinutes ?? 10,
+            usesCustomReminder: draft.usesCustomReminder,
             subtasks: draft.subtasks,
             icon: draft.icon,
           ),
@@ -3018,10 +3066,9 @@ class _DailyTaskDetailScreenState
   late DateTime _endsAt =
       widget.initialDraft.endsAt ?? _startsAt.add(const Duration(minutes: 30));
   late RecurrenceType _recurrence = widget.initialDraft.recurrence.type;
-  late bool _alarm = widget.initialDraft.alarmAt != null;
-  late TimeOfDay _alarmTime = TimeOfDay.fromDateTime(
-    widget.initialDraft.alarmAt ?? nextDailyAlarmSlot(DateTime.now()),
-  );
+  late bool _usesCustomReminder = widget.initialDraft.usesCustomReminder;
+  late int _reminderLeadMinutes =
+      widget.initialDraft.reminderLeadMinutes ?? 10;
   late final List<String> _subtasks = [...widget.initialDraft.subtasks];
   late bool _subtasksExpanded = widget.initialDraft.subtasks.isNotEmpty;
   late bool _notesExpanded = widget.initialDraft.description.trim().isNotEmpty;
@@ -3055,21 +3102,6 @@ class _DailyTaskDetailScreenState
       _taskIcon.onTaskChanged(_title.text.trim());
       final taskDate = _isTimed ? _dateOnly(_startsAt) : _date;
       final taskPeriod = _isTimed ? dayPeriodForLocalTime(_startsAt) : _period;
-      final alarmAt = _alarm ? _alarmDateTime(taskDate, _alarmTime) : null;
-      if (alarmAt != null) {
-        final readiness = await ref
-            .read(taskAlarmServiceProvider)
-            .prepareTaskAlarm(alarmAt);
-        if (readiness != TaskAlarmReadiness.ready) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(_alarmReadinessMessage(readiness))),
-            );
-          }
-          return;
-        }
-        if (!mounted) return;
-      }
       final draft = widget.initialDraft.copyWith(
         title: _title.text.trim(),
         description: _notes.text.trim(),
@@ -3083,8 +3115,11 @@ class _DailyTaskDetailScreenState
         endsAt: _isTimed ? _endsAt : null,
         clearTimedRange: !_isTimed,
         recurrence: RecurrenceSelection(type: _recurrence),
-        alarmAt: alarmAt,
-        clearAlarmAt: !_alarm,
+        reminderLeadMinutes: _isTimed && _usesCustomReminder
+            ? _reminderLeadMinutes
+            : null,
+        usesCustomReminder: _isTimed && _usesCustomReminder,
+        clearReminder: !_isTimed || !_usesCustomReminder,
         icon: _taskIcon.value.category.storageName,
         subtasks: _subtasks,
         openDetails: false,
@@ -3354,37 +3389,38 @@ class _DailyTaskDetailScreenState
                   },
                 ),
                 const Divider(height: 1),
-                SwitchListTile(
-                  secondary: Icon(
-                    isPremium
-                        ? Icons.alarm_outlined
-                        : Icons.lock_outline_rounded,
-                  ),
-                  title: const Text('Alarm'),
-                  subtitle: const Text('Belirlediğiniz saatte hatırlatır'),
-                  value: _alarm,
-                  onChanged: (value) async {
-                    if (value &&
-                        !await requirePremiumAccess(
-                          context,
-                          ref,
-                          PremiumFeature.reminders,
-                        )) {
-                      return;
-                    }
-                    if (mounted) setState(() => _alarm = value);
-                  },
-                ),
-                if (_alarm) ...[
-                  const Divider(height: 1),
+                if (_isTimed)
                   _DetailTile(
-                    key: const ValueKey('daily-alarm-time'),
-                    icon: Icons.access_time_rounded,
-                    label: 'Alarm saati',
-                    value: _formatAlarmTime(_alarmTime),
-                    onTap: _pickAlarmTime,
+                    key: const ValueKey('daily-reminder-lead'),
+                    icon: Icons.notifications_active_outlined,
+                    label: 'Hatırlatma',
+                    value: _usesCustomReminder
+                        ? _leadMinutesLabel(_reminderLeadMinutes)
+                        : 'Varsayılan',
+                    onTap: () async {
+                      final prefs = await ref.read(
+                        notificationPreferencesProvider.future,
+                      );
+                      if (!context.mounted) return;
+                      final selected = await _showReminderLeadPicker(
+                        context,
+                        current: _usesCustomReminder
+                            ? _reminderLeadMinutes
+                            : null,
+                        defaultLead: prefs.taskReminderLeadMinutes,
+                      );
+                      if (selected == null || !mounted) return;
+                      setState(() {
+                        if (selected < 0) {
+                          _usesCustomReminder = false;
+                          _reminderLeadMinutes = prefs.taskReminderLeadMinutes;
+                        } else {
+                          _usesCustomReminder = true;
+                          _reminderLeadMinutes = selected;
+                        }
+                      });
+                    },
                   ),
-                ],
               ],
             ),
           ),
@@ -3626,21 +3662,7 @@ class _DailyTaskDetailScreenState
     });
   }
 
-  Future<void> _pickAlarmTime() async {
-    if (!await requirePremiumAccess(context, ref, PremiumFeature.reminders)) {
-      return;
-    }
-    if (!mounted) return;
-    final value = await showTimePicker(
-      context: context,
-      initialTime: _alarmTime,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
-      ),
-    );
-    if (value != null && mounted) setState(() => _alarmTime = value);
-  }
+  // Reminder lead is chosen via `_showReminderLeadPicker`.
 }
 
 class _DailyFormSectionHeader extends StatelessWidget {
@@ -4109,7 +4131,8 @@ class _DailyTaskDraft {
     this.startsAt,
     this.endsAt,
     this.recurrence = const RecurrenceSelection(),
-    this.alarmAt,
+    this.reminderLeadMinutes,
+    this.usesCustomReminder = false,
     this.subtasks = const [],
     this.presetSubtasks = const [],
     this.icon = TaskIcons.defaultName,
@@ -4127,7 +4150,8 @@ class _DailyTaskDraft {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final RecurrenceSelection recurrence;
-  final DateTime? alarmAt;
+  final int? reminderLeadMinutes;
+  final bool usesCustomReminder;
   final List<String> subtasks;
   final List<String> presetSubtasks;
   final String icon;
@@ -4146,8 +4170,9 @@ class _DailyTaskDraft {
     DateTime? endsAt,
     bool clearTimedRange = false,
     RecurrenceSelection? recurrence,
-    DateTime? alarmAt,
-    bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool? usesCustomReminder,
+    bool clearReminder = false,
     List<String>? subtasks,
     List<String>? presetSubtasks,
     String? icon,
@@ -4164,7 +4189,12 @@ class _DailyTaskDraft {
     startsAt: clearTimedRange ? null : (startsAt ?? this.startsAt),
     endsAt: clearTimedRange ? null : (endsAt ?? this.endsAt),
     recurrence: recurrence ?? this.recurrence,
-    alarmAt: clearAlarmAt ? null : (alarmAt ?? this.alarmAt),
+    reminderLeadMinutes: clearReminder
+        ? null
+        : (reminderLeadMinutes ?? this.reminderLeadMinutes),
+    usesCustomReminder: clearReminder
+        ? false
+        : (usesCustomReminder ?? this.usesCustomReminder),
     subtasks: subtasks ?? this.subtasks,
     presetSubtasks: presetSubtasks ?? this.presetSubtasks,
     icon: icon ?? this.icon,
@@ -4181,6 +4211,15 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
   final durationMinutes = draft.isTimed
       ? draft.endsAt!.difference(draft.startsAt!).inMinutes
       : draft.durationMinutes;
+  final prefs = await ref.read(notificationPreferencesProvider.future);
+  final lead = draft.isTimed
+      ? (draft.usesCustomReminder
+            ? (draft.reminderLeadMinutes ?? prefs.taskReminderLeadMinutes)
+            : prefs.taskReminderLeadMinutes)
+      : null;
+  final alarmAt = draft.isTimed && lead != null
+      ? scheduledAt.subtract(Duration(minutes: lead))
+      : null;
   final task = await ref
       .read(taskRepositoryProvider)
       .createTask(
@@ -4190,7 +4229,10 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
             : draft.description,
         durationMinutes: durationMinutes,
         scheduledAt: scheduledAt,
-        alarmAt: draft.alarmAt,
+        alarmAt: alarmAt,
+        reminderLeadMinutes: draft.usesCustomReminder
+            ? draft.reminderLeadMinutes
+            : null,
         isTimed: draft.isTimed,
         isInbox: false,
         recurrence: draft.recurrence,
@@ -4198,20 +4240,6 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
         color: draft.color,
         dayPeriod: draft.period,
       );
-  final alarmAt = draft.alarmAt;
-  if (alarmAt != null) {
-    try {
-      final scheduled = await ref
-          .read(taskAlarmServiceProvider)
-          .schedule(taskId: task.id, title: task.title, alarmAt: alarmAt);
-      if (!scheduled) {
-        debugPrint('Created daily task alarm was not scheduled.');
-      }
-    } catch (error) {
-      debugPrint('Created daily task alarm failed: $error');
-      // Notification setup must not prevent the task itself from being saved.
-    }
-  }
   if (draft.subtasks.isNotEmpty) {
     await ref
         .read(taskRepositoryProvider)
@@ -4224,6 +4252,11 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
               )
               .toList(),
         );
+  }
+  try {
+    await ref.read(notificationReconcileProvider)();
+  } catch (error) {
+    debugPrint('Created daily task notifications failed: $error');
   }
   ref.invalidate(dailyTimelineProvider(_dateOnly(draft.date)));
 }
@@ -4430,6 +4463,41 @@ class _QuickChip extends StatelessWidget {
 }
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+String _leadMinutesLabel(int minutes) {
+  if (minutes <= 0) return 'Tam başlangıçta';
+  return '$minutes dk önce';
+}
+
+Future<int?> _showReminderLeadPicker(
+  BuildContext context, {
+  required int? current,
+  required int defaultLead,
+}) {
+  return showFlorienBottomSheet<int>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text('Varsayılan (${_leadMinutesLabel(defaultLead)})'),
+            trailing: current == null ? const Icon(Icons.check_rounded) : null,
+            onTap: () => Navigator.pop(context, -1),
+          ),
+          for (final minutes in taskReminderLeadOptions)
+            ListTile(
+              title: Text(_leadMinutesLabel(minutes)),
+              trailing: current == minutes
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () => Navigator.pop(context, minutes),
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
 DateTime nextDailyAlarmSlot(DateTime now) {
   final local = now.toLocal();

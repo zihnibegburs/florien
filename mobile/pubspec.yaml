@@ -36,6 +36,7 @@ dependencies:
   audio_session: ^0.2.4
   just_audio: ^0.10.6
   lottie: ^3.3.3
+  flutter_timezone: ^5.1.0
 
 dev_dependencies:
   flutter_test:

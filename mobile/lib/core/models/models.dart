@@ -74,6 +74,8 @@ class TaskModel {
   final DateTime? startedAt;
   final DateTime? completedAt;
   final DateTime? alarmAt;
+  /// Minutes before [scheduledAt]. `null` means use the account default.
+  final int? reminderLeadMinutes;
   final bool isTimed;
   final String? parentTaskId;
   final List<TaskModel> subtasks;
@@ -103,6 +105,7 @@ class TaskModel {
     this.startedAt,
     this.completedAt,
     this.alarmAt,
+    this.reminderLeadMinutes,
     this.isTimed = false,
     this.parentTaskId,
     this.subtasks = const [],
@@ -131,6 +134,7 @@ class TaskModel {
     startedAt: _parseDateTime(json['startedAt']),
     completedAt: _parseDateTime(json['completedAt']),
     alarmAt: _parseDateTime(json['alarmAt']),
+    reminderLeadMinutes: json['reminderLeadMinutes'] as int?,
     isTimed: json['isTimed'] as bool? ?? false,
     parentTaskId: json['parentTaskId'] as String?,
     subtasks: json['subtasks'] != null
@@ -167,6 +171,7 @@ class TaskModel {
     startedAt: _parseDateTime(data['startedAt']),
     completedAt: _parseDateTime(data['completedAt']),
     alarmAt: _parseDateTime(data['alarmAt']),
+    reminderLeadMinutes: (data['reminderLeadMinutes'] as num?)?.toInt(),
     isTimed: data['isTimed'] as bool? ?? false,
     parentTaskId: data['parentTaskId'] as String?,
     subtasks: subtasks,
@@ -202,6 +207,7 @@ class TaskModel {
         ? Timestamp.fromDate(completedAt!.toUtc())
         : null,
     'alarmAt': alarmAt != null ? Timestamp.fromDate(alarmAt!.toUtc()) : null,
+    'reminderLeadMinutes': reminderLeadMinutes,
     'isTimed': isTimed,
     'parentTaskId': parentTaskId,
     'reward': reward,
@@ -255,6 +261,8 @@ class TaskModel {
     bool clearCompletedAt = false,
     DateTime? alarmAt,
     bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool clearReminderLeadMinutes = false,
     bool? isTimed,
     String? parentTaskId,
     List<TaskModel>? subtasks,
@@ -282,6 +290,9 @@ class TaskModel {
     startedAt: clearStartedAt ? null : (startedAt ?? this.startedAt),
     completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
     alarmAt: clearAlarmAt ? null : (alarmAt ?? this.alarmAt),
+    reminderLeadMinutes: clearReminderLeadMinutes
+        ? null
+        : (reminderLeadMinutes ?? this.reminderLeadMinutes),
     isTimed: isTimed ?? this.isTimed,
     parentTaskId: parentTaskId ?? this.parentTaskId,
     subtasks: subtasks ?? this.subtasks,

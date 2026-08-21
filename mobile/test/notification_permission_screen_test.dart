@@ -15,6 +15,13 @@ class _PermissionTaskAlarmService extends TaskAlarmService {
   bool requested = false;
 
   @override
+  Future<bool> enableDefaultsAfterPermissionGrant() async {
+    requested = true;
+    await storage.enableDefaultNotificationPlan();
+    return true;
+  }
+
+  @override
   Future<bool> setTaskRemindersEnabled(bool enabled) async {
     requested = enabled;
     await storage.setTaskRemindersEnabled(enabled);
@@ -37,6 +44,9 @@ void main() {
         overrides: [
           settingsStorageProvider.overrideWithValue(storage),
           taskAlarmServiceProvider.overrideWithValue(alarms),
+          notificationReconcileProvider.overrideWithValue(
+            ({int? previousDefaultLeadMinutes}) async {},
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -62,6 +72,10 @@ void main() {
     expect(alarms.requested, isTrue);
     expect(completed, isTrue);
     expect(await storage.isNotificationPermissionIntroCompleted(), isTrue);
+    expect(
+      (await storage.getNotificationPreferences()).morningSummaryEnabled,
+      isTrue,
+    );
   });
 
   testWidgets('can postpone notification permission without blocking entry', (

@@ -16,6 +16,7 @@ import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/services/live_activity_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
+import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/achievement_progress_storage.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
@@ -129,6 +130,50 @@ final notificationPreferencesProvider = FutureProvider<NotificationPreferences>(
   (ref) => ref.watch(taskAlarmServiceProvider).getPreferences(),
 );
 
+class NotificationLaunchCommand {
+  const NotificationLaunchCommand({
+    required this.target,
+    this.taskId,
+    this.kind,
+  });
+
+  final NotificationTargetScreen target;
+  final String? taskId;
+  final FlorienNotificationKind? kind;
+}
+
+final notificationLaunchProvider = StateProvider<NotificationLaunchCommand?>(
+  (ref) => null,
+);
+
+final dailyPlannerDateRequestProvider = StateProvider<DateTime?>((ref) => null);
+
+final dailyReviewLaunchSignalProvider = StateProvider<int>((ref) => 0);
+
+/// Reconciles OS local notifications with preferences + upcoming timed tasks.
+final notificationReconcileProvider =
+    Provider<
+      Future<void> Function({int? previousDefaultLeadMinutes})
+    >((ref) {
+      return ({int? previousDefaultLeadMinutes}) async {
+        final auth = ref.read(authStateProvider).valueOrNull;
+        if (auth == null) return;
+        final alarms = ref.read(taskAlarmServiceProvider);
+        final repository = ref.read(taskRepositoryProvider);
+        final now = DateTime.now();
+        final tasks = await repository.getUpcomingTimedTasks(
+          from: now.subtract(const Duration(hours: 1)),
+          to: now.add(const Duration(days: 14)),
+        );
+        await alarms.reconcile(
+          accountId: auth.userId,
+          upcomingTasks: tasks,
+          previousDefaultLeadMinutes: previousDefaultLeadMinutes,
+        );
+      };
+    });
+
+
 final liveActivityServiceProvider = Provider<FlorienLiveActivityService>(
   (ref) => FlorienLiveActivityService(),
 );
@@ -239,6 +284,7 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
     ref.invalidate(dailyTimelineProvider);
     ref.invalidate(completionCountsProvider);
     ref.invalidate(moodEntriesProvider);
+    unawaited(ref.read(notificationReconcileProvider)());
   }
 
   Future<void> _migrateLocalData(AppProfilesState state) async {
@@ -501,14 +547,26 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }
 
   Future<void> logout() async {
+    final userId = state.valueOrNull?.userId;
+    if (userId != null) {
+      await ref
+          .read(taskAlarmServiceProvider)
+          .cancelAccountNotifications(userId);
+    }
     await ref.read(googleAuthServiceProvider).signOut();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }
 
   Future<void> deleteAccount() async {
+    final userId = state.valueOrNull?.userId;
     state = const AsyncLoading();
     try {
+      if (userId != null) {
+        await ref
+            .read(taskAlarmServiceProvider)
+            .cancelAccountNotifications(userId);
+      }
       await ref.read(authRepositoryProvider).deleteAccount();
       await ref.read(googleAuthServiceProvider).disconnect();
       state = const AsyncData(null);
@@ -587,7 +645,11 @@ final dailyTimelineProvider = FutureProvider.autoDispose
 
 final dailyDeleteTaskProvider = Provider<Future<void> Function(String)>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
-  return (id) => repository.deleteTask(id);
+  return (id) async {
+    await repository.deleteTask(id);
+    await ref.read(taskAlarmServiceProvider).cancel(id);
+    unawaited(ref.read(notificationReconcileProvider)());
+  };
 });
 
 final dailyMoveToTodoProvider =
@@ -595,6 +657,7 @@ final dailyMoveToTodoProvider =
       final repository = ref.watch(taskRepositoryProvider);
       return (id, todoListId) async {
         await repository.moveToInbox(id, todoListId: todoListId);
+        await ref.read(taskAlarmServiceProvider).cancel(id);
         if (ref.read(activeFocusTaskProvider)?.taskId == id) {
           ref.read(activeFocusTaskProvider.notifier).state = null;
           ref.read(focusTaskLaunchProvider.notifier).state = null;
@@ -602,6 +665,7 @@ final dailyMoveToTodoProvider =
         }
         ref.invalidate(inboxProvider);
         ref.invalidate(dailyTimelineProvider);
+        unawaited(ref.read(notificationReconcileProvider)());
       };
     });
 
@@ -788,6 +852,7 @@ final completeFocusedTaskProvider = Provider<Future<void> Function(String)>((
   final repository = ref.watch(taskRepositoryProvider);
   return (taskId) async {
     await repository.completeTask(taskId);
+    await ref.read(taskAlarmServiceProvider).cancel(taskId);
     if (ref.read(activeFocusTaskProvider)?.taskId == taskId) {
       ref.read(activeFocusTaskProvider.notifier).state = null;
     }
@@ -796,6 +861,7 @@ final completeFocusedTaskProvider = Provider<Future<void> Function(String)>((
     }
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);
+    unawaited(ref.read(notificationReconcileProvider)());
   };
 });
 
@@ -940,12 +1006,15 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
 
   Future<void> completeTask(String id) async {
     await ref.read(taskRepositoryProvider).completeTask(id);
+    await ref.read(taskAlarmServiceProvider).cancel(id);
     await refresh();
+    unawaited(ref.read(notificationReconcileProvider)());
   }
 
   Future<void> uncompleteTask(String id) async {
     await ref.read(taskRepositoryProvider).uncompleteTask(id);
     await refresh();
+    unawaited(ref.read(notificationReconcileProvider)());
   }
 
   Future<void> scheduleTask(String id, DateTime scheduledAt) async {
@@ -973,6 +1042,8 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
 
   Future<void> deleteTask(String id) async {
     await ref.read(taskRepositoryProvider).deleteTask(id);
+    await ref.read(taskAlarmServiceProvider).cancel(id);
     await refresh();
+    unawaited(ref.read(notificationReconcileProvider)());
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
+import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
@@ -32,6 +33,8 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   late final ProviderSubscription<FocusTaskLaunch?> _focusLaunchSubscription;
   late final ProviderSubscription<HomeWidgetLaunchCommand?>
   _homeWidgetLaunchSubscription;
+  late final ProviderSubscription<NotificationLaunchCommand?>
+  _notificationLaunchSubscription;
   late final ProviderSubscription<AsyncValue<TimelineModel>>
   _widgetTimelineSubscription;
   late final ProviderSubscription<AsyncValue<List<TaskModel>>>
@@ -55,6 +58,11 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     _homeWidgetLaunchSubscription = ref.listenManual(
       homeWidgetLaunchProvider,
       (_, command) => unawaited(_handleHomeWidgetLaunch(command)),
+      fireImmediately: true,
+    );
+    _notificationLaunchSubscription = ref.listenManual(
+      notificationLaunchProvider,
+      (_, command) => unawaited(_handleNotificationLaunch(command)),
       fireImmediately: true,
     );
     final today = _today();
@@ -101,6 +109,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     _scheduledFocusClock?.cancel();
     _focusLaunchSubscription.close();
     _homeWidgetLaunchSubscription.close();
+    _notificationLaunchSubscription.close();
     _widgetTimelineSubscription.close();
     _widgetInboxSubscription.close();
     super.dispose();
@@ -109,6 +118,53 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   DateTime _today() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
+  }
+
+  Future<void> _handleNotificationLaunch(
+    NotificationLaunchCommand? command,
+  ) async {
+    if (command == null || !mounted) return;
+    ref.read(notificationLaunchProvider.notifier).state = null;
+    switch (command.target) {
+      case NotificationTargetScreen.taskFocus:
+        final taskId = command.taskId;
+        if (taskId == null) {
+          _selectTab(1);
+          return;
+        }
+        try {
+          final task = await ref
+              .read(taskRepositoryProvider)
+              .getTaskById(taskId);
+          if (task == null || task.isCompleted) {
+            _selectTab(1);
+            return;
+          }
+          ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
+            taskId: task.id,
+            title: task.title,
+            durationMinutes: task.durationMinutes,
+            icon: task.icon,
+            color: task.color,
+          );
+          _selectTab(2);
+        } catch (_) {
+          _selectTab(1);
+        }
+      case NotificationTargetScreen.dailyPlan:
+        _selectTab(1);
+      case NotificationTargetScreen.dailyReview:
+        _selectTab(1);
+        ref.read(dailyReviewLaunchSignalProvider.notifier).state++;
+      case NotificationTargetScreen.weeklyPlanMonday:
+        final now = DateTime.now();
+        var monday = DateTime(now.year, now.month, now.day);
+        while (monday.weekday != DateTime.monday) {
+          monday = monday.add(const Duration(days: 1));
+        }
+        ref.read(dailyPlannerDateRequestProvider.notifier).state = monday;
+        _selectTab(1);
+    }
   }
 
   Future<void> _handleHomeWidgetLaunch(HomeWidgetLaunchCommand? command) async {
