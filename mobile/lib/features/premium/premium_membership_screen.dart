@@ -105,21 +105,11 @@ class _PremiumMembershipScreenState
                   ),
                   child: Column(
                     children: [
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: FlorienColors.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.palette.border,
-                            width: FlorienBorders.thin,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.workspace_premium_rounded,
-                          size: 36,
-                        ),
+                      Image.asset(
+                        'assets/premium/premium_thanks.png',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: FlorienSpacing.xl),
                       Text(
@@ -185,9 +175,9 @@ class _PremiumMembershipScreenState
         padding: const EdgeInsets.all(FlorienSpacing.screen),
         children: [
           Container(
-            padding: const EdgeInsets.all(FlorienSpacing.lg),
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: context.palette.surface,
+              color: Colors.black,
               borderRadius: BorderRadius.circular(FlorienRadius.lg),
               border: Border.all(
                 color: context.palette.border,
@@ -195,38 +185,85 @@ class _PremiumMembershipScreenState
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
-                  value?.hasActivePremium == true
-                      ? Icons.workspace_premium_rounded
-                      : Icons.auto_awesome_rounded,
-                  color: context.palette.textPrimary,
-                  size: 34,
-                ),
-                const SizedBox(height: FlorienSpacing.md),
-                Text(
-                  value?.hasActivePremium == true
-                      ? strings.premiumActive
-                      : strings.premiumAppBar,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                AspectRatio(
+                  aspectRatio: 951 / 561,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        'assets/premium/premium_banner.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.72),
+                              ],
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              FlorienSpacing.lg,
+                              FlorienSpacing.xxl,
+                              FlorienSpacing.lg,
+                              FlorienSpacing.lg,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  value?.hasActivePremium == true
+                                      ? strings.premiumActive
+                                      : strings.premiumAppBar,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                                const SizedBox(height: FlorienSpacing.xs),
+                                Text(
+                                  value?.hasActivePremium == true
+                                      ? strings.premiumActiveDescription
+                                      : strings.premiumIntro,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.82),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: FlorienSpacing.xs),
-                Text(
-                  value?.hasActivePremium == true
-                      ? strings.premiumActiveDescription
-                      : strings.premiumIntro,
-                  style: TextStyle(color: context.palette.textSecondary),
-                ),
-                if (value?.message != null) ...[
-                  const SizedBox(height: FlorienSpacing.md),
-                  Text(
-                    value!.message!,
-                    style: TextStyle(color: context.palette.textSecondary),
+                if (value?.message != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      FlorienSpacing.lg,
+                      FlorienSpacing.md,
+                      FlorienSpacing.lg,
+                      FlorienSpacing.lg,
+                    ),
+                    child: Text(
+                      value!.message!,
+                      style: TextStyle(color: context.palette.textSecondary),
+                    ),
                   ),
-                ],
               ],
             ),
           ),

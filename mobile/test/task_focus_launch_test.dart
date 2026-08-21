@@ -272,7 +272,7 @@ void main() {
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
   });
 
-  testWidgets('todo scroll focus keeps only the date and add action', (
+  testWidgets('todo scroll keeps header chrome and bottom navigation', (
     tester,
   ) async {
     await _pumpHome(
@@ -288,20 +288,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byKey(const ValueKey('todo-focused-date')), findsOneWidget);
-    expect(find.byKey(const ValueKey('todo-focused-add')), findsOneWidget);
-    expect(find.byType(FlorienBottomNavigation), findsNothing);
-    expect(find.byTooltip('Liste seçenekleri'), findsNothing);
-
-    await tester.drag(
-      find.byKey(const ValueKey('todo-task-list')),
-      const Offset(0, 40),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-
+    expect(find.byKey(const ValueKey('todo-focused-date')), findsNothing);
+    expect(find.byKey(const ValueKey('todo-focused-add')), findsNothing);
     expect(find.byType(FlorienBottomNavigation), findsOneWidget);
     expect(find.byTooltip('Liste seçenekleri'), findsOneWidget);
+    expect(find.text('Florien'), findsOneWidget);
   });
 
   testWidgets('planner AI chat opens Premium for a free account', (

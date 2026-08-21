@@ -29,7 +29,6 @@ class TodoHomeScreen extends ConsumerStatefulWidget {
 class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   int _selectedIndex = 0;
   int _todoQuickAddSignal = 0;
-  bool _scrollChromeVisible = true;
   late final ProviderSubscription<FocusTaskLaunch?> _focusLaunchSubscription;
   late final ProviderSubscription<HomeWidgetLaunchCommand?>
   _homeWidgetLaunchSubscription;
@@ -328,19 +327,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
 
   void _selectTab(int index) {
     if (!mounted) return;
-    setState(() {
-      _selectedIndex = index;
-      _scrollChromeVisible = true;
-    });
-  }
-
-  void _handleScrollChromeVisibility(int tabIndex, bool visible) {
-    if (!mounted ||
-        _selectedIndex != tabIndex ||
-        _scrollChromeVisible == visible) {
-      return;
-    }
-    setState(() => _scrollChromeVisible = visible);
+    setState(() => _selectedIndex = index);
   }
 
   Future<FocusTaskLaunch> _createStandaloneFocusTask(
@@ -377,46 +364,24 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     final alarms = ref.read(taskAlarmServiceProvider);
-    final todoFocusMode = _selectedIndex == 0 && !_scrollChromeVisible;
     return Scaffold(
       backgroundColor: context.palette.background,
       appBar: _selectedIndex == 0
           ? AppBar(
-              centerTitle: todoFocusMode,
-              title: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: todoFocusMode
-                    ? Text(
-                        _compactHomeDateLabel(_today()),
-                        key: const ValueKey('todo-focused-date'),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      )
-                    : Row(
-                        key: const ValueKey('todo-home-scroll-chrome-header'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const FlorienLogo(
-                            key: ValueKey('todo-home-brand-icon'),
-                            size: 34,
-                          ),
-                          const SizedBox(width: 10),
-                          const Text('Florien'),
-                        ],
-                      ),
+              title: const Row(
+                key: ValueKey('todo-home-scroll-chrome-header'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FlorienLogo(
+                    key: ValueKey('todo-home-brand-icon'),
+                    size: 34,
+                  ),
+                  SizedBox(width: 10),
+                  Text('Florien'),
+                ],
               ),
               actions: [
-                if (todoFocusMode)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: IconButton.filled(
-                      key: const ValueKey('todo-focused-add'),
-                      tooltip: 'Yeni yapılacak ekle',
-                      onPressed: () => setState(() => _todoQuickAddSignal++),
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  )
-                else if (premium != null && !premium.hasActivePremium)
+                if (premium != null && !premium.hasActivePremium)
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: PremiumUpsellButton(
@@ -435,21 +400,15 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         children: [
           TodoListTab(
             quickAddSignal: _todoQuickAddSignal,
-            scrollChromeEnabled: _selectedIndex == 0,
-            onScrollChromeVisibilityChanged: (visible) =>
-                _handleScrollChromeVisibility(0, visible),
           ),
           DailyPlannerTab(
             quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
-            scrollChromeEnabled: _selectedIndex == 1,
             showPremiumUpsell: premium != null && !premium.hasActivePremium,
             onPremiumUpsellPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const PremiumMembershipScreen(),
               ),
             ),
-            onScrollChromeVisibilityChanged: (visible) =>
-                _handleScrollChromeVisibility(1, visible),
           ),
           FocusTimerTab(
             launchRequest: requestedFocus ?? _scheduledFocusLaunch,
@@ -480,61 +439,38 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           const StatisticsTab(),
         ],
       ),
-      bottomNavigationBar: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        child: _scrollChromeVisible
-            ? FlorienBottomNavigation(
-                key: const ValueKey('home-scroll-chrome-navigation'),
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: _selectTab,
-                destinations: const [
-                  FlorienNavDestination(
-                    label: 'To-do',
-                    icon: Icons.check_box_outlined,
-                    selectedIcon: Icons.check_box_rounded,
-                  ),
-                  FlorienNavDestination(
-                    label: 'Günlük',
-                    icon: Icons.calendar_today_outlined,
-                    selectedIcon: Icons.calendar_today_rounded,
-                  ),
-                  FlorienNavDestination(
-                    label: 'Odaklan',
-                    icon: Icons.timelapse_outlined,
-                    selectedIcon: Icons.timelapse_rounded,
-                  ),
-                  FlorienNavDestination(
-                    label: 'İstatistik',
-                    icon: Icons.bar_chart_rounded,
-                    selectedIcon: Icons.bar_chart_rounded,
-                  ),
-                ],
-                trailing: FlorienAiFab(
-                  key: const ValueKey('planner-ai-chat-button'),
-                  tooltip: 'Plan asistanını aç',
-                  onPressed: _openPlannerAi,
-                ),
-              )
-            : const SizedBox.shrink(key: ValueKey('home-navigation-hidden')),
+      bottomNavigationBar: FlorienBottomNavigation(
+        key: const ValueKey('home-scroll-chrome-navigation'),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _selectTab,
+        destinations: const [
+          FlorienNavDestination(
+            label: 'To-do',
+            icon: Icons.check_box_outlined,
+            selectedIcon: Icons.check_box_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'Günlük',
+            icon: Icons.calendar_today_outlined,
+            selectedIcon: Icons.calendar_today_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'Odaklan',
+            icon: Icons.timelapse_outlined,
+            selectedIcon: Icons.timelapse_rounded,
+          ),
+          FlorienNavDestination(
+            label: 'İstatistik',
+            icon: Icons.bar_chart_rounded,
+            selectedIcon: Icons.bar_chart_rounded,
+          ),
+        ],
+        trailing: FlorienAiFab(
+          key: const ValueKey('planner-ai-chat-button'),
+          tooltip: 'Plan asistanını aç',
+          onPressed: _openPlannerAi,
+        ),
       ),
     );
   }
-}
-
-String _compactHomeDateLabel(DateTime date) {
-  const months = [
-    'Ocak',
-    'Şubat',
-    'Mart',
-    'Nisan',
-    'Mayıs',
-    'Haziran',
-    'Temmuz',
-    'Ağustos',
-    'Eylül',
-    'Ekim',
-    'Kasım',
-    'Aralık',
-  ];
-  return '${date.day} ${months[date.month - 1]} ${date.year}';
 }

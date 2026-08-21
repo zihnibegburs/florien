@@ -341,11 +341,13 @@ class TaskAlarmService {
     if (!preferences.taskRemindersEnabled) return null;
     if (!task.isTimed || task.scheduledAt == null) return null;
     if (task.isCompleted || task.status == TaskStatus.skipped) return null;
+    // Opt-in per task: alarm toggle stores alarmAt and/or reminderLeadMinutes.
+    if (task.alarmAt == null && task.reminderLeadMinutes == null) return null;
 
-    final lead =
-        task.reminderLeadMinutes ?? preferences.taskReminderLeadMinutes;
     final start = task.scheduledAt!.toLocal();
-    final fireAt = start.subtract(Duration(minutes: lead));
+    final fireAt =
+        task.alarmAt?.toLocal() ??
+        start.subtract(Duration(minutes: task.reminderLeadMinutes ?? 0));
     final now = DateTime.now();
     // Too close: do not fire immediately or at start as a catch-up.
     if (!fireAt.isAfter(now)) return null;
@@ -565,8 +567,7 @@ class TaskAlarmService {
       // Custom lead stays on the task; null lead uses the account default.
       final fireAt = computeTaskFireTime(task: task, preferences: preferences);
       if (fireAt == null) continue;
-      final lead =
-          task.reminderLeadMinutes ?? preferences.taskReminderLeadMinutes;
+      final lead = task.reminderLeadMinutes ?? 0;
       candidates.add(
         _TaskFireCandidate(task: task, fireAt: fireAt, leadMinutes: lead),
       );

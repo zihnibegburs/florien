@@ -102,6 +102,56 @@ void main() {
     expect(fireAt, start.subtract(const Duration(minutes: 30)));
   });
 
+  test('task without opt-in alarm does not produce a fire time', () {
+    final alarms = TaskAlarmService(SettingsStorage());
+    final start = DateTime.now().add(const Duration(hours: 2));
+    final task = TaskModel(
+      id: 't2b',
+      title: 'Alarmsız',
+      color: '#000',
+      icon: 'task',
+      durationMinutes: 30,
+      scheduledAt: start,
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      isTimed: true,
+    );
+    expect(
+      alarms.computeTaskFireTime(
+        task: task,
+        preferences: const NotificationPreferences(taskReminderLeadMinutes: 10),
+      ),
+      isNull,
+    );
+  });
+
+  test('task fire time at start uses alarmAt', () {
+    final alarms = TaskAlarmService(SettingsStorage());
+    final start = DateTime.now().add(const Duration(hours: 2));
+    final task = TaskModel(
+      id: 't2c',
+      title: 'Başlangıç alarmı',
+      color: '#000',
+      icon: 'task',
+      durationMinutes: 30,
+      scheduledAt: start,
+      alarmAt: start,
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      isTimed: true,
+      reminderLeadMinutes: 0,
+    );
+    expect(
+      alarms.computeTaskFireTime(
+        task: task,
+        preferences: const NotificationPreferences(),
+      ),
+      start,
+    );
+  });
+
   test('untimed tasks do not produce a fire time', () {
     final alarms = TaskAlarmService(SettingsStorage());
     final task = TaskModel(

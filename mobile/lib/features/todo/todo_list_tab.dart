@@ -4,7 +4,6 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/core/widgets/delayed_scroll_chrome.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -51,13 +50,9 @@ class TodoListTab extends ConsumerStatefulWidget {
   const TodoListTab({
     super.key,
     this.quickAddSignal = 0,
-    this.scrollChromeEnabled = true,
-    this.onScrollChromeVisibilityChanged,
   });
 
   final int quickAddSignal;
-  final bool scrollChromeEnabled;
-  final ValueChanged<bool>? onScrollChromeVisibilityChanged;
 
   @override
   ConsumerState<TodoListTab> createState() => _TodoListTabState();
@@ -68,25 +63,15 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
   bool _tasksCollapsed = false;
   bool _showDuration = true;
   bool _completedCollapsed = false;
-  bool _scrollChromeVisible = true;
 
   @override
   void didUpdateWidget(covariant TodoListTab oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollChromeEnabled && !widget.scrollChromeEnabled) {
-      _scrollChromeVisible = true;
-    }
     if (widget.quickAddSignal != oldWidget.quickAddSignal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _showAdd();
       });
     }
-  }
-
-  void _handleScrollChromeVisibility(bool visible) {
-    if (_scrollChromeVisible == visible) return;
-    setState(() => _scrollChromeVisible = visible);
-    widget.onScrollChromeVisibilityChanged?.call(visible);
   }
 
   @override
@@ -114,120 +99,112 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
         final completedTasks = visibleTasks
             .where((task) => task.isCompleted)
             .toList();
-        return DelayedScrollChrome(
-          enabled: widget.scrollChromeEnabled,
-          onVisibilityChanged: _handleScrollChromeVisibility,
-          child: Column(
-            children: [
-              ScrollChromeVisibility(
-                key: const ValueKey('todo-scroll-chrome-header'),
-                visible: _scrollChromeVisible,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  _ListTitle(
-                                    label: 'To-do',
-                                    selected: activeListId == null,
-                                    onTap: () =>
-                                        setState(() => _selectedListId = null),
-                                  ),
-                                  for (final list in lists)
-                                    _ListTitle(
-                                      label: list.name,
-                                      selected: activeListId == list.id,
-                                      onTap: () => setState(
-                                        () => _selectedListId = list.id,
-                                      ),
-                                    ),
-                                  _ListAddButton(
-                                    onTap: () => _createList(lists),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
                             children: [
-                              _TodoIconButton(
-                                tooltip: 'Liste seçenekleri',
-                                onPressed: () => _showHeaderMenu(lists),
-                                icon: Icons.more_horiz_rounded,
-                                filled: false,
+                              _ListTitle(
+                                label: 'To-do',
+                                selected: activeListId == null,
+                                onTap: () =>
+                                    setState(() => _selectedListId = null),
                               ),
-                              const SizedBox(width: 4),
-                              _TodoIconButton(
-                                tooltip: 'Yeni yapılacak ekle',
-                                onPressed: _showAdd,
-                                icon: Icons.add_rounded,
+                              for (final list in lists)
+                                _ListTitle(
+                                  label: list.name,
+                                  selected: activeListId == list.id,
+                                  onTap: () => setState(
+                                    () => _selectedListId = list.id,
+                                  ),
+                                ),
+                              _ListAddButton(
+                                onTap: () => _createList(lists),
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _TodoIconButton(
+                            tooltip: 'Liste seçenekleri',
+                            onPressed: () => _showHeaderMenu(lists),
+                            icon: Icons.more_horiz_rounded,
+                            filled: false,
+                          ),
+                          const SizedBox(width: 4),
+                          _TodoIconButton(
+                            tooltip: 'Yeni yapılacak ekle',
+                            onPressed: _showAdd,
+                            icon: Icons.add_rounded,
+                          ),
                         ],
                       ),
-                      if (currentList?.description.isNotEmpty ?? false) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          currentList!.description,
-                          style: TextStyle(
-                            color: context.palette.textSecondary,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 22),
                     ],
                   ),
-                ),
+                  if (currentList?.description.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      currentList!.description,
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 22),
+                ],
               ),
-              Expanded(
-                child: ListView(
-                  key: const ValueKey('todo-task-list'),
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 40),
-                  children: [
+            ),
+            Expanded(
+              child: ListView(
+                key: const ValueKey('todo-task-list'),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 40),
+                children: [
+                  _TodoSection(
+                    section: _defaultSection,
+                    tasks: visibleTasks
+                        .where((task) => !task.isCompleted)
+                        .toList(),
+                    collapsed: _tasksCollapsed,
+                    onToggle: () =>
+                        setState(() => _tasksCollapsed = !_tasksCollapsed),
+                    onAdd: _showAdd,
+                    showDuration: _showDuration,
+                  ),
+                  const SizedBox(height: 16),
+                  if (completedTasks.isNotEmpty) ...[
                     _TodoSection(
-                      section: _defaultSection,
-                      tasks: visibleTasks
-                          .where((task) => !task.isCompleted)
-                          .toList(),
-                      collapsed: _tasksCollapsed,
-                      onToggle: () =>
-                          setState(() => _tasksCollapsed = !_tasksCollapsed),
-                      onAdd: _showAdd,
+                      section: _completedSection,
+                      tasks: completedTasks,
+                      collapsed: _completedCollapsed,
+                      onToggle: () => setState(
+                        () => _completedCollapsed = !_completedCollapsed,
+                      ),
+                      onAdd: () {},
                       showDuration: _showDuration,
+                      allowAdd: false,
+                      completedTarget: true,
+                      onTaskDropped: (task) =>
+                          _moveTaskToSection(task, completed: true),
                     ),
                     const SizedBox(height: 16),
-                    if (completedTasks.isNotEmpty) ...[
-                      _TodoSection(
-                        section: _completedSection,
-                        tasks: completedTasks,
-                        collapsed: _completedCollapsed,
-                        onToggle: () => setState(
-                          () => _completedCollapsed = !_completedCollapsed,
-                        ),
-                        onAdd: () {},
-                        showDuration: _showDuration,
-                        allowAdd: false,
-                        completedTarget: true,
-                        onTaskDropped: (task) =>
-                            _moveTaskToSection(task, completed: true),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

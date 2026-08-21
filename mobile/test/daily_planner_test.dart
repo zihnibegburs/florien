@@ -98,7 +98,7 @@ void main() {
     expect(find.text('Akşam'), findsOneWidget);
     expect(find.text('Etkinlik'), findsOneWidget);
     expect(find.text('Zamanında'), findsOneWidget);
-    expect(find.text('Tüm gün'), findsOneWidget);
+    expect(find.text('Tüm gün'), findsNothing);
     expect(find.text('Yapılacaklar'), findsOneWidget);
 
     await tester.tap(find.text('Sabah'));
@@ -120,7 +120,7 @@ void main() {
     expect(find.text('Tarih'), findsOneWidget);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Yinelemek'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-time')), findsNothing);
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsNothing);
     expect(
       find.byKey(const ValueKey('daily-detail-subtask-input')),
       findsNothing,
@@ -143,13 +143,12 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('daily-detail-notes')), findsOneWidget);
 
-    await tester.tap(find.text('Alarm'));
+    await tester.tap(find.text('Günün saati'));
     await tester.pumpAndSettle();
-    final alarmTime = find.descendant(
-      of: find.byKey(const ValueKey('daily-alarm-time')),
-      matching: find.textContaining(RegExp(r'^\d{2}:\d{2}$')),
-    );
-    expect(alarmTime, findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
+    expect(find.text('Görev başladığında çalar'), findsOneWidget);
   });
 
   test('daily alarm defaults to the next half or full hour', () {
@@ -433,12 +432,14 @@ void main() {
     );
     await tester.tap(find.byKey(const ValueKey('daily-details-chip')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Alarm'));
+    await tester.tap(find.text('Günün saati'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
     await tester.pumpAndSettle();
 
     expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('Alarm ve hatırlatıcılar'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-time')), findsNothing);
+    expect(find.text('Görev için özel saat'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsNothing);
   });
 
   testWidgets('daily grouping switches between list and timeline views', (
@@ -767,7 +768,7 @@ void main() {
     expect(find.byKey(const ValueKey('premium-upsell-button')), findsNothing);
   });
 
-  testWidgets('date selector collapses behind the pinned daily header', (
+  testWidgets('daily header stays fixed above the scrolling task list', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 700));
@@ -802,50 +803,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final page = tester.widget<CustomScrollView>(
-      find.byKey(const ValueKey('daily-planner-page')),
-    );
-    expect(page.paintOrder, SliverPaintOrder.firstIsTop);
-    expect(
-      (page.physics! as AlwaysScrollableScrollPhysics).parent,
-      isA<ClampingScrollPhysics>(),
-    );
-    final appBar = tester.widget<SliverAppBar>(
-      find.byKey(const ValueKey('daily-floating-date-header')),
-    );
-    expect(appBar.floating, isTrue);
-    expect(appBar.snap, isFalse);
-    expect(appBar.pinned, isTrue);
-    expect(appBar.collapsedHeight, 64);
-    expect(appBar.clipBehavior, Clip.hardEdge);
     final header = find.byKey(const ValueKey('daily-date-header'));
-    expect(tester.getTopLeft(header).dy, greaterThanOrEqualTo(0));
+    expect(header, findsOneWidget);
+    final headerBottom = tester.getBottomLeft(header).dy;
 
     await tester.drag(
-      find.byKey(const ValueKey('daily-planner-page')),
+      find.byKey(const ValueKey('daily-planner-list')),
       const Offset(0, -520),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('daily-floating-date-header')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const ValueKey('daily-focused-header')), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-focused-date')), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-focused-add')), findsOneWidget);
-    expect(header, findsNothing);
 
-    await tester.drag(
-      find.byKey(const ValueKey('daily-planner-page')),
-      const Offset(0, 72),
-    );
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('daily-floating-date-header')),
-      findsOneWidget,
-    );
     expect(header, findsOneWidget);
     expect(find.byKey(const ValueKey('daily-focused-header')), findsNothing);
+    expect(find.byTooltip('Günlük seçenekleri'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-top-add')), findsOneWidget);
+    expect(tester.getBottomLeft(header).dy, headerBottom);
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('daily-planner-list'))).dy,
+      greaterThanOrEqualTo(headerBottom - 0.5),
+    );
   });
 
   testWidgets('daily planner can pick any date and quickly return to today', (
@@ -1028,6 +1004,7 @@ void main() {
       status: TaskStatus.pending,
       sortOrder: 0,
       isInbox: false,
+      isTimed: true,
       dayPeriod: DayPeriod.daytime,
       subtasks: const [
         TaskModel(
@@ -1077,7 +1054,7 @@ void main() {
     expect(title.controller?.text, task.title);
     expect(find.text(task.description!), findsOneWidget);
     expect(find.text('İlk adım'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('daily-detail-title')),
@@ -1090,7 +1067,7 @@ void main() {
     expect(savedInput?.description, 'Eski not');
     expect(savedInput?.durationMinutes, 30);
     expect(savedInput?.period, DayPeriod.daytime);
-    expect(savedInput?.alarmAt, DateTime(2026, 8, 14, 12, 30));
+    expect(savedInput?.alarmEnabled, isTrue);
     expect(savedInput?.subtasks, ['İlk adım']);
   });
 

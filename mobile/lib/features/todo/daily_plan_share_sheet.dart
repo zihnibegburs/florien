@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
@@ -89,18 +88,16 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
           ? shareBox.localToGlobal(Offset.zero) & shareBox.size
           : null;
       final shareFile = await _createShareImage();
-      final result = await Share.shareXFiles(
+      await Share.shareXFiles(
         [XFile(shareFile.path, mimeType: 'image/png', name: _shareFileName())],
-        text: _shareText(),
-        subject: '${_formattedDate(widget.date)} planım',
         sharePositionOrigin: shareOrigin,
       );
-      if (result.status == ShareResultStatus.unavailable) {
-        await _copyShareText();
-      }
     } catch (error, stackTrace) {
       debugPrint('Daily plan share failed: $error\n$stackTrace');
-      await _copyShareText();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paylaşım açılamadı. Tekrar dene.')),
+      );
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -128,26 +125,6 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
   String _shareFileName() {
     final date = widget.date;
     return 'florien-plan-${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}.png';
-  }
-
-  Future<void> _copyShareText() async {
-    await Clipboard.setData(ClipboardData(text: _shareText()));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Paylaşım açılamadı; plan panoya kopyalandı.'),
-      ),
-    );
-  }
-
-  String _shareText() {
-    final buffer = StringBuffer('Florien • ${_formattedDate(widget.date)}');
-    buffer.writeln('\n\nBugünün planı');
-    for (final task in _selectedTasks) {
-      final state = _stateFor(task);
-      buffer.writeln('${state.marker} ${task.title} · ${state.label}');
-    }
-    return buffer.toString();
   }
 
   @override
@@ -949,32 +926,27 @@ enum _ShareTaskState {
   planned(
     label: 'Planlandı',
     shortLabel: 'Planlı',
-    marker: '○',
     icon: Icons.circle_outlined,
   ),
   completed(
     label: 'Tamamlandı',
     shortLabel: 'Bitti',
-    marker: '✓',
     icon: Icons.check_circle_rounded,
   ),
   incomplete(
     label: 'Tamamlanamadı',
     shortLabel: 'Olmadı',
-    marker: '×',
     icon: Icons.cancel_outlined,
   );
 
   const _ShareTaskState({
     required this.label,
     required this.shortLabel,
-    required this.marker,
     required this.icon,
   });
 
   final String label;
   final String shortLabel;
-  final String marker;
   final IconData icon;
 }
 
