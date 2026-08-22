@@ -358,7 +358,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   Future<void> _openPlannerAi({
     bool rootNavigator = false,
     PlannerAiChatMode initialMode = PlannerAiChatMode.chat,
-    bool gateAiPremium = true,
+    bool gateAiPremium = false,
   }) async {
     if (_plannerAiOpen) {
       ref.read(plannerAiModeRequestProvider.notifier).state = initialMode;

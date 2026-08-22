@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
@@ -16,14 +17,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _loginWithGoogle() async {
     await ref.read(authStateProvider.notifier).loginWithGoogle();
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/paywall');
+      await navigateAfterAuth(context, ref);
     }
   }
 
   Future<void> _loginWithApple() async {
     await ref.read(authStateProvider.notifier).loginWithApple();
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/paywall');
+      await navigateAfterAuth(context, ref);
     }
   }
 

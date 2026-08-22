@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:florien/core/routing/startup_routing.dart';
+import 'package:florien/core/storage/onboarding_login_intent_storage.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
@@ -29,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    await ref.read(onboardingLoginIntentStorageProvider).setFirstTimeSetup();
     await ref
         .read(authStateProvider.notifier)
         .register(
@@ -39,7 +42,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (mounted &&
         ref.read(authStateProvider).hasValue &&
         ref.read(authStateProvider).value != null) {
-      context.go('/paywall');
+      await navigateAfterAuth(context, ref);
     }
   }
 

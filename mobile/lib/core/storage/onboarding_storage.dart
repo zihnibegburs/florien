@@ -4,6 +4,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const currentOnboardingVersion = '1';
 
+const onboardingSurveyQuestionIds = [
+  'ONB-Q1',
+  'ONB-Q2',
+  'ONB-Q3',
+  'ONB-Q4',
+  'ONB-Q5',
+  'ONB-Q6',
+  'ONB-Q7',
+];
+
+bool isOnboardingSurveyComplete(OnboardingPreferences preferences) =>
+    onboardingSurveyQuestionIds.every(
+      (questionId) => preferences.answerIdFor(questionId) != null,
+    );
+
 class OnboardingAnswer {
   const OnboardingAnswer({
     required this.questionId,

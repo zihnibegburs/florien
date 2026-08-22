@@ -19,6 +19,7 @@ import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/achievement_progress_storage.dart';
+import 'package:florien/core/storage/onboarding_login_intent_storage.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/mood_storage.dart';
 import 'package:florien/core/storage/profile_storage.dart';
@@ -37,6 +38,12 @@ final appleAuthServiceProvider = Provider<AppleAuthService>(
 final onboardingStorageProvider = Provider<OnboardingStorage>(
   (ref) => OnboardingStorage(),
 );
+
+final onboardingLoginIntentStorageProvider = Provider<OnboardingLoginIntentStorage>(
+  (ref) => OnboardingLoginIntentStorage(),
+);
+
+final recentAuthIsNewUserProvider = StateProvider<bool?>((ref) => null);
 
 final onboardingRemoteStorageProvider = Provider<OnboardingRemoteStorage>(
   (ref) => OnboardingFirestoreStorage(ref.watch(firestoreProvider)),
@@ -486,6 +493,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
           .read(authRepositoryProvider)
           .login(email: email, password: password),
     );
+    ref.read(recentAuthIsNewUserProvider.notifier).state = false;
     _refreshPreferences();
   }
 
@@ -493,13 +501,22 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     final social = await ref.read(googleAuthServiceProvider).signIn();
     if (social == null) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => ref
           .read(authRepositoryProvider)
-          .signInWithCredential(
+          .signInWithCredentialResult(
             social.credential,
             displayName: social.displayName,
           ),
+    );
+    state = result.when(
+      data: (value) => AsyncData(value.response),
+      loading: () => const AsyncLoading(),
+      error: AsyncError.new,
+    );
+    result.whenData(
+      (value) =>
+          ref.read(recentAuthIsNewUserProvider.notifier).state = value.isNewUser,
     );
     _refreshPreferences();
   }
@@ -515,13 +532,22 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     final social = await ref.read(appleAuthServiceProvider).signIn();
     if (social == null) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => ref
           .read(authRepositoryProvider)
-          .signInWithCredential(
+          .signInWithCredentialResult(
             social.credential,
             displayName: social.displayName,
           ),
+    );
+    state = result.when(
+      data: (value) => AsyncData(value.response),
+      loading: () => const AsyncLoading(),
+      error: AsyncError.new,
+    );
+    result.whenData(
+      (value) =>
+          ref.read(recentAuthIsNewUserProvider.notifier).state = value.isNewUser,
     );
     _refreshPreferences();
   }
@@ -537,6 +563,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
           .read(authRepositoryProvider)
           .register(email: email, password: password, displayName: displayName),
     );
+    ref.read(recentAuthIsNewUserProvider.notifier).state = true;
     _refreshPreferences();
   }
 
@@ -549,6 +576,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     }
     await ref.read(googleAuthServiceProvider).signOut();
     await ref.read(authRepositoryProvider).logout();
+    ref.read(recentAuthIsNewUserProvider.notifier).state = null;
     state = const AsyncData(null);
   }
 
@@ -629,6 +657,7 @@ final inboxProvider = AsyncNotifierProvider<InboxNotifier, List<TaskModel>>(
 
 final dailyTimelineProvider = FutureProvider.autoDispose
     .family<TimelineModel, DateTime>((ref, date) async {
+      ref.keepAlive();
       final repository = ref.watch(taskRepositoryProvider);
       try {
         return await repository.getTimeline(date);

@@ -83,7 +83,7 @@ void main() {
     expect(find.text('GÜNDÜZ (0)'), findsOneWidget);
     expect(find.text('AKŞAM (0)'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
     expect(find.text('Sırada ne var?'), findsOneWidget);
     expect(find.byKey(const ValueKey('daily-quick-submit')), findsOneWidget);
@@ -263,7 +263,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('daily-quick-voice')), findsOneWidget);
     await tester.enterText(
@@ -335,7 +335,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
     await tester.pumpAndSettle();
@@ -389,7 +389,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-period-chip')));
     await tester.pumpAndSettle();
@@ -424,7 +424,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Günlük görev ekle'));
+    await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('daily-quick-title')),
@@ -817,7 +817,7 @@ void main() {
     expect(header, findsOneWidget);
     expect(find.byKey(const ValueKey('daily-focused-header')), findsNothing);
     expect(find.byTooltip('Günlük seçenekleri'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-top-add')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-top-add')), findsNothing);
     expect(tester.getBottomLeft(header).dy, headerBottom);
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('daily-planner-list'))).dy,

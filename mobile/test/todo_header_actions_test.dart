@@ -62,7 +62,9 @@ void main() {
     await tester.tapAt(const Offset(8, 300));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Yeni yapılacak ekle'));
+    expect(find.byTooltip('Yeni yapılacak ekle'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('todo-first-task-prompt')));
     await tester.pumpAndSettle();
     expect(find.text('Ne yapman gerekiyor?'), findsOneWidget);
     expect(find.byKey(const ValueKey('todo-quick-voice')), findsOneWidget);

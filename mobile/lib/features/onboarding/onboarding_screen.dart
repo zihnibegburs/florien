@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:florien/core/routing/startup_routing.dart';
+import 'package:florien/core/storage/onboarding_login_intent_storage.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
@@ -204,35 +206,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
     if (!allAnswered || _finishing) return;
     setState(() => _finishing = true);
-    try {
-      await ref
-          .read(onboardingPreferencesProvider.notifier)
-          .completeOnboarding();
-      if (mounted) context.go(_routeAfterOnboarding());
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _finishing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Onboarding tamamlanamadı. Tekrar dene.')),
-      );
+    if (!mounted) return;
+    final loggedIn = ref.read(authStateProvider).valueOrNull != null;
+    if (loggedIn) {
+      if (await shouldShowOnboardingSetup(ref)) {
+        context.go(await resolveIncompleteSetupDestination(ref));
+      } else {
+        context.go('/todo');
+      }
+      return;
     }
+    await ref.read(onboardingLoginIntentStorageProvider).setFirstTimeSetup();
+    if (!mounted) return;
+    context.go('/login');
   }
 
-  void _start() => setState(() => _step = 1);
+  Future<void> _start() async {
+    await ref.read(onboardingLoginIntentStorageProvider).setFirstTimeSetup();
+    if (!mounted) return;
+    setState(() => _step = 1);
+  }
 
-  String _routeAfterOnboarding() =>
-      ref.read(authStateProvider).valueOrNull == null ? '/login' : '/paywall';
+  Future<void> _goToLogin() async {
+    await ref.read(onboardingLoginIntentStorageProvider).setExistingAccount();
+    if (!mounted) return;
+    context.go('/login');
+  }
 
   void _back() {
     _selectionToken++;
+    final loggedIn = ref.read(authStateProvider).valueOrNull != null;
+    final minStep = loggedIn ? 1 : 0;
     setState(() {
       _transitioning = false;
-      _step = (_step - 1).clamp(0, _onboardingQuestions.length + 1);
+      _step = (_step - 1).clamp(minStep, _onboardingQuestions.length + 1);
     });
   }
 
-  int _initialStep(OnboardingPreferences preferences) {
-    if (preferences.answers.isEmpty) return 0;
+  int _initialStep(OnboardingPreferences preferences, {required bool loggedIn}) {
+    if (preferences.answers.isEmpty) return loggedIn ? 1 : 0;
     final unansweredIndex = _onboardingQuestions.indexWhere(
       (question) => preferences.answerIdFor(question.id) == null,
     );
@@ -250,23 +262,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       error: (_, _) =>
           const Scaffold(body: Center(child: Text('Onboarding yüklenemedi.'))),
       data: (preferences) {
+        final loggedIn = ref.watch(authStateProvider).valueOrNull != null;
+        ref.listen(authStateProvider, (previous, next) {
+          final becameLoggedIn =
+              previous?.valueOrNull == null && next.valueOrNull != null;
+          if (becameLoggedIn && _step == 0 && preferences.answers.isEmpty) {
+            setState(() => _step = 1);
+          }
+        });
         if (preferences.completed) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) context.go(_routeAfterOnboarding());
+            if (!mounted) return;
+            context.go(loggedIn ? '/todo' : '/login');
           });
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: SizedBox.shrink());
         }
         if (!_initialized) {
           _initialized = true;
-          _step = _initialStep(preferences);
+          _step = _initialStep(preferences, loggedIn: loggedIn);
         }
         return _OnboardingFrame(
           answeredCount: _onboardingQuestions
               .where((question) => preferences.answerIdFor(question.id) != null)
               .length,
-          onBack: _step == 0 ? null : _back,
+          onBack: _step <= (loggedIn ? 1 : 0) ? null : _back,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 260),
             transitionBuilder: (child, animation) => FadeTransition(
@@ -279,18 +298,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: child,
               ),
             ),
-            child: _content(preferences),
+            child: _content(preferences, loggedIn: loggedIn),
           ),
         );
       },
     );
   }
 
-  Widget _content(OnboardingPreferences preferences) {
+  Widget _content(OnboardingPreferences preferences, {required bool loggedIn}) {
     if (_step == 0) {
       return _OpeningStep(
         key: const ValueKey('onboarding-opening'),
-        onStart: _start,
+        onStart: () => unawaited(_start()),
+        onExistingAccount: loggedIn ? null : () => unawaited(_goToLogin()),
       );
     }
     if (_step > _onboardingQuestions.length) {
@@ -405,16 +425,22 @@ class _OnboardingFrame extends StatelessWidget {
 }
 
 class _OpeningStep extends StatelessWidget {
-  const _OpeningStep({super.key, required this.onStart});
+  const _OpeningStep({
+    super.key,
+    required this.onStart,
+    this.onExistingAccount,
+  });
 
   final VoidCallback onStart;
+  final VoidCallback? onExistingAccount;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         Center(
           child: FlorienLogo(
             size: 126,
@@ -445,7 +471,16 @@ class _OpeningStep extends StatelessWidget {
           icon: const Icon(Icons.arrow_forward_rounded),
           label: const Text('Başlayalım'),
         ),
+        if (onExistingAccount != null) ...[
+          const SizedBox(height: 12),
+          TextButton(
+            key: const ValueKey('onboarding-existing-account'),
+            onPressed: onExistingAccount,
+            child: const Text('Zaten hesabım var'),
+          ),
+        ],
       ],
+      ),
     );
   }
 }

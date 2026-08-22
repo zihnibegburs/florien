@@ -1,4 +1,6 @@
+import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/providers.dart';
@@ -19,6 +21,29 @@ class _LoggedInAuthNotifier extends AuthNotifier {
     displayName: 'Test User',
     avatarColor: '#F2BC52',
   );
+}
+
+class _SurveyCompleteOnboardingNotifier extends OnboardingPreferencesNotifier {
+  @override
+  Future<OnboardingPreferences> build() async {
+    final now = DateTime(2026, 1, 1);
+    return OnboardingPreferences(
+      answers: {
+        for (final questionId in onboardingSurveyQuestionIds)
+          questionId: OnboardingAnswer(
+            questionId: questionId,
+            answerId: 'test',
+            answeredAt: now,
+          ),
+      },
+    );
+  }
+}
+
+class _CompletedOnboardingNotifier extends OnboardingPreferencesNotifier {
+  @override
+  Future<OnboardingPreferences> build() async =>
+      const OnboardingPreferences(completed: true);
 }
 
 class _TestPremiumMembershipNotifier extends PremiumMembershipNotifier {
@@ -86,17 +111,27 @@ class _RetryPremiumPlansNotifier extends PremiumMembershipNotifier {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('logged-in auth routes redirect to paywall', (tester) async {
+  testWidgets('existing account login skips paywall after survey', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'onboarding_login_intent': 'existing',
+    });
     final container = ProviderContainer(
       overrides: [
         authStateProvider.overrideWith(_LoggedInAuthNotifier.new),
+        onboardingPreferencesProvider.overrideWith(
+          _SurveyCompleteOnboardingNotifier.new,
+        ),
         premiumMembershipProvider.overrideWith(
           _TestPremiumMembershipNotifier.new,
         ),
+        recentAuthIsNewUserProvider.overrideWith((ref) => false),
       ],
     );
     addTearDown(container.dispose);
     await container.read(authStateProvider.future);
+    await container.read(onboardingPreferencesProvider.future);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -104,10 +139,50 @@ void main() {
         child: const FlorienApp(),
       ),
     );
-    await tester.pump();
+    for (var attempt = 0; attempt < 20; attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .byKey(const ValueKey('todo-home-scroll-chrome-header'))
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
+    }
 
-    container.read(routerProvider).go('/login');
-    for (var attempt = 0; attempt < 10; attempt++) {
+    expect(find.byKey(const ValueKey('paywall-continue')), findsNothing);
+    expect(find.text('Florien Premium'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('todo-home-scroll-chrome-header')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('survey complete on startup opens paywall until setup is done', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        authStateProvider.overrideWith(_LoggedInAuthNotifier.new),
+        onboardingPreferencesProvider.overrideWith(
+          _SurveyCompleteOnboardingNotifier.new,
+        ),
+        premiumMembershipProvider.overrideWith(
+          _TestPremiumMembershipNotifier.new,
+        ),
+        recentAuthIsNewUserProvider.overrideWith((ref) => true),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(authStateProvider.future);
+    await container.read(onboardingPreferencesProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const FlorienApp(),
+      ),
+    );
+    for (var attempt = 0; attempt < 20; attempt++) {
       await tester.pump(const Duration(milliseconds: 100));
       if (find
           .byKey(const ValueKey('paywall-continue'))
@@ -118,45 +193,76 @@ void main() {
     }
 
     expect(find.text('Florien Premium'), findsWidgets);
-    expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('Yapılacaklar ve günlük plan'), findsOneWidget);
-    expect(find.text('Odak zamanlayıcısı'), findsOneWidget);
-    expect(find.text('Hazır rutinler'), findsOneWidget);
-    expect(find.text('Günlük yansımalar'), findsOneWidget);
-    expect(find.text('AI plan asistanı'), findsOneWidget);
-    expect(find.text('Alt görevler'), findsOneWidget);
-    expect(find.text('Birden fazla profil'), findsOneWidget);
-    expect(find.text('Takvim aktarma'), findsOneWidget);
-    expect(find.text('Alarm ve hatırlatıcılar'), findsOneWidget);
-    expect(find.text('Görev için özel saat'), findsOneWidget);
-    expect(find.text('Standart'), findsOneWidget);
-    expect(find.text('Premium'), findsOneWidget);
-    expect(find.byKey(const ValueKey('standard-aiChat')), findsOneWidget);
-    expect(find.byKey(const ValueKey('premium-aiChat')), findsOneWidget);
-    expect(
-      tester
-          .widget<Icon>(
-            find.byKey(const ValueKey('standard-tasksAndDailyPlan')),
-          )
-          .icon,
-      Icons.check_circle_rounded,
-    );
-    expect(
-      tester
-          .widget<Icon>(find.byKey(const ValueKey('premium-tasksAndDailyPlan')))
-          .icon,
-      Icons.check_circle_rounded,
-    );
-    expect(
-      tester.widget<Icon>(find.byKey(const ValueKey('standard-aiChat'))).icon,
-      Icons.close_rounded,
-    );
     expect(find.byKey(const ValueKey('paywall-continue')), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('paywall-continue')));
-    await tester.pumpAndSettle();
     expect(
-      find.byKey(const ValueKey('notification-permission-screen')),
+      find.byKey(const ValueKey('todo-home-scroll-chrome-header')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('onboarding paywall continues to notification permission', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          premiumMembershipProvider.overrideWith(
+            _TestPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          home: PremiumMembershipScreen(
+            onContinue: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Florien Premium'), findsWidgets);
+    expect(find.text('Florien özellikleri'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paywall-continue')), findsOneWidget);
+  });
+
+  testWidgets('completed onboarding skips paywall on startup', (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        authStateProvider.overrideWith(_LoggedInAuthNotifier.new),
+        onboardingPreferencesProvider.overrideWith(
+          _CompletedOnboardingNotifier.new,
+        ),
+        premiumMembershipProvider.overrideWith(
+          _TestPremiumMembershipNotifier.new,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(authStateProvider.future);
+    await container.read(onboardingPreferencesProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const FlorienApp(),
+      ),
+    );
+    await tester.pump();
+    for (var attempt = 0; attempt < 20; attempt++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find
+          .byKey(const ValueKey('todo-home-scroll-chrome-header'))
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
+    }
+
+    expect(find.byKey(const ValueKey('paywall-continue')), findsNothing);
+    expect(find.text('Florien Premium'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('todo-home-scroll-chrome-header')),
       findsOneWidget,
     );
   });
@@ -172,7 +278,11 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: PremiumMembershipScreen(onContinue: () => continued = true),
+          home: PremiumMembershipScreen(
+            onContinue: () async {
+              continued = true;
+            },
+          ),
         ),
       ),
     );

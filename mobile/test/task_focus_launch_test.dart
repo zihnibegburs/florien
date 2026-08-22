@@ -92,7 +92,9 @@ void main() {
 
     _expectActiveTaskFocus(tester, title: _todoTask.title, remaining: '12:00');
     expect(startedTask?.id, _todoTask.id);
-    expect(find.byKey(const ValueKey('planner-ai-mode-focus')), findsOneWidget);
+    // Focus mode hides the mode chips; the AI shell focus surface is active.
+    expect(find.byKey(const ValueKey('planner-ai-mode-focus')), findsNothing);
+    expect(find.text('Odak'), findsWidgets);
   });
 
   testWidgets('daily task starts focus with its duration and icon', (

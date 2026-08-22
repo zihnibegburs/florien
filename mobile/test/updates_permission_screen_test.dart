@@ -20,7 +20,9 @@ void main() {
         overrides: [settingsStorageProvider.overrideWithValue(storage)],
         child: MaterialApp(
           theme: FlorienTheme.light,
-          home: UpdatesPermissionScreen(onComplete: () => completed = true),
+          home: UpdatesPermissionScreen(
+            onComplete: () async => completed = true,
+          ),
         ),
       ),
     );
@@ -49,7 +51,9 @@ void main() {
         overrides: [settingsStorageProvider.overrideWithValue(storage)],
         child: MaterialApp(
           theme: FlorienTheme.dark,
-          home: UpdatesPermissionScreen(onComplete: () => completed = true),
+          home: UpdatesPermissionScreen(
+            onComplete: () async => completed = true,
+          ),
         ),
       ),
     );

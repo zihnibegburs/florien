@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class NotificationPermissionScreen extends ConsumerStatefulWidget {
   const NotificationPermissionScreen({super.key, required this.onComplete});
 
-  final VoidCallback onComplete;
+  final Future<void> Function() onComplete;
 
   @override
   ConsumerState<NotificationPermissionScreen> createState() =>
@@ -60,7 +60,7 @@ class _NotificationPermissionScreenState
         .markNotificationPermissionIntroCompleted();
     if (!mounted) return;
     setState(() => _requesting = false);
-    widget.onComplete();
+    await widget.onComplete();
   }
 
   @override

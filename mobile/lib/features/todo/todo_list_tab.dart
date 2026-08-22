@@ -99,6 +99,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
         final completedTasks = visibleTasks
             .where((task) => task.isCompleted)
             .toList();
+        final hasAnyTasks = visibleTasks.isNotEmpty;
         return Column(
           children: [
             Padding(
@@ -144,12 +145,6 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                             icon: Icons.more_horiz_rounded,
                             filled: false,
                           ),
-                          const SizedBox(width: 4),
-                          _TodoIconButton(
-                            tooltip: 'Yeni yapılacak ekle',
-                            onPressed: _showAdd,
-                            icon: Icons.add_rounded,
-                          ),
                         ],
                       ),
                     ],
@@ -168,41 +163,45 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
               ),
             ),
             Expanded(
-              child: ListView(
-                key: const ValueKey('todo-task-list'),
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 40),
-                children: [
-                  _TodoSection(
-                    section: _defaultSection,
-                    tasks: visibleTasks
-                        .where((task) => !task.isCompleted)
-                        .toList(),
-                    collapsed: _tasksCollapsed,
-                    onToggle: () =>
-                        setState(() => _tasksCollapsed = !_tasksCollapsed),
-                    onAdd: _showAdd,
-                    showDuration: _showDuration,
-                  ),
-                  const SizedBox(height: 16),
-                  if (completedTasks.isNotEmpty) ...[
-                    _TodoSection(
-                      section: _completedSection,
-                      tasks: completedTasks,
-                      collapsed: _completedCollapsed,
-                      onToggle: () => setState(
-                        () => _completedCollapsed = !_completedCollapsed,
-                      ),
-                      onAdd: () {},
-                      showDuration: _showDuration,
-                      allowAdd: false,
-                      completedTarget: true,
-                      onTaskDropped: (task) =>
-                          _moveTaskToSection(task, completed: true),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
-              ),
+              child: hasAnyTasks
+                  ? ListView(
+                      key: const ValueKey('todo-task-list'),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 40),
+                      children: [
+                        _TodoSection(
+                          section: _defaultSection,
+                          tasks: visibleTasks
+                              .where((task) => !task.isCompleted)
+                              .toList(),
+                          collapsed: _tasksCollapsed,
+                          onToggle: () => setState(
+                            () => _tasksCollapsed = !_tasksCollapsed,
+                          ),
+                          onAdd: _showAdd,
+                          showDuration: _showDuration,
+                          showHeaderAddButton: true,
+                        ),
+                        const SizedBox(height: 16),
+                        if (completedTasks.isNotEmpty) ...[
+                          _TodoSection(
+                            section: _completedSection,
+                            tasks: completedTasks,
+                            collapsed: _completedCollapsed,
+                            onToggle: () => setState(
+                              () => _completedCollapsed = !_completedCollapsed,
+                            ),
+                            onAdd: () {},
+                            showDuration: _showDuration,
+                            allowAdd: false,
+                            completedTarget: true,
+                            onTaskDropped: (task) =>
+                                _moveTaskToSection(task, completed: true),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ],
+                    )
+                  : _FirstTaskPrompt(onAdd: _showAdd),
             ),
           ],
         );
@@ -1343,6 +1342,7 @@ class _TodoSection extends StatelessWidget {
     required this.onAdd,
     required this.showDuration,
     this.allowAdd = true,
+    this.showHeaderAddButton = false,
     this.completedTarget = false,
     this.onTaskDropped,
   });
@@ -1354,6 +1354,7 @@ class _TodoSection extends StatelessWidget {
   final VoidCallback onAdd;
   final bool showDuration;
   final bool allowAdd;
+  final bool showHeaderAddButton;
   final bool completedTarget;
   final Future<void> Function(TaskModel task)? onTaskDropped;
 
@@ -1419,12 +1420,22 @@ class _TodoSection extends StatelessWidget {
                   ),
                 ),
               ),
+              if (showHeaderAddButton) ...[
+                const Spacer(),
+                _TodoIconButton(
+                  key: const ValueKey('todo-section-add'),
+                  tooltip: 'Yeni yapılacak ekle',
+                  onPressed: onAdd,
+                  icon: Icons.add_rounded,
+                  compact: true,
+                ),
+              ],
             ],
           ),
           if (!collapsed) ...[
             const SizedBox(height: 5),
             if (tasks.isEmpty && allowAdd)
-              _EmptySection(onAdd: onAdd)
+              const SizedBox.shrink()
             else
               ...tasks.map(
                 (task) => _TodoDraggableTask(
@@ -1538,45 +1549,58 @@ class _TodoDragPreview extends StatelessWidget {
   }
 }
 
-class _EmptySection extends StatelessWidget {
-  const _EmptySection({required this.onAdd});
+class _FirstTaskPrompt extends StatelessWidget {
+  const _FirstTaskPrompt({required this.onAdd});
+
   final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onAdd,
-        borderRadius: BorderRadius.circular(FlorienRadius.sm),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: context.palette.surfaceMuted.withValues(alpha: .42),
-            borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.add_rounded,
-                size: 16,
-                color: context.palette.textSecondary.withValues(alpha: .68),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: FlorienColors.accent.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(FlorienRadius.lg),
+                border: Border.all(color: context.palette.border),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Görev ekle',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: context.palette.textSecondary.withValues(alpha: .72),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              child: Icon(
+                Icons.check_circle_outline_rounded,
+                size: 36,
+                color: FlorienColors.accent,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Küçük bir adımla başla',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'İlk görevini ekleyerek gününü toparlamaya başlayabilirsin.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: context.palette.textSecondary,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              key: const ValueKey('todo-first-task-prompt'),
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('İlk görevini ekle'),
+            ),
+          ],
         ),
       ),
     );
@@ -2193,6 +2217,7 @@ class _TaskOptionTile extends StatelessWidget {
 
 class _TodoIconButton extends StatelessWidget {
   const _TodoIconButton({
+    super.key,
     required this.tooltip,
     required this.onPressed,
     required this.icon,

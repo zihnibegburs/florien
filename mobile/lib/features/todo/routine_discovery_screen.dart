@@ -218,23 +218,26 @@ class _FrequentlyUsedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final task = summary.task;
+    final borderAlpha = context.isFlorienDark ? .55 : .16;
     return Semantics(
       button: true,
       label: '${task.title}, ${summary.usageCount} kez kullanıldı',
       child: Material(
         key: ValueKey('frequently-used-task-${task.id}'),
-        color: FlorienColors.primary,
-        borderRadius: BorderRadius.circular(FlorienRadius.lg),
+        color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(FlorienRadius.lg),
-          child: Container(
+          splashColor: FlorienColors.primary.withValues(alpha: .12),
+          highlightColor: FlorienColors.primary.withValues(alpha: .06),
+          child: Ink(
             width: 168,
             padding: const EdgeInsets.all(FlorienSpacing.md),
             decoration: BoxDecoration(
+              color: context.palette.surface,
               borderRadius: BorderRadius.circular(FlorienRadius.lg),
               border: Border.all(
-                color: context.palette.border,
+                color: context.palette.border.withValues(alpha: borderAlpha),
                 width: FlorienBorders.thin,
               ),
             ),
@@ -247,13 +250,16 @@ class _FrequentlyUsedCard extends StatelessWidget {
                   task.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: context.palette.textPrimary,
+                  ),
                 ),
                 Text(
                   '${summary.usageCount} kullanım',
-                  style: Theme.of(context).textTheme.labelSmall,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: context.palette.textSecondary,
+                  ),
                 ),
               ],
             ),

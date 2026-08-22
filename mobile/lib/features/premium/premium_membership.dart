@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/services/planner_ai_service.dart';
+import 'package:florien/core/services/premium_purchase_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:florien/core/services/premium_purchase_service.dart';
 
 class PremiumMembership {
   const PremiumMembership({
@@ -15,6 +16,7 @@ class PremiumMembership {
     this.selectedProductId,
     this.isPremium = false,
     this.premiumUntil,
+    this.aiChatUsage,
     this.isPurchasing = false,
     this.message,
     this.storeDiagnostics,
@@ -26,6 +28,7 @@ class PremiumMembership {
   final String? selectedProductId;
   final bool isPremium;
   final DateTime? premiumUntil;
+  final AiChatUsage? aiChatUsage;
   final bool isPurchasing;
   final String? message;
   final String? storeDiagnostics;
@@ -56,6 +59,7 @@ class PremiumMembership {
     String? selectedProductId,
     bool? isPremium,
     DateTime? premiumUntil,
+    AiChatUsage? aiChatUsage,
     bool? isPurchasing,
     String? message,
     String? storeDiagnostics,
@@ -63,6 +67,7 @@ class PremiumMembership {
     bool clearMessage = false,
     bool clearPremiumUntil = false,
     bool clearStoreDiagnostics = false,
+    bool clearAiChatUsage = false,
   }) => PremiumMembership(
     storeAvailable: storeAvailable ?? this.storeAvailable,
     products: products ?? this.products,
@@ -71,6 +76,7 @@ class PremiumMembership {
     premiumUntil: clearPremiumUntil
         ? null
         : (premiumUntil ?? this.premiumUntil),
+    aiChatUsage: clearAiChatUsage ? null : (aiChatUsage ?? this.aiChatUsage),
     isPurchasing: isPurchasing ?? this.isPurchasing,
     message: clearMessage ? null : (message ?? this.message),
     storeDiagnostics: clearStoreDiagnostics
@@ -414,8 +420,9 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     PremiumMembership membership,
     PremiumEntitlement entitlement,
   ) {
+    final withUsage = membership.copyWith(aiChatUsage: entitlement.aiChatUsage);
     if (!entitlement.isPremium) {
-      return membership.copyWith(isPremium: false, clearPremiumUntil: true);
+      return withUsage.copyWith(isPremium: false, clearPremiumUntil: true);
     }
     final serverUntil = entitlement.premiumUntil;
     final localUntil = membership.premiumUntil;
@@ -426,7 +433,7 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       (null, final DateTime local) => local,
       (null, null) => null,
     };
-    return membership.copyWith(
+    return withUsage.copyWith(
       isPremium: bestUntil != null && bestUntil.isAfter(DateTime.now()),
       premiumUntil: bestUntil,
       clearPremiumUntil: bestUntil == null,

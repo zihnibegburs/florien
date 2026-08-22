@@ -37,6 +37,13 @@ void main() {
     expect(
       aiFunctionsErrorMessage(
         code: 'resource-exhausted',
+        details: const {'reason': 'AI_FREE_CHAT_MONTHLY_LIMIT_REACHED'},
+      ),
+      contains('ücretsiz AI mesaj'),
+    );
+    expect(
+      aiFunctionsErrorMessage(
+        code: 'resource-exhausted',
         details: const {'reason': 'AI_MONTHLY_LIMIT_REACHED'},
       ),
       contains('Aylık'),

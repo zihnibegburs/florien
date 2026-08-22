@@ -3,8 +3,8 @@ import { HttpsError } from "firebase-functions/v2/https";
 import { error as logError } from "firebase-functions/logger";
 import {
   AI_REQUEST_TIMEOUT_MS,
-  GEMINI_MODEL_NAME,
 } from "./ai-config";
+import { loadAiLimitsConfig } from "./ai-limits-config";
 import { AI_MAX_OUTPUT_TOKENS } from "./ai-protection";
 
 type GeminiJsonRequest = {
@@ -38,9 +38,10 @@ export async function callGeminiJson(
 ): Promise<Record<string, unknown>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+  const config = await loadAiLimitsConfig();
   try {
     const response = await client(request.apiKey).models.generateContent({
-      model: GEMINI_MODEL_NAME,
+      model: config.geminiModelName,
       contents: request.userPrompt,
       config: {
         abortSignal: controller.signal,
@@ -62,7 +63,7 @@ export async function callGeminiJson(
       return malformedResponse("invalid_json");
     }
   } catch (error) {
-    throw mapGeminiError(error);
+    throw mapGeminiError(error, config.geminiModelName);
   } finally {
     clearTimeout(timer);
   }
@@ -77,7 +78,7 @@ function malformedResponse(kind: string): never {
   );
 }
 
-function mapGeminiError(error: unknown): HttpsError {
+function mapGeminiError(error: unknown, modelName: string): HttpsError {
   if (error instanceof HttpsError) return error;
   if (isAbortError(error)) {
     return new HttpsError("deadline-exceeded", "AI request timed out.", {
@@ -85,15 +86,26 @@ function mapGeminiError(error: unknown): HttpsError {
     });
   }
   if (error instanceof ApiError) {
-    logError("Gemini API request failed", { status: error.status });
+    logError("Gemini API request failed", {
+      status: error.status,
+      model: modelName,
+      message: error.message,
+    });
     if (error.status === 429) {
       return new HttpsError("resource-exhausted", "AI capacity is limited.", {
         reason: "AI_PROVIDER_QUOTA_EXCEEDED",
       });
     }
-    if (error.status === 400 || error.status === 404) {
+    if (error.status === 404) {
       return new HttpsError("failed-precondition", "AI model unavailable.", {
         reason: "AI_MODEL_UNAVAILABLE",
+        model: modelName,
+      });
+    }
+    if (error.status === 400) {
+      return new HttpsError("failed-precondition", "AI request rejected.", {
+        reason: "AI_REQUEST_REJECTED",
+        model: modelName,
       });
     }
     if (error.status === 401 || error.status === 403) {

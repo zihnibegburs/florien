@@ -11,6 +11,10 @@ import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
+import 'package:florien/core/routing/startup_routing.dart';
+import 'package:florien/core/routing/startup_routing.dart';
+import 'package:florien/core/routing/startup_screen.dart';
+import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/liquid_glass.dart';
@@ -288,21 +292,71 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authStateProvider);
+  final onboardingPrefs = ref.watch(onboardingPreferencesProvider);
+  final setupRequired = ref.watch(onboardingSetupRequiredProvider);
+
   return GoRouter(
-    initialLocation: '/onboarding',
+    initialLocation: '/startup',
     redirect: (context, state) {
+      final location = state.matchedLocation;
+      if (location == '/startup') return null;
+
+      if (auth.isLoading ||
+          onboardingPrefs.isLoading ||
+          setupRequired.isLoading) {
+        return '/startup';
+      }
+
       final loggedIn = auth.valueOrNull != null;
-      final isOnboardingRoute = state.matchedLocation == '/onboarding';
+      final prefs = onboardingPrefs.valueOrNull ?? const OnboardingPreferences();
       final isAuthRoute =
-          state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register' ||
-          state.matchedLocation == '/email-login';
-      if (isOnboardingRoute) return null;
-      if (!loggedIn && !isAuthRoute) return '/login';
-      if (loggedIn && isAuthRoute) return '/paywall';
+          location == '/login' ||
+          location == '/register' ||
+          location == '/email-login';
+      final isSetupFlow =
+          location == '/paywall' ||
+          location == '/notification-permission' ||
+          location == '/updates-permission';
+
+      if (loggedIn && prefs.completed) {
+        if (isAuthRoute || location == '/onboarding' || isSetupFlow) {
+          return '/todo';
+        }
+        return null;
+      }
+
+      if (!loggedIn) {
+        if (location == '/todo' || isSetupFlow) return '/login';
+        if (location == '/onboarding' &&
+            (prefs.completed || isOnboardingSurveyComplete(prefs))) {
+          return '/login';
+        }
+        return null;
+      }
+
+      final surveyComplete = isOnboardingSurveyComplete(prefs);
+      if (!surveyComplete) {
+        if (location == '/todo' || isSetupFlow) return '/onboarding';
+        if (isAuthRoute) return '/onboarding';
+        return null;
+      }
+
+      if (setupRequired.valueOrNull != true) {
+        if (location == '/onboarding' || isAuthRoute || isSetupFlow) {
+          return '/todo';
+        }
+        return null;
+      }
+
+      if (location == '/todo' ||
+          location == '/onboarding' ||
+          isAuthRoute) {
+        return '/paywall';
+      }
       return null;
     },
     routes: [
+      GoRoute(path: '/startup', builder: (_, _) => const StartupScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(
         path: '/email-login',
@@ -314,18 +368,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/paywall',
         builder: (context, _) => PremiumMembershipScreen(
           onContinue: () async {
-            final storage = ref.read(settingsStorageProvider);
-            final notificationCompleted = await storage
-                .isNotificationPermissionIntroCompleted();
-            if (!context.mounted) return;
-            if (!notificationCompleted) {
-              context.go('/notification-permission');
-              return;
-            }
-            final updatesCompleted = await storage
-                .isUpdatesConsentIntroCompleted();
-            if (!context.mounted) return;
-            context.go(updatesCompleted ? '/todo' : '/updates-permission');
+            await continueOnboardingSetupFromPaywall(context, ref);
           },
         ),
       ),
@@ -337,14 +380,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                 .read(settingsStorageProvider)
                 .isUpdatesConsentIntroCompleted();
             if (!context.mounted) return;
-            context.go(completed ? '/todo' : '/updates-permission');
+            if (!completed) {
+              context.go('/updates-permission');
+              return;
+            }
+            await completeOnboardingSetupAndGoTodo(context, ref);
           },
         ),
       ),
       GoRoute(
         path: '/updates-permission',
-        builder: (context, _) =>
-            UpdatesPermissionScreen(onComplete: () => context.go('/todo')),
+        builder: (context, _) => UpdatesPermissionScreen(
+          onComplete: () async {
+            await completeOnboardingSetupAndGoTodo(context, ref);
+          },
+        ),
       ),
       GoRoute(path: '/todo', builder: (_, _) => const TodoHomeScreen()),
     ],

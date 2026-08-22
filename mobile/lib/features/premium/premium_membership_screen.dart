@@ -16,7 +16,7 @@ class PremiumMembershipScreen extends ConsumerStatefulWidget {
     this.highlightedFeature,
   });
 
-  final VoidCallback? onContinue;
+  final Future<void> Function()? onContinue;
   final PremiumFeature? highlightedFeature;
 
   @override
@@ -38,10 +38,10 @@ class _PremiumMembershipScreenState
     });
   }
 
-  void _handleContinue() {
+  Future<void> _handleContinue() async {
     final onContinue = widget.onContinue;
     if (onContinue != null) {
-      onContinue();
+      await onContinue();
       return;
     }
     if (Navigator.of(context).canPop()) {
@@ -162,7 +162,7 @@ class _PremiumMembershipScreenState
                 ),
                 child: TextButton(
                   key: const ValueKey('paywall-continue'),
-                  onPressed: widget.onContinue,
+                  onPressed: () => _handleContinue(),
                   child: Text(
                     value?.hasActivePremium == true
                         ? strings.continueLabel

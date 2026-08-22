@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:florien/core/models/models.dart';
+import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/onboarding/onboarding_screen.dart';
+import 'package:florien/features/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +13,42 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('logged-in users skip the opening screen and existing-account link', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(375, 667));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStateProvider.overrideWith(
+            _LoggedInAuthNotifier.new,
+          ),
+          onboardingPreferencesProvider.overrideWith(
+            _EmptyOnboardingNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const OnboardingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Bazen plan yapmak bile yorucu gelebilir.'),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('onboarding-existing-account')), findsNothing);
+    expect(
+      find.text('Gün içinde en sık hangisini yaşıyorsun?'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('onboarding follows the active light theme', (tester) async {
     await tester.pumpWidget(
@@ -58,6 +97,40 @@ void main() {
       find.byKey(const ValueKey('onboarding-opening-logo')),
     );
     expect(_assetNameOf(logo), 'assets/brand/florien-logo-dark-background.png');
+  });
+
+  testWidgets('opening screen offers login for existing accounts', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(375, 667));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final router = GoRouter(
+      initialLocation: '/onboarding',
+      routes: [
+        GoRoute(
+          path: '/onboarding',
+          builder: (_, _) => const OnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (_, _) => const Scaffold(body: Text('Giriş ekranı')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('onboarding-existing-account')),
+    );
+    await tester.tap(find.byKey(const ValueKey('onboarding-existing-account')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Giriş ekranı'), findsOneWidget);
   });
 
   testWidgets('completed onboarding remains saved and continues to login', (
@@ -197,4 +270,19 @@ String _assetNameOf(Image image) {
       ? provider.imageProvider
       : provider;
   return (assetProvider as AssetImage).assetName;
+}
+
+class _LoggedInAuthNotifier extends AuthNotifier {
+  @override
+  Future<AuthResponse?> build() async => const AuthResponse(
+    userId: 'user-1',
+    email: 'user@example.com',
+    displayName: 'Test User',
+    avatarColor: '#F2BC52',
+  );
+}
+
+class _EmptyOnboardingNotifier extends OnboardingPreferencesNotifier {
+  @override
+  Future<OnboardingPreferences> build() async => const OnboardingPreferences();
 }

@@ -177,6 +177,7 @@ enum DailyPlannerGrouping { list, timeline }
 
 class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   late DateTime _selectedDate = _dateOnly(DateTime.now());
+  final Map<String, List<TaskModel>> _timelineTasksByDate = {};
   final Set<DayPeriod> _collapsed = {};
   DailyPlannerGrouping _grouping = DailyPlannerGrouping.list;
   late final ProviderSubscription<DateTime?> _dateRequestSubscription;
@@ -186,6 +187,9 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _prefetchAdjacentDates(_selectedDate);
+    });
     _dateRequestSubscription = ref.listenManual(
       dailyPlannerDateRequestProvider,
       (_, date) {
@@ -228,53 +232,70 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   @override
   Widget build(BuildContext context) {
     final timeline = ref.watch(dailyTimelineProvider(_selectedDate));
+    final dateKey = _timelineCacheKey(_selectedDate);
+    final resolved = timeline.valueOrNull;
+    if (resolved != null) {
+      _timelineTasksByDate[dateKey] = resolved.tasks;
+    }
+    final tasks =
+        resolved?.tasks ?? _timelineTasksByDate[dateKey] ?? const <TaskModel>[];
+    final isLoadingNewDate = timeline.isLoading && resolved == null;
+
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: () async =>
             ref.refresh(dailyTimelineProvider(_selectedDate).future),
-        child: timeline.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => _DailyBody(
-            selectedDate: _selectedDate,
-            tasks: const [],
-            collapsed: _collapsed,
-            onSelectDate: _selectDate,
-            onOpenDatePicker: _showDatePicker,
-            onToggleSection: _toggleSection,
-            onAdd: _showQuickAdd,
-            onMoveTask: _moveTaskToGroup,
-            grouping: _grouping,
-            onGroupingChanged: _setGrouping,
-            onRescheduleTasks: () => _showRescheduleReview(const []),
-            onDiscoverRoutines: _showRoutineDiscovery,
-            onShare: () => _showDailyShare(const []),
-            showPremiumUpsell: widget.showPremiumUpsell,
-            onPremiumUpsellPressed: widget.onPremiumUpsellPressed,
-          ),
-          data: (value) => _DailyBody(
-            selectedDate: _selectedDate,
-            tasks: value.tasks,
-            collapsed: _collapsed,
-            onSelectDate: _selectDate,
-            onOpenDatePicker: _showDatePicker,
-            onToggleSection: _toggleSection,
-            onAdd: _showQuickAdd,
-            onMoveTask: _moveTaskToGroup,
-            grouping: _grouping,
-            onGroupingChanged: _setGrouping,
-            onRescheduleTasks: () => _showRescheduleReview(value.tasks),
-            onDiscoverRoutines: _showRoutineDiscovery,
-            onShare: () => _showDailyShare(value.tasks),
-            showPremiumUpsell: widget.showPremiumUpsell,
-            onPremiumUpsellPressed: widget.onPremiumUpsellPressed,
-          ),
+        child: Stack(
+          children: [
+            _DailyBody(
+              selectedDate: _selectedDate,
+              tasks: tasks,
+              collapsed: _collapsed,
+              onSelectDate: _selectDate,
+              onOpenDatePicker: _showDatePicker,
+              onToggleSection: _toggleSection,
+              onAdd: _showQuickAdd,
+              onMoveTask: _moveTaskToGroup,
+              grouping: _grouping,
+              onGroupingChanged: _setGrouping,
+              onRescheduleTasks: () => _showRescheduleReview(tasks),
+              onDiscoverRoutines: _showRoutineDiscovery,
+              onShare: () => _showDailyShare(tasks),
+              showPremiumUpsell: widget.showPremiumUpsell,
+              onPremiumUpsellPressed: widget.onPremiumUpsellPressed,
+            ),
+            if (isLoadingNewDate)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LinearProgressIndicator(
+                  key: ValueKey('daily-timeline-loading-$dateKey'),
+                  minHeight: 2,
+                  color: FlorienColors.primary,
+                  backgroundColor: context.palette.border,
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
+  void _prefetchAdjacentDates(DateTime date) {
+    final previous = _dateOnly(date.subtract(const Duration(days: 1)));
+    final next = _dateOnly(date.add(const Duration(days: 1)));
+    unawaited(ref.read(dailyTimelineProvider(previous).future));
+    unawaited(ref.read(dailyTimelineProvider(next).future));
+  }
+
+  String _timelineCacheKey(DateTime date) =>
+      '${date.year}-${date.month}-${date.day}';
+
   void _selectDate(DateTime value) {
-    setState(() => _selectedDate = _dateOnly(value));
+    final date = _dateOnly(value);
+    setState(() => _selectedDate = date);
+    _prefetchAdjacentDates(date);
   }
 
   Future<void> _showDatePicker() async {
@@ -474,7 +495,6 @@ class _DailyBody extends StatelessWidget {
               selectedDate: selectedDate,
               onSelectDate: onSelectDate,
               onOpenDatePicker: onOpenDatePicker,
-              onAdd: () => onAdd(DayPeriod.anytime),
               grouping: grouping,
               onGroupingChanged: onGroupingChanged,
               onRescheduleTasks: onRescheduleTasks,
@@ -529,7 +549,6 @@ class _DailyHeader extends StatelessWidget {
     required this.selectedDate,
     required this.onSelectDate,
     required this.onOpenDatePicker,
-    required this.onAdd,
     required this.grouping,
     required this.onGroupingChanged,
     required this.onRescheduleTasks,
@@ -542,7 +561,6 @@ class _DailyHeader extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onSelectDate;
   final VoidCallback onOpenDatePicker;
-  final VoidCallback onAdd;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
   final VoidCallback onRescheduleTasks;
@@ -604,14 +622,6 @@ class _DailyHeader extends StatelessWidget {
                 onRescheduleTasks: onRescheduleTasks,
                 onDiscoverRoutines: onDiscoverRoutines,
               ),
-            ),
-            const SizedBox(width: 6),
-            _SquareButton(
-              key: const ValueKey('daily-top-add'),
-              tooltip: 'Günlük görev ekle',
-              icon: Icons.add_rounded,
-              emphasized: true,
-              onTap: onAdd,
             ),
           ],
         ),
@@ -1400,6 +1410,7 @@ class _TimelineGroupHeader extends StatelessWidget {
         tooltip: 'Zaman çizelgesine görev ekle',
         icon: Icons.add_rounded,
         compact: true,
+        emphasized: true,
         onTap: onAdd,
       ),
     ],
@@ -1626,6 +1637,7 @@ class _DailySection extends StatelessWidget {
                     tooltip: '${_periodLabel(period)} görevi ekle',
                     icon: Icons.add_rounded,
                     compact: true,
+                    emphasized: true,
                     onTap: onAdd,
                   ),
               ],

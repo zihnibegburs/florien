@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 
@@ -30,7 +31,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
         .read(authStateProvider.notifier)
         .login(_emailController.text.trim(), _passwordController.text);
     if (mounted && ref.read(authStateProvider).valueOrNull != null) {
-      context.go('/paywall');
+      await navigateAfterAuth(context, ref);
     }
   }
 

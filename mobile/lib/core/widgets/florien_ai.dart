@@ -63,6 +63,9 @@ class FlorienAiInput extends StatelessWidget {
     required this.controller,
     required this.onSend,
     this.enabled = true,
+    this.textEnabled,
+    this.premiumLocked = false,
+    this.onPremiumTap,
     this.hintText = 'Ne yapmak istiyorsun?',
     this.inputKey,
     this.sendKey,
@@ -73,7 +76,14 @@ class FlorienAiInput extends StatelessWidget {
 
   final TextEditingController controller;
   final VoidCallback onSend;
+  /// Send and voice actions (TextField stays tappable when false).
   final bool enabled;
+  /// When null, follows [enabled]. Set true to keep the field editable while
+  /// actions stay disabled (e.g. free monthly quota exhausted).
+  final bool? textEnabled;
+  /// Free quota exhausted — field read-only, premium affordance on send.
+  final bool premiumLocked;
+  final VoidCallback? onPremiumTap;
   final String hintText;
   final Key? inputKey;
   final Key? sendKey;
@@ -83,6 +93,8 @@ class FlorienAiInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canType = premiumLocked ? false : (textEnabled ?? enabled);
+    final actionsEnabled = premiumLocked ? false : enabled;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         FlorienSpacing.screen,
@@ -90,112 +102,196 @@ class FlorienAiInput extends StatelessWidget {
         FlorienSpacing.screen,
         FlorienSpacing.lg,
       ),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-        decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.xl),
-          border: Border.all(
-            color: context.palette.border,
-            width: FlorienBorders.thin,
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: TextField(
-                key: inputKey,
-                controller: controller,
-                enabled: enabled,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
-                minLines: 1,
-                maxLines: 4,
-                style: Theme.of(context).textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: hintText,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (premiumLocked)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: FlorienColors.aiGradient,
+                  borderRadius: BorderRadius.circular(FlorienRadius.md),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (onVoiceTap != null) ...[
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: voiceKey,
-                  onTap: enabled ? onVoiceTap : null,
-                  customBorder: const CircleBorder(),
-                  child: Ink(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: isListening || context.isFlorienDark
-                          ? FlorienColors.aiGradient
-                          : null,
-                      color: isListening || context.isFlorienDark
-                          ? null
-                          : context.palette.aiSurface,
-                      border: Border.all(
-                        color: context.palette.border,
-                        width: FlorienBorders.thin,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.workspace_premium_rounded,
+                      size: 18,
+                      color: FlorienColors.onPrimary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ücretsiz mesaj hakkın bitti. Sınırsız AI sohbet için Premium gerekli.',
+                        style: TextStyle(
+                          color: FlorienColors.onPrimary.withValues(alpha: 0.96),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
                       ),
                     ),
-                    child: isListening
-                        ? const Padding(
-                            padding: EdgeInsets.all(3),
-                            child: FlorienAiAnimation(
-                              size: 40,
-                              speed: 1.4,
-                              animate: true,
-                              semanticLabel: 'Sesli AI aktif',
-                            ),
-                          )
-                        : const Icon(
-                            Icons.graphic_eq_rounded,
-                            color: FlorienColors.onPrimary,
-                          ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                key: sendKey,
-                onTap: enabled ? onSend : null,
-                customBorder: const CircleBorder(),
-                child: Ink(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: enabled
-                        ? FlorienColors.primary
-                        : context.palette.surfaceMuted,
-                    border: Border.all(
-                      color: context.palette.border,
-                      width: FlorienBorders.thin,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.arrow_upward_rounded,
-                    color: enabled
-                        ? FlorienColors.onPrimary
-                        : context.palette.textSecondary,
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+            decoration: BoxDecoration(
+              color: context.palette.surface,
+              borderRadius: BorderRadius.circular(FlorienRadius.xl),
+              border: Border.all(
+                color: premiumLocked
+                    ? FlorienColors.aiAccent.withValues(alpha: 0.45)
+                    : context.palette.border,
+                width: FlorienBorders.thin,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: premiumLocked
+                      ? GestureDetector(
+                          key: inputKey,
+                          onTap: onPremiumTap,
+                          behavior: HitTestBehavior.opaque,
+                          child: IgnorePointer(
+                            child: TextField(
+                              controller: controller,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: hintText,
+                                hintStyle: TextStyle(
+                                  color: context.palette.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: context.palette.textSecondary,
+                                  ),
+                            ),
+                          ),
+                        )
+                      : TextField(
+                          key: inputKey,
+                          controller: controller,
+                          enabled: canType,
+                          readOnly: !canType,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: canType && actionsEnabled
+                              ? (_) => onSend()
+                              : null,
+                          minLines: 1,
+                          maxLines: 4,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: InputDecoration(
+                            hintText: hintText,
+                            hintStyle: TextStyle(
+                              color: context.palette.textSecondary,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 8),
+                if (onVoiceTap != null && !premiumLocked) ...[
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: voiceKey,
+                      onTap: actionsEnabled ? onVoiceTap : null,
+                      customBorder: const CircleBorder(),
+                      child: Ink(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: isListening || context.isFlorienDark
+                              ? FlorienColors.aiGradient
+                              : null,
+                          color: isListening || context.isFlorienDark
+                              ? null
+                              : context.palette.aiSurface,
+                          border: Border.all(
+                            color: context.palette.border,
+                            width: FlorienBorders.thin,
+                          ),
+                        ),
+                        child: isListening
+                            ? const Padding(
+                                padding: EdgeInsets.all(3),
+                                child: FlorienAiAnimation(
+                                  size: 40,
+                                  speed: 1.4,
+                                  animate: true,
+                                  semanticLabel: 'Sesli AI aktif',
+                                ),
+                              )
+                            : const Icon(
+                                Icons.graphic_eq_rounded,
+                                color: FlorienColors.onPrimary,
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: sendKey,
+                    onTap: premiumLocked
+                        ? onPremiumTap
+                        : (actionsEnabled ? onSend : null),
+                    customBorder: const CircleBorder(),
+                    child: Ink(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: premiumLocked ? FlorienColors.aiGradient : null,
+                        color: premiumLocked
+                            ? null
+                            : (actionsEnabled
+                                  ? FlorienColors.primary
+                                  : context.palette.surfaceMuted),
+                        border: Border.all(
+                          color: context.palette.border,
+                          width: FlorienBorders.thin,
+                        ),
+                      ),
+                      child: Icon(
+                        premiumLocked
+                            ? Icons.workspace_premium_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: premiumLocked || actionsEnabled
+                            ? FlorienColors.onPrimary
+                            : context.palette.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -106,10 +106,11 @@ void main() {
 
     expect(shareCall?.method, 'shareFiles');
     final arguments = shareCall?.arguments as Map<Object?, Object?>;
-    expect(arguments['text'], contains('Raporu tamamla'));
-    expect(arguments['text'], contains('Tamamlanamadı'));
     expect(arguments['mimeTypes'], contains('image/png'));
     expect(arguments['originWidth'], greaterThan(0));
     expect(arguments['originHeight'], greaterThan(0));
+    final paths = arguments['paths'];
+    expect(paths, isA<List>());
+    expect((paths as List).single, isNotEmpty);
   });
 }

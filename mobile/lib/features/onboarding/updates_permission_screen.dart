@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class UpdatesPermissionScreen extends ConsumerStatefulWidget {
   const UpdatesPermissionScreen({super.key, required this.onComplete});
 
-  final VoidCallback onComplete;
+  final Future<void> Function() onComplete;
 
   @override
   ConsumerState<UpdatesPermissionScreen> createState() =>
@@ -25,7 +25,7 @@ class _UpdatesPermissionScreenState
     await ref.read(settingsStorageProvider).setMarketingUpdatesEnabled(enabled);
     if (!mounted) return;
     setState(() => _saving = false);
-    widget.onComplete();
+    await widget.onComplete();
   }
 
   @override

@@ -210,4 +210,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected?.task.id, 'frequent-focus');
   });
+
+  testWidgets('frequently used cards use theme surface instead of solid yellow', (
+    tester,
+  ) async {
+    final summary = TaskUsageSummary(
+      task: _task('frequent-focus', 'Odaklan'),
+      usageCount: 4,
+      lastCreatedAt: DateTime(2026, 8, 19),
+    );
+
+    for (final theme in [FlorienTheme.light, FlorienTheme.dark]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: RoutineDiscoveryScreen(
+            frequentlyUsedTasks: [summary],
+            onTaskSelected: (_, _) async {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final card = tester.widget<Ink>(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey('frequently-used-task-frequent-focus'),
+          ),
+          matching: find.byType(Ink),
+        ),
+      );
+      final decoration = card.decoration! as BoxDecoration;
+      final palette = theme.extension<FlorienPalette>()!;
+      expect(decoration.color, palette.surface);
+      expect(decoration.color, isNot(FlorienColors.primary));
+    }
+  });
 }

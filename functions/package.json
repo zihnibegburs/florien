@@ -4,6 +4,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "seed:ai-limits": "node scripts/seed-ai-limits.js",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },

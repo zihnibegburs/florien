@@ -79,6 +79,27 @@ class AuthRepository {
     return authResponseFromUser(user, displayNameOverride: displayName);
   }
 
+  Future<({AuthResponse response, bool isNewUser})> signInWithCredentialResult(
+    AuthCredential credential, {
+    String? displayName,
+  }) async {
+    _ensureConfigured();
+    final cred = await _auth.signInWithCredential(credential);
+    final isNewUser = cred.additionalUserInfo?.isNewUser ?? false;
+    final user = cred.user!;
+    if (displayName != null &&
+        displayName.trim().isNotEmpty &&
+        (user.displayName == null || user.displayName!.trim().isEmpty)) {
+      await user.updateDisplayName(displayName.trim());
+    }
+    await _profiles.ensureUserDocument(user: user, displayName: displayName);
+    final response = await authResponseFromUser(
+      user,
+      displayNameOverride: displayName,
+    );
+    return (response: response, isNewUser: isNewUser);
+  }
+
   Future<AuthResponse?> getMe() async {
     if (!DefaultFirebaseOptions.isConfigured) return null;
     final user = _auth.currentUser;

@@ -68,17 +68,21 @@ premiumTransactions/{sha256}              # Admin SDK only; purchase ownership
 | `verifyPremiumPurchase` | Apple/Google satın alımını doğrula ve private entitlement yaz |
 | `getPremiumStatus` | Sunucudaki aktif Premium durumunu istemciye döndür |
 
-AI callable'ları kullanıcı kimliğini ve server-verified Premium entitlement'ı
-kontrol eder. Kullanım rezervasyonu `users/{uid}/private/aiAccess` üzerinde tek
-Firestore transaction'ıyla yapılır. Sabit limitler: 5/dakika, 30/saat,
-100/gün ve 3.000/ay.
+AI callable'ları kullanıcı kimliğini kontrol eder. `assistPlannerChat` ücretsiz
+kullanıcılara açıktır (aylık mesaj limiti `appConfig/aiLimits`); alt görev ve
+günlük plan callable'ları Premium gerektirir. Kullanım rezervasyonu
+`users/{uid}/private/aiAccess` üzerinde tek Firestore transaction'ıyla yapılır.
+Varsayılan limitler: ücretsiz sohbet 3/ay; Premium 5/dakika, 30/saat, 100/gün,
+3.000/ay. Limitler Firebase Console'dan `appConfig/aiLimits` ile değiştirilebilir
+(bkz. `docs/ai-limits-config.md`).
 
 AI üretimi API anahtarı olmadan Cloud Functions servis hesabıyla Gemini
 üzerinden çalışır. Merkezi model seçimi `functions/src/ai-config.ts`
 dosyasındadır. Functions runtime servis hesabında Vertex AI User yetkisi ve
 projede Vertex AI API etkin olmalıdır.
 
-Premium kapsamı: AI plan sohbeti, alt görev oluşturma, birden fazla profil,
+Premium kapsamı: AI görevlerini To-do'ya ekleme, sınırsız AI sohbet (limitler
+config'den), alt görev oluşturma, birden fazla profil,
 Apple/Google takvim aktarma, alarm/hatırlatıcı ve göreve özel saat seçimi.
 Alt görev, alarm, özel saat ve ikincil profil görev yazımları istemci
 manipülasyonuna karşı Firestore Rules ile de korunur.

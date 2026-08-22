@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:florien/core/models/models.dart';
 
 const _maxAiInputCharacters = 2000;
+const _maxAiChatTurns = 4;
 
 class PlannerChatTurn {
   const PlannerChatTurn({required this.role, required this.content});
@@ -23,6 +24,41 @@ class PlannerTaskSuggestion {
   final int durationMinutes;
 }
 
+class AiChatUsage {
+  const AiChatUsage({
+    required this.usedThisMonth,
+    required this.limitThisMonth,
+    this.resetsAt,
+    this.isPremium = false,
+  });
+
+  final int usedThisMonth;
+  final int limitThisMonth;
+  final DateTime? resetsAt;
+  final bool isPremium;
+
+  int get remaining =>
+      (limitThisMonth - usedThisMonth).clamp(0, limitThisMonth);
+
+  bool get isExhausted =>
+      limitThisMonth > 0 && usedThisMonth >= limitThisMonth;
+
+  bool get shouldShowFreeQuota => !isPremium && limitThisMonth > 0;
+
+  static AiChatUsage? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final used = (raw['usedThisMonth'] as num?)?.toInt();
+    final limit = (raw['limitThisMonth'] as num?)?.toInt();
+    if (used == null || limit == null) return null;
+    return AiChatUsage(
+      usedThisMonth: used.clamp(0, 1 << 30),
+      limitThisMonth: limit.clamp(0, 1 << 30),
+      resetsAt: DateTime.tryParse(raw['resetsAt']?.toString() ?? ''),
+      isPremium: raw['isPremium'] == true,
+    );
+  }
+}
+
 class PlannerAiException implements Exception {
   const PlannerAiException(this.message);
 
@@ -33,10 +69,15 @@ class PlannerAiException implements Exception {
 }
 
 class PlannerAiReply {
-  const PlannerAiReply({required this.message, required this.tasks});
+  const PlannerAiReply({
+    required this.message,
+    required this.tasks,
+    this.usage,
+  });
 
   final String message;
   final List<PlannerTaskSuggestion> tasks;
+  final AiChatUsage? usage;
 }
 
 abstract interface class TaskBreakdownService {
@@ -109,7 +150,7 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
     );
     late final HttpsCallableResult<dynamic> result;
     try {
-      final payloadTurns = _latestConversationWithinInputLimit(conversation);
+      final payloadTurns = trimConversationForAiRequest(conversation);
       result = await callable.call(<String, Object?>{
         'messages': payloadTurns.map((turn) => turn.toJson()).toList(),
       });
@@ -147,6 +188,7 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
             ? 'Planlamak istediğin şeyi biraz daha anlatır mısın?'
             : message,
         tasks: tasks,
+        usage: AiChatUsage.fromJson(data['usage']),
       );
     } catch (error, stackTrace) {
       debugPrint('assistPlannerChat response failed: $error\n$stackTrace');
@@ -157,12 +199,15 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
   }
 }
 
-List<PlannerChatTurn> _latestConversationWithinInputLimit(
+List<PlannerChatTurn> trimConversationForAiRequest(
   List<PlannerChatTurn> conversation,
 ) {
+  final recent = conversation.length <= _maxAiChatTurns
+      ? conversation
+      : conversation.sublist(conversation.length - _maxAiChatTurns);
   final selected = <PlannerChatTurn>[];
   var usedCharacters = 0;
-  for (final turn in conversation.reversed) {
+  for (final turn in recent.reversed) {
     final contentLength = turn.content.runes.length;
     if (selected.isEmpty ||
         usedCharacters + contentLength <= _maxAiInputCharacters) {
@@ -183,6 +228,8 @@ String aiFunctionsErrorMessage({
   final reason = details is Map ? details['reason']?.toString() : null;
   final retrySuffix = _retrySuffix(details);
   final protectedMessage = switch (reason) {
+    'AI_FREE_CHAT_MONTHLY_LIMIT_REACHED' =>
+      'Bu ayki ücretsiz AI mesaj hakkın bitti.$retrySuffix',
     'PREMIUM_REQUIRED' =>
       'Bu AI özelliğini kullanmak için Premium üyelik gerekiyor.',
     'AI_RATE_LIMIT_MINUTE' =>

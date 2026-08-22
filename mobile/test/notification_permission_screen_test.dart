@@ -51,7 +51,7 @@ void main() {
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: NotificationPermissionScreen(
-            onComplete: () => completed = true,
+            onComplete: () async => completed = true,
           ),
         ),
       ),
@@ -90,7 +90,7 @@ void main() {
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: NotificationPermissionScreen(
-            onComplete: () => completed = true,
+            onComplete: () async => completed = true,
           ),
         ),
       ),

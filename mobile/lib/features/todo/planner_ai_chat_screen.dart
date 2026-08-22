@@ -61,6 +61,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   String _voiceTranscript = '';
   String? _voiceError;
   int _voiceSession = 0;
+  AiChatUsage? _chatUsage;
 
   bool get _isFocusMode => _mode == PlannerAiChatMode.focus;
   bool get _showModeSwitcher => !_voicePanelOpen && !_isFocusMode;
@@ -78,6 +79,18 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
       ref.read(plannerAiModeRequestProvider.notifier).state = null;
       unawaited(_selectMode(request, allowDeselect: false));
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_syncChatUsageFromServer());
+    });
+  }
+
+  Future<void> _syncChatUsageFromServer() async {
+    await ref.read(premiumMembershipProvider.notifier).refreshEntitlement();
+    if (!mounted) return;
+    final usage = ref.read(premiumMembershipProvider).valueOrNull?.aiChatUsage;
+    if (usage != null) {
+      setState(() => _chatUsage = usage);
+    }
   }
 
   @override
@@ -97,14 +110,6 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
       if (!allowDeselect || mode == PlannerAiChatMode.chat) return;
       setState(() => _mode = PlannerAiChatMode.chat);
       return;
-    }
-    if (mode != PlannerAiChatMode.focus && mode != PlannerAiChatMode.chat) {
-      final allowed = await requirePremiumAccess(
-        context,
-        ref,
-        PremiumFeature.aiChat,
-      );
-      if (!allowed || !mounted) return;
     }
     if (_voicePanelOpen) {
       await _closeVoiceInput();
@@ -248,9 +253,23 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     });
   }
 
+  Future<void> _openPremiumForChat() async {
+    await requirePremiumAccess(context, ref, PremiumFeature.aiChat);
+  }
+
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _sending) return;
+
+    final premium = ref.read(premiumMembershipProvider).valueOrNull;
+    final usage = _chatUsage ?? premium?.aiChatUsage;
+    final freeQuotaExhausted =
+        premium?.hasActivePremium != true && usage?.isExhausted == true;
+    if (freeQuotaExhausted) {
+      await _openPremiumForChat();
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     _controller.clear();
     setState(() {
@@ -269,6 +288,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
       final reply = await ref.read(plannerAiGatewayProvider).send(conversation);
       if (!mounted) return;
       setState(() {
+        if (reply.usage != null) {
+          _chatUsage = reply.usage;
+        }
         _messages.add(
           _PlannerChatMessage(
             role: 'assistant',
@@ -304,6 +326,12 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
         message.decision != _ProposalDecision.pending) {
       return;
     }
+    final allowed = await requirePremiumAccess(
+      context,
+      ref,
+      PremiumFeature.aiChat,
+    );
+    if (!allowed || !mounted) return;
     setState(() => message.decision = _ProposalDecision.saving);
     try {
       for (final task in message.tasks) {
@@ -369,10 +397,24 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(premiumMembershipProvider, (previous, next) {
+      final usage = next.valueOrNull?.aiChatUsage;
+      if (usage == null || !mounted) return;
+      if (_chatUsage == usage) return;
+      setState(() => _chatUsage = usage);
+    });
+
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
     final scheduledFocus = ref.watch(scheduledFocusLaunchProvider);
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     final alarms = ref.read(taskAlarmServiceProvider);
+    final chatUsage = _chatUsage ?? premium?.aiChatUsage;
+    final requiresPremiumToAdd = premium?.hasActivePremium != true;
+    final freeQuotaExhausted =
+        !requiresPremiumToAdd ? false : chatUsage?.isExhausted == true;
+    final inputHint = freeQuotaExhausted
+        ? 'Premium ile sınırsız AI sohbet'
+        : 'Ne yapmak istiyorsun?';
 
     return Theme(
       data: FlorienTheme.dark,
@@ -429,9 +471,14 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                         children: [
+                          if (chatUsage?.shouldShowFreeQuota == true &&
+                              premium?.hasActivePremium != true &&
+                              !freeQuotaExhausted)
+                            _FreeChatQuotaBanner(usage: chatUsage!),
                           for (var index = 0; index < _messages.length; index++)
                             _ChatMessageBubble(
                               message: _messages[index],
+                              requiresPremiumToAdd: requiresPremiumToAdd,
                               onApprove: () => unawaited(_approveTasks(index)),
                               onReject: () => _rejectTasks(index),
                             ),
@@ -524,7 +571,10 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         : FlorienAiInput(
                             key: const ValueKey('planner-ai-text-input-mode'),
                             controller: _controller,
-                            enabled: !_sending,
+                            enabled: !_sending && !freeQuotaExhausted,
+                            premiumLocked: freeQuotaExhausted,
+                            onPremiumTap: () => unawaited(_openPremiumForChat()),
+                            hintText: inputHint,
                             onSend: () => unawaited(_send()),
                             inputKey: const ValueKey('planner-ai-input'),
                             sendKey: const ValueKey('planner-ai-send'),
@@ -813,14 +863,54 @@ class _PlannerChatMessage {
   _ProposalDecision decision = _ProposalDecision.pending;
 }
 
+class _FreeChatQuotaBanner extends StatelessWidget {
+  const _FreeChatQuotaBanner({required this.usage});
+
+  final AiChatUsage usage;
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = usage.remaining;
+    final text = remaining <= 0
+        ? 'Bu ayki ücretsiz AI mesaj hakkın bitti.'
+        : remaining == 1
+        ? 'Bu ay 1 ücretsiz AI mesaj hakkın kaldı. Görev önerilerini görebilirsin; To-do\'ya eklemek Premium ile.'
+        : 'Bu ay $remaining ücretsiz AI mesaj hakkın var. Görev önerilerini görebilirsin; To-do\'ya eklemek Premium ile.';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: context.palette.textSecondary,
+            fontSize: 13.5,
+            height: 1.35,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatMessageBubble extends StatelessWidget {
   const _ChatMessageBubble({
     required this.message,
+    required this.requiresPremiumToAdd,
     required this.onApprove,
     required this.onReject,
   });
 
   final _PlannerChatMessage message;
+  final bool requiresPremiumToAdd;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
@@ -848,31 +938,130 @@ class _ChatMessageBubble extends StatelessWidget {
             ],
             const SizedBox(height: 6),
             if (message.decision == _ProposalDecision.pending)
-              Row(
-                children: [
-                  Expanded(
-                    child: FlorienSecondaryButton(
-                      label: 'Reddet',
-                      onPressed: onReject,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 54,
-                      child: FilledButton(
-                        key: const ValueKey('planner-ai-approve'),
-                        onPressed: onApprove,
-                        child: const Text('To-do’ya ekle'),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+              requiresPremiumToAdd
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _PremiumGradientActionButton(
+                          buttonKey: const ValueKey('planner-ai-approve'),
+                          label: 'To-do\'ya ekle',
+                          caption: 'Premium gerekli',
+                          icon: Icons.check_box_rounded,
+                          onPressed: onApprove,
+                        ),
+                        const SizedBox(height: 6),
+                        Center(
+                          child: TextButton(
+                            onPressed: onReject,
+                            child: const Text('Reddet'),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: FlorienSecondaryButton(
+                            label: 'Reddet',
+                            onPressed: onReject,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 54,
+                            child: FilledButton(
+                              key: const ValueKey('planner-ai-approve'),
+                              onPressed: onApprove,
+                              child: const Text('To-do\'ya ekle'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
             else
               _ProposalStatus(decision: message.decision),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _PremiumGradientActionButton extends StatelessWidget {
+  const _PremiumGradientActionButton({
+    required this.buttonKey,
+    required this.label,
+    required this.caption,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final Key buttonKey;
+  final String label;
+  final String caption;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      key: buttonKey,
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(FlorienRadius.pill),
+        child: Ink(
+          height: 54,
+          decoration: BoxDecoration(
+            gradient: FlorienColors.aiGradient,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 20, color: FlorienColors.onPrimary),
+                const SizedBox(width: 10),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: FlorienColors.onPrimary,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                    Text(
+                      caption,
+                      style: TextStyle(
+                        color: FlorienColors.onPrimary.withValues(alpha: 0.88),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.workspace_premium_rounded,
+                  size: 18,
+                  color: FlorienColors.onPrimary,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

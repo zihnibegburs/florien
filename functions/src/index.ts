@@ -3,10 +3,13 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import {
   normalizeAiInput,
+  protectAiChatGeneration,
   protectAiGeneration,
+  readAiChatUsage,
   requireAuthenticatedUid,
 } from "./ai-protection";
 import { callGeminiJson } from "./gemini-ai";
+import { AI_CHAT_MAX_TRANSCRIPT_TURNS } from "./ai-config";
 import {
   getPremiumEntitlement,
   verifyAndPersistPremium,
@@ -47,7 +50,19 @@ export const verifyPremiumPurchase = onCall(
 
 export const getPremiumStatus = onCall(async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
-  return getPremiumEntitlement(uid);
+  const [entitlement, aiChat] = await Promise.all([
+    getPremiumEntitlement(uid),
+    readAiChatUsage(uid),
+  ]);
+  return {
+    ...entitlement,
+    aiChat: {
+      usedThisMonth: aiChat.usedThisMonth,
+      limitThisMonth: aiChat.limitThisMonth,
+      resetsAt: aiChat.resetsAt,
+      isPremium: aiChat.isPremium,
+    },
+  };
 });
 
 export const assistBreakdown = onCall(
@@ -205,11 +220,11 @@ export const assistPlannerChat = onCall(
   { secrets: [geminiApiKey] },
   async (request) => {
     const uid = requireAuthenticatedUid(request.auth?.uid);
-    const messages = await protectAiGeneration(uid, () => {
+    const { value: messages, usage } = await protectAiChatGeneration(uid, () => {
       const messagesRaw: unknown[] = Array.isArray(request.data?.messages) ?
         request.data.messages as unknown[] : [];
       const normalized = messagesRaw
-        .slice(-12)
+        .slice(-AI_CHAT_MAX_TRANSCRIPT_TURNS)
         .map((node: unknown) => {
           if (node == null || typeof node !== "object") return null;
           const item = node as Record<string, unknown>;
@@ -317,6 +332,15 @@ ${transcript}`;
         item != null
       );
 
-    return { reply, tasks };
+    return {
+      reply,
+      tasks,
+      usage: {
+        usedThisMonth: usage.usedThisMonth,
+        limitThisMonth: usage.limitThisMonth,
+        resetsAt: usage.resetsAt,
+        isPremium: usage.isPremium,
+      },
+    };
   }
 );

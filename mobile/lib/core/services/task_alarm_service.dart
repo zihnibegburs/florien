@@ -746,6 +746,8 @@ class TaskAlarmService {
       _androidChannelId(channelPrefix, preferences),
       channelName,
       channelDescription: channelDescription,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       importance: Importance.max,
       priority: Priority.max,
       playSound: preferences.soundEnabled,

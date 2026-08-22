@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -12,12 +13,17 @@ const premiumYearlyProductId = 'com.florien.app.subscription.yearly';
 const premiumProductIds = {premiumMonthlyProductId, premiumYearlyProductId};
 
 class PremiumEntitlement {
-  const PremiumEntitlement({required this.isPremium, this.premiumUntil});
+  const PremiumEntitlement({
+    required this.isPremium,
+    this.premiumUntil,
+    this.aiChatUsage,
+  });
 
   const PremiumEntitlement.none() : this(isPremium: false);
 
   final bool isPremium;
   final DateTime? premiumUntil;
+  final AiChatUsage? aiChatUsage;
 }
 
 class PremiumStoreQueryResult {
@@ -157,6 +163,7 @@ class PremiumPurchaseService {
       return PremiumEntitlement(
         isPremium: isPremium,
         premiumUntil: isPremium ? premiumUntil : null,
+        aiChatUsage: AiChatUsage.fromJson(raw['aiChat']),
       );
     } catch (error) {
       debugPrint('Premium entitlement fetch failed: $error');
