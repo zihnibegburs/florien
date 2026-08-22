@@ -451,6 +451,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                   Expanded(child: Center(child: Text(_headerTitle))),
                   const FlorienAiMark(
                     size: 42,
+                    premium: true,
                     imageKey: ValueKey('planner-ai-header-image'),
                     semanticLabel: 'Florien AI',
                   ),
