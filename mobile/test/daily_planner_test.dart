@@ -505,14 +505,13 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byTooltip('Günlük seçenekleri'));
-    await tester.pumpAndSettle();
-    expect(find.text('Görevleri yeniden zamanlama'), findsOneWidget);
-    expect(find.text('Rutinleri keşfedin'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-menu-reschedule')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-menu-routines')), findsOneWidget);
+    expect(find.text('Yeniden zamanla'), findsOneWidget);
+    expect(find.text('Rutinler'), findsOneWidget);
     expect(find.text('Günlük modu'), findsNothing);
-    expect(find.text('Gruplama seçenekleri'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+    await tester.tap(find.byTooltip('Görünüm seçenekleri'));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('daily-grouping-submenu')),
@@ -562,9 +561,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byTooltip('Günlük seçenekleri'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+    await tester.tap(find.byTooltip('Görünüm seçenekleri'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-grouping-list')));
     await tester.pumpAndSettle();
@@ -630,9 +627,7 @@ void main() {
       );
       expect(listStatus.data, matches(RegExp(r'^\d+:\d{2}:\d{2}$')));
 
-      await tester.tap(find.byTooltip('Günlük seçenekleri'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('daily-menu-grouping')));
+      await tester.tap(find.byTooltip('Görünüm seçenekleri'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
       await tester.pumpAndSettle();
@@ -816,7 +811,7 @@ void main() {
 
     expect(header, findsOneWidget);
     expect(find.byKey(const ValueKey('daily-focused-header')), findsNothing);
-    expect(find.byTooltip('Günlük seçenekleri'), findsOneWidget);
+    expect(find.byTooltip('Görünüm seçenekleri'), findsOneWidget);
     expect(find.byKey(const ValueKey('daily-top-add')), findsNothing);
     expect(tester.getBottomLeft(header).dy, headerBottom);
     expect(
@@ -1397,8 +1392,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Günlük seçenekleri'));
-      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
       await tester.pumpAndSettle();
 
@@ -1517,8 +1510,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Günlük seçenekleri'));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-menu-reschedule')));
     await tester.pumpAndSettle();
 

@@ -613,14 +613,12 @@ class _DailyHeader extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             _SquareButton(
-              tooltip: 'Günlük seçenekleri',
+              tooltip: 'Görünüm seçenekleri',
               icon: Icons.more_horiz_rounded,
               onTap: () => _showDailyOptions(
                 context,
                 grouping: grouping,
                 onGroupingChanged: onGroupingChanged,
-                onRescheduleTasks: onRescheduleTasks,
-                onDiscoverRoutines: onDiscoverRoutines,
               ),
             ),
           ],
@@ -688,7 +686,100 @@ class _DailyHeader extends StatelessWidget {
               ),
           ],
         ),
+        const SizedBox(height: 10),
+        _DailyUtilityActions(
+          onRescheduleTasks: onRescheduleTasks,
+          onDiscoverRoutines: onDiscoverRoutines,
+        ),
       ],
+    );
+  }
+}
+
+class _DailyUtilityActions extends StatelessWidget {
+  const _DailyUtilityActions({
+    required this.onRescheduleTasks,
+    required this.onDiscoverRoutines,
+  });
+
+  final VoidCallback onRescheduleTasks;
+  final Future<void> Function() onDiscoverRoutines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _QuietActionChip(
+          key: const ValueKey('daily-menu-reschedule'),
+          icon: Icons.event_repeat_rounded,
+          label: 'Yeniden zamanla',
+          tooltip: 'Görevleri yeniden zamanla',
+          onTap: onRescheduleTasks,
+        ),
+        const SizedBox(width: 8),
+        _QuietActionChip(
+          key: const ValueKey('daily-menu-routines'),
+          icon: Icons.auto_awesome_outlined,
+          label: 'Rutinler',
+          tooltip: 'Rutinleri keşfet',
+          onTap: () => onDiscoverRoutines(),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuietActionChip extends StatelessWidget {
+  const _QuietActionChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = context.palette.textSecondary;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: context.palette.surfaceMuted,
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: context.palette.border.withValues(alpha: 0.35),
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 15, color: muted),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: muted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -789,19 +880,15 @@ Future<void> _showDailyOptions(
   BuildContext context, {
   required DailyPlannerGrouping grouping,
   required ValueChanged<DailyPlannerGrouping> onGroupingChanged,
-  required VoidCallback onRescheduleTasks,
-  required Future<void> Function() onDiscoverRoutines,
 }) => showGeneralDialog<void>(
   context: context,
   barrierDismissible: true,
-  barrierLabel: 'Günlük seçeneklerini kapat',
+  barrierLabel: 'Görünüm seçeneklerini kapat',
   barrierColor: Colors.black.withValues(alpha: .24),
   transitionDuration: const Duration(milliseconds: 180),
   pageBuilder: (context, _, _) => _DailyOptionsOverlay(
     grouping: grouping,
     onGroupingChanged: onGroupingChanged,
-    onRescheduleTasks: onRescheduleTasks,
-    onDiscoverRoutines: onDiscoverRoutines,
   ),
   transitionBuilder: (context, animation, _, child) => FadeTransition(
     opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -809,29 +896,18 @@ Future<void> _showDailyOptions(
   ),
 );
 
-class _DailyOptionsOverlay extends StatefulWidget {
+class _DailyOptionsOverlay extends StatelessWidget {
   const _DailyOptionsOverlay({
     required this.grouping,
     required this.onGroupingChanged,
-    required this.onRescheduleTasks,
-    required this.onDiscoverRoutines,
   });
 
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
-  final VoidCallback onRescheduleTasks;
-  final Future<void> Function() onDiscoverRoutines;
-
-  @override
-  State<_DailyOptionsOverlay> createState() => _DailyOptionsOverlayState();
-}
-
-class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
-  bool _groupingOpen = false;
 
   @override
   Widget build(BuildContext context) {
-    final width = math.min(350.0, MediaQuery.sizeOf(context).width - 28);
+    final width = math.min(320.0, MediaQuery.sizeOf(context).width - 28);
     return SafeArea(
       child: Material(
         color: Colors.transparent,
@@ -848,134 +924,51 @@ class _DailyOptionsOverlayState extends State<_DailyOptionsOverlay> {
               right: 14,
               child: SizedBox(
                 width: width,
-                height: 450,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      child: _DailyMenuCard(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IgnorePointer(
-                              ignoring: _groupingOpen,
-                              child: AnimatedOpacity(
-                                opacity: _groupingOpen ? .38 : 1,
-                                duration: const Duration(milliseconds: 140),
-                                child: Column(
-                                  children: [
-                                    _DailyMenuTile(
-                                      key: const ValueKey(
-                                        'daily-menu-reschedule',
-                                      ),
-                                      icon: Icons.calendar_month_outlined,
-                                      label: 'Görevleri yeniden zamanlama',
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        widget.onRescheduleTasks();
-                                      },
-                                    ),
-                                    _DailyMenuTile(
-                                      key: const ValueKey(
-                                        'daily-menu-routines',
-                                      ),
-                                      icon: Icons.search_rounded,
-                                      label: 'Rutinleri keşfedin',
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                        widget.onDiscoverRoutines();
-                                      },
-                                    ),
-                                  ],
+                child: _DailyMenuCard(
+                  key: const ValueKey('daily-grouping-submenu'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Gruplama',
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: context.palette.textSecondary,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                              ),
-                            ),
-                            Divider(
-                              height: 1,
-                              indent: 18,
-                              endIndent: 18,
-                              color: context.palette.border,
-                            ),
-                            _DailyMenuTile(
-                              key: const ValueKey('daily-menu-grouping'),
-                              icon: Icons.account_tree_outlined,
-                              label: 'Gruplama seçenekleri',
-                              trailing: Icon(
-                                _groupingOpen
-                                    ? Icons.keyboard_arrow_down_rounded
-                                    : Icons.chevron_right_rounded,
-                              ),
-                              onTap: () => setState(() => _groupingOpen = true),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (_groupingOpen)
-                      Positioned(
-                        top: 151,
-                        left: 8,
-                        right: 0,
-                        child: _DailyMenuCard(
-                          key: const ValueKey('daily-grouping-submenu'),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _DailyMenuTile(
-                                icon: Icons.tune_rounded,
-                                label: 'Gruplama seçenekleri',
-                                trailing: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                ),
-                                bold: true,
-                                onTap: () =>
-                                    setState(() => _groupingOpen = false),
-                              ),
-                              Divider(
-                                height: 1,
-                                indent: 18,
-                                endIndent: 18,
-                                color: context.palette.border,
-                              ),
-                              _DailyMenuTile(
-                                key: const ValueKey('daily-grouping-list'),
-                                icon: Icons.format_list_bulleted_rounded,
-                                label: 'Liste',
-                                leading:
-                                    widget.grouping == DailyPlannerGrouping.list
-                                    ? const Icon(Icons.check_rounded)
-                                    : null,
-                                onTap: () {
-                                  widget.onGroupingChanged(
-                                    DailyPlannerGrouping.list,
-                                  );
-                                  Navigator.pop(context);
-                                },
-                              ),
-                              _DailyMenuTile(
-                                key: const ValueKey('daily-grouping-timeline'),
-                                icon: Icons.view_timeline_outlined,
-                                label: 'Zaman çizelgesi',
-                                leading:
-                                    widget.grouping ==
-                                        DailyPlannerGrouping.timeline
-                                    ? const Icon(Icons.check_rounded)
-                                    : null,
-                                onTap: () {
-                                  widget.onGroupingChanged(
-                                    DailyPlannerGrouping.timeline,
-                                  );
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
                           ),
                         ),
                       ),
-                  ],
+                      _DailyMenuTile(
+                        key: const ValueKey('daily-grouping-list'),
+                        icon: Icons.format_list_bulleted_rounded,
+                        label: 'Liste',
+                        leading: grouping == DailyPlannerGrouping.list
+                            ? const Icon(Icons.check_rounded)
+                            : null,
+                        onTap: () {
+                          onGroupingChanged(DailyPlannerGrouping.list);
+                          Navigator.pop(context);
+                        },
+                      ),
+                      _DailyMenuTile(
+                        key: const ValueKey('daily-grouping-timeline'),
+                        icon: Icons.view_timeline_outlined,
+                        label: 'Zaman çizelgesi',
+                        leading: grouping == DailyPlannerGrouping.timeline
+                            ? const Icon(Icons.check_rounded)
+                            : null,
+                        onTap: () {
+                          onGroupingChanged(DailyPlannerGrouping.timeline);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1015,16 +1008,12 @@ class _DailyMenuTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.leading,
-    this.trailing,
-    this.bold = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final Widget? leading;
-  final Widget? trailing;
-  final bool bold;
 
   @override
   Widget build(BuildContext context) => InkWell(
@@ -1044,11 +1033,10 @@ class _DailyMenuTile extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     ),
