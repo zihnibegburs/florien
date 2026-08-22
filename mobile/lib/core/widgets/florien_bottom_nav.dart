@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 
@@ -19,89 +21,120 @@ class FlorienAiMark extends StatelessWidget {
   final bool premium;
   final bool showRing;
 
+  static const _glassDeep = Color(0xFF0C0A14);
+  static const _glassMid = Color(0xFF1A1430);
+  static const _glassRimA = Color(0xFF8B7CFF);
+  static const _glassRimB = Color(0xFF4F7CFF);
+  static const _glassRimC = Color(0xFF6A4CFF);
+
   @override
   Widget build(BuildContext context) {
-    Widget image({required double scale}) {
-      return Semantics(
-        image: true,
-        label: semanticLabel,
-        child: Transform.scale(
-          scale: scale,
-          child: Image.asset(
-            florienAiFabImageAsset,
-            key: imageKey,
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.high,
-          ),
+    final star = Semantics(
+      image: true,
+      label: semanticLabel,
+      child: ColorFiltered(
+        colorFilter: const ColorFilter.matrix(<double>[
+          1, 0, 0, 0, 0,
+          0, 1, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0.28, 0.42, 0.30, 0, -0.04,
+        ]),
+        child: Image.asset(
+          florienAiFabImageAsset,
+          key: imageKey,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
         ),
-      );
-    }
+      ),
+    );
 
     if (!showRing) {
       return SizedBox(
         width: size,
         height: size,
-        child: ClipOval(child: image(scale: 1.2)),
+        child: ClipOval(child: star),
       );
     }
 
-    final ringWidth = premium ? 1.8 : FlorienBorders.thin;
-    final inset = premium ? 2.0 : 2.5;
+    final ring = premium ? 2.6 : FlorienBorders.thin;
+    final inset = size * 0.16;
 
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: premium ? FlorienColors.aiGradient : null,
-        color: premium ? null : Colors.white,
-        border: premium
-            ? null
-            : Border.all(
-                color: context.palette.border,
-                width: FlorienBorders.thin,
-              ),
-        boxShadow: premium
-            ? [
-                BoxShadow(
-                  color: FlorienColors.aiAccent.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  spreadRadius: 0.5,
-                ),
-                BoxShadow(
-                  color: FlorienColors.paleBlue.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      padding: EdgeInsets.all(premium ? ringWidth : 0),
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: premium
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    FlorienColors.aiLavender.withValues(alpha: 0.92),
-                    Colors.white,
-                  ],
-                )
-              : null,
-          color: premium ? null : Colors.white,
-          border: premium
-              ? Border.all(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  width: 0.8,
-                )
+          boxShadow: premium
+              ? [
+                  BoxShadow(
+                    color: _glassRimA.withValues(alpha: 0.34),
+                    blurRadius: 16,
+                    spreadRadius: 0.5,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: _glassRimB.withValues(alpha: 0.18),
+                    blurRadius: 22,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : null,
         ),
-        child: Padding(
-          padding: EdgeInsets.all(inset),
-          child: ClipOval(child: image(scale: premium ? 2.05 : 1.9)),
+        child: ClipOval(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const ColoredBox(color: _glassDeep),
+              if (premium)
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: const SizedBox.expand(),
+                ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [
+                      _glassRimA.withValues(alpha: premium ? 0.85 : 0.35),
+                      _glassRimB.withValues(alpha: premium ? 0.7 : 0.25),
+                      _glassRimC.withValues(alpha: premium ? 0.8 : 0.3),
+                      _glassRimA.withValues(alpha: premium ? 0.85 : 0.35),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(ring),
+                child: ClipOval(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.3, -0.4),
+                            radius: 1.1,
+                            colors: [
+                              _glassRimA.withValues(alpha: 0.28),
+                              _glassMid.withValues(alpha: 0.72),
+                              _glassDeep,
+                            ],
+                            stops: const [0, 0.45, 1],
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(inset),
+                        child: star,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -124,44 +157,62 @@ class FlorienBottomNavigation extends StatelessWidget {
   final VoidCallback? onAiPressed;
   final String? aiTooltip;
 
+  static const double _barHeight = 68;
+  static const double _aiSize = 64;
+  static const double _aiLift = 12;
+
   @override
   Widget build(BuildContext context) {
+    final hasAi = onAiPressed != null;
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           FlorienSpacing.screen,
-          FlorienSpacing.sm,
+          hasAi ? FlorienSpacing.sm + _aiLift : FlorienSpacing.sm,
           FlorienSpacing.screen,
           FlorienSpacing.md,
         ),
-        child: Container(
-          height: 72,
-          padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(FlorienRadius.pill),
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.thin,
-            ),
-          ),
-          child: Row(
+        child: SizedBox(
+          height: _barHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              for (var i = 0; i < destinations.length; i++)
-                Expanded(
-                  flex: 10,
-                  child: _NavItem(
-                    destination: destinations[i],
-                    selected: selectedIndex == i,
-                    onTap: () => onDestinationSelected(i),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.palette.surface,
+                    borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                    border: Border.all(
+                      color: context.palette.border,
+                      width: FlorienBorders.thin,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 4, 8, 4),
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < destinations.length; i++)
+                          Expanded(
+                            child: _NavItem(
+                              destination: destinations[i],
+                              selected: selectedIndex == i,
+                              onTap: () => onDestinationSelected(i),
+                            ),
+                          ),
+                        if (hasAi) const SizedBox(width: _aiSize - 6),
+                      ],
+                    ),
                   ),
                 ),
-              if (onAiPressed != null)
-                Expanded(
-                  flex: 11,
+              ),
+              if (hasAi)
+                Positioned(
+                  right: 4,
+                  top: -_aiLift,
                   child: _AiNavItem(
                     key: const ValueKey('planner-ai-chat-button'),
+                    size: _aiSize,
                     onTap: onAiPressed!,
                     tooltip: aiTooltip,
                   ),
@@ -190,63 +241,27 @@ class _AiNavItem extends StatelessWidget {
   const _AiNavItem({
     super.key,
     required this.onTap,
+    required this.size,
     this.tooltip,
   });
 
   final VoidCallback onTap;
+  final double size;
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      child: Tooltip(
-        message: tooltip ?? 'Plan asistanı',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(FlorienRadius.pill),
-            child: Ink(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(FlorienRadius.pill),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    FlorienColors.paleBlue.withValues(alpha: 0.45),
-                    FlorienColors.aiLavender.withValues(alpha: 0.78),
-                    FlorienColors.aiAccent.withValues(alpha: 0.22),
-                  ],
-                ),
-                border: Border.all(
-                  color: FlorienColors.aiAccent.withValues(alpha: 0.45),
-                  width: FlorienBorders.thin,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const FlorienAiMark(
-                    size: 28,
-                    showRing: false,
-                    imageKey: ValueKey('florien-ai-fab-image'),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    'AI',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      letterSpacing: 0.8,
-                      color: FlorienColors.aiAccent.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    return Tooltip(
+      message: tooltip ?? 'Plan asistanı',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: FlorienAiMark(
+            size: size,
+            premium: true,
+            imageKey: const ValueKey('florien-ai-fab-image'),
           ),
         ),
       ),
