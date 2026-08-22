@@ -511,14 +511,8 @@ void main() {
     expect(find.text('Rutinler'), findsOneWidget);
     expect(find.text('Günlük modu'), findsNothing);
 
-    await tester.tap(find.byTooltip('Görünüm seçenekleri'));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('daily-grouping-submenu')),
-      findsOneWidget,
-    );
-    expect(find.text('Liste'), findsOneWidget);
-    expect(find.text('Zaman çizelgesi'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-grouping-list')), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-grouping-timeline')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
     await tester.pumpAndSettle();
@@ -561,8 +555,6 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byTooltip('Görünüm seçenekleri'));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-grouping-list')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('daily-list-view')), findsOneWidget);
@@ -627,8 +619,6 @@ void main() {
       );
       expect(listStatus.data, matches(RegExp(r'^\d+:\d{2}:\d{2}$')));
 
-      await tester.tap(find.byTooltip('Görünüm seçenekleri'));
-      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
       await tester.pumpAndSettle();
 
@@ -811,7 +801,7 @@ void main() {
 
     expect(header, findsOneWidget);
     expect(find.byKey(const ValueKey('daily-focused-header')), findsNothing);
-    expect(find.byTooltip('Görünüm seçenekleri'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-grouping-list')), findsOneWidget);
     expect(find.byKey(const ValueKey('daily-top-add')), findsNothing);
     expect(tester.getBottomLeft(header).dy, headerBottom);
     expect(

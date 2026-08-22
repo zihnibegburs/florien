@@ -10,15 +10,41 @@ class FlorienAiMark extends StatelessWidget {
     this.imageKey,
     this.semanticLabel = 'Florien AI asistanı',
     this.premium = false,
+    this.showRing = true,
   });
 
   final double size;
   final Key? imageKey;
   final String semanticLabel;
   final bool premium;
+  final bool showRing;
 
   @override
   Widget build(BuildContext context) {
+    Widget image({required double scale}) {
+      return Semantics(
+        image: true,
+        label: semanticLabel,
+        child: Transform.scale(
+          scale: scale,
+          child: Image.asset(
+            florienAiFabImageAsset,
+            key: imageKey,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+          ),
+        ),
+      );
+    }
+
+    if (!showRing) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipOval(child: image(scale: 1.2)),
+      );
+    }
+
     final ringWidth = premium ? 1.8 : FlorienBorders.thin;
     final inset = premium ? 2.0 : 2.5;
 
@@ -75,21 +101,7 @@ class FlorienAiMark extends StatelessWidget {
         ),
         child: Padding(
           padding: EdgeInsets.all(inset),
-          child: ClipOval(
-            child: Semantics(
-              image: true,
-              label: semanticLabel,
-              child: Transform.scale(
-                scale: premium ? 2.05 : 1.9,
-                child: Image.asset(
-                  florienAiFabImageAsset,
-                  key: imageKey,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                ),
-              ),
-            ),
-          ),
+          child: ClipOval(child: image(scale: premium ? 2.05 : 1.9)),
         ),
       ),
     );
@@ -147,7 +159,7 @@ class FlorienBottomNavigation extends StatelessWidget {
                 ),
               if (onAiPressed != null)
                 Expanded(
-                  flex: 13,
+                  flex: 11,
                   child: _AiNavItem(
                     key: const ValueKey('planner-ai-chat-button'),
                     onTap: onAiPressed!,
@@ -186,58 +198,54 @@ class _AiNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? 'Plan asistanı',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(FlorienRadius.pill),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(FlorienRadius.pill),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  FlorienColors.paleBlue.withValues(alpha: 0.55),
-                  FlorienColors.aiLavender.withValues(alpha: 0.9),
-                  FlorienColors.aiAccent.withValues(alpha: 0.28),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Tooltip(
+        message: tooltip ?? 'Plan asistanı',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(FlorienRadius.pill),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    FlorienColors.paleBlue.withValues(alpha: 0.45),
+                    FlorienColors.aiLavender.withValues(alpha: 0.78),
+                    FlorienColors.aiAccent.withValues(alpha: 0.22),
+                  ],
+                ),
+                border: Border.all(
+                  color: FlorienColors.aiAccent.withValues(alpha: 0.45),
+                  width: FlorienBorders.thin,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const FlorienAiMark(
+                    size: 28,
+                    showRing: false,
+                    imageKey: ValueKey('florien-ai-fab-image'),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'AI',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      letterSpacing: 0.8,
+                      color: FlorienColors.aiAccent.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
-              border: Border.all(
-                color: FlorienColors.aiAccent.withValues(alpha: 0.55),
-                width: FlorienBorders.thin,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: FlorienColors.aiAccent.withValues(alpha: 0.18),
-                  blurRadius: 8,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const FlorienAiMark(
-                  size: 38,
-                  premium: true,
-                  imageKey: ValueKey('florien-ai-fab-image'),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  'AI',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10,
-                    letterSpacing: 0.8,
-                    color: FlorienColors.aiAccent.withValues(alpha: 0.95),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
             ),
           ),
         ),

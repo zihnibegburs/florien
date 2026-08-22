@@ -612,14 +612,9 @@ class _DailyHeader extends StatelessWidget {
               onTap: onShare,
             ),
             const SizedBox(width: 6),
-            _SquareButton(
-              tooltip: 'Görünüm seçenekleri',
-              icon: Icons.more_horiz_rounded,
-              onTap: () => _showDailyOptions(
-                context,
-                grouping: grouping,
-                onGroupingChanged: onGroupingChanged,
-              ),
+            _DailyViewToggle(
+              grouping: grouping,
+              onChanged: onGroupingChanged,
             ),
           ],
         ),
@@ -876,101 +871,44 @@ class _DailyDatePickerSheetState extends State<_DailyDatePickerSheet> {
   }
 }
 
-Future<void> _showDailyOptions(
-  BuildContext context, {
-  required DailyPlannerGrouping grouping,
-  required ValueChanged<DailyPlannerGrouping> onGroupingChanged,
-}) => showGeneralDialog<void>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: 'Görünüm seçeneklerini kapat',
-  barrierColor: Colors.black.withValues(alpha: .24),
-  transitionDuration: const Duration(milliseconds: 180),
-  pageBuilder: (context, _, _) => _DailyOptionsOverlay(
-    grouping: grouping,
-    onGroupingChanged: onGroupingChanged,
-  ),
-  transitionBuilder: (context, animation, _, child) => FadeTransition(
-    opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-    child: child,
-  ),
-);
-
-class _DailyOptionsOverlay extends StatelessWidget {
-  const _DailyOptionsOverlay({
+class _DailyViewToggle extends StatelessWidget {
+  const _DailyViewToggle({
     required this.grouping,
-    required this.onGroupingChanged,
+    required this.onChanged,
   });
 
   final DailyPlannerGrouping grouping;
-  final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final ValueChanged<DailyPlannerGrouping> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final width = math.min(320.0, MediaQuery.sizeOf(context).width - 28);
-    return SafeArea(
-      child: Material(
-        color: Colors.transparent,
-        child: Stack(
+    return Semantics(
+      label: 'Görünüm',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: BorderRadius.circular(FlorienRadius.sm),
+          border: Border.all(
+            color: context.palette.border,
+            width: FlorienBorders.thin,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.pop(context),
-              ),
+            _DailyViewToggleSegment(
+              key: const ValueKey('daily-grouping-list'),
+              tooltip: 'Liste görünümü',
+              icon: Icons.format_list_bulleted_rounded,
+              selected: grouping == DailyPlannerGrouping.list,
+              onTap: () => onChanged(DailyPlannerGrouping.list),
             ),
-            Positioned(
-              top: 10,
-              right: 14,
-              child: SizedBox(
-                width: width,
-                child: _DailyMenuCard(
-                  key: const ValueKey('daily-grouping-submenu'),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Gruplama',
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: context.palette.textSecondary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                      ),
-                      _DailyMenuTile(
-                        key: const ValueKey('daily-grouping-list'),
-                        icon: Icons.format_list_bulleted_rounded,
-                        label: 'Liste',
-                        leading: grouping == DailyPlannerGrouping.list
-                            ? const Icon(Icons.check_rounded)
-                            : null,
-                        onTap: () {
-                          onGroupingChanged(DailyPlannerGrouping.list);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      _DailyMenuTile(
-                        key: const ValueKey('daily-grouping-timeline'),
-                        icon: Icons.view_timeline_outlined,
-                        label: 'Zaman çizelgesi',
-                        leading: grouping == DailyPlannerGrouping.timeline
-                            ? const Icon(Icons.check_rounded)
-                            : null,
-                        onTap: () {
-                          onGroupingChanged(DailyPlannerGrouping.timeline);
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            _DailyViewToggleSegment(
+              key: const ValueKey('daily-grouping-timeline'),
+              tooltip: 'Zaman çizelgesi',
+              icon: Icons.view_timeline_outlined,
+              selected: grouping == DailyPlannerGrouping.timeline,
+              onTap: () => onChanged(DailyPlannerGrouping.timeline),
             ),
           ],
         ),
@@ -979,68 +917,45 @@ class _DailyOptionsOverlay extends StatelessWidget {
   }
 }
 
-class _DailyMenuCard extends StatelessWidget {
-  const _DailyMenuCard({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: context.palette.surface,
-      borderRadius: BorderRadius.circular(FlorienRadius.xl),
-      border: Border.all(
-        color: context.palette.border,
-        width: FlorienBorders.thin,
-      ),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(FlorienRadius.xl - 1),
-      child: Material(color: Colors.transparent, child: child),
-    ),
-  );
-}
-
-class _DailyMenuTile extends StatelessWidget {
-  const _DailyMenuTile({
+class _DailyViewToggleSegment extends StatelessWidget {
+  const _DailyViewToggleSegment({
     super.key,
+    required this.tooltip,
     required this.icon,
-    required this.label,
+    required this.selected,
     required this.onTap,
-    this.leading,
   });
 
+  final String tooltip;
   final IconData icon;
-  final String label;
+  final bool selected;
   final VoidCallback onTap;
-  final Widget? leading;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 30,
-            child:
-                leading ??
-                Icon(icon, size: 23, color: context.palette.textSecondary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: selected ? FlorienColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(FlorienRadius.sm - 1),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(FlorienRadius.sm - 1),
+          child: SizedBox(
+            width: 36,
+            height: 40,
+            child: Icon(
+              icon,
+              size: 18,
+              color: selected
+                  ? FlorienColors.onPrimary
+                  : context.palette.textSecondary,
             ),
           ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 TaskModel? activeScheduledTaskAt({
