@@ -466,11 +466,8 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             selectedIcon: Icons.bar_chart_rounded,
           ),
         ],
-        trailing: FlorienAiFab(
-          key: const ValueKey('planner-ai-chat-button'),
-          tooltip: 'Plan asistanını aç',
-          onPressed: _openPlannerAi,
-        ),
+        onAiPressed: _openPlannerAi,
+        aiTooltip: 'Plan asistanını aç',
       ),
     );
   }

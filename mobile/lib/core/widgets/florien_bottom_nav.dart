@@ -56,13 +56,15 @@ class FlorienBottomNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
-    this.trailing,
+    this.onAiPressed,
+    this.aiTooltip,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<FlorienNavDestination> destinations;
-  final Widget? trailing;
+  final VoidCallback? onAiPressed;
+  final String? aiTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -75,39 +77,37 @@ class FlorienBottomNavigation extends StatelessWidget {
           FlorienSpacing.screen,
           FlorienSpacing.md,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 68,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(
-                  color: context.palette.surface,
-                  borderRadius: BorderRadius.circular(FlorienRadius.pill),
-                  border: Border.all(
-                    color: context.palette.border,
-                    width: FlorienBorders.thin,
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            color: context.palette.surface,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < destinations.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    destination: destinations[i],
+                    selected: selectedIndex == i,
+                    onTap: () => onDestinationSelected(i),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < destinations.length; i++)
-                      Expanded(
-                        child: _NavItem(
-                          destination: destinations[i],
-                          selected: selectedIndex == i,
-                          onTap: () => onDestinationSelected(i),
-                        ),
-                      ),
-                  ],
+              if (onAiPressed != null)
+                Expanded(
+                  child: _AiNavItem(
+                    key: const ValueKey('planner-ai-chat-button'),
+                    onTap: onAiPressed!,
+                    tooltip: aiTooltip,
+                  ),
                 ),
-              ),
-            ),
-            if (trailing != null) ...[
-              const SizedBox(width: FlorienSpacing.md),
-              trailing!,
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -124,6 +124,54 @@ class FlorienNavDestination {
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+}
+
+class _AiNavItem extends StatelessWidget {
+  const _AiNavItem({
+    super.key,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Tooltip(
+        message: tooltip ?? 'AI',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const FlorienAiMark(
+                  size: 26,
+                  imageKey: ValueKey('florien-ai-fab-image'),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'AI',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    color: context.palette.textPrimary.withValues(alpha: 0.55),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _NavItem extends StatelessWidget {
