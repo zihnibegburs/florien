@@ -65,17 +65,24 @@ class AppleAuthService {
     final rawNonce = _generateNonce();
     final nonce = _sha256ofString(rawNonce);
 
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce,
-    );
+    final AuthorizationCredentialAppleID appleCredential;
+    try {
+      appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (error) {
+      if (error.code == AuthorizationErrorCode.canceled) return null;
+      throw StateError(_appleSignInMessage(error.code.name));
+    }
 
     final idToken = appleCredential.identityToken;
-    if (idToken == null) {
-      throw StateError('Apple sign-in failed: missing identity token');
+    final authorizationCode = appleCredential.authorizationCode;
+    if (idToken == null || idToken.isEmpty) {
+      throw StateError('Apple ile giriş başarısız oldu. Tekrar dene.');
     }
 
     final given = appleCredential.givenName;
@@ -87,12 +94,22 @@ class AppleAuthService {
     final displayName = parts.isEmpty ? null : parts.join(' ');
 
     return SocialAuthCredential(
-      credential: OAuthProvider(
-        'apple.com',
-      ).credential(idToken: idToken, rawNonce: rawNonce),
+      credential: OAuthProvider('apple.com').credential(
+        idToken: idToken,
+        rawNonce: rawNonce,
+        // firebase_auth 5.2+ rejects Apple credentials without this.
+        accessToken: authorizationCode,
+      ),
       displayName: displayName,
     );
   }
+
+  String _appleSignInMessage(String code) => switch (code) {
+    'failed' || 'invalidResponse' || 'notHandled' || 'notInteractive' =>
+      'Apple ile giriş tamamlanamadı. Tekrar dene.',
+    'unknown' => 'Apple ile giriş şu anda kullanılamıyor.',
+    _ => 'Apple ile giriş başarısız oldu. Tekrar dene.',
+  };
 
   String _generateNonce([int length = 32]) {
     const charset =
@@ -109,4 +126,22 @@ class AppleAuthService {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
+}
+
+Object friendlySocialAuthError(Object error) {
+  if (error is FirebaseAuthException) {
+    return StateError(switch (error.code) {
+      'invalid-credential' || 'invalid-verification-code' =>
+        'Apple ile giriş doğrulanamadı. Tekrar dene.',
+      'account-exists-with-different-credential' =>
+        'Bu e-posta başka bir giriş yöntemiyle kayıtlı.',
+      'user-disabled' => 'Bu hesap devre dışı bırakılmış.',
+      'network-request-failed' =>
+        'Bağlantı kurulamadı. İnternetini kontrol et.',
+      'operation-not-allowed' =>
+        'Apple ile giriş şu anda kapalı. Daha sonra dene.',
+      _ => 'Giriş başarısız oldu. Tekrar dene.',
+    });
+  }
+  return error;
 }

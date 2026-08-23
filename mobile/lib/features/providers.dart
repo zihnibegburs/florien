@@ -529,21 +529,29 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       );
       return;
     }
-    final social = await ref.read(appleAuthServiceProvider).signIn();
+    final SocialAuthCredential? social;
+    try {
+      social = await ref.read(appleAuthServiceProvider).signIn();
+    } catch (error, stackTrace) {
+      state = AsyncError(friendlySocialAuthError(error), stackTrace);
+      return;
+    }
     if (social == null) return;
+    final signedIn = social;
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
       () => ref
           .read(authRepositoryProvider)
           .signInWithCredentialResult(
-            social.credential,
-            displayName: social.displayName,
+            signedIn.credential,
+            displayName: signedIn.displayName,
           ),
     );
     state = result.when(
       data: (value) => AsyncData(value.response),
       loading: () => const AsyncLoading(),
-      error: AsyncError.new,
+      error: (error, stackTrace) =>
+          AsyncError(friendlySocialAuthError(error), stackTrace),
     );
     result.whenData(
       (value) =>

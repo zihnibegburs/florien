@@ -49,10 +49,7 @@ Future<void> showTodoQuickAdd({
 }
 
 class TodoListTab extends ConsumerStatefulWidget {
-  const TodoListTab({
-    super.key,
-    this.quickAddSignal = 0,
-  });
+  const TodoListTab({super.key, this.quickAddSignal = 0});
 
   final int quickAddSignal;
 
@@ -126,13 +123,10 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                                 _ListTitle(
                                   label: list.name,
                                   selected: activeListId == list.id,
-                                  onTap: () => setState(
-                                    () => _selectedListId = list.id,
-                                  ),
+                                  onTap: () =>
+                                      setState(() => _selectedListId = list.id),
                                 ),
-                              _ListAddButton(
-                                onTap: () => _createList(lists),
-                              ),
+                              _ListAddButton(onTap: () => _createList(lists)),
                             ],
                           ),
                         ),
@@ -155,9 +149,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                     const SizedBox(height: 6),
                     Text(
                       currentList!.description,
-                      style: TextStyle(
-                        color: context.palette.textSecondary,
-                      ),
+                      style: TextStyle(color: context.palette.textSecondary),
                     ),
                   ],
                   const SizedBox(height: 22),
@@ -182,6 +174,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                           onAdd: _showAdd,
                           showDuration: _showDuration,
                           showHeaderAddButton: true,
+                          onToggleCompletion: _toggleTaskCompletion,
                         ),
                         const SizedBox(height: 16),
                         if (completedTasks.isNotEmpty) ...[
@@ -196,8 +189,8 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                             showDuration: _showDuration,
                             allowAdd: false,
                             completedTarget: true,
-                            onTaskDropped: (task) =>
-                                _moveTaskToSection(task, completed: true),
+                            onToggleCompletion: _toggleTaskCompletion,
+                            onTaskDropped: _completeWithFeedback,
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -219,16 +212,26 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
     );
   }
 
-  Future<void> _moveTaskToSection(
-    TaskModel task, {
-    bool completed = false,
-  }) async {
-    final notifier = ref.read(inboxProvider.notifier);
-    if (completed) {
-      if (!task.isCompleted) await notifier.completeTask(task.id);
+  Future<void> _toggleTaskCompletion(TaskModel task) async {
+    if (task.isCompleted) {
+      await ref.read(inboxProvider.notifier).uncompleteTask(task.id);
       return;
     }
-    if (task.isCompleted) await notifier.uncompleteTask(task.id);
+    await _completeWithFeedback(task);
+  }
+
+  Future<void> _completeWithFeedback(TaskModel task) async {
+    if (task.isCompleted) return;
+    await ref.read(inboxProvider.notifier).completeTask(task.id);
+    if (!mounted) return;
+    CompletionCounts counts = const CompletionCounts(today: 0, thisWeek: 0);
+    try {
+      counts = await ref.read(manualCompletionSummaryProvider)(task.id);
+    } catch (error) {
+      debugPrint('Todo completion counts could not be loaded: $error');
+    }
+    if (!mounted) return;
+    await showTaskCompletionFeedback(context, ref, counts);
   }
 
   Future<void> _handleMenu(
@@ -569,7 +572,9 @@ class _ListTitle extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? context.palette.selection : context.palette.surface,
+            color: selected
+                ? context.palette.selection
+                : context.palette.surface,
             borderRadius: BorderRadius.circular(FlorienRadius.pill),
             border: Border.all(
               color: context.palette.border,
@@ -1332,6 +1337,7 @@ class _TodoSection extends StatelessWidget {
     this.showHeaderAddButton = false,
     this.completedTarget = false,
     this.onTaskDropped,
+    this.onToggleCompletion,
   });
 
   final _TodoSectionData section;
@@ -1344,6 +1350,7 @@ class _TodoSection extends StatelessWidget {
   final bool showHeaderAddButton;
   final bool completedTarget;
   final Future<void> Function(TaskModel task)? onTaskDropped;
+  final Future<void> Function(TaskModel task)? onToggleCompletion;
 
   @override
   Widget build(BuildContext context) => DragTarget<TaskModel>(
@@ -1429,6 +1436,7 @@ class _TodoSection extends StatelessWidget {
                   key: ValueKey(task.id),
                   task: task,
                   showDuration: showDuration,
+                  onToggleCompletion: onToggleCompletion,
                 ),
               ),
           ],
@@ -1443,14 +1451,20 @@ class _TodoDraggableTask extends StatelessWidget {
     super.key,
     required this.task,
     required this.showDuration,
+    this.onToggleCompletion,
   });
 
   final TaskModel task;
   final bool showDuration;
+  final Future<void> Function(TaskModel task)? onToggleCompletion;
 
   @override
   Widget build(BuildContext context) {
-    final card = _TodoTaskCard(task: task, showDuration: showDuration);
+    final card = _TodoTaskCard(
+      task: task,
+      showDuration: showDuration,
+      onToggleCompletion: onToggleCompletion,
+    );
     return LongPressDraggable<TaskModel>(
       data: task,
       delay: const Duration(milliseconds: 280),
@@ -1567,9 +1581,9 @@ class _FirstTaskPrompt extends StatelessWidget {
             Text(
               'Küçük bir adımla başla',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1595,10 +1609,15 @@ class _FirstTaskPrompt extends StatelessWidget {
 }
 
 class _TodoTaskCard extends ConsumerStatefulWidget {
-  const _TodoTaskCard({required this.task, required this.showDuration});
+  const _TodoTaskCard({
+    required this.task,
+    required this.showDuration,
+    this.onToggleCompletion,
+  });
 
   final TaskModel task;
   final bool showDuration;
+  final Future<void> Function(TaskModel task)? onToggleCompletion;
 
   @override
   ConsumerState<_TodoTaskCard> createState() => _TodoTaskCardState();
@@ -1746,6 +1765,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                               _TodoSubtaskRow(
                                 subtask: subtask,
                                 parentColor: color,
+                                onToggleCompletion: widget.onToggleCompletion,
                               ),
                           ],
                         )
@@ -1760,14 +1780,16 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
   }
 
   Future<void> _toggleCompletion(TaskModel target) async {
+    final onToggleCompletion = widget.onToggleCompletion;
+    if (onToggleCompletion != null) {
+      await onToggleCompletion(target);
+      return;
+    }
     final notifier = ref.read(inboxProvider.notifier);
     if (target.isCompleted) {
       await notifier.uncompleteTask(target.id);
     } else {
       await notifier.completeTask(target.id);
-      final counts = await ref.read(manualCompletionSummaryProvider)(target.id);
-      if (!mounted) return;
-      await showTaskCompletionFeedback(context, ref, counts);
     }
   }
 
@@ -1928,10 +1950,15 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
 }
 
 class _TodoSubtaskRow extends ConsumerWidget {
-  const _TodoSubtaskRow({required this.subtask, required this.parentColor});
+  const _TodoSubtaskRow({
+    required this.subtask,
+    required this.parentColor,
+    this.onToggleCompletion,
+  });
 
   final TaskModel subtask;
   final Color parentColor;
+  final Future<void> Function(TaskModel task)? onToggleCompletion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => AnimatedOpacity(
@@ -1972,6 +1999,11 @@ class _TodoSubtaskRow extends ConsumerWidget {
             compact: true,
             filled: subtask.isCompleted,
             onPressed: () async {
+              final onToggle = onToggleCompletion;
+              if (onToggle != null) {
+                await onToggle(subtask);
+                return;
+              }
               final notifier = ref.read(inboxProvider.notifier);
               if (subtask.isCompleted) {
                 await notifier.uncompleteTask(subtask.id);

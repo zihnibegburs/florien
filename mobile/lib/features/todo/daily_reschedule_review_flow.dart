@@ -8,7 +8,7 @@ import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 typedef ReviewTaskRescheduler =
     Future<void> Function(TaskModel task, DateTime date);
 
-enum _ReviewPhase { completed, remaining, finished }
+enum _ReviewPhase { remaining, finished }
 
 class DailyRescheduleReviewFlow extends StatefulWidget {
   const DailyRescheduleReviewFlow({
@@ -28,16 +28,11 @@ class DailyRescheduleReviewFlow extends StatefulWidget {
 }
 
 class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
-  late final List<TaskModel> _completed = widget.tasks
-      .where((task) => task.isCompleted)
-      .toList();
   late final List<TaskModel> _remaining = widget.tasks
       .where((task) => !task.isCompleted)
       .toList();
   late Set<String> _selectedIds = _remaining.map((task) => task.id).toSet();
-  late _ReviewPhase _phase = _completed.isNotEmpty
-      ? _ReviewPhase.completed
-      : _remaining.isEmpty
+  late _ReviewPhase _phase = _remaining.isEmpty
       ? _ReviewPhase.finished
       : _ReviewPhase.remaining;
   Timer? _phaseTimer;
@@ -46,9 +41,7 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
   @override
   void initState() {
     super.initState();
-    if (_phase == _ReviewPhase.completed) {
-      _phaseTimer = Timer(const Duration(seconds: 3), _leaveCompletedSummary);
-    } else if (_phase == _ReviewPhase.finished) {
+    if (_phase == _ReviewPhase.finished) {
       _scheduleClose();
     }
   }
@@ -57,15 +50,6 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
   void dispose() {
     _phaseTimer?.cancel();
     super.dispose();
-  }
-
-  void _leaveCompletedSummary() {
-    if (!mounted) return;
-    if (_remaining.isEmpty) {
-      _showFinished();
-      return;
-    }
-    setState(() => _phase = _ReviewPhase.remaining);
   }
 
   void _showFinished() {
@@ -149,11 +133,6 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
               switchInCurve: Curves.easeOutCubic,
               switchOutCurve: Curves.easeInCubic,
               child: switch (_phase) {
-                _ReviewPhase.completed => _CompletedReview(
-                  key: const ValueKey('daily-review-completed'),
-                  date: widget.selectedDate,
-                  tasks: _completed,
-                ),
                 _ReviewPhase.remaining => _RemainingReview(
                   key: const ValueKey('daily-review-remaining'),
                   sourceDate: widget.selectedDate,
@@ -180,53 +159,6 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
           ),
         ],
       ),
-    ),
-  );
-}
-
-class _CompletedReview extends StatelessWidget {
-  const _CompletedReview({super.key, required this.date, required this.tasks});
-
-  final DateTime date;
-  final List<TaskModel> tasks;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(24, 88, 24, 24),
-    child: Column(
-      children: [
-        _DatePill(date: date),
-        const SizedBox(height: 18),
-        Text(
-          'Bu oldu',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 34,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          'Bu kadardı. Kendine övgü ver!',
-          style: TextStyle(color: context.palette.textSecondary, fontSize: 16),
-        ),
-        const SizedBox(height: 54),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '${tasks.length} görev tamamladın',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Expanded(
-          child: ListView.separated(
-            itemCount: tasks.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (_, index) =>
-                _ReviewTaskCard(task: tasks[index], completed: true),
-          ),
-        ),
-      ],
     ),
   );
 }
@@ -402,10 +334,9 @@ class _SelectableReviewTask extends StatelessWidget {
 }
 
 class _ReviewTaskCard extends StatelessWidget {
-  const _ReviewTaskCard({required this.task, this.completed = false});
+  const _ReviewTaskCard({required this.task});
 
   final TaskModel task;
-  final bool completed;
 
   @override
   Widget build(BuildContext context) {
@@ -428,10 +359,9 @@ class _ReviewTaskCard extends StatelessWidget {
                   task.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
-                    decoration: completed ? TextDecoration.lineThrough : null,
                   ),
                 ),
                 Text(
@@ -439,18 +369,11 @@ class _ReviewTaskCard extends StatelessWidget {
                   style: TextStyle(
                     color: context.palette.textSecondary,
                     fontSize: 11.5,
-                    decoration: completed ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ],
             ),
           ),
-          if (completed)
-            Icon(
-              Icons.check_circle_rounded,
-              color: context.palette.textSecondary,
-              size: 25,
-            ),
         ],
       ),
     );

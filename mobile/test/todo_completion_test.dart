@@ -78,6 +78,14 @@ class _CompletionInboxNotifier extends InboxNotifier {
   }
 }
 
+class _DelayedCompletionInboxNotifier extends _CompletionInboxNotifier {
+  @override
+  Future<void> completeTask(String id) async {
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await super.completeTask(id);
+  }
+}
+
 class _EmptyTodoListsNotifier extends TodoListsNotifier {
   @override
   Future<List<TodoListDefinition>> build() async => const [];
@@ -154,6 +162,58 @@ void main() {
     expect(find.text('YAPILACAK (1)'), findsOneWidget);
     expect(find.text('YÜKSEK (0)'), findsNothing);
   });
+
+  testWidgets(
+    'completion bubbles still appear after the task moves to TAMAMLANDI',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            inboxProvider.overrideWith(_DelayedCompletionInboxNotifier.new),
+            todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
+            manualCompletionSummaryProvider.overrideWithValue(
+              (_) async => const CompletionCounts(today: 3, thisWeek: 7),
+            ),
+          ],
+          child: MaterialApp(
+            theme: FlorienTheme.light,
+            home: const Scaffold(body: TodoListTab()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final taskTile = find.ancestor(
+        of: find.text('Deneme görevi'),
+        matching: find.byType(ListTile),
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: taskTile,
+          matching: find.byIcon(Icons.circle_outlined),
+        ),
+      );
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('task-completion-bubbles')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('task-completion-bubbles')),
+        findsOneWidget,
+      );
+      expect(find.text('TAMAMLANDI (1)'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 1400));
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('achievement popup appears only at the completion threshold', (
     tester,

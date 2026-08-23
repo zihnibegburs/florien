@@ -512,7 +512,10 @@ void main() {
     expect(find.text('Günlük modu'), findsNothing);
 
     expect(find.byKey(const ValueKey('daily-grouping-list')), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-grouping-timeline')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('daily-grouping-timeline')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
     await tester.pumpAndSettle();
@@ -1323,7 +1326,7 @@ void main() {
   });
 
   testWidgets(
-    'daily review shows completed tasks then repeatedly moves selected tasks',
+    'daily review skips completed tasks and repeatedly moves selected tasks',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(430, 1100));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1387,20 +1390,17 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('daily-review-completed')),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('1 görev tamamladın'), findsOneWidget);
+      expect(find.text('Bu oldu'), findsNothing);
       expect(
         find.descendant(
-          of: find.byKey(const ValueKey('daily-review-completed')),
+          of: find.byKey(const ValueKey('daily-review-remaining')),
           matching: find.text(completed.title),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byKey(const ValueKey('daily-review-close')), findsOneWidget);
-
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('daily-review-remaining')),
         findsOneWidget,
