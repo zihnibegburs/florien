@@ -49,6 +49,11 @@ class FlorienAiMark extends StatelessWidget {
       );
     }
 
+    final fill = [
+      FlorienPalette.dark.aiSurface,
+      Color.lerp(FlorienPalette.dark.aiSurface, FlorienColors.accent, 0.42)!,
+    ];
+
     return SizedBox(
       width: size,
       height: size,
@@ -58,89 +63,31 @@ class FlorienAiMark extends StatelessWidget {
           boxShadow: premium
               ? [
                   BoxShadow(
-                    color: FlorienColors.aiAccent.withValues(
-                      alpha: dark ? 0.38 : 0.24,
+                    color: FlorienColors.accent.withValues(
+                      alpha: dark ? 0.28 : 0.18,
                     ),
-                    blurRadius: 18,
-                    offset: const Offset(0, 5),
-                  ),
-                  BoxShadow(
-                    color: FlorienColors.paleBlue.withValues(
-                      alpha: dark ? 0.22 : 0.34,
-                    ),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
                 ]
               : null,
         ),
-        child: ClipOval(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      FlorienColors.paleBlue.withValues(
-                        alpha: dark ? 0.62 : 0.86,
-                      ),
-                      FlorienColors.aiLavender.withValues(
-                        alpha: dark ? 0.7 : 0.92,
-                      ),
-                      FlorienColors.aiAccent.withValues(
-                        alpha: dark ? 0.42 : 0.38,
-                      ),
-                    ],
-                    stops: const [0, 0.48, 1],
-                  ),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.fromBorderSide(
-                    BorderSide(
-                      color: Color.lerp(
-                        FlorienColors.paleBlue,
-                        FlorienColors.aiAccent,
-                        dark ? 0.45 : 0.28,
-                      )!.withValues(alpha: 0.82),
-                      width: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-              const IgnorePointer(
-                child: Align(
-                  alignment: Alignment(-0.52, -0.7),
-                  child: FractionallySizedBox(
-                    widthFactor: 0.48,
-                    heightFactor: 0.2,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(99)),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0x99FFFFFF),
-                            Color(0x00FFFFFF),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(size * 0.11),
-                child: star,
-              ),
-            ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: fill,
+            ),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(size * 0.12),
+            child: star,
           ),
         ),
       ),
