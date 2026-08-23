@@ -883,35 +883,35 @@ class _DailyViewToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Semantics(
       label: 'Görünüm',
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: context.palette.surface,
+          color: palette.surfaceMuted,
           borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          border: Border.all(
-            color: context.palette.border,
-            width: FlorienBorders.thin,
-          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _DailyViewToggleSegment(
-              key: const ValueKey('daily-grouping-list'),
-              tooltip: 'Liste görünümü',
-              icon: Icons.format_list_bulleted_rounded,
-              selected: grouping == DailyPlannerGrouping.list,
-              onTap: () => onChanged(DailyPlannerGrouping.list),
-            ),
-            _DailyViewToggleSegment(
-              key: const ValueKey('daily-grouping-timeline'),
-              tooltip: 'Zaman çizelgesi',
-              icon: Icons.view_timeline_outlined,
-              selected: grouping == DailyPlannerGrouping.timeline,
-              onTap: () => onChanged(DailyPlannerGrouping.timeline),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _DailyViewToggleSegment(
+                key: const ValueKey('daily-grouping-list'),
+                tooltip: 'Liste görünümü',
+                icon: Icons.format_list_bulleted_rounded,
+                selected: grouping == DailyPlannerGrouping.list,
+                onTap: () => onChanged(DailyPlannerGrouping.list),
+              ),
+              _DailyViewToggleSegment(
+                key: const ValueKey('daily-grouping-timeline'),
+                tooltip: 'Zaman çizelgesi',
+                icon: Icons.view_timeline_outlined,
+                selected: grouping == DailyPlannerGrouping.timeline,
+                onTap: () => onChanged(DailyPlannerGrouping.timeline),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -934,23 +934,25 @@ class _DailyViewToggleSegment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final radius = BorderRadius.circular(FlorienRadius.sm - 4);
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: selected ? FlorienColors.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(FlorienRadius.sm - 1),
+        color: selected ? palette.surface : Colors.transparent,
+        borderRadius: radius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(FlorienRadius.sm - 1),
+          borderRadius: radius,
           child: SizedBox(
             width: 36,
-            height: 40,
+            height: 34,
             child: Icon(
               icon,
               size: 18,
               color: selected
-                  ? FlorienColors.onPrimary
-                  : context.palette.textSecondary,
+                  ? palette.textPrimary
+                  : palette.textSecondary.withValues(alpha: 0.62),
             ),
           ),
         ),
@@ -4109,14 +4111,15 @@ class _SquareButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = compact ? 34.0 : 40.0;
+    final palette = context.palette;
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: emphasized ? FlorienColors.primary : context.palette.surface,
+        color: emphasized ? palette.primaryMuted : palette.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.sm),
           side: BorderSide(
-            color: context.palette.border,
+            color: palette.border.withValues(alpha: emphasized ? 0.18 : 1),
             width: FlorienBorders.thin,
           ),
         ),
@@ -4128,9 +4131,9 @@ class _SquareButton extends StatelessWidget {
             child: Icon(
               icon,
               size: compact ? 18 : 21,
-              color: emphasized
-                  ? FlorienColors.onPrimary
-                  : context.palette.textSecondary,
+              color: palette.textSecondary.withValues(
+                alpha: emphasized ? 0.72 : 1,
+              ),
             ),
           ),
         ),
@@ -4163,11 +4166,13 @@ class _DayButton extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? FlorienColors.primary : Colors.transparent,
+            color: selected
+                ? context.palette.primaryMuted
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(FlorienRadius.md),
             border: selected
                 ? Border.all(
-                    color: context.palette.border,
+                    color: context.palette.border.withValues(alpha: 0.18),
                     width: FlorienBorders.thin,
                   )
                 : null,
