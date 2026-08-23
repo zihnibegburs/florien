@@ -149,7 +149,7 @@ class FlorienEmptyState extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: FlorienColors.primary,
+                  color: context.palette.selection,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: context.palette.border,
@@ -207,7 +207,7 @@ class FlorienTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = accent ?? FlorienColors.primary;
+    final tint = accent ?? context.palette.selection;
     final card = Container(
       margin: margin ?? const EdgeInsets.only(bottom: FlorienSpacing.md),
       padding: padding ?? const EdgeInsets.all(FlorienSpacing.lg),

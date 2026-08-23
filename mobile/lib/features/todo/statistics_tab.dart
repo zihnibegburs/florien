@@ -399,7 +399,7 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: FlorienColors.primary,
+                    color: context.palette.selection,
                     borderRadius: BorderRadius.circular(FlorienRadius.md),
                     border: Border.all(
                       color: context.palette.border,
@@ -520,7 +520,7 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: rating <= _rating
-                          ? FlorienColors.primary
+                          ? context.palette.selection
                           : context.palette.surfaceMuted,
                       borderRadius: BorderRadius.circular(FlorienRadius.sm),
                       border: Border.all(
@@ -854,7 +854,7 @@ class _MoodDayButton extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isToday
-                          ? FlorienColors.primary
+                          ? context.palette.selection
                           : context.palette.border,
                       width: isToday
                           ? FlorienBorders.medium

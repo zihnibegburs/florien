@@ -299,7 +299,7 @@ class _AiTaskRow extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: done ? FlorienColors.mint : FlorienColors.primary,
+              color: done ? FlorienColors.mint : context.palette.selection,
             ),
           ),
           const SizedBox(width: 9),

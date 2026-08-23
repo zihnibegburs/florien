@@ -65,7 +65,7 @@ class AchievementCollection extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: FlorienColors.primary,
+                  color: context.palette.selection,
                   borderRadius: BorderRadius.circular(FlorienRadius.pill),
                   border: Border.all(
                     color: context.palette.border,

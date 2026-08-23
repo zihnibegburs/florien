@@ -11,6 +11,15 @@ void main() {
     expect(primary, FlorienColors.accentText);
     expect(_contrastRatio(primary, Colors.white), greaterThanOrEqualTo(4.5));
   });
+
+  test('pastel tokens stay quieter than lemon and ink', () {
+    expect(FlorienColors.primary, isNot(const Color(0xFFFFF76A)));
+    expect(
+      FlorienPalette.light.border.computeLuminance(),
+      greaterThan(FlorienPalette.light.textPrimary.computeLuminance()),
+    );
+    expect(FlorienPalette.light.selection, FlorienPalette.light.primaryMuted);
+  });
 }
 
 double _contrastRatio(Color foreground, Color background) {

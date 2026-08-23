@@ -218,14 +218,8 @@ class _NavItem extends StatelessWidget {
             duration: const Duration(milliseconds: 180),
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
-              color: selected ? FlorienColors.primary : Colors.transparent,
+              color: selected ? context.palette.selection : Colors.transparent,
               borderRadius: BorderRadius.circular(FlorienRadius.pill),
-              border: selected
-                  ? Border.all(
-                      color: context.palette.border,
-                      width: FlorienBorders.thin,
-                    )
-                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -91,7 +91,7 @@ class _DurationChoice extends StatelessWidget {
         child: Ink(
           height: 48,
           decoration: BoxDecoration(
-            color: selected ? FlorienColors.primary : palette.surface,
+            color: selected ? palette.selection : palette.surface,
             borderRadius: BorderRadius.circular(FlorienRadius.sm),
             border: Border.all(
               color: palette.border,

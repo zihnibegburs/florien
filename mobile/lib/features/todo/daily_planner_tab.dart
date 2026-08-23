@@ -273,8 +273,8 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
                 child: LinearProgressIndicator(
                   key: ValueKey('daily-timeline-loading-$dateKey'),
                   minHeight: 2,
-                  color: FlorienColors.primary,
-                  backgroundColor: context.palette.border,
+                  color: context.palette.selection,
+                  backgroundColor: context.palette.surfaceMuted,
                 ),
               ),
           ],

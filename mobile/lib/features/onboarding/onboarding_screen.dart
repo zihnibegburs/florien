@@ -575,13 +575,13 @@ class _AnswerCard extends StatelessWidget {
             duration: const Duration(milliseconds: 170),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? FlorienColors.primary : context.palette.surface,
+              color: selected
+                  ? context.palette.selection
+                  : context.palette.surface,
               borderRadius: BorderRadius.circular(FlorienRadius.md),
               border: Border.all(
-                color: selected
-                    ? FlorienColors.onPrimary
-                    : context.palette.border,
-                width: selected ? FlorienBorders.medium : FlorienBorders.thin,
+                color: context.palette.border,
+                width: FlorienBorders.thin,
               ),
             ),
             child: Row(

@@ -530,7 +530,7 @@ class _DatePill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
     decoration: BoxDecoration(
-      color: FlorienColors.primary,
+      color: context.palette.selection,
       borderRadius: BorderRadius.circular(99),
       border: Border.all(
         color: context.palette.border,

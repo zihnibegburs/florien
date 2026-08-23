@@ -665,7 +665,7 @@ class _AiModeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? FlorienColors.primary : Colors.transparent,
+      color: selected ? context.palette.selection : Colors.transparent,
       borderRadius: BorderRadius.circular(FlorienRadius.pill),
       child: InkWell(
         key: ValueKey('planner-ai-mode-${mode.name}'),
@@ -1091,7 +1091,7 @@ class _SuggestedTaskCard extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: FlorienColors.primary,
+            color: context.palette.selection,
             shape: BoxShape.circle,
             border: Border.all(
               color: context.palette.border,
@@ -1182,7 +1182,7 @@ class _TypingBubble extends StatelessWidget {
       height: 18,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        color: FlorienColors.primary,
+        color: context.palette.selection,
       ),
     ),
   );

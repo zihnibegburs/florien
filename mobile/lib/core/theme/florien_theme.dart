@@ -6,13 +6,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:florien/core/firebase/user_profile_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 
-/// Florien design tokens — soft neo-brutalist, pastel accents, bold type.
+/// Florien design tokens — calm pastels with one clear focus point.
+///
+/// Color roles for ADHD-friendly UI:
+/// - Surfaces stay quiet (off-white, white, warm gray).
+/// - [primaryMuted] marks “you are here” (selected day, chip, tab).
+/// - [primary] is the single action color (save, start). Still pastel, never lemon.
+/// - Borders are warm hairlines, not ink-black frames.
+/// - Text on pastels stays dark so contrast stays readable.
 class FlorienColors {
-  static const primary = Color(0xFFFFF76A);
+  static const primary = Color(0xFFF0E19A);
   static const accentText = Color(0xFF765415);
-  static const focusAccent = Color(0xFFF2BC52);
+  static const focusAccent = Color(0xFFE6C56A);
   static const onPrimary = Color(0xFF171717);
-  static const primaryLight = Color(0xFFFFF9A8);
+  static const primaryLight = Color(0xFFF8F1C4);
   static const accent = Color(0xFFC4B5FD);
   static const aiAccent = Color(0xFFA78BFA);
   static const aiLavender = Color(0xFFE9E2FF);
@@ -28,7 +35,7 @@ class FlorienColors {
   static const surface = Color(0xFFFFFFFF);
   static const textPrimary = Color(0xFF171717);
   static const textSecondary = Color(0xFF6B6B70);
-  static const border = Color(0xFF171717);
+  static const border = Color(0xFFD4CFC4);
 
   static const darkBackground = Color(0xFF29292B);
   static const darkSurface = Color(0xFF333336);
@@ -37,7 +44,7 @@ class FlorienColors {
   static const darkBorder = Color(0xFF4A4A4E);
 
   static const taskColors = [
-    '#FFF76A',
+    '#F0E19A',
     '#C4B5FD',
     '#B8F2D0',
     '#BCEEFF',
@@ -112,14 +119,17 @@ class FlorienPalette extends ThemeExtension<FlorienPalette> {
   final Color accent;
   final Color aiSurface;
 
+  /// Quiet “you are here” fill. Use [FlorienColors.primary] only for the main action.
+  Color get selection => primaryMuted;
+
   static const light = FlorienPalette(
     background: FlorienColors.background,
     surface: FlorienColors.surface,
     surfaceMuted: Color(0xFFF3F1EC),
-    primaryMuted: Color(0xFFFFF6B8),
+    primaryMuted: Color(0xFFF6EFC2),
     textPrimary: FlorienColors.textPrimary,
     textSecondary: FlorienColors.textSecondary,
-    border: Color(0xFF1A1A1A),
+    border: FlorienColors.border,
     error: FlorienColors.error,
     accent: FlorienColors.accent,
     aiSurface: FlorienColors.aiLavender,
@@ -513,7 +523,7 @@ class FlorienTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: palette.surfaceMuted,
-        selectedColor: primary,
+        selectedColor: palette.primaryMuted,
         side: BorderSide(color: palette.border, width: FlorienBorders.thin),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.pill),
@@ -533,14 +543,15 @@ class FlorienTheme {
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? primary
+              ? palette.primaryMuted
               : palette.surfaceMuted,
         ),
         trackOutlineColor: WidgetStatePropertyAll(palette.border),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? primary : null,
+          (states) =>
+              states.contains(WidgetState.selected) ? palette.primaryMuted : null,
         ),
         checkColor: const WidgetStatePropertyAll(onPrimary),
         side: BorderSide(color: palette.border, width: FlorienBorders.thin),
@@ -549,7 +560,7 @@ class FlorienTheme {
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? primary
+              ? palette.primaryMuted
               : palette.textSecondary,
         ),
       ),
@@ -585,7 +596,7 @@ class FlorienTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: palette.surface,
-        indicatorColor: primary,
+        indicatorColor: palette.primaryMuted,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         height: 68,

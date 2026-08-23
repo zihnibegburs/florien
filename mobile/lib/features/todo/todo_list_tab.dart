@@ -569,7 +569,7 @@ class _ListTitle extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? FlorienColors.primary : context.palette.surface,
+            color: selected ? context.palette.selection : context.palette.surface,
             borderRadius: BorderRadius.circular(FlorienRadius.pill),
             border: Border.all(
               color: context.palette.border,
@@ -2152,7 +2152,7 @@ class _MoveListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? FlorienColors.primary.withValues(alpha: 0.35) : Colors.transparent,
+    color: selected ? context.palette.selection : Colors.transparent,
     child: InkWell(
       onTap: onTap,
       child: Padding(

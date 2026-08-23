@@ -338,7 +338,7 @@ class _AppearanceChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? FlorienColors.primary : context.palette.surfaceMuted,
+      color: selected ? context.palette.selection : context.palette.surfaceMuted,
       borderRadius: BorderRadius.circular(FlorienRadius.pill),
       child: InkWell(
         onTap: onTap,

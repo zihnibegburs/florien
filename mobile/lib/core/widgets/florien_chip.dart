@@ -21,7 +21,7 @@ class FlorienChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = selected
-        ? (accent ?? FlorienColors.primary)
+        ? (accent ?? context.palette.selection)
         : context.palette.surface;
     final fg = selected
         ? FlorienColors.onPrimary

@@ -432,7 +432,7 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
                   for (final profile in state.profiles)
                     Material(
                       color: profile.id == state.activeProfileId
-                          ? FlorienColors.primary.withValues(alpha: 0.4)
+                          ? context.palette.selection
                           : Colors.transparent,
                       child: InkWell(
                         key: ValueKey('switch-profile-${profile.id}'),
