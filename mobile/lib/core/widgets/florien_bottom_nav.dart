@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 
@@ -21,14 +19,9 @@ class FlorienAiMark extends StatelessWidget {
   final bool premium;
   final bool showRing;
 
-  static const _glassDeep = Color(0xFF0C0A14);
-  static const _glassMid = Color(0xFF1A1430);
-  static const _glassRimA = Color(0xFF8B7CFF);
-  static const _glassRimB = Color(0xFF4F7CFF);
-  static const _glassRimC = Color(0xFF6A4CFF);
-
   @override
   Widget build(BuildContext context) {
+    final dark = context.isFlorienDark;
     final star = Semantics(
       image: true,
       label: semanticLabel,
@@ -56,9 +49,6 @@ class FlorienAiMark extends StatelessWidget {
       );
     }
 
-    final ring = premium ? 2.6 : FlorienBorders.thin;
-    final inset = size * 0.16;
-
     return SizedBox(
       width: size,
       height: size,
@@ -68,14 +58,17 @@ class FlorienAiMark extends StatelessWidget {
           boxShadow: premium
               ? [
                   BoxShadow(
-                    color: _glassRimA.withValues(alpha: 0.34),
-                    blurRadius: 16,
-                    spreadRadius: 0.5,
-                    offset: const Offset(0, 4),
+                    color: FlorienColors.aiAccent.withValues(
+                      alpha: dark ? 0.38 : 0.24,
+                    ),
+                    blurRadius: 18,
+                    offset: const Offset(0, 5),
                   ),
                   BoxShadow(
-                    color: _glassRimB.withValues(alpha: 0.18),
-                    blurRadius: 22,
+                    color: FlorienColors.paleBlue.withValues(
+                      alpha: dark ? 0.22 : 0.34,
+                    ),
+                    blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -85,53 +78,67 @@ class FlorienAiMark extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              const ColoredBox(color: _glassDeep),
-              if (premium)
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: const SizedBox.expand(),
-                ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: SweepGradient(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      _glassRimA.withValues(alpha: premium ? 0.85 : 0.35),
-                      _glassRimB.withValues(alpha: premium ? 0.7 : 0.25),
-                      _glassRimC.withValues(alpha: premium ? 0.8 : 0.3),
-                      _glassRimA.withValues(alpha: premium ? 0.85 : 0.35),
+                      FlorienColors.paleBlue.withValues(
+                        alpha: dark ? 0.62 : 0.86,
+                      ),
+                      FlorienColors.aiLavender.withValues(
+                        alpha: dark ? 0.7 : 0.92,
+                      ),
+                      FlorienColors.aiAccent.withValues(
+                        alpha: dark ? 0.42 : 0.38,
+                      ),
                     ],
+                    stops: const [0, 0.48, 1],
+                  ),
+                ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.fromBorderSide(
+                    BorderSide(
+                      color: Color.lerp(
+                        FlorienColors.paleBlue,
+                        FlorienColors.aiAccent,
+                        dark ? 0.45 : 0.28,
+                      )!.withValues(alpha: 0.82),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+              const IgnorePointer(
+                child: Align(
+                  alignment: Alignment(-0.52, -0.7),
+                  child: FractionallySizedBox(
+                    widthFactor: 0.48,
+                    heightFactor: 0.2,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(99)),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0x99FFFFFF),
+                            Color(0x00FFFFFF),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(ring),
-                child: ClipOval(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            center: const Alignment(-0.3, -0.4),
-                            radius: 1.1,
-                            colors: [
-                              _glassRimA.withValues(alpha: 0.28),
-                              _glassMid.withValues(alpha: 0.72),
-                              _glassDeep,
-                            ],
-                            stops: const [0, 0.45, 1],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(inset),
-                        child: star,
-                      ),
-                    ],
-                  ),
-                ),
+                padding: EdgeInsets.all(size * 0.11),
+                child: star,
               ),
             ],
           ),
@@ -147,29 +154,24 @@ class FlorienBottomNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
-    this.onAiPressed,
-    this.aiTooltip,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<FlorienNavDestination> destinations;
-  final VoidCallback? onAiPressed;
-  final String? aiTooltip;
 
   static const double _barHeight = 68;
-  static const double _aiSize = 64;
-  static const double _aiLift = 12;
+  static const double _aiSize = 58;
+  static const double _aiLift = 10;
 
   @override
   Widget build(BuildContext context) {
-    final hasAi = onAiPressed != null;
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
+        padding: const EdgeInsets.fromLTRB(
           FlorienSpacing.screen,
-          hasAi ? FlorienSpacing.sm + _aiLift : FlorienSpacing.sm,
+          FlorienSpacing.sm + _aiLift,
           FlorienSpacing.screen,
           FlorienSpacing.md,
         ),
@@ -200,23 +202,17 @@ class FlorienBottomNavigation extends StatelessWidget {
                               onTap: () => onDestinationSelected(i),
                             ),
                           ),
-                        if (hasAi) const SizedBox(width: _aiSize - 6),
+                        const SizedBox(width: _aiSize - 8),
                       ],
                     ),
                   ),
                 ),
               ),
-              if (hasAi)
-                Positioned(
-                  right: 4,
-                  top: -_aiLift,
-                  child: _AiNavItem(
-                    key: const ValueKey('planner-ai-chat-button'),
-                    size: _aiSize,
-                    onTap: onAiPressed!,
-                    tooltip: aiTooltip,
-                  ),
-                ),
+              const Positioned(
+                right: 5,
+                top: -_aiLift,
+                child: _SpecialNavButton(size: _aiSize),
+              ),
             ],
           ),
         ),
@@ -237,32 +233,22 @@ class FlorienNavDestination {
   final IconData selectedIcon;
 }
 
-class _AiNavItem extends StatelessWidget {
-  const _AiNavItem({
-    super.key,
-    required this.onTap,
-    required this.size,
-    this.tooltip,
-  });
+class _SpecialNavButton extends StatelessWidget {
+  const _SpecialNavButton({this.size = 58});
 
-  final VoidCallback onTap;
   final double size;
-  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? 'Plan asistanı',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: FlorienAiMark(
-            size: size,
-            premium: true,
-            imageKey: const ValueKey('florien-ai-fab-image'),
-          ),
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        key: const ValueKey('florien-nav-special-button'),
+        dimension: size,
+        child: FlorienAiMark(
+          size: size,
+          premium: true,
+          semanticLabel: '',
+          imageKey: const ValueKey('florien-nav-special-image'),
         ),
       ),
     );

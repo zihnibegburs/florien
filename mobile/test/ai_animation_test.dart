@@ -92,4 +92,31 @@ void main() {
     await tester.tap(find.byType(FlorienAiFab));
     expect(tapped, isTrue);
   });
+
+  testWidgets('bottom banner keeps a decorative special button on the right', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          bottomNavigationBar: FlorienBottomNavigation(
+            selectedIndex: 0,
+            onDestinationSelected: (_) {},
+            destinations: const [
+              FlorienNavDestination(
+                label: 'To-do',
+                icon: Icons.check_box_outlined,
+                selectedIcon: Icons.check_box_rounded,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('florien-nav-special-button')), findsOneWidget);
+    expect(find.byKey(const ValueKey('florien-nav-special-image')), findsOneWidget);
+    expect(find.byKey(const ValueKey('planner-ai-chat-button')), findsNothing);
+  });
 }

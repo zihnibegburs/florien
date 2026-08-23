@@ -7,6 +7,7 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
 const _todoTask = TaskModel(
@@ -183,7 +184,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await _openPlannerAi(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.byKey(const ValueKey('planner-ai-mode-focus')));
@@ -233,7 +234,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await _openPlannerAi(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.byKey(const ValueKey('planner-ai-mode-focus')));
@@ -279,9 +280,9 @@ void main() {
     expect(find.byType(FlorienBottomNavigation), findsOneWidget);
     expect(
       find.byKey(const ValueKey('planner-ai-chat-button')),
-      findsOneWidget,
+      findsNothing,
     );
-    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await _openPlannerAi(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -324,13 +325,28 @@ void main() {
       premium: false,
     );
 
-    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    await _openPlannerAi(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('Florien özellikleri'), findsOneWidget);
     expect(find.text('AI plan asistanı'), findsOneWidget);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsNothing);
   });
+}
+
+Future<void> _openPlannerAi(WidgetTester tester) async {
+  final context = tester.element(find.byType(TodoHomeScreen));
+  final container = ProviderScope.containerOf(context);
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PlannerAiChatScreen(
+        onStandaloneFocusStarted: (minutes) =>
+            container.read(createStandaloneFocusTaskProvider)(minutes),
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 Future<void> _pumpHome(
