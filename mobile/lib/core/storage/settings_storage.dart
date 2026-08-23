@@ -70,10 +70,8 @@ class NotificationPreferences {
     taskRemindersEnabled: taskRemindersEnabled ?? this.taskRemindersEnabled,
     taskReminderLeadMinutes:
         taskReminderLeadMinutes ?? this.taskReminderLeadMinutes,
-    morningSummaryEnabled:
-        morningSummaryEnabled ?? this.morningSummaryEnabled,
-    morningSummaryMinutes:
-        morningSummaryMinutes ?? this.morningSummaryMinutes,
+    morningSummaryEnabled: morningSummaryEnabled ?? this.morningSummaryEnabled,
+    morningSummaryMinutes: morningSummaryMinutes ?? this.morningSummaryMinutes,
     motivationEnabled: motivationEnabled ?? this.motivationEnabled,
     motivationMinutes: motivationMinutes ?? this.motivationMinutes,
     dailyReviewEnabled: dailyReviewEnabled ?? this.dailyReviewEnabled,
@@ -140,13 +138,18 @@ class SettingsStorage {
   final FirebaseFirestore? _firestore;
   final FirebaseAuth? _auth;
 
-  Future<String> getLanguage() async {
+  Future<String?> getSavedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_languageKey) ?? 'tr';
+    return prefs.getString(_languageKey);
   }
 
-  Future<void> setLanguage(String code) async {
+  /// Saves a manual language override. Pass `null` to follow the phone language.
+  Future<void> setLanguage(String? code) async {
     final prefs = await SharedPreferences.getInstance();
+    if (code == null || code.isEmpty) {
+      await prefs.remove(_languageKey);
+      return;
+    }
     await prefs.setString(_languageKey, code);
   }
 

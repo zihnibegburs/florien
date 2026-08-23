@@ -9,6 +9,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 enum FlorienOsNotificationPermission { unknown, notDetermined, denied, granted }
 
@@ -24,10 +25,7 @@ typedef NotificationResponseHandler =
     Future<void> Function(FlorienNotificationPayload payload);
 
 typedef NotificationActionHandler =
-    Future<void> Function(
-      FlorienNotificationPayload payload,
-      String actionId,
-    );
+    Future<void> Function(FlorienNotificationPayload payload, String actionId);
 
 class TaskAlarmService {
   TaskAlarmService(this._settingsStorage);
@@ -63,7 +61,7 @@ class TaskAlarmService {
         actions: <DarwinNotificationAction>[
           DarwinNotificationAction.plain(
             _completeActionId,
-            'Tamamlandı',
+            ActiveLanguage.s('Tamamlandı'),
             options: <DarwinNotificationActionOption>{
               DarwinNotificationActionOption.foreground,
             },
@@ -110,8 +108,9 @@ class TaskAlarmService {
     await initialize();
     if (kIsWeb) return FlorienOsNotificationPermission.denied;
     try {
-      final status = await _notificationSettingsChannel
-          .invokeMethod<String>('authorizationStatus');
+      final status = await _notificationSettingsChannel.invokeMethod<String>(
+        'authorizationStatus',
+      );
       return switch (status) {
         'authorized' => FlorienOsNotificationPermission.granted,
         'notDetermined' => FlorienOsNotificationPermission.notDetermined,
@@ -241,7 +240,10 @@ class TaskAlarmService {
     return _zonedSchedule(
       idKey: _taskIdKey(taskId),
       title: NotificationCopy.taskTitle,
-      body: NotificationCopy.taskBody(taskTitle: title, leadMinutes: leadMinutes),
+      body: NotificationCopy.taskBody(
+        taskTitle: title,
+        leadMinutes: leadMinutes,
+      ),
       when: alarmAt,
       preferences: preferences,
       payload: payload,
@@ -295,13 +297,15 @@ class TaskAlarmService {
     return _zonedSchedule(
       idKey: _focusTimerAlarmId,
       title: title,
-      body: 'Odak turun tamamlandı.',
+      body: ActiveLanguage.s('Odak turun tamamlandı.'),
       when: alarmAt,
       preferences: preferences,
       payload: payload,
       channelPrefix: 'focus_timer_alarm_v2',
-      channelName: 'Odak zamanlayıcısı',
-      channelDescription: 'Odak süresi tamamlandığında çalan alarm',
+      channelName: ActiveLanguage.s('Odak zamanlayıcısı'),
+      channelDescription: ActiveLanguage.s(
+        'Odak süresi tamamlandığında çalan alarm',
+      ),
     );
   }
 
@@ -314,12 +318,14 @@ class TaskAlarmService {
     await _notifications.show(
       _notificationId(_focusTimerAlarmId),
       title,
-      'Odak turun tamamlandı.',
+      ActiveLanguage.s('Odak turun tamamlandı.'),
       _notificationDetails(
         preferences,
         channelPrefix: 'focus_timer_alarm_v2',
-        channelName: 'Odak zamanlayıcısı',
-        channelDescription: 'Odak süresi tamamlandığında çalan alarm',
+        channelName: ActiveLanguage.s('Odak zamanlayıcısı'),
+        channelDescription: ActiveLanguage.s(
+          'Odak süresi tamamlandığında çalan alarm',
+        ),
       ),
       payload: FlorienNotificationPayload(
         kind: FlorienNotificationKind.focusTimer,
@@ -366,8 +372,10 @@ class TaskAlarmService {
     );
 
     if (preferences.taskRemindersEnabled) {
-      final taskSlots =
-          (_maxPendingNotifications - generalScheduled).clamp(0, _maxPendingNotifications);
+      final taskSlots = (_maxPendingNotifications - generalScheduled).clamp(
+        0,
+        _maxPendingNotifications,
+      );
       await _scheduleTaskNotifications(
         accountId: accountId,
         preferences: preferences,
@@ -533,8 +541,7 @@ class TaskAlarmService {
     var day = DateTime(from.year, from.month, from.day);
     final last = DateTime(to.year, to.month, to.day);
     while (!day.isAfter(last)) {
-      if (day.weekday == DateTime.tuesday ||
-          day.weekday == DateTime.thursday) {
+      if (day.weekday == DateTime.tuesday || day.weekday == DateTime.thursday) {
         var when = _localDateTime(day, preferences.motivationMinutes);
         when = applyQuietHoursShift(when, preferences) ?? when;
         if (when.isAfter(from) && !when.isAfter(to)) {
@@ -543,7 +550,10 @@ class TaskAlarmService {
               idKey: 'motivation_${accountId}_${_dayKey(day)}',
               when: when,
               title: NotificationCopy.motivationTitle,
-              body: NotificationCopy.pick(NotificationCopy.motivationBodies, day),
+              body: NotificationCopy.pick(
+                NotificationCopy.motivationBodies,
+                day,
+              ),
               payload: FlorienNotificationPayload(
                 kind: FlorienNotificationKind.motivation,
                 accountId: accountId,
@@ -626,7 +636,9 @@ class TaskAlarmService {
 
     final scheduledEntries = <_Schedulable>[];
     final orderedKeys = groups.keys.toList()
-      ..sort((a, b) => groups[a]!.first.fireAt.compareTo(groups[b]!.first.fireAt));
+      ..sort(
+        (a, b) => groups[a]!.first.fireAt.compareTo(groups[b]!.first.fireAt),
+      );
     for (final key in orderedKeys) {
       final group = groups[key]!;
       if (group.length >= 3) {
@@ -731,8 +743,8 @@ class TaskAlarmService {
     required FlorienNotificationPayload payload,
     String? categoryId,
     String channelPrefix = 'florien_local_v1',
-    String channelName = 'Florien hatırlatmaları',
-    String channelDescription = 'Yerel plan ve görev bildirimleri',
+    String? channelName,
+    String? channelDescription,
   }) async {
     if (!when.toLocal().isAfter(DateTime.now())) return false;
     await _configureLocalTimezone();
@@ -781,14 +793,16 @@ class TaskAlarmService {
   NotificationDetails _notificationDetails(
     NotificationPreferences preferences, {
     required String channelPrefix,
-    required String channelName,
-    required String channelDescription,
+    String? channelName,
+    String? channelDescription,
     String? categoryId,
   }) => NotificationDetails(
     android: AndroidNotificationDetails(
       _androidChannelId(channelPrefix, preferences),
-      channelName,
-      channelDescription: channelDescription,
+      ActiveLanguage.s(channelName ?? 'Florien hatırlatmaları'),
+      channelDescription: ActiveLanguage.s(
+        channelDescription ?? 'Yerel plan ve görev bildirimleri',
+      ),
       icon: '@mipmap/ic_launcher',
       largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
       importance: Importance.max,
@@ -797,9 +811,9 @@ class TaskAlarmService {
       enableVibration: preferences.vibrationEnabled,
       actions: categoryId == _taskCategoryId
           ? <AndroidNotificationAction>[
-              const AndroidNotificationAction(
+              AndroidNotificationAction(
                 _completeActionId,
-                'Tamamlandı',
+                ActiveLanguage.s('Tamamlandı'),
                 showsUserInterface: true,
               ),
             ]
@@ -892,13 +906,7 @@ class TaskAlarmService {
 
   static DateTime _localDateTime(DateTime day, int minutes) {
     final clamped = minutes.clamp(0, 24 * 60 - 1);
-    return DateTime(
-      day.year,
-      day.month,
-      day.day,
-      clamped ~/ 60,
-      clamped % 60,
-    );
+    return DateTime(day.year, day.month, day.day, clamped ~/ 60, clamped % 60);
   }
 
   int _notificationId(String key) {

@@ -13,7 +13,7 @@
         android:background="@drawable/florien_widget_action_surface"
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
-        android:text="Planın nedir?   ✦"
+        android:text="@string/widget_ai_prompt"
         android:textColor="#29262D"
         android:textSize="20sp"
         android:textStyle="bold" />

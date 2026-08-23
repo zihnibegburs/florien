@@ -48,9 +48,6 @@ class _NotificationPermissionScreenState
 
   Future<void> _skip() async {
     if (_requesting) return;
-    // Do not re-prompt; leave type preferences untouched except task reminders off
-    // for users who explicitly skip the intro.
-    await ref.read(settingsStorageProvider).setTaskRemindersEnabled(false);
     await _finish();
   }
 

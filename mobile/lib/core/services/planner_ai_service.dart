@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 const _maxAiInputCharacters = 2000;
 const _maxAiChatTurns = 4;
@@ -40,10 +41,7 @@ class AiChatUsage {
   int get remaining =>
       (limitThisMonth - usedThisMonth).clamp(0, limitThisMonth);
 
-  bool get isExhausted =>
-      limitThisMonth > 0 && usedThisMonth >= limitThisMonth;
-
-  bool get shouldShowFreeQuota => !isPremium && limitThisMonth > 0;
+  bool get isExhausted => limitThisMonth > 0 && usedThisMonth >= limitThisMonth;
 
   static AiChatUsage? fromJson(Object? raw) {
     if (raw is! Map) return null;
@@ -84,6 +82,23 @@ abstract interface class TaskBreakdownService {
   Future<List<String>> generateSubtasks(String title);
 }
 
+List<String> selectAiSubtaskAdditions({
+  required Iterable<String> generated,
+  required Iterable<String> existing,
+}) {
+  final existingTitles = existing.toList(growable: false);
+  final seen = existingTitles.map((item) => item.toLowerCase()).toSet();
+  final remaining = TaskModel.userSubtaskLimit - existingTitles.length;
+  if (remaining <= 0) return const [];
+  final limit = remaining < TaskModel.aiSubtaskLimit
+      ? remaining
+      : TaskModel.aiSubtaskLimit;
+  return generated
+      .where((item) => seen.add(item.toLowerCase()))
+      .take(limit)
+      .toList();
+}
+
 class FirebaseTaskBreakdownService implements TaskBreakdownService {
   const FirebaseTaskBreakdownService(this._functions);
 
@@ -99,7 +114,8 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
           )
           .call(<String, Object?>{'task': title});
       final raw = result.data;
-      if (raw is! Map) throw const PlannerAiException('Geçersiz AI yanıtı.');
+      if (raw is! Map)
+        throw PlannerAiException(ActiveLanguage.s('Geçersiz AI yanıtı.'));
       final steps = raw['steps'] as List? ?? const [];
       final titles = steps
           .whereType<Map>()
@@ -108,7 +124,7 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
           .take(TaskModel.aiSubtaskLimit)
           .toList(growable: false);
       if (titles.isEmpty) {
-        throw const PlannerAiException('AI alt görev üretemedi.');
+        throw PlannerAiException(ActiveLanguage.s('AI alt görev üretemedi.'));
       }
       return titles;
     } on FirebaseFunctionsException catch (error, stackTrace) {
@@ -126,8 +142,10 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
       rethrow;
     } catch (error, stackTrace) {
       debugPrint('assistBreakdown response failed: $error\n$stackTrace');
-      throw const PlannerAiException(
-        'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
+      throw PlannerAiException(
+        ActiveLanguage.s(
+          'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
+        ),
       );
     }
   }
@@ -185,15 +203,19 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
       final message = (data['reply']?.toString() ?? '').trim();
       return PlannerAiReply(
         message: message.isEmpty
-            ? 'Planlamak istediğin şeyi biraz daha anlatır mısın?'
+            ? ActiveLanguage.s(
+                'Planlamak istediğin şeyi biraz daha anlatır mısın?',
+              )
             : message,
         tasks: tasks,
         usage: AiChatUsage.fromJson(data['usage']),
       );
     } catch (error, stackTrace) {
       debugPrint('assistPlannerChat response failed: $error\n$stackTrace');
-      throw const PlannerAiException(
-        'Plan asistanının yanıtını anlayamadım. Tekrar deneyebilir misin?',
+      throw PlannerAiException(
+        ActiveLanguage.s(
+          'Plan asistanının yanıtını anlayamadım. Tekrar deneyebilir misin?',
+        ),
       );
     }
   }
@@ -229,47 +251,70 @@ String aiFunctionsErrorMessage({
   final retrySuffix = _retrySuffix(details);
   final protectedMessage = switch (reason) {
     'AI_FREE_CHAT_MONTHLY_LIMIT_REACHED' =>
-      'Bu ayki ücretsiz AI mesaj hakkın bitti.$retrySuffix',
-    'PREMIUM_REQUIRED' =>
+      ActiveLanguage.s('Bu ayki ücretsiz AI mesaj hakkın bitti.') + retrySuffix,
+    'PREMIUM_REQUIRED' => ActiveLanguage.s(
       'Bu AI özelliğini kullanmak için Premium üyelik gerekiyor.',
+    ),
     'AI_RATE_LIMIT_MINUTE' =>
-      'Çok hızlı AI isteği gönderdin. Bir dakika bekleyip tekrar dene.$retrySuffix',
+      ActiveLanguage.s(
+            'Çok hızlı AI isteği gönderdin. Bir dakika bekleyip tekrar dene.',
+          ) +
+          retrySuffix,
     'AI_RATE_LIMIT_HOURLY' =>
-      'Saatlik AI kullanım sınırına ulaştın.$retrySuffix',
+      ActiveLanguage.s('Saatlik AI kullanım sınırına ulaştın.') + retrySuffix,
     'AI_DAILY_LIMIT_REACHED' =>
-      'Günlük AI kullanım sınırına ulaştın.$retrySuffix',
+      ActiveLanguage.s('Günlük AI kullanım sınırına ulaştın.') + retrySuffix,
     'AI_MONTHLY_LIMIT_REACHED' =>
-      'Aylık AI kullanım sınırına ulaştın.$retrySuffix',
-    'AI_INPUT_TOO_LONG' =>
-      'AI isteği en fazla $_maxAiInputCharacters karakter olabilir.',
-    'AI_PROVIDER_TIMEOUT' =>
+      ActiveLanguage.s('Aylık AI kullanım sınırına ulaştın.') + retrySuffix,
+    'AI_INPUT_TOO_LONG' => ActiveLanguage.s(
+      'AI isteği en fazla {count} karakter olabilir.',
+      {'count': '$_maxAiInputCharacters'},
+    ),
+    'AI_PROVIDER_TIMEOUT' => ActiveLanguage.s(
       'Plan asistanı yanıt vermek için fazla bekletti. Tekrar deneyebilirsin.',
-    'AI_PROVIDER_QUOTA_EXCEEDED' =>
+    ),
+    'AI_PROVIDER_QUOTA_EXCEEDED' => ActiveLanguage.s(
       'Plan asistanı şu anda yoğun. Biraz sonra tekrar deneyebilir misin?',
-    'AI_MODEL_UNAVAILABLE' || 'AI_CONFIGURATION_UNAVAILABLE' =>
+    ),
+    'AI_MODEL_UNAVAILABLE' ||
+    'AI_CONFIGURATION_UNAVAILABLE' => ActiveLanguage.s(
       'Plan asistanı geçici olarak kullanılamıyor. Biraz sonra tekrar dene.',
-    'AI_PROVIDER_UNAVAILABLE' =>
+    ),
+    'AI_PROVIDER_UNAVAILABLE' => ActiveLanguage.s(
       'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
-    'AI_MALFORMED_RESPONSE' =>
+    ),
+    'AI_MALFORMED_RESPONSE' => ActiveLanguage.s(
       'Plan asistanının yanıtını anlayamadım. Tekrar deneyebilir misin?',
+    ),
     _ => null,
   };
   if (protectedMessage != null) return protectedMessage;
 
   return switch (code) {
-    'unauthenticated' => 'Plan asistanı için giriş yapmış olman gerekiyor.',
-    'not-found' =>
+    'unauthenticated' => ActiveLanguage.s(
+      'Plan asistanı için giriş yapmış olman gerekiyor.',
+    ),
+    'not-found' => ActiveLanguage.s(
       'Plan asistanı fonksiyonu bulunamadı. Firebase Functions henüz deploy edilmemiş olabilir.',
-    'failed-precondition' =>
+    ),
+    'failed-precondition' => ActiveLanguage.s(
       'Plan asistanı geçici olarak kullanılamıyor. Biraz sonra tekrar dene.',
-    'resource-exhausted' =>
+    ),
+    'resource-exhausted' => ActiveLanguage.s(
       'Plan asistanı şu anda yoğun. Biraz sonra tekrar deneyebilir misin?',
-    'unavailable' || 'deadline-exceeded' =>
+    ),
+    'unavailable' || 'deadline-exceeded' => ActiveLanguage.s(
       'Plan asistanı şu anda yanıt vermiyor. Biraz sonra tekrar dene.',
-    _ =>
+    ),
+    _ => ActiveLanguage.s(
       breakdown
-          ? 'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.'
-          : 'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+          ? ActiveLanguage.s(
+              'AI alt görevleri şu an oluşturamadı. Tekrar deneyebilirsin.',
+            )
+          : ActiveLanguage.s(
+              'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+            ),
+    ),
   };
 }
 
@@ -280,5 +325,5 @@ String _retrySuffix(Object? details) {
   final local = retryAt.toLocal();
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
-  return ' $hour:$minute sonrasında tekrar deneyebilirsin.';
+  return ' ${ActiveLanguage.s('{hour}:{minute} sonrasında tekrar deneyebilirsin.', {'hour': hour, 'minute': minute})}';
 }

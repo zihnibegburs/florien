@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/data/routine_catalog.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -74,8 +75,24 @@ class _RoutineDiscoveryScreenState extends State<RoutineDiscoveryScreen> {
                   (task) =>
                       query.isEmpty ||
                       theme.name.toLowerCase().contains(query) ||
+                      context.l10n(theme.name).toLowerCase().contains(query) ||
+                      theme.description.toLowerCase().contains(query) ||
+                      context
+                          .l10n(theme.description)
+                          .toLowerCase()
+                          .contains(query) ||
                       task.title.toLowerCase().contains(query) ||
-                      task.description.toLowerCase().contains(query),
+                      context.l10n(task.title).toLowerCase().contains(query) ||
+                      task.description.toLowerCase().contains(query) ||
+                      context
+                          .l10n(task.description)
+                          .toLowerCase()
+                          .contains(query) ||
+                      task.subtasks.any(
+                        (subtask) =>
+                            subtask.toLowerCase().contains(query) ||
+                            context.l10n(subtask).toLowerCase().contains(query),
+                      ),
                 )
                 .toList(),
           ),
@@ -86,7 +103,7 @@ class _RoutineDiscoveryScreenState extends State<RoutineDiscoveryScreen> {
     return Scaffold(
       key: const ValueKey('routine-discovery-screen'),
       backgroundColor: context.palette.background,
-      appBar: AppBar(title: const Text('Rutinleri keşfet')),
+      appBar: AppBar(title: Text(context.l10n('Rutinleri keşfet'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           FlorienSpacing.screen,
@@ -100,12 +117,12 @@ class _RoutineDiscoveryScreenState extends State<RoutineDiscoveryScreen> {
             controller: _search,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Rutin veya kategori ara',
+              hintText: context.l10n('Rutin veya kategori ara'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _search.text.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Aramayı temizle',
+                      tooltip: context.l10n('Aramayı temizle'),
                       onPressed: () {
                         _search.clear();
                         setState(() {});
@@ -126,14 +143,16 @@ class _RoutineDiscoveryScreenState extends State<RoutineDiscoveryScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Hazır rutinler',
+                  context.l10n('Hazır rutinler'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
               Text(
-                '${visibleThemes.length} kategori',
+                context.l10n('{count} kategori', {
+                  'count': '${visibleThemes.length}',
+                }),
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: context.palette.textSecondary,
                 ),
@@ -175,14 +194,16 @@ class _FrequentlyUsedSection extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'En çok kullandıkların',
+        context.l10n('En çok kullandıkların'),
         style: Theme.of(
           context,
         ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
       ),
       const SizedBox(height: FlorienSpacing.sm),
       Text(
-        'Kullanım sayısına göre; eşitlikte en son oluşturulan önce gelir.',
+        context.l10n(
+          'Kullanım sayısına göre; eşitlikte en son oluşturulan önce gelir.',
+        ),
         style: Theme.of(
           context,
         ).textTheme.bodySmall?.copyWith(color: context.palette.textSecondary),
@@ -221,7 +242,10 @@ class _FrequentlyUsedCard extends StatelessWidget {
     final borderAlpha = context.isFlorienDark ? .55 : .16;
     return Semantics(
       button: true,
-      label: '${task.title}, ${summary.usageCount} kez kullanıldı',
+      label: context.l10n('{title}, {count} kez kullanıldı', {
+        'title': context.l10n(task.title),
+        'count': '${summary.usageCount}',
+      }),
       child: Material(
         key: ValueKey('frequently-used-task-${task.id}'),
         color: Colors.transparent,
@@ -247,7 +271,7 @@ class _FrequentlyUsedCard extends StatelessWidget {
                 TaskIconBadge.forTask(icon: task.icon, size: 30),
                 const Spacer(),
                 Text(
-                  task.title,
+                  context.l10n(task.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -256,7 +280,9 @@ class _FrequentlyUsedCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${summary.usageCount} kullanım',
+                  context.l10n('{count} kullanım', {
+                    'count': '${summary.usageCount}',
+                  }),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: context.palette.textSecondary,
                   ),
@@ -316,7 +342,7 @@ class _RoutineThemeAccordion extends StatelessWidget {
                   children: [
                     Container(
                       width: 4,
-                      height: 32,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: color,
                         borderRadius: BorderRadius.circular(FlorienRadius.pill),
@@ -334,13 +360,15 @@ class _RoutineThemeAccordion extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            theme.name,
-                            style: Theme.of(context).textTheme.titleSmall
+                            context.l10n(theme.name),
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${tasks.length} rutin',
+                            context.l10n('{count} rutin', {
+                              'count': '${tasks.length}',
+                            }),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelSmall
@@ -427,7 +455,10 @@ class _RoutineTaskRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '${task.title}, ${task.durationMinutes} dakika',
+    label: context.l10n('{title}, {minutes} dakika', {
+      'title': context.l10n(task.title),
+      'minutes': '${task.durationMinutes}',
+    }),
     child: Material(
       key: ValueKey('routine-task-${task.title}'),
       color: Colors.transparent,
@@ -451,7 +482,7 @@ class _RoutineTaskRow extends StatelessWidget {
               const SizedBox(width: FlorienSpacing.sm),
               Expanded(
                 child: Text(
-                  task.title,
+                  context.l10n(task.title),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -481,7 +512,9 @@ class _RoutineTaskRow extends StatelessWidget {
                     ),
                     const SizedBox(width: FlorienSpacing.xs),
                     Text(
-                      '${task.durationMinutes} dk',
+                      context.l10n('{minutes} dk', {
+                        'minutes': '${task.durationMinutes}',
+                      }),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: context.palette.textSecondary,
                         fontWeight: FontWeight.w700,
@@ -511,7 +544,7 @@ class _EmptySearchState extends StatelessWidget {
       borderRadius: BorderRadius.circular(FlorienRadius.lg),
     ),
     child: Text(
-      '“$query” için hazır rutin bulunamadı.',
+      context.l10n('“{query}” için hazır rutin bulunamadı.', {'query': query}),
       textAlign: TextAlign.center,
       style: Theme.of(
         context,

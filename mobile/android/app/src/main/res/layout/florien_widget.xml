@@ -18,7 +18,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Günlük plan"
+            android:text="@string/widget_daily_plan"
             android:textColor="#29262D"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -42,7 +42,7 @@
         android:layout_marginTop="7dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="Tamamlanmamış görevler"
+        android:text="@string/widget_incomplete_tasks"
         android:textColor="#4A454F"
         android:textSize="12sp" />
 

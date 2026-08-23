@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/services/review_feedback_service.dart';
@@ -148,13 +149,13 @@ class _StatsHeader extends StatelessWidget {
         ),
         const Spacer(),
         _RoundHeaderButton(
-          tooltip: 'Paylaş',
+          tooltip: context.l10n('Paylaş'),
           icon: Icons.ios_share_rounded,
           onPressed: () {},
         ),
         const SizedBox(width: 10),
         _RoundHeaderButton(
-          tooltip: 'Ayarlar',
+          tooltip: context.l10n('Ayarlar'),
           icon: Icons.settings_outlined,
           onPressed: () {
             Navigator.of(context).push(
@@ -229,8 +230,10 @@ class _StatsSummaryCard extends StatelessWidget {
             Expanded(
               child: _StatColumn(
                 value: '$streak',
-                label: 'GÜN SERİSİ',
-                progressLabel: streak == 1 ? '1 gün' : '$streak gün',
+                label: context.l10n('GÜN SERİSİ'),
+                progressLabel: streak == 1
+                    ? context.l10n('1 gün')
+                    : '$streak gün',
                 progress: (streak / 7).clamp(0, 1),
                 accent: FlorienColors.accent,
                 icon: Icons.local_fire_department_rounded,
@@ -244,8 +247,11 @@ class _StatsSummaryCard extends StatelessWidget {
             Expanded(
               child: _StatColumn(
                 value: '$completed',
-                label: 'TAMAMLANDI',
-                progressLabel: '$completed/$completedGoal görevler',
+                label: context.l10n('TAMAMLANDI'),
+                progressLabel: context.l10n('{completed}/{goal} görevler', {
+                  'completed': '$completed',
+                  'goal': '$completedGoal',
+                }),
                 progress: completed / completedGoal,
                 accent: FlorienColors.mint,
                 icon: Icons.check_circle_rounded,
@@ -370,8 +376,10 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
       );
       if (submitted == true && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Geri bildirimin bize ulaştı. Teşekkür ederiz!'),
+          SnackBar(
+            content: Text(
+              context.l10n('Geri bildirimin bize ulaştı. Teşekkür ederiz!'),
+            ),
           ),
         );
       }
@@ -414,14 +422,16 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Teşekkürler!',
+                  context.l10n('Teşekkürler!'),
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Florien’i mağazada değerlendirerek bize destek olmak ister misin?',
+                  context.l10n(
+                    'Florien’i mağazada değerlendirerek bize destek olmak ister misin?',
+                  ),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: context.palette.textSecondary,
@@ -434,13 +444,13 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
                     key: const ValueKey('statistics-rating-open-store'),
                     onPressed: () => Navigator.of(dialogContext).pop(true),
                     icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                    label: const Text('Mağazada değerlendir'),
+                    label: Text(context.l10n('Mağazada değerlendir')),
                   ),
                 ),
                 TextButton(
                   key: const ValueKey('statistics-rating-dismiss'),
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Şimdi değil'),
+                  child: Text(context.l10n('Şimdi değil')),
                 ),
               ],
             ),
@@ -467,8 +477,10 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
     setState(() => _openingStore = false);
     if (!opened) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mağaza şu anda açılamadı. Lütfen tekrar dene.'),
+        SnackBar(
+          content: Text(
+            context.l10n('Mağaza şu anda açılamadı. Lütfen tekrar dene.'),
+          ),
         ),
       );
     }
@@ -488,14 +500,14 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
     child: Column(
       children: [
         Text(
-          'Bizi değerlendirin',
+          context.l10n('Bizi değerlendirin'),
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         Text(
-          'Florien deneyimini kaç yıldızla değerlendirirsin?',
+          context.l10n('Florien deneyimini kaç yıldızla değerlendirirsin?'),
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: context.palette.textSecondary,
@@ -509,7 +521,7 @@ class _StatisticsReviewCardState extends State<StatisticsReviewCard> {
               Semantics(
                 button: true,
                 selected: rating <= _rating,
-                label: '$rating yıldız',
+                label: context.l10n('{count} yıldız', {'count': '$rating'}),
                 child: InkWell(
                   key: ValueKey('statistics-rating-$rating'),
                   onTap: _openingStore ? null : () => _selectRating(rating),
@@ -595,7 +607,9 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
       if (mounted) {
         setState(() {
           _sending = false;
-          _error = 'Geri bildirimin gönderilemedi. Lütfen tekrar dene.';
+          _error = context.l10n(
+            'Geri bildirimin gönderilemedi. Lütfen tekrar dene.',
+          );
         });
       }
     }
@@ -617,7 +631,7 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Teşekkürler!',
+            context.l10n('Teşekkürler!'),
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
@@ -625,7 +639,9 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Deneyimini iyileştirebilmemiz için bize biraz daha anlatır mısın?',
+            context.l10n(
+              'Deneyimini iyileştirebilmemiz için bize biraz daha anlatır mısın?',
+            ),
             textAlign: TextAlign.center,
             style: TextStyle(color: context.palette.textSecondary),
           ),
@@ -638,9 +654,9 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
             maxLength: reviewFeedbackMaxCharacters,
             textCapitalization: TextCapitalization.sentences,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Yaşadığın sorun nedir?',
-              hintText: 'Örneğin: Görev eklerken zorlandım…',
+            decoration: InputDecoration(
+              labelText: context.l10n('Yaşadığın sorun nedir?'),
+              hintText: context.l10n('Örneğin: Görev eklerken zorlandım…'),
             ),
           ),
           const SizedBox(height: 8),
@@ -652,9 +668,9 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
             maxLength: reviewFeedbackMaxCharacters,
             textCapitalization: TextCapitalization.sentences,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Önerin nedir?',
-              hintText: 'Florien’i nasıl iyileştirebiliriz?',
+            decoration: InputDecoration(
+              labelText: context.l10n('Önerin nedir?'),
+              hintText: context.l10n('Florien’i nasıl iyileştirebiliriz?'),
             ),
           ),
           if (_error != null) ...[
@@ -665,12 +681,16 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
           FilledButton(
             key: const ValueKey('statistics-rating-submit-feedback'),
             onPressed: _canSubmit && !_sending ? _submit : null,
-            child: Text(_sending ? 'Gönderiliyor…' : 'Geri bildirimi gönder'),
+            child: Text(
+              _sending
+                  ? context.l10n('Gönderiliyor…')
+                  : context.l10n('Geri bildirimi gönder'),
+            ),
           ),
           TextButton(
             key: const ValueKey('statistics-rating-dismiss'),
             onPressed: _sending ? null : () => Navigator.of(context).pop(false),
-            child: const Text('Şimdi değil'),
+            child: Text(context.l10n('Şimdi değil')),
           ),
         ],
       ),
@@ -703,7 +723,7 @@ Future<bool> _launchExternal(Uri uri) async {
 class _MoodSection extends ConsumerWidget {
   const _MoodSection();
 
-  static const _days = ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'];
+  static const _dayKeys = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -718,7 +738,7 @@ class _MoodSection extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                'Ruh Hali ve Günlük Yansımalar',
+                context.l10n('Ruh Hali ve Günlük Yansımalar'),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.4,
@@ -728,13 +748,13 @@ class _MoodSection extends ConsumerWidget {
             TextButton.icon(
               onPressed: () => _connectAppleHealth(context, ref),
               icon: const Icon(Icons.health_and_safety_outlined, size: 18),
-              label: const Text('Apple Sağlık'),
+              label: Text(context.l10n('Apple Sağlık')),
             ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
-          'Bugün veya geçmiş günler için nasıl hissettiğini seç.',
+          context.l10n('Bugün veya geçmiş günler için nasıl hissettiğini seç.'),
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: context.palette.textSecondary),
@@ -744,11 +764,11 @@ class _MoodSection extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             for (final date in List.generate(
-              _days.length,
+              _dayKeys.length,
               (index) => weekStart.add(Duration(days: index)),
             ))
               _MoodDayButton(
-                label: _days[date.weekday - DateTime.monday],
+                label: context.l10n(_dayKeys[date.weekday - DateTime.monday]),
                 date: date,
                 entry: _entryForDay(entries, date),
                 isToday: _sameDay(today, date),
@@ -777,8 +797,12 @@ class _MoodSection extends ConsumerWidget {
       SnackBar(
         content: Text(
           connected
-              ? 'Apple Sağlık bağlandı. Bu haftanın ruh halleri eşitlendi.'
-              : 'Apple Sağlık izni verilmedi veya bu iPhone desteklenmiyor.',
+              ? context.l10n(
+                  'Apple Sağlık bağlandı. Bu haftanın ruh halleri eşitlendi.',
+                )
+              : context.l10n(
+                  'Apple Sağlık izni verilmedi veya bu iPhone desteklenmiyor.',
+                ),
         ),
       ),
     );
@@ -955,8 +979,10 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
             minLines: 3,
             maxLines: 5,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Bugünle ilgili kısa bir yansıma ekle (isteğe bağlı)',
+            decoration: InputDecoration(
+              hintText: context.l10n(
+                'Bugünle ilgili kısa bir yansıma ekle (isteğe bağlı)',
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -972,7 +998,7 @@ class _MoodEntrySheetState extends State<_MoodEntrySheet> {
                 ),
               ),
               icon: const Icon(Icons.check_rounded),
-              label: const Text('Ruh halini kaydet'),
+              label: Text(context.l10n('Ruh halini kaydet')),
             ),
           ),
         ],
@@ -998,46 +1024,51 @@ bool _sameDay(DateTime first, DateTime second) =>
     first.month == second.month &&
     first.day == second.day;
 
-const _turkishMonthNames = [
-  'Ocak',
-  'Şubat',
-  'Mart',
-  'Nisan',
-  'Mayıs',
-  'Haziran',
-  'Temmuz',
-  'Ağustos',
-  'Eylül',
-  'Ekim',
-  'Kasım',
-  'Aralık',
-];
+String _localizedMonthName(int month) => [
+  ActiveLanguage.s('Ocak'),
+  ActiveLanguage.s('Şubat'),
+  ActiveLanguage.s('Mart'),
+  ActiveLanguage.s('Nisan'),
+  ActiveLanguage.s('Mayıs'),
+  ActiveLanguage.s('Haziran'),
+  ActiveLanguage.s('Temmuz'),
+  ActiveLanguage.s('Ağustos'),
+  ActiveLanguage.s('Eylül'),
+  ActiveLanguage.s('Ekim'),
+  ActiveLanguage.s('Kasım'),
+  ActiveLanguage.s('Aralık'),
+][month - 1];
 
-const _turkishWeekdayNames = [
-  'Pazartesi',
-  'Salı',
-  'Çarşamba',
-  'Perşembe',
-  'Cuma',
-  'Cumartesi',
-  'Pazar',
-];
+String _localizedWeekdayName(int weekday) => [
+  ActiveLanguage.s('Pazartesi'),
+  ActiveLanguage.s('Salı'),
+  ActiveLanguage.s('Çarşamba'),
+  ActiveLanguage.s('Perşembe'),
+  ActiveLanguage.s('Cuma'),
+  ActiveLanguage.s('Cumartesi'),
+  ActiveLanguage.s('Pazar'),
+][weekday - 1];
 
 String moodReflectionQuestion(DateTime date, {DateTime? today}) {
   final current = today ?? DateTime.now();
   final currentDay = DateTime(current.year, current.month, current.day);
   final selectedDay = DateTime(date.year, date.month, date.day);
-  if (_sameDay(selectedDay, currentDay)) return 'Bugün nasılsın?';
+  if (_sameDay(selectedDay, currentDay)) {
+    return ActiveLanguage.s('Bugün nasılsın?');
+  }
   if (_sameDay(selectedDay, currentDay.subtract(const Duration(days: 1)))) {
-    return 'Dün nasıldın?';
+    return ActiveLanguage.s('Dün nasıldın?');
   }
 
-  final month = _turkishMonthNames[selectedDay.month - 1];
-  final weekday = _turkishWeekdayNames[selectedDay.weekday - 1];
   final year = selectedDay.year == currentDay.year
       ? ''
       : ' ${selectedDay.year}';
-  return '${selectedDay.day} $month$year $weekday günü nasıldın?';
+  return ActiveLanguage.s('{day} {month}{year} {weekday} günü nasıldın?', {
+    'day': '${selectedDay.day}',
+    'month': _localizedMonthName(selectedDay.month),
+    'year': year,
+    'weekday': _localizedWeekdayName(selectedDay.weekday),
+  });
 }
 
 Color _moodColor(MoodLevel? mood, BuildContext context) => switch (mood) {

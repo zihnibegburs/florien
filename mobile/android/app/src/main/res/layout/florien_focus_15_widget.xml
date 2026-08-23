@@ -8,18 +8,20 @@
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/focus_15_brand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Florien · Odaklan"
+        android:text="@string/widget_focus_brand"
         android:textColor="#29262D"
         android:textSize="12sp"
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/focus_15_ready"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="7dp"
-        android:text="15 dakikalık alanın hazır"
+        android:text="@string/widget_focus_ready"
         android:textColor="#29262D"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -32,7 +34,7 @@
         android:background="@drawable/florien_widget_primary"
         android:paddingHorizontal="13dp"
         android:paddingVertical="8dp"
-        android:text="▶ Başla"
+        android:text="@string/widget_start"
         android:textColor="#29262D"
         android:textSize="12sp"
         android:textStyle="bold" />

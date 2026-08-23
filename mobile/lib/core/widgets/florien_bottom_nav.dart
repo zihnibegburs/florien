@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 const florienAiFabImageAsset = 'assets/ai/florien_ai_glass_star.png';
 
@@ -24,7 +25,7 @@ class FlorienAiMark extends StatelessWidget {
     final dark = context.isFlorienDark;
     final star = Semantics(
       image: true,
-      label: semanticLabel,
+      label: ActiveLanguage.s(semanticLabel),
       child: Image.asset(
         florienAiFabImageAsset,
         key: imageKey,
@@ -77,10 +78,7 @@ class FlorienAiMark extends StatelessWidget {
               width: FlorienBorders.thin,
             ),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(size * 0.12),
-            child: star,
-          ),
+          child: Padding(padding: EdgeInsets.all(size * 0.12), child: star),
         ),
       ),
     );
@@ -164,11 +162,7 @@ class FlorienNavDestination {
 }
 
 class _SpecialNavButton extends StatelessWidget {
-  const _SpecialNavButton({
-    this.size = 58,
-    this.onTap,
-    this.tooltip,
-  });
+  const _SpecialNavButton({this.size = 58, this.onTap, this.tooltip});
 
   final double size;
   final VoidCallback? onTap;
@@ -177,7 +171,7 @@ class _SpecialNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: tooltip ?? 'Plan asistanı',
+      message: tooltip ?? context.l10n('Plan asistanı'),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

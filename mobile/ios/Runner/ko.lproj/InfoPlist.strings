@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "음성으로 할 일을 추가하려면 마이크 권한이 필요해요.";
+"NSSpeechRecognitionUsageDescription" = "말한 내용을 글자로 바꾸려면 음성 인식이 필요해요.";
+"NSHealthShareUsageDescription" = "기분을 Apple 건강과 맞추려면 건강 데이터가 필요해요.";
+"NSHealthUpdateUsageDescription" = "앱에 적은 기분을 Apple 건강에 저장하려면 권한이 필요해요.";
+"NSCalendarsUsageDescription" = "캘린더 일정을 할 일로 가져오려면 권한이 필요해요.";
+"NSCalendarsFullAccessUsageDescription" = "캘린더 일정을 할 일로 가져오려면 전체 권한이 필요해요.";

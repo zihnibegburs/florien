@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/todo/calendar_connections_screen.dart';
@@ -16,10 +18,12 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final language = ref.watch(appLanguageProvider).valueOrNull ?? strings.lang;
     final themeMode =
         ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
     final activeProfileName =
-        ref.watch(activeAppProfileProvider)?.name ?? 'Profilim';
+        ref.watch(activeAppProfileProvider)?.name ?? strings('Profilim');
 
     return Scaffold(
       key: const ValueKey('settings-screen'),
@@ -60,7 +64,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Ayarlar',
+                  strings('Ayarlar'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
@@ -70,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Ayarlar',
+              strings('Ayarlar'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -80,7 +84,7 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 _SettingsRow(
                   icon: Icons.workspace_premium_rounded,
-                  label: 'Florien Premium',
+                  label: strings('Florien Premium'),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const PremiumMembershipScreen(),
@@ -89,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 _SettingsRow(
                   icon: Icons.notifications_none_rounded,
-                  label: 'Bildirimler',
+                  label: strings('Bildirimler'),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const NotificationSettingsScreen(),
@@ -98,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 _SettingsRow(
                   icon: Icons.timelapse_rounded,
-                  label: 'Canlı Etkinlikler',
+                  label: strings('Canlı Etkinlikler'),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const LiveActivitySettingsScreen(),
@@ -107,7 +111,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 _SettingsRow(
                   icon: Icons.calendar_month_outlined,
-                  label: 'Bağlı Takvimler',
+                  label: strings('Bağlı Takvimler'),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const CalendarConnectionsScreen(),
@@ -116,15 +120,22 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 _SettingsRow(
                   icon: Icons.wb_sunny_outlined,
-                  label: 'Görünüm',
-                  trailingLabel: _themeLabel(themeMode),
+                  label: strings('Görünüm'),
+                  trailingLabel: _themeLabel(strings, themeMode),
                   onTap: () => _showAppearanceSheet(context, ref, themeMode),
+                ),
+                _SettingsRow(
+                  key: const ValueKey('settings-language'),
+                  icon: Icons.translate_rounded,
+                  label: strings('Dil'),
+                  trailingLabel: _languageLabel(language),
+                  onTap: () => _showLanguageSheet(context, ref, language),
                 ),
               ],
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Profil',
+              strings('Profil'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -136,24 +147,24 @@ class SettingsScreen extends ConsumerWidget {
                   key: const ValueKey('settings-profile-switcher'),
                   icon: Icons.switch_account_outlined,
                   label: activeProfileName,
-                  trailingLabel: 'Değiştir',
+                  trailingLabel: strings('Değiştir'),
                   onTap: () => showProfileSwitcher(context, ref),
                 ),
                 _SettingsRow(
                   icon: Icons.person_add_alt_1_outlined,
-                  label: 'Yeni profil ekle',
+                  label: strings('Yeni profil ekle'),
                   onTap: () => _openProfiles(context),
                 ),
                 _SettingsRow(
                   icon: Icons.person_outline_rounded,
-                  label: 'Profil adını düzenle',
+                  label: strings('Profil adını düzenle'),
                   onTap: () => _openProfiles(context),
                 ),
               ],
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Hesap ve abonelik',
+              strings('Hesap ve abonelik'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -161,25 +172,25 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: FlorienSpacing.lg),
             FlorienGroupedPanel(
               children: [
-                const _SettingsRow(
+                _SettingsRow(
                   icon: Icons.restart_alt_rounded,
-                  label: 'Satın alımı geri yükle',
+                  label: strings('Satın alımı geri yükle'),
                 ),
                 _SettingsRow(
                   icon: Icons.logout_rounded,
-                  label: 'Çıkış yap',
+                  label: strings('Çıkış yap'),
                   onTap: () => _confirmLogout(context, ref),
                 ),
                 _SettingsRow(
                   icon: Icons.delete_outline_rounded,
-                  label: 'Hesabı sil',
+                  label: strings('Hesabı sil'),
                   onTap: () => _confirmDeleteAccount(context, ref),
                 ),
               ],
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Yasal',
+              strings('Yasal'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -190,7 +201,7 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   key: const ValueKey('settings-terms'),
                   icon: Icons.description_outlined,
-                  label: 'Hizmet şartları',
+                  label: strings('Hizmet şartları'),
                   onTap: () => _openLegalUrl(
                     context,
                     'https://www.wirefire.co/florien/terms',
@@ -199,7 +210,7 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   key: const ValueKey('settings-privacy'),
                   icon: Icons.privacy_tip_outlined,
-                  label: 'Gizlilik politikası',
+                  label: strings('Gizlilik politikası'),
                   onTap: () => _openLegalUrl(
                     context,
                     'https://www.wirefire.co/florien/privacy',
@@ -213,11 +224,16 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static String _themeLabel(ThemeMode mode) => switch (mode) {
-    ThemeMode.light => 'Aydınlık',
-    ThemeMode.dark => 'Karanlık',
-    ThemeMode.system => 'Sistem',
+  static String _themeLabel(S strings, ThemeMode mode) => switch (mode) {
+    ThemeMode.light => strings('Aydınlık'),
+    ThemeMode.dark => strings('Karanlık'),
+    ThemeMode.system => strings('Sistem'),
   };
+
+  static String _languageLabel(String code) {
+    final match = supportedLanguageOptions.where((item) => item.code == code);
+    return match.isEmpty ? code : match.first.nativeName;
+  }
 
   Future<void> _openLegalUrl(BuildContext context, String url) async {
     try {
@@ -230,7 +246,7 @@ class SettingsScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Sayfa açılamadı.')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n('Sayfa açılamadı.'))));
   }
 
   void _openProfiles(BuildContext context) {
@@ -242,9 +258,9 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final approved = await _confirmAction(
       context,
-      title: 'Çıkış yapılsın mı?',
-      message: 'Hesabından çıkış yapacaksın.',
-      actionLabel: 'Çıkış yap',
+      title: context.l10n('Çıkış yapılsın mı?'),
+      message: context.l10n('Hesabından çıkış yapacaksın.'),
+      actionLabel: context.l10n('Çıkış yap'),
     );
     if (approved != true) return;
     await ref.read(authStateProvider.notifier).logout();
@@ -256,9 +272,11 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final approved = await _confirmAction(
       context,
-      title: 'Hesap silinsin mi?',
-      message: 'Hesabın ve buluttaki görevlerin kalıcı olarak silinecek.',
-      actionLabel: 'Hesabı sil',
+      title: context.l10n('Hesap silinsin mi?'),
+      message: context.l10n(
+        'Hesabın ve buluttaki görevlerin kalıcı olarak silinecek.',
+      ),
+      actionLabel: context.l10n('Hesabı sil'),
       destructive: true,
     );
     if (approved != true || !context.mounted) return;
@@ -267,9 +285,13 @@ class SettingsScreen extends ConsumerWidget {
       await ref.read(authStateProvider.notifier).deleteAccount();
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hesap silinemedi: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n('Hesap silinemedi: {error}', {'error': '$error'}),
+          ),
+        ),
+      );
     }
   }
 
@@ -287,7 +309,7 @@ class SettingsScreen extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Vazgeç'),
+          child: Text(context.l10n('Vazgeç')),
         ),
         FilledButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -334,26 +356,26 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Görünüm',
+                  context.l10n('Görünüm'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 14),
                 _AppearanceChoice(
-                  label: 'Aydınlık mod',
+                  label: context.l10n('Aydınlık mod'),
                   selected: current == ThemeMode.light,
                   onTap: () => Navigator.pop(context, ThemeMode.light),
                 ),
                 const SizedBox(height: 10),
                 _AppearanceChoice(
-                  label: 'Karanlık mod',
+                  label: context.l10n('Karanlık mod'),
                   selected: current == ThemeMode.dark,
                   onTap: () => Navigator.pop(context, ThemeMode.dark),
                 ),
                 const SizedBox(height: 10),
                 _AppearanceChoice(
-                  label: 'Sistem',
+                  label: context.l10n('Sistem'),
                   selected: current == ThemeMode.system,
                   onTap: () => Navigator.pop(context, ThemeMode.system),
                 ),
@@ -366,6 +388,82 @@ class SettingsScreen extends ConsumerWidget {
 
     if (selected == null || !context.mounted) return;
     await ref.read(appThemeModeProvider.notifier).setThemeMode(selected);
+  }
+
+  Future<void> _showLanguageSheet(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            decoration: BoxDecoration(
+              color: context.palette.background,
+              borderRadius: BorderRadius.circular(FlorienRadius.xl),
+              border: Border.all(
+                color: context.palette.border,
+                width: FlorienBorders.thin,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.palette.border,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  context.l10n('Dili seç'),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 420),
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      _AppearanceChoice(
+                        label: context.l10n('Telefon dili'),
+                        selected: false,
+                        onTap: () => Navigator.pop(context, ''),
+                      ),
+                      const SizedBox(height: 10),
+                      for (final option in supportedLanguageOptions) ...[
+                        _AppearanceChoice(
+                          label: option.nativeName,
+                          selected: option.code == current,
+                          onTap: () => Navigator.pop(context, option.code),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selected == null || !context.mounted) return;
+    await ref
+        .read(appLanguageProvider.notifier)
+        .setLanguage(selected.isEmpty ? null : selected);
+    await HomeScreenWidgetService.syncChrome();
   }
 }
 
@@ -383,7 +481,9 @@ class _AppearanceChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? context.palette.selection : context.palette.surfaceMuted,
+      color: selected
+          ? context.palette.selection
+          : context.palette.surfaceMuted,
       borderRadius: BorderRadius.circular(FlorienRadius.pill),
       child: InkWell(
         onTap: onTap,

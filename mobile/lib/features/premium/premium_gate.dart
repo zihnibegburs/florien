@@ -15,6 +15,12 @@ Future<bool> requirePremiumAccess(
   PremiumFeature feature,
 ) async {
   if (hasActivePremium(ref)) return true;
+  try {
+    if ((await ref.read(premiumMembershipProvider.future)).hasActivePremium) {
+      return true;
+    }
+  } catch (_) {}
+  if (!context.mounted) return false;
   await Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => PremiumMembershipScreen(highlightedFeature: feature),

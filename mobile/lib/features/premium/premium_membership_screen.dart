@@ -64,9 +64,7 @@ class _PremiumMembershipScreenState
 
       final previousMessage = previous?.valueOrNull?.message;
       final nextMessage = next.valueOrNull?.message;
-      if (nextMessage != null &&
-          nextMessage != previousMessage &&
-          mounted) {
+      if (nextMessage != null && nextMessage != previousMessage && mounted) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(nextMessage)));

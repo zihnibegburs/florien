@@ -26,7 +26,7 @@
             android:id="@+id/live_activity_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Odak modu"
+            android:text="@string/live_activity_focus"
             android:textColor="#1C2826"
             android:textSize="14sp"
             android:textStyle="bold" />

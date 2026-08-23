@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
@@ -74,20 +75,27 @@ class _NotificationSettingsScreenState
       await alarms.savePreferences(next);
       ref.invalidate(notificationPreferencesProvider);
       await ref.read(notificationReconcileProvider)(
-        previousDefaultLeadMinutes:
-            previousLead == next.taskReminderLeadMinutes ? null : previousLead,
+        previousDefaultLeadMinutes: previousLead == next.taskReminderLeadMinutes
+            ? null
+            : previousLead,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kaydedildi'),
-          duration: Duration(milliseconds: 1200),
+        SnackBar(
+          content: Text(context.l10n('Kaydedildi')),
+          duration: const Duration(milliseconds: 1200),
         ),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bildirim ayarı kaydedilemedi: $error')),
+        SnackBar(
+          content: Text(
+            context.l10n('Bildirim ayarı kaydedilemedi: {error}', {
+              'error': '$error',
+            }),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -142,7 +150,7 @@ class _NotificationSettingsScreenState
                 ),
                 const SizedBox(width: 14),
                 Text(
-                  'Bildirimler',
+                  context.l10n('Bildirimler'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
@@ -173,14 +181,14 @@ class _NotificationSettingsScreenState
                 ),
               ),
               error: (_, _) => Text(
-                'Bildirim ayarları yüklenemedi.',
+                context.l10n('Bildirim ayarları yüklenemedi.'),
                 style: TextStyle(color: context.palette.error),
               ),
               data: (value) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bildirim türleri',
+                    context.l10n('Bildirim türleri'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -190,7 +198,7 @@ class _NotificationSettingsScreenState
                     children: [
                       _TypeTile(
                         icon: Icons.notifications_active_outlined,
-                        title: 'Görev hatırlatması',
+                        title: context.l10n('Görev hatırlatması'),
                         subtitle: _leadLabel(value.taskReminderLeadMinutes),
                         enabled: value.taskRemindersEnabled,
                         interactive: !_saving,
@@ -210,7 +218,7 @@ class _NotificationSettingsScreenState
                       ),
                       _TypeTile(
                         icon: Icons.wb_sunny_outlined,
-                        title: 'Sabah plan özeti',
+                        title: context.l10n('Sabah plan özeti'),
                         subtitle: _formatTime(value.morningSummaryTime),
                         enabled: value.morningSummaryEnabled,
                         interactive: !_saving,
@@ -236,9 +244,10 @@ class _NotificationSettingsScreenState
                       ),
                       _TypeTile(
                         icon: Icons.favorite_outline_rounded,
-                        title: 'Motivasyon',
-                        subtitle:
-                            'Salı ve perşembe · ${_formatTime(value.motivationTime)}',
+                        title: context.l10n('Motivasyon'),
+                        subtitle: context.l10n('Salı ve perşembe · {time}', {
+                          'time': _formatTime(value.motivationTime),
+                        }),
                         enabled: value.motivationEnabled,
                         interactive: !_saving,
                         onEnabledChanged: (enabled) => _persist(
@@ -263,7 +272,7 @@ class _NotificationSettingsScreenState
                       ),
                       _TypeTile(
                         icon: Icons.nightlight_round,
-                        title: 'Günlük değerlendirme',
+                        title: context.l10n('Günlük değerlendirme'),
                         subtitle: _formatTime(value.dailyReviewTime),
                         enabled: value.dailyReviewEnabled,
                         interactive: !_saving,
@@ -289,7 +298,7 @@ class _NotificationSettingsScreenState
                       ),
                       _TypeTile(
                         icon: Icons.calendar_view_week_rounded,
-                        title: 'Haftalık değerlendirme',
+                        title: context.l10n('Haftalık değerlendirme'),
                         subtitle:
                             'Pazar · ${_formatTime(value.weeklyReviewTime)}',
                         enabled: value.weeklyReviewEnabled,
@@ -318,14 +327,16 @@ class _NotificationSettingsScreenState
                   ),
                   const SizedBox(height: FlorienSpacing.xxxl),
                   Text(
-                    'Sessiz saatler',
+                    context.l10n('Sessiz saatler'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Bu aralıkta genel bildirimler sessiz saat bitimine ertelenir. Saatli görev hatırlatmaları etkilenmez.',
+                    context.l10n(
+                      'Bu aralıkta genel bildirimler sessiz saat bitimine ertelenir. Saatli görev hatırlatmaları etkilenmez.',
+                    ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: context.palette.textSecondary,
                     ),
@@ -334,52 +345,52 @@ class _NotificationSettingsScreenState
                   FlorienGroupedPanel(
                     children: [
                       _TypeTile(
-                    icon: Icons.do_not_disturb_on_outlined,
-                    title: 'Sessiz saatler',
-                    subtitle:
-                        '${_formatTime(value.quietHoursStart)} – ${_formatTime(value.quietHoursEnd)}',
-                    enabled: value.quietHoursEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) =>
-                          current.copyWith(quietHoursEnabled: enabled),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _TimeButton(
-                          label: _formatTime(value.quietHoursStart),
-                          enabled: value.quietHoursEnabled && !_saving,
-                          onTap: () => _pickTime(
-                            initial: value.quietHoursStart,
-                            onPicked: (time) => _persist(
-                              (current) => current.copyWith(
-                                quietHoursStartMinutes:
-                                    NotificationPreferences.minutesFromTime(
-                                      time,
-                                    ),
+                        icon: Icons.do_not_disturb_on_outlined,
+                        title: context.l10n('Sessiz saatler'),
+                        subtitle:
+                            '${_formatTime(value.quietHoursStart)} – ${_formatTime(value.quietHoursEnd)}',
+                        enabled: value.quietHoursEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(quietHoursEnabled: enabled),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _TimeButton(
+                              label: _formatTime(value.quietHoursStart),
+                              enabled: value.quietHoursEnabled && !_saving,
+                              onTap: () => _pickTime(
+                                initial: value.quietHoursStart,
+                                onPicked: (time) => _persist(
+                                  (current) => current.copyWith(
+                                    quietHoursStartMinutes:
+                                        NotificationPreferences.minutesFromTime(
+                                          time,
+                                        ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        _TimeButton(
-                          label: _formatTime(value.quietHoursEnd),
-                          enabled: value.quietHoursEnabled && !_saving,
-                          onTap: () => _pickTime(
-                            initial: value.quietHoursEnd,
-                            onPicked: (time) => _persist(
-                              (current) => current.copyWith(
-                                quietHoursEndMinutes:
-                                    NotificationPreferences.minutesFromTime(
-                                      time,
-                                    ),
+                            const SizedBox(width: 6),
+                            _TimeButton(
+                              label: _formatTime(value.quietHoursEnd),
+                              enabled: value.quietHoursEnabled && !_saving,
+                              onTap: () => _pickTime(
+                                initial: value.quietHoursEnd,
+                                onPicked: (time) => _persist(
+                                  (current) => current.copyWith(
+                                    quietHoursEndMinutes:
+                                        NotificationPreferences.minutesFromTime(
+                                          time,
+                                        ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
                       ),
                     ],
                   ),
@@ -400,8 +411,8 @@ String _formatTime(TimeOfDay time) {
 }
 
 String _leadLabel(int minutes) {
-  if (minutes <= 0) return 'Tam başlangıçta';
-  return '$minutes dakika önce';
+  if (minutes <= 0) return ActiveLanguage.s('Tam başlangıçta');
+  return ActiveLanguage.s('{minutes} dakika önce', {'minutes': '$minutes'});
 }
 
 class _PermissionDeniedCard extends StatelessWidget {
@@ -431,7 +442,7 @@ class _PermissionDeniedCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bildirim izni kapalı',
+            context.l10n('Bildirim izni kapalı'),
             style: Theme.of(
               context,
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
@@ -439,8 +450,12 @@ class _PermissionDeniedCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             needsInAppPrompt
-                ? 'Hatırlatmalar için Florien’e bildirim izni vermen gerekiyor.'
-                : 'Ayarlar → Bildirimler → Florien yolundan izin ver.',
+                ? context.l10n(
+                    'Hatırlatmalar için Florien’e bildirim izni vermen gerekiyor.',
+                  )
+                : context.l10n(
+                    'Ayarlar → Bildirimler → Florien yolundan izin ver.',
+                  ),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: context.palette.textSecondary,
             ),
@@ -455,8 +470,8 @@ class _PermissionDeniedCard extends StatelessWidget {
             ),
             label: Text(
               needsInAppPrompt
-                  ? 'İzin ver'
-                  : 'Florien bildirim ayarlarını aç',
+                  ? context.l10n('İzin ver')
+                  : context.l10n('Florien bildirim ayarlarını aç'),
             ),
           ),
         ],
@@ -545,10 +560,7 @@ class _TimeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: enabled ? onTap : null,
-      child: Text(label),
-    );
+    return TextButton(onPressed: enabled ? onTap : null, child: Text(label));
   }
 }
 
@@ -576,10 +588,7 @@ class _LeadPicker extends StatelessWidget {
             : null,
         items: [
           for (final minutes in taskReminderLeadOptions)
-            DropdownMenuItem(
-              value: minutes,
-              child: Text(_leadLabel(minutes)),
-            ),
+            DropdownMenuItem(value: minutes, child: Text(_leadLabel(minutes))),
         ],
       ),
     );

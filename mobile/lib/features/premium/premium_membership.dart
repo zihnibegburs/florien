@@ -207,7 +207,9 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
           ..clear()
           ..addAll(last.notFoundIds);
       } catch (error) {
-        debugPrint('[PremiumStore] product query attempt $attempt failed: $error');
+        debugPrint(
+          '[PremiumStore] product query attempt $attempt failed: $error',
+        );
       }
       if (productsById.length >= premiumProductIds.length) break;
     }
@@ -384,7 +386,10 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     final entitlement = await _service.fetchEntitlement();
     final current = state.valueOrNull ?? membership;
     state = AsyncData(
-      _applyServerEntitlement(current, entitlement).copyWith(isPurchasing: false),
+      _applyServerEntitlement(
+        current,
+        entitlement,
+      ).copyWith(isPurchasing: false),
     );
   }
 
@@ -408,7 +413,10 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       final entitlement = await _service.fetchEntitlement();
       final latest = state.valueOrNull ?? current;
       state = AsyncData(
-        _applyServerEntitlement(latest, entitlement).copyWith(isPurchasing: false),
+        _applyServerEntitlement(
+          latest,
+          entitlement,
+        ).copyWith(isPurchasing: false),
       );
     });
   }

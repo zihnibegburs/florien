@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
@@ -68,7 +69,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Hepsi bir arada planlama\nve üretkenlik',
+                            context.l10n(
+                              'Hepsi bir arada planlama\nve üretkenlik',
+                            ),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.headlineLarge
                                 ?.copyWith(
@@ -78,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Gününü kendi ritmine göre düzenle.',
+                            context.l10n('Gününü kendi ritmine göre düzenle.'),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(
@@ -87,7 +90,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 44),
                           _AuthActionButton(
-                            label: 'Apple ile devam et',
+                            label: context.l10n('Apple ile devam et'),
                             icon: Icons.apple,
                             light: true,
                             loading: authState.isLoading,
@@ -95,14 +98,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 12),
                           _AuthActionButton(
-                            label: 'Google ile devam et',
+                            label: context.l10n('Google ile devam et'),
                             icon: Icons.g_mobiledata_rounded,
                             loading: authState.isLoading,
                             onPressed: _loginWithGoogle,
                           ),
                           const SizedBox(height: 12),
                           _AuthActionButton(
-                            label: 'E-posta ile devam et',
+                            label: context.l10n('E-posta ile devam et'),
                             icon: Icons.mail_outline_rounded,
                             outline: true,
                             loading: authState.isLoading,
@@ -110,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Zaten bir hesabın var mı?',
+                            context.l10n('Zaten bir hesabın var mı?'),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: context.palette.textSecondary,
@@ -118,7 +121,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           TextButton(
                             onPressed: () => context.go('/email-login'),
-                            child: const Text('Giriş Yap'),
+                            child: Text(context.l10n('Giriş Yap')),
                           ),
                         ],
                       ),

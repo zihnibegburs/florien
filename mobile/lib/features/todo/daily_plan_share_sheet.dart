@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter/rendering.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -88,15 +89,16 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
           ? shareBox.localToGlobal(Offset.zero) & shareBox.size
           : null;
       final shareFile = await _createShareImage();
-      await Share.shareXFiles(
-        [XFile(shareFile.path, mimeType: 'image/png', name: _shareFileName())],
-        sharePositionOrigin: shareOrigin,
-      );
+      await Share.shareXFiles([
+        XFile(shareFile.path, mimeType: 'image/png', name: _shareFileName()),
+      ], sharePositionOrigin: shareOrigin);
     } catch (error, stackTrace) {
       debugPrint('Daily plan share failed: $error\n$stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Paylaşım açılamadı. Tekrar dene.')),
+        SnackBar(
+          content: Text(context.l10n('Paylaşım açılamadı. Tekrar dene.')),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSharing = false);
@@ -108,13 +110,13 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
         _shareCardKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
     if (boundary == null) {
-      throw StateError('Paylaşım önizlemesi hazırlanamadı.');
+      throw StateError(context.l10n('Paylaşım önizlemesi hazırlanamadı.'));
     }
     final image = await boundary.toImage(pixelRatio: 3);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
     if (byteData == null) {
-      throw StateError('Paylaşım görseli oluşturulamadı.');
+      throw StateError(context.l10n('Paylaşım görseli oluşturulamadı.'));
     }
     final file = File(
       '${Directory.systemTemp.path}/${DateTime.now().microsecondsSinceEpoch}-${_shareFileName()}',
@@ -175,9 +177,10 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
         const SizedBox(height: 12),
         _SheetHeader(
           icon: Icons.ios_share_rounded,
-          title: 'Gününü paylaş',
-          subtitle:
-              '${_formattedDate(widget.date)} için paylaşılacak görevleri seç.',
+          title: context.l10n('Gününü paylaş'),
+          subtitle: context.l10n('{date} için paylaşılacak görevleri seç.', {
+            'date': _formattedDate(widget.date),
+          }),
           onClose: () => Navigator.pop(context),
         ),
         const SizedBox(height: 14),
@@ -187,7 +190,9 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
           Row(
             children: [
               Text(
-                '${_selectedTaskIds.length} görev seçildi',
+                context.l10n('{count} görev seçildi', {
+                  'count': '${_selectedTaskIds.length}',
+                }),
                 style: Theme.of(
                   context,
                 ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -201,7 +206,9 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
                       : Icons.done_all_rounded,
                   size: 17,
                 ),
-                label: Text(allSelected ? 'Temizle' : 'Tümünü seç'),
+                label: Text(
+                  allSelected ? context.l10n('Temizle') : context.l10n('Tümünü seç'),
+                ),
               ),
             ],
           ),
@@ -234,7 +241,7 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
                 ? null
                 : () => setState(() => _showPreview = true),
             icon: const Icon(Icons.arrow_forward_rounded),
-            label: const Text('Önizlemeye geç'),
+            label: Text(context.l10n('Önizlemeye geç')),
           ),
         ),
       ],
@@ -259,8 +266,8 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
         const SizedBox(height: 12),
         _SheetHeader(
           icon: Icons.auto_awesome_rounded,
-          title: 'Paylaşım önizlemesi',
-          subtitle: 'Planın karşı tarafta böyle görünecek.',
+          title: context.l10n('Paylaşım önizlemesi'),
+          subtitle: context.l10n('Planın karşı tarafta böyle görünecek.'),
           onClose: () => Navigator.pop(context),
           onBack: () => setState(() => _showPreview = false),
         ),
@@ -268,14 +275,14 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
         Row(
           children: [
             Text(
-              'Görünüm',
+              context.l10n('Görünüm'),
               style: Theme.of(
                 context,
               ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const Spacer(),
             Text(
-              shareTheme.name,
+              context.l10n(shareTheme.name),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: context.palette.textSecondary,
                 fontWeight: FontWeight.w700,
@@ -318,7 +325,9 @@ class _DailyPlanShareSheetState extends State<_DailyPlanShareSheet> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.ios_share_rounded),
-              label: Text(_isSharing ? 'Açılıyor…' : 'Paylaş'),
+              label: Text(
+                _isSharing ? context.l10n('Açılıyor…') : context.l10n('Paylaş'),
+              ),
             ),
           ),
         ),
@@ -365,7 +374,7 @@ class _SheetHeader extends StatelessWidget {
     children: [
       if (onBack != null)
         IconButton(
-          tooltip: 'Seçime dön',
+          tooltip: context.l10n('Seçime dön'),
           onPressed: onBack,
           icon: const Icon(Icons.arrow_back_rounded),
         )
@@ -402,7 +411,7 @@ class _SheetHeader extends StatelessWidget {
         ),
       ),
       IconButton(
-        tooltip: 'Kapat',
+        tooltip: context.l10n('Kapat'),
         onPressed: onClose,
         icon: const Icon(Icons.close_rounded),
       ),
@@ -511,7 +520,7 @@ class _ShareTaskStateMenu extends StatelessWidget {
     final palette = context.palette;
     return PopupMenuButton<_ShareTaskState>(
       key: ValueKey('daily-share-status-menu-$taskId'),
-      tooltip: 'Paylaşım durumunu değiştir',
+      tooltip: context.l10n('Paylaşım durumunu değiştir'),
       initialValue: state,
       onSelected: onSelected,
       position: PopupMenuPosition.under,
@@ -528,7 +537,7 @@ class _ShareTaskStateMenu extends StatelessWidget {
                   color: _shareStateColor(option, palette),
                 ),
                 const SizedBox(width: 9),
-                Text(option.label),
+                Text(context.l10n(option.label)),
                 if (option == state) ...[
                   const Spacer(),
                   const Icon(Icons.check_rounded, size: 18),
@@ -543,7 +552,7 @@ class _ShareTaskStateMenu extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              state.shortLabel,
+              context.l10n(state.shortLabel),
               style: TextStyle(
                 color: _shareStateColor(state, palette),
                 fontSize: 11.5,
@@ -615,7 +624,9 @@ class _ShareThemeOption extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     selected: selected,
     button: true,
-    label: '${shareTheme.name} paylaşım teması',
+    label: context.l10n('{name} paylaşım teması', {
+      'name': context.l10n(shareTheme.name),
+    }),
     child: Material(
       color: Colors.transparent,
       child: InkWell(
@@ -667,7 +678,7 @@ class _ShareThemeOption extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                shareTheme.name,
+                context.l10n(shareTheme.name),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -770,7 +781,7 @@ class _DailyShareCard extends StatelessWidget {
         ),
         const SizedBox(height: 17),
         Text(
-          'Günlük planım',
+          context.l10n('Günlük planım'),
           style: TextStyle(
             color: shareTheme.text,
             fontSize: 25,
@@ -784,21 +795,25 @@ class _DailyShareCard extends StatelessWidget {
           runSpacing: 7,
           children: [
             _SummaryPill(
-              label: '$planned planlandı',
+              label: context.l10n('{count} planlandı', {'count': '$planned'}),
               color: shareTheme.accent,
               textColor: shareTheme.text,
               borderColor: shareTheme.border,
             ),
             if (completed > 0)
               _SummaryPill(
-                label: '$completed tamamlandı',
+                label: context.l10n('{count} tamamlandı', {
+                  'count': '$completed',
+                }),
                 color: shareTheme.completed,
                 textColor: shareTheme.text,
                 borderColor: shareTheme.border,
               ),
             if (incomplete > 0)
               _SummaryPill(
-                label: '$incomplete tamamlanamadı',
+                label: context.l10n('{count} tamamlanamadı', {
+                  'count': '$incomplete',
+                }),
                 color: shareTheme.incomplete,
                 textColor: shareTheme.text,
                 borderColor: shareTheme.border,
@@ -816,7 +831,7 @@ class _DailyShareCard extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         Text(
-          'Kendi ritminde, gerçekçi bir gün.',
+          context.l10n('Kendi ritminde, gerçekçi bir gün.'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: shareTheme.mutedText,
@@ -878,7 +893,7 @@ class _PreviewTaskTile extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          shareState.shortLabel,
+          context.l10n(shareState.shortLabel),
           style: TextStyle(
             color: shareTheme.mutedText,
             fontSize: 10.5,
@@ -1076,7 +1091,7 @@ class _ShareEmptyState extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Bugün için paylaşılacak görev yok.',
+          context.l10n('Bugün için paylaşılacak görev yok.'),
           style: Theme.of(
             context,
           ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -1087,7 +1102,7 @@ class _ShareEmptyState extends StatelessWidget {
 }
 
 String _formattedDate(DateTime date) =>
-    '${date.day} ${_monthNames[date.month - 1]} ${_weekdayNames[date.weekday - 1]}';
+    '${date.day} ${ActiveLanguage.s(_monthNames[date.month - 1])} ${ActiveLanguage.s(_weekdayNames[date.weekday - 1])}';
 
 const _weekdayNames = [
   'Pazartesi',

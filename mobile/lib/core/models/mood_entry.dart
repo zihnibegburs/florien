@@ -1,12 +1,14 @@
+import 'package:florien/core/l10n/app_strings.dart';
+
 enum MoodLevel { veryLow, low, neutral, good, veryGood }
 
 extension MoodLevelDetails on MoodLevel {
   String get label => switch (this) {
-    MoodLevel.veryLow => 'Çok zor',
-    MoodLevel.low => 'Zor',
-    MoodLevel.neutral => 'Dengede',
-    MoodLevel.good => 'İyi',
-    MoodLevel.veryGood => 'Çok iyi',
+    MoodLevel.veryLow => ActiveLanguage.s('Çok zor'),
+    MoodLevel.low => ActiveLanguage.s('Zor'),
+    MoodLevel.neutral => ActiveLanguage.s('Dengede'),
+    MoodLevel.good => ActiveLanguage.s('İyi'),
+    MoodLevel.veryGood => ActiveLanguage.s('Çok iyi'),
   };
 
   String get emoji => switch (this) {
@@ -73,7 +75,7 @@ class MoodEntry {
     final moodName = json['mood'] as String?;
     final mood = MoodLevel.values.where((item) => item.name == moodName);
     if (date == null || mood.isEmpty) {
-      throw const FormatException('Geçersiz ruh hali kaydı.');
+      throw FormatException(ActiveLanguage.s('Geçersiz ruh hali kaydı.'));
     }
     return MoodEntry(
       date: DateTime(date.year, date.month, date.day),

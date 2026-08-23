@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">今日の計画</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">15分フォーカス</string>
+    <string name="widget_quick_actions">Florienクイック操作</string>
+    <string name="widget_focus_duration">フォーカス時間</string>
+    <string name="widget_quick_todo">クイックTo-do</string>
+    <string name="widget_incomplete_tasks">未完了のタスク</string>
+    <string name="widget_focus_brand">Florien · フォーカス</string>
+    <string name="widget_focus_ready">15分のスペースの準備できたよ</string>
+    <string name="widget_start">▶ 開始</string>
+    <string name="widget_focus_how_long">どれくらい集中する？</string>
+    <string name="widget_min_5">5分</string>
+    <string name="widget_min_10">10分</string>
+    <string name="widget_min_15">15分</string>
+    <string name="widget_min_30">30分</string>
+    <string name="widget_quick_prompt">何か思いついた？</string>
+    <string name="widget_quick_cta">＋ To-doを追加</string>
+    <string name="widget_ai_prompt">計画は？   ✦</string>
+    <string name="live_activity_focus">フォーカスモード</string>
+    <string name="widget_open_short">未完了{count}</string>
+    <string name="widget_open_tasks_count">未完了 {count} 件</string>
+</resources>

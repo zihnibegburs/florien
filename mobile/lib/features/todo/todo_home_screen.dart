@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
@@ -256,7 +257,9 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       debugPrint('Home widget To-do sheet could not be opened: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('To-do ekleme ekranı açılamadı.')),
+          SnackBar(
+            content: Text(context.l10n('To-do ekleme ekranı açılamadı.')),
+          ),
         );
       }
     }
@@ -339,7 +342,10 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     if (mounted) unawaited(_refreshScheduledFocus());
   }
 
-  Future<void> _syncDailyLiveActivities(DateTime date, List<TaskModel> tasks) async {
+  Future<void> _syncDailyLiveActivities(
+    DateTime date,
+    List<TaskModel> tasks,
+  ) async {
     final preferences = await ref.read(liveActivityPreferencesProvider.future);
     await ref
         .read(liveActivityServiceProvider)
@@ -431,10 +437,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
                 key: ValueKey('todo-home-scroll-chrome-header'),
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FlorienLogo(
-                    key: ValueKey('todo-home-brand-icon'),
-                    size: 34,
-                  ),
+                  FlorienLogo(key: ValueKey('todo-home-brand-icon'), size: 34),
                   SizedBox(width: 10),
                   Text('Florien'),
                 ],
@@ -457,9 +460,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          TodoListTab(
-            quickAddSignal: _todoQuickAddSignal,
-          ),
+          TodoListTab(quickAddSignal: _todoQuickAddSignal),
           DailyPlannerTab(
             quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
             showPremiumUpsell: premium != null && !premium.hasActivePremium,
@@ -476,25 +477,25 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         key: const ValueKey('home-scroll-chrome-navigation'),
         selectedIndex: _selectedIndex,
         onDestinationSelected: _selectTab,
-        destinations: const [
+        destinations: [
           FlorienNavDestination(
-            label: 'To-do',
+            label: context.l10n('To-do'),
             icon: Icons.check_box_outlined,
             selectedIcon: Icons.check_box_rounded,
           ),
           FlorienNavDestination(
-            label: 'Günlük',
+            label: context.l10n('Günlük'),
             icon: Icons.calendar_today_outlined,
             selectedIcon: Icons.calendar_today_rounded,
           ),
           FlorienNavDestination(
-            label: 'İstatistik',
+            label: context.l10n('İstatistik'),
             icon: Icons.bar_chart_rounded,
             selectedIcon: Icons.bar_chart_rounded,
           ),
         ],
         onAiPressed: () => unawaited(_openPlannerAi()),
-        aiTooltip: 'Plan asistanını aç',
+        aiTooltip: context.l10n('Plan asistanını aç'),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 enum CalendarProvider { apple, google }
 
@@ -13,10 +14,10 @@ class CalendarConnection {
   final CalendarProvider provider;
   final String detail;
 
-  String get name => switch (provider) {
+  String get name => ActiveLanguage.s(switch (provider) {
     CalendarProvider.apple => 'Apple Takvimi',
     CalendarProvider.google => 'Google Takvim',
-  };
+  });
 }
 
 class CalendarConnectionService {
@@ -65,7 +66,9 @@ class CalendarConnectionService {
   Future<CalendarConnection> _connectAppleCalendar() async {
     if (kIsWeb || !(Platform.isIOS || Platform.isMacOS)) {
       throw UnsupportedError(
-        'Apple Takvimi yalnızca Apple cihazlarda bağlanabilir.',
+        ActiveLanguage.s(
+          'Apple Takvimi yalnızca Apple cihazlarda bağlanabilir.',
+        ),
       );
     }
 
@@ -74,18 +77,20 @@ class CalendarConnectionService {
       permission = await _deviceCalendar.requestPermissions();
     }
     if (!permission.isSuccess || permission.data != true) {
-      throw StateError('Takvim erişimi için izin verilmedi.');
+      throw StateError(ActiveLanguage.s('Takvim erişimi için izin verilmedi.'));
     }
 
     final calendars = await _deviceCalendar.retrieveCalendars();
     if (!calendars.isSuccess) {
-      throw StateError('Apple takvimleri alınamadı.');
+      throw StateError(ActiveLanguage.s('Apple takvimleri alınamadı.'));
     }
 
     final count = calendars.data?.length ?? 0;
     final detail = count == 0
-        ? 'Takvim erişimi verildi'
-        : '$count takvime erişim verildi';
+        ? ActiveLanguage.s('Takvim erişimi verildi')
+        : ActiveLanguage.s('{count} takvime erişim verildi', {
+            'count': '$count',
+          });
     await _settingsStorage.setCalendarConnectionDetail(
       CalendarProvider.apple.name,
       detail,
@@ -101,7 +106,9 @@ class CalendarConnectionService {
       _googleCalendarScope,
     ]);
     if (!calendarAccessGranted) {
-      throw StateError('Google Takvim erişimi için izin verilmedi.');
+      throw StateError(
+        ActiveLanguage.s('Google Takvim erişimi için izin verilmedi.'),
+      );
     }
 
     await _settingsStorage.setCalendarConnectionDetail(

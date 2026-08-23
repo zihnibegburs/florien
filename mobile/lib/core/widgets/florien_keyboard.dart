@@ -10,11 +10,7 @@ void florienDismissKeyboard([PointerDownEvent? event]) {
 
 bool _pointerHitsEditable(PointerDownEvent event) {
   final result = HitTestResult();
-  WidgetsBinding.instance.hitTestInView(
-    result,
-    event.position,
-    event.viewId,
-  );
+  WidgetsBinding.instance.hitTestInView(result, event.position, event.viewId);
   for (final entry in result.path) {
     if (entry.target is RenderEditable) return true;
   }

@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:florien/core/routing/startup_routing.dart';
-import 'package:florien/core/storage/onboarding_login_intent_storage.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_logo.dart';
 import 'package:florien/features/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -194,7 +194,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted || selectionToken != _selectionToken) return;
       setState(() => _transitioning = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Yanıt kaydedilemedi. Tekrar dene.')),
+        SnackBar(
+          content: Text(context.l10n('Yanıt kaydedilemedi. Tekrar dene.')),
+        ),
       );
     }
   }
@@ -243,7 +245,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
-  int _initialStep(OnboardingPreferences preferences, {required bool loggedIn}) {
+  int _initialStep(
+    OnboardingPreferences preferences, {
+    required bool loggedIn,
+  }) {
     if (preferences.answers.isEmpty) return loggedIn ? 1 : 0;
     final unansweredIndex = _onboardingQuestions.indexWhere(
       (question) => preferences.answerIdFor(question.id) == null,
@@ -259,8 +264,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return onboarding.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, _) =>
-          const Scaffold(body: Center(child: Text('Onboarding yüklenemedi.'))),
+      error: (_, _) => Scaffold(
+        body: Center(child: Text(context.l10n('Onboarding yüklenemedi.'))),
+      ),
       data: (preferences) {
         final loggedIn = ref.watch(authStateProvider).valueOrNull != null;
         ref.listen(authStateProvider, (previous, next) {
@@ -365,7 +371,7 @@ class _OnboardingFrame extends StatelessWidget {
                             ? null
                             : IconButton(
                                 key: const ValueKey('onboarding-back'),
-                                tooltip: 'Geri',
+                                tooltip: context.l10n('Geri'),
                                 onPressed: onBack,
                                 style: IconButton.styleFrom(
                                   backgroundColor: context.palette.surface,
@@ -381,8 +387,13 @@ class _OnboardingFrame extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Semantics(
-                          label:
-                              'Onboarding ilerlemesi: $answeredCount / ${_onboardingQuestions.length}',
+                          label: context.l10n(
+                            'Onboarding ilerlemesi: {current} / {total}',
+                            {
+                              'current': '$answeredCount',
+                              'total': '${_onboardingQuestions.length}',
+                            },
+                          ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(
                               FlorienRadius.pill,
@@ -441,45 +452,45 @@ class _OpeningStep extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        Center(
-          child: FlorienLogo(
-            size: 126,
-            imageKey: ValueKey('onboarding-opening-logo'),
+          Center(
+            child: FlorienLogo(
+              size: 126,
+              imageKey: ValueKey('onboarding-opening-logo'),
+            ),
           ),
-        ),
-        const SizedBox(height: 36),
-        Text(
-          'Bazen plan yapmak bile yorucu gelebilir.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontSize: 34,
-            fontWeight: FontWeight.w800,
+          const SizedBox(height: 36),
+          Text(
+            context.l10n('Bazen plan yapmak bile yorucu gelebilir.'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Seni daha iyi anlamak için birkaç kısa sorumuz var.',
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyLarge?.copyWith(color: context.palette.textSecondary),
-        ),
-        const SizedBox(height: 40),
-        FilledButton.icon(
-          key: const ValueKey('onboarding-start'),
-          onPressed: onStart,
-          icon: const Icon(Icons.arrow_forward_rounded),
-          label: const Text('Başlayalım'),
-        ),
-        if (onExistingAccount != null) ...[
-          const SizedBox(height: 12),
-          TextButton(
-            key: const ValueKey('onboarding-existing-account'),
-            onPressed: onExistingAccount,
-            child: const Text('Zaten hesabım var'),
+          const SizedBox(height: 16),
+          Text(
+            context.l10n('Seni daha iyi anlamak için birkaç kısa sorumuz var.'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: context.palette.textSecondary,
+            ),
           ),
+          const SizedBox(height: 40),
+          FilledButton.icon(
+            key: const ValueKey('onboarding-start'),
+            onPressed: onStart,
+            icon: const Icon(Icons.arrow_forward_rounded),
+            label: Text(context.l10n('Başlayalım')),
+          ),
+          if (onExistingAccount != null) ...[
+            const SizedBox(height: 12),
+            TextButton(
+              key: const ValueKey('onboarding-existing-account'),
+              onPressed: onExistingAccount,
+              child: Text(context.l10n('Zaten hesabım var')),
+            ),
+          ],
         ],
-      ],
       ),
     );
   }
@@ -507,7 +518,7 @@ class _QuestionStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            question.title,
+            context.l10n(question.title),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: compact ? 27 : 31,
               height: 1.08,
@@ -555,7 +566,7 @@ class _AnswerCard extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: answer.label,
+      label: context.l10n(answer.label),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -580,7 +591,7 @@ class _AnswerCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    answer.label,
+                    context.l10n(answer.label),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: foreground,
                       height: 1.2,
@@ -623,7 +634,7 @@ class _ClosingStep extends StatelessWidget {
       const Center(child: FlorienLogo(size: 104)),
       const SizedBox(height: 34),
       Text(
-        'Yalnız değilsin.',
+        context.l10n('Yalnız değilsin.'),
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.headlineLarge?.copyWith(
           fontSize: 36,
@@ -632,7 +643,9 @@ class _ClosingStep extends StatelessWidget {
       ),
       const SizedBox(height: 16),
       Text(
-        'Her gün kusursuz gitmek zorunda değil. Florien, dağıldığında kaldığın yerden devam etmene yardım eder.',
+        context.l10n(
+          'Her gün kusursuz gitmek zorunda değil. Florien, dağıldığında kaldığın yerden devam etmene yardım eder.',
+        ),
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
           color: context.palette.textSecondary,
@@ -644,7 +657,9 @@ class _ClosingStep extends StatelessWidget {
         key: const ValueKey('onboarding-finish'),
         onPressed: finishing ? null : onFinish,
         icon: const Icon(Icons.arrow_forward_rounded),
-        label: Text(finishing ? 'Hazırlanıyor…' : 'Devam et'),
+        label: Text(
+          finishing ? context.l10n('Hazırlanıyor…') : context.l10n('Devam et'),
+        ),
       ),
     ],
   );

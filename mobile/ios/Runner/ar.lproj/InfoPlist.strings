@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "يحتاج Florien إلى الميكروفون لإضافة المهام بالصوت.";
+"NSSpeechRecognitionUsageDescription" = "يحتاج Florien إلى التعرف على الكلام لتحويل ما تقوله إلى نص.";
+"NSHealthShareUsageDescription" = "يحتاج Florien إلى بيانات صحتي لمزامنة مزاجك مع Apple الصحة.";
+"NSHealthUpdateUsageDescription" = "يحتاج Florien إلى إذن لحفظ المزاج الذي تسجّله في Apple الصحة.";
+"NSCalendarsUsageDescription" = "يحتاج Florien إلى التقويم لاستيراد الأحداث كمهام.";
+"NSCalendarsFullAccessUsageDescription" = "يحتاج Florien إلى وصول كامل للتقويم لاستيراد الأحداث كمهام.";

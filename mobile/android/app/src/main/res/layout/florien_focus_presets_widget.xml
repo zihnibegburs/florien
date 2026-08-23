@@ -7,9 +7,10 @@
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/focus_presets_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ne kadar odaklanmak istersin?"
+        android:text="@string/widget_focus_how_long"
         android:textColor="#29262D"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -28,7 +29,7 @@
             android:background="@drawable/florien_widget_soft_action"
             android:gravity="center"
             android:paddingVertical="9dp"
-            android:text="5 dk"
+            android:text="@string/widget_min_5"
             android:textColor="#29262D"
             android:textStyle="bold" />
 
@@ -42,7 +43,7 @@
             android:background="@drawable/florien_widget_soft_action"
             android:gravity="center"
             android:paddingVertical="9dp"
-            android:text="10 dk"
+            android:text="@string/widget_min_10"
             android:textColor="#29262D"
             android:textStyle="bold" />
 
@@ -56,7 +57,7 @@
             android:background="@drawable/florien_widget_primary"
             android:gravity="center"
             android:paddingVertical="9dp"
-            android:text="15 dk"
+            android:text="@string/widget_min_15"
             android:textColor="#29262D"
             android:textStyle="bold" />
 
@@ -70,7 +71,7 @@
             android:background="@drawable/florien_widget_soft_action"
             android:gravity="center"
             android:paddingVertical="9dp"
-            android:text="30 dk"
+            android:text="@string/widget_min_30"
             android:textColor="#29262D"
             android:textStyle="bold" />
     </LinearLayout>

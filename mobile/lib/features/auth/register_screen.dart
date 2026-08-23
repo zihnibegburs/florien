@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/routing/startup_routing.dart';
-import 'package:florien/core/storage/onboarding_login_intent_storage.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
@@ -116,8 +115,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        hintText: 'ornek@email.com',
+                      decoration: InputDecoration(
+                        hintText: context.l10n('ornek@email.com'),
                       ),
                       validator: (v) =>
                           v == null || !v.contains('@') ? s.validEmail : null,

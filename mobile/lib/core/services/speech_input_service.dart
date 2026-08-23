@@ -1,3 +1,4 @@
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -39,7 +40,7 @@ class SpeechInputService implements SpeechInput {
     );
     if (!available) {
       onListeningChanged(false);
-      onError('Mikrofon veya ses tanıma izni verilmedi.');
+      onError(ActiveLanguage.s('Mikrofon veya ses tanıma izni verilmedi.'));
       return false;
     }
 
@@ -49,7 +50,7 @@ class SpeechInputService implements SpeechInput {
         onResult: (result) => _onResult(result, onText),
         onSoundLevelChange: onSoundLevelChanged,
         listenOptions: SpeechListenOptions(
-          localeId: 'tr_TR',
+          localeId: speechLocaleIdForLanguageCode(ActiveLanguage.code),
           listenMode: ListenMode.dictation,
           partialResults: true,
           cancelOnError: true,
@@ -58,7 +59,11 @@ class SpeechInputService implements SpeechInput {
       return true;
     } catch (_) {
       onListeningChanged(false);
-      onError('Sesli giriş başlatılamadı. Mikrofon iznini kontrol et.');
+      onError(
+        ActiveLanguage.s(
+          'Sesli giriş başlatılamadı. Mikrofon iznini kontrol et.',
+        ),
+      );
       return false;
     }
   }
@@ -84,7 +89,11 @@ class SpeechInputService implements SpeechInput {
     void Function(String message) onError,
   ) {
     if (error.permanent) {
-      onError('Sesli giriş başlatılamadı. Mikrofon iznini kontrol et.');
+      onError(
+        ActiveLanguage.s(
+          'Sesli giriş başlatılamadı. Mikrofon iznini kontrol et.',
+        ),
+      );
     }
   }
 }

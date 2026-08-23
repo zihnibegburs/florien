@@ -217,8 +217,7 @@ class PremiumPurchaseService {
       final id = tx.payment.productIdentifier;
       if (!premiumProductIds.contains(id)) continue;
       if (productId != null && id != productId) continue;
-      if (tx.transactionState ==
-          SKPaymentTransactionStateWrapper.purchasing) {
+      if (tx.transactionState == SKPaymentTransactionStateWrapper.purchasing) {
         continue;
       }
       await queue.finishTransaction(tx);
@@ -243,10 +242,7 @@ class PremiumPurchaseService {
       debugPrint(
         '[PremiumStore] unfinished purchase already entitled until=$grantedUntil',
       );
-      return PremiumBuyResult(
-        started: false,
-        entitledUntil: grantedUntil,
-      );
+      return PremiumBuyResult(started: false, entitledUntil: grantedUntil);
     }
 
     try {
@@ -277,9 +273,7 @@ class PremiumPurchaseService {
           debugPrint('[PremiumStore] buy retry started=$started');
           return PremiumBuyResult(started: started);
         } on PlatformException catch (retryError) {
-          debugPrint(
-            '[PremiumStore] buy retry failed code=${retryError.code}',
-          );
+          debugPrint('[PremiumStore] buy retry failed code=${retryError.code}');
           return PremiumBuyResult(
             started: false,
             errorCode: retryError.code,
@@ -313,12 +307,9 @@ class PremiumPurchaseService {
     required String source,
     required String verificationData,
   }) async {
-    final result = await _functions
-        .httpsCallable('verifyPremiumPurchase')
-        .call(<String, Object?>{
-          'source': source,
-          'verificationData': verificationData,
-        });
+    final result = await _functions.httpsCallable('verifyPremiumPurchase').call(
+      <String, Object?>{'source': source, 'verificationData': verificationData},
+    );
     final raw = result.data;
     if (raw is! Map || raw['premium'] != true) {
       throw StateError('Premium purchase could not be verified.');

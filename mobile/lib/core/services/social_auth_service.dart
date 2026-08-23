@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class SocialAuthCredential {
   const SocialAuthCredential({required this.credential, this.displayName});
@@ -82,7 +83,9 @@ class AppleAuthService {
     final idToken = appleCredential.identityToken;
     final authorizationCode = appleCredential.authorizationCode;
     if (idToken == null || idToken.isEmpty) {
-      throw StateError('Apple ile giriş başarısız oldu. Tekrar dene.');
+      throw StateError(
+        ActiveLanguage.s('Apple ile giriş başarısız oldu. Tekrar dene.'),
+      );
     }
 
     final given = appleCredential.givenName;
@@ -106,9 +109,9 @@ class AppleAuthService {
 
   String _appleSignInMessage(String code) => switch (code) {
     'failed' || 'invalidResponse' || 'notHandled' || 'notInteractive' =>
-      'Apple ile giriş tamamlanamadı. Tekrar dene.',
-    'unknown' => 'Apple ile giriş şu anda kullanılamıyor.',
-    _ => 'Apple ile giriş başarısız oldu. Tekrar dene.',
+      ActiveLanguage.s('Apple ile giriş tamamlanamadı. Tekrar dene.'),
+    'unknown' => ActiveLanguage.s('Apple ile giriş şu anda kullanılamıyor.'),
+    _ => ActiveLanguage.s('Apple ile giriş başarısız oldu. Tekrar dene.'),
   };
 
   String _generateNonce([int length = 32]) {
@@ -131,16 +134,20 @@ class AppleAuthService {
 Object friendlySocialAuthError(Object error) {
   if (error is FirebaseAuthException) {
     return StateError(switch (error.code) {
-      'invalid-credential' || 'invalid-verification-code' =>
+      'invalid-credential' || 'invalid-verification-code' => ActiveLanguage.s(
         'Apple ile giriş doğrulanamadı. Tekrar dene.',
-      'account-exists-with-different-credential' =>
+      ),
+      'account-exists-with-different-credential' => ActiveLanguage.s(
         'Bu e-posta başka bir giriş yöntemiyle kayıtlı.',
-      'user-disabled' => 'Bu hesap devre dışı bırakılmış.',
-      'network-request-failed' =>
+      ),
+      'user-disabled' => ActiveLanguage.s('Bu hesap devre dışı bırakılmış.'),
+      'network-request-failed' => ActiveLanguage.s(
         'Bağlantı kurulamadı. İnternetini kontrol et.',
-      'operation-not-allowed' =>
+      ),
+      'operation-not-allowed' => ActiveLanguage.s(
         'Apple ile giriş şu anda kapalı. Daha sonra dene.',
-      _ => 'Giriş başarısız oldu. Tekrar dene.',
+      ),
+      _ => ActiveLanguage.s('Giriş başarısız oldu. Tekrar dene.'),
     });
   }
   return error;

@@ -25,6 +25,8 @@
 		A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001C /* florien-live-activity-icon.png */; };
 		A1FLORIENW000000000000001E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001D /* Assets.xcassets */; };
 		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
+		A1L10N0000000000000003 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
+		A1IPLRES0000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1IPLGRP0000000000000001 /* InfoPlist.strings */; };
 		A1SIRI0000000000000001 /* FlorienSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* FlorienSharedStorage.swift */; };
 		A1SIRI0000000000000002 /* FlorienTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* FlorienTaskApi.swift */; };
 		A1SIRI0000000000000003 /* AddFlorienTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */; };
@@ -111,6 +113,16 @@
 		A1FLORIENW000000000000001C /* florien-live-activity-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "florien-live-activity-icon.png"; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A1IPLEN00000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLTR00000000000000001 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLES00000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLDE00000000000000001 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLFR00000000000000001 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLPT00000000000000001 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLJA00000000000000001 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLKO00000000000000001 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLZH00000000000000001 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		A1IPLAR00000000000000001 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1SIRI0000000000000005 /* FlorienSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienSharedStorage.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000006 /* FlorienTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienTaskApi.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFlorienTaskIntent.swift; sourceTree = "<group>"; };
@@ -216,6 +228,7 @@
 				A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */,
 				A1SIRI0000000000000008 /* FlorienShortcuts.swift */,
 				A1L10N0000000000000001 /* Localizable.xcstrings */,
+				A1IPLGRP0000000000000001 /* InfoPlist.strings */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -368,6 +381,15 @@
 			knownRegions = (
 				en,
 				Base,
+				tr,
+				es,
+				de,
+				fr,
+				pt,
+				ja,
+				ko,
+				"zh-Hans",
+				ar,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
@@ -398,6 +420,7 @@
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				A1L10N0000000000000002 /* Localizable.xcstrings in Resources */,
+				A1IPLRES0000000000000001 /* InfoPlist.strings in Resources */,
 				8579399C84F0B5BFE495A128 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -409,6 +432,7 @@
 				A1FLORIENW0000000000000019 /* focus-default-hourglass.png in Resources */,
 				A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */,
 				A1FLORIENW000000000000001E /* Assets.xcassets in Resources */,
+				A1L10N0000000000000003 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -569,6 +593,23 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A1IPLGRP0000000000000001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1IPLEN00000000000000001 /* en */,
+				A1IPLTR00000000000000001 /* tr */,
+				A1IPLES00000000000000001 /* es */,
+				A1IPLDE00000000000000001 /* de */,
+				A1IPLFR00000000000000001 /* fr */,
+				A1IPLPT00000000000000001 /* pt */,
+				A1IPLJA00000000000000001 /* ja */,
+				A1IPLKO00000000000000001 /* ko */,
+				A1IPLZH00000000000000001 /* zh-Hans */,
+				A1IPLAR00000000000000001 /* ar */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

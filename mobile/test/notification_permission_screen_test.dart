@@ -107,7 +107,7 @@ void main() {
     expect(await storage.isNotificationPermissionIntroCompleted(), isTrue);
     expect(
       (await storage.getNotificationPreferences()).taskRemindersEnabled,
-      isFalse,
+      isTrue,
     );
   });
 }

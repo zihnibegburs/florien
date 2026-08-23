@@ -10,6 +10,7 @@ import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
 import 'package:florien/firebase_options.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class AuthRepository {
   AuthRepository({
@@ -132,7 +133,8 @@ class AuthRepository {
 
   Future<void> deleteAccount() async {
     _ensureConfigured();
-    if (_auth.currentUser == null) throw StateError('Oturum bulunamadı.');
+    if (_auth.currentUser == null)
+      throw StateError(ActiveLanguage.s('Oturum bulunamadı.'));
     await _functions.httpsCallable('deleteAccount').call();
     await _auth.signOut();
   }

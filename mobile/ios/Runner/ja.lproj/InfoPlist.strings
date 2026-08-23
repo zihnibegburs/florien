@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "声でタスクを追加するためにマイクへのアクセスが必要です。";
+"NSSpeechRecognitionUsageDescription" = "話した内容を文字にするために音声認識が必要です。";
+"NSHealthShareUsageDescription" = "気分の記録をAppleヘルスケアと同期するためにアクセスが必要です。";
+"NSHealthUpdateUsageDescription" = "アプリで記録した気分をAppleヘルスケアに保存する許可が必要です。";
+"NSCalendarsUsageDescription" = "カレンダーの予定をタスクとして取り込むためにアクセスが必要です。";
+"NSCalendarsFullAccessUsageDescription" = "カレンダーの予定をタスクとして取り込むためにフルアクセスが必要です。";

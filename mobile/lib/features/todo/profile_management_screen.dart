@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -48,19 +49,21 @@ class _ProfileManagementScreenState
     final approved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Profili sil?'),
-        content: Text('${profile.name} profili silinecek.'),
+        title: Text(context.l10n('Profili sil?')),
+        content: Text(
+          context.l10n('{name} profili silinecek.', {'name': profile.name}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Vazgeç'),
+            child: Text(context.l10n('Vazgeç')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: context.palette.error,
             ),
-            child: const Text('Sil'),
+            child: Text(context.l10n('Sil')),
           ),
         ],
       ),
@@ -79,13 +82,13 @@ class _ProfileManagementScreenState
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(title),
+        title: Text(context.l10n(title)),
         content: TextFormField(
           initialValue: initialValue,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
-            labelText: 'Profil adı',
+            labelText: context.l10n('Profil adı'),
             labelStyle: TextStyle(color: dialogContext.palette.textSecondary),
             floatingLabelStyle: TextStyle(
               color: dialogContext.palette.textSecondary,
@@ -98,11 +101,11 @@ class _ProfileManagementScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Vazgeç'),
+            child: Text(context.l10n('Vazgeç')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(profileName),
-            child: const Text('Kaydet'),
+            child: Text(context.l10n('Kaydet')),
           ),
         ],
       ),
@@ -187,7 +190,9 @@ class _ProfileManagementScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Aynı uygulamada farklı profiller arasında geçiş yapabilirsin.',
+              context.l10n(
+                'Aynı uygulamada farklı profiller arasında geçiş yapabilirsin.',
+              ),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: context.palette.textSecondary,
               ),
@@ -201,7 +206,7 @@ class _ProfileManagementScreenState
                 ),
               ),
               error: (_, _) => Text(
-                'Profiller yüklenemedi.',
+                context.l10n('Profiller yüklenemedi.'),
                 style: TextStyle(color: context.palette.error),
               ),
               data: (state) => FlorienGroupedPanel(
@@ -232,7 +237,7 @@ class _ProfileManagementScreenState
                     ? Icons.person_add_alt_1_outlined
                     : Icons.lock_outline_rounded,
               ),
-              label: const Text('Yeni profil ekle'),
+              label: Text(context.l10n('Yeni profil ekle')),
             ),
           ],
         ),
@@ -269,65 +274,67 @@ class _ProfileCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-        children: [
-          Icon(
-            isActive ? Icons.person_rounded : Icons.person_outline_rounded,
-            size: 28,
-            color: context.palette.textPrimary,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+          children: [
+            Icon(
+              isActive ? Icons.person_rounded : Icons.person_outline_rounded,
+              size: 28,
+              color: context.palette.textPrimary,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isActive ? 'Kullanımdaki profil' : 'Profili değiştir',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.palette.textSecondary,
+                  const SizedBox(height: 2),
+                  Text(
+                    isActive
+                        ? context.l10n('Kullanımdaki profil')
+                        : context.l10n('Profili değiştir'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: context.palette.textSecondary,
+                    ),
                   ),
+                ],
+              ),
+            ),
+            if (!isActive)
+              IconButton(
+                tooltip: context.l10n('Bu profile geç'),
+                onPressed: isSaving ? null : onSelect,
+                icon: const Icon(Icons.check_circle_outline_rounded),
+              ),
+            PopupMenuButton<_ProfileAction>(
+              enabled: !isSaving,
+              tooltip: context.l10n('Profil seçenekleri'),
+              onSelected: (action) {
+                switch (action) {
+                  case _ProfileAction.rename:
+                    onRename();
+                    break;
+                  case _ProfileAction.delete:
+                    onDelete();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _ProfileAction.rename,
+                  child: Text(context.l10n('Adını değiştir')),
                 ),
+                if (canDelete)
+                  PopupMenuItem(
+                    value: _ProfileAction.delete,
+                    child: Text(context.l10n('Profili sil')),
+                  ),
               ],
             ),
-          ),
-          if (!isActive)
-            IconButton(
-              tooltip: 'Bu profile geç',
-              onPressed: isSaving ? null : onSelect,
-              icon: const Icon(Icons.check_circle_outline_rounded),
-            ),
-          PopupMenuButton<_ProfileAction>(
-            enabled: !isSaving,
-            tooltip: 'Profil seçenekleri',
-            onSelected: (action) {
-              switch (action) {
-                case _ProfileAction.rename:
-                  onRename();
-                  break;
-                case _ProfileAction.delete:
-                  onDelete();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: _ProfileAction.rename,
-                child: Text('Adını değiştir'),
-              ),
-              if (canDelete)
-                const PopupMenuItem(
-                  value: _ProfileAction.delete,
-                  child: Text('Profili sil'),
-                ),
-            ],
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -399,14 +406,14 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Profil değiştir',
+                  context.l10n('Profil değiştir'),
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               IconButton(
-                tooltip: 'Kapat',
+                tooltip: context.l10n('Kapat'),
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -423,7 +430,7 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
               error: (_, _) => Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Profiller yüklenemedi.',
+                  context.l10n('Profiller yüklenemedi.'),
                   style: TextStyle(color: context.palette.error),
                 ),
               ),
@@ -480,7 +487,7 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
               key: const ValueKey('manage-profiles-button'),
               onPressed: () => Navigator.of(context).pop(_manageProfilesResult),
               icon: const Icon(Icons.manage_accounts_outlined),
-              label: const Text('Profilleri yönet'),
+              label: Text(context.l10n('Profilleri yönet')),
             ),
           ),
         ],

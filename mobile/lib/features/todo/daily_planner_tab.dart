@@ -3,15 +3,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide DayPeriod;
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/data/routine_catalog.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
+import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
@@ -25,6 +28,7 @@ import 'package:florien/features/todo/completion_celebration_screen.dart';
 import 'package:florien/features/todo/daily_plan_share_sheet.dart';
 import 'package:florien/features/todo/daily_reschedule_review_flow.dart';
 import 'package:florien/features/todo/routine_discovery_screen.dart';
+import 'package:florien/features/todo/task_breakdown_action.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 typedef DailyTaskGroupMover =
@@ -58,6 +62,7 @@ class DailyTaskEditInput {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final RecurrenceSelection recurrence;
+
   /// When true on a timed task, alarm fires at [startsAt].
   final bool alarmEnabled;
   final List<String> subtasks;
@@ -420,14 +425,6 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             );
           },
           onTaskSelected: (task, _) async {
-            if (task.subtasks.isNotEmpty &&
-                !await requirePremiumAccess(
-                  context,
-                  ref,
-                  PremiumFeature.subtasks,
-                )) {
-              return;
-            }
             if (!mounted) return;
             await pushFlorienOverlayRoute<bool>(
               context: context,
@@ -440,6 +437,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
                   durationMinutes: task.durationMinutes,
                   icon: task.icon,
                   color: readyRoutineTaskColor,
+                  subtasks: List<String>.from(task.subtasks),
                   presetSubtasks: task.subtasks,
                   openDetails: true,
                 ),
@@ -590,7 +588,9 @@ class _DailyHeader extends StatelessWidget {
               key: ValueKey(
                 isToday ? 'daily-open-date-picker' : 'daily-return-today',
               ),
-              label: isToday ? 'Tarih seç' : 'Bugüne dön',
+              label: isToday
+                  ? context.l10n('Tarih seç')
+                  : context.l10n('Bugüne dön'),
               icon: isToday
                   ? Icons.calendar_month_outlined
                   : Icons.today_rounded,
@@ -614,21 +614,18 @@ class _DailyHeader extends StatelessWidget {
               const Spacer(),
             _SquareButton(
               key: const ValueKey('daily-share-plan'),
-              tooltip: 'Günü paylaş',
+              tooltip: context.l10n('Günü paylaş'),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
             ),
             const SizedBox(width: 6),
-            _DailyViewToggle(
-              grouping: grouping,
-              onChanged: onGroupingChanged,
-            ),
+            _DailyViewToggle(grouping: grouping, onChanged: onGroupingChanged),
           ],
         ),
         const SizedBox(height: 18),
         Semantics(
           button: true,
-          label: 'Tarih seç',
+          label: context.l10n('Tarih seç'),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -714,16 +711,16 @@ class _DailyUtilityActions extends StatelessWidget {
         _QuietActionChip(
           key: const ValueKey('daily-menu-reschedule'),
           icon: Icons.event_repeat_rounded,
-          label: 'Yeniden zamanla',
-          tooltip: 'Görevleri yeniden zamanla',
+          label: context.l10n('Yeniden zamanla'),
+          tooltip: context.l10n('Görevleri yeniden zamanla'),
           onTap: onRescheduleTasks,
         ),
         const SizedBox(width: 8),
         _QuietActionChip(
           key: const ValueKey('daily-menu-routines'),
           icon: Icons.auto_awesome_outlined,
-          label: 'Rutinler',
-          tooltip: 'Rutinleri keşfet',
+          label: context.l10n('Rutinler'),
+          tooltip: context.l10n('Rutinleri keşfet'),
           onTap: () => onDiscoverRoutines(),
         ),
       ],
@@ -835,7 +832,7 @@ class _DailyDatePickerSheetState extends State<_DailyDatePickerSheet> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Kapat',
+                  tooltip: context.l10n('Kapat'),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -849,7 +846,7 @@ class _DailyDatePickerSheetState extends State<_DailyDatePickerSheet> {
                   ),
                 ),
                 IconButton.filled(
-                  tooltip: 'Seçilen tarihe git',
+                  tooltip: context.l10n('Seçilen tarihe git'),
                   onPressed: () => Navigator.pop(context, _selectedDate),
                   icon: const Icon(Icons.check_rounded),
                 ),
@@ -867,7 +864,7 @@ class _DailyDatePickerSheetState extends State<_DailyDatePickerSheet> {
               const Divider(height: 18),
               _DailyRescheduleShortcut(
                 icon: Icons.today_rounded,
-                label: 'Bugüne dön',
+                label: context.l10n('Bugüne dön'),
                 onTap: () => Navigator.pop(context, today),
               ),
             ],
@@ -879,10 +876,7 @@ class _DailyDatePickerSheetState extends State<_DailyDatePickerSheet> {
 }
 
 class _DailyViewToggle extends StatelessWidget {
-  const _DailyViewToggle({
-    required this.grouping,
-    required this.onChanged,
-  });
+  const _DailyViewToggle({required this.grouping, required this.onChanged});
 
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onChanged;
@@ -891,7 +885,7 @@ class _DailyViewToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     return Semantics(
-      label: 'Görünüm',
+      label: context.l10n('Görünüm'),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: palette.surfaceMuted,
@@ -904,14 +898,14 @@ class _DailyViewToggle extends StatelessWidget {
             children: [
               _DailyViewToggleSegment(
                 key: const ValueKey('daily-grouping-list'),
-                tooltip: 'Liste görünümü',
+                tooltip: context.l10n('Liste görünümü'),
                 icon: Icons.format_list_bulleted_rounded,
                 selected: grouping == DailyPlannerGrouping.list,
                 onTap: () => onChanged(DailyPlannerGrouping.list),
               ),
               _DailyViewToggleSegment(
                 key: const ValueKey('daily-grouping-timeline'),
-                tooltip: 'Zaman çizelgesi',
+                tooltip: context.l10n('Zaman çizelgesi'),
                 icon: Icons.view_timeline_outlined,
                 selected: grouping == DailyPlannerGrouping.timeline,
                 onTap: () => onChanged(DailyPlannerGrouping.timeline),
@@ -1152,7 +1146,9 @@ class _DailyTimelineSectionsState
       children: [
         _TimelineGroupHeader(
           icon: Icons.schedule_rounded,
-          label: 'HERHANGİ BİR ZAMAN (${anytime.length})',
+          label: context.l10n('HERHANGİ BİR ZAMAN ({count})', {
+            'count': '${anytime.length}',
+          }),
           onAdd: widget.onAdd,
         ),
         const SizedBox(height: 5),
@@ -1178,7 +1174,7 @@ class _DailyTimelineSectionsState
           key: const ValueKey('daily-timeline-scheduled'),
           child: scheduled.isEmpty
               ? Text(
-                  'Belirli saatli görev yok',
+                  context.l10n('Belirli saatli görev yok'),
                   style: TextStyle(color: context.palette.textSecondary),
                 )
               : Column(
@@ -1319,7 +1315,7 @@ class _TimelineGroupHeader extends StatelessWidget {
       ),
       const Spacer(),
       _SquareButton(
-        tooltip: 'Zaman çizelgesine görev ekle',
+        tooltip: context.l10n('Zaman çizelgesine görev ekle'),
         icon: Icons.add_rounded,
         compact: true,
         emphasized: true,
@@ -1546,7 +1542,9 @@ class _DailySection extends StatelessWidget {
                 const Spacer(),
                 if (tasks.isNotEmpty)
                   _SquareButton(
-                    tooltip: '${_periodLabel(period)} görevi ekle',
+                    tooltip: context.l10n('{period} görevi ekle', {
+                      'period': _periodLabel(period),
+                    }),
                     icon: Icons.add_rounded,
                     compact: true,
                     emphasized: true,
@@ -1841,7 +1839,9 @@ class _DailyTaskCard extends ConsumerWidget {
         ? scheduledProgress
         : (activeFocus?.progress ?? scheduledProgress);
     final completionButton = IconButton(
-      tooltip: task.isCompleted ? 'Tamamlanmadı' : 'Tamamla',
+      tooltip: task.isCompleted
+          ? context.l10n('Tamamlanmadı')
+          : context.l10n('Tamamla'),
       iconSize: timelineStyle ? 22 : 20,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
@@ -1868,7 +1868,9 @@ class _DailyTaskCard extends ConsumerWidget {
           debugPrint('Daily task completion could not be changed: $error');
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Görev durumu güncellenemedi.')),
+              SnackBar(
+                content: Text(context.l10n('Görev durumu güncellenemedi.')),
+              ),
             );
           }
         }
@@ -2032,48 +2034,53 @@ class _DailyTaskCard extends ConsumerWidget {
           children: [
             _DailyTaskActionTile(
               icon: Icons.copy_all_outlined,
-              label: 'Bir kopya oluştur',
+              label: context.l10n('Bir kopya oluştur'),
               onTap: () =>
                   Navigator.pop(context, _DailyTaskMenuAction.createCopy),
             ),
             _DailyTaskActionTile(
               icon: Icons.move_to_inbox_outlined,
-              label: 'Yapılacaklara taşı',
+              label: context.l10n('Yapılacaklara taşı'),
               onTap: () =>
                   Navigator.pop(context, _DailyTaskMenuAction.moveToTodo),
             ),
             _DailyTaskActionTile(
               icon: Icons.calendar_month_outlined,
-              label: 'Yeniden planla',
+              label: context.l10n('Yeniden planla'),
               onTap: () =>
                   Navigator.pop(context, _DailyTaskMenuAction.reschedule),
             ),
             _DailyTaskActionTile(
               icon: Icons.redo_rounded,
-              label: 'Yarın için yeniden planla',
+              label: context.l10n('Yarın için yeniden planla'),
               onTap: () =>
                   Navigator.pop(context, _DailyTaskMenuAction.tomorrow),
             ),
-            const _DailyTaskActionTile(
-              icon: Icons.auto_awesome_rounded,
-              label: 'Ayrım öner',
-            ),
+            if (!task.hasSubtasks)
+              _DailyTaskActionTile(
+                icon: Icons.auto_awesome_rounded,
+                label: context.l10n('Ayrım öner'),
+                onTap: () => Navigator.pop(
+                  context,
+                  _DailyTaskMenuAction.suggestBreakdown,
+                ),
+              ),
             _DailyTaskActionTile(
               icon: Icons.restart_alt_rounded,
               label: task.isCompleted
-                  ? 'Görevi yeniden başlat'
-                  : 'Görevi başlat',
+                  ? context.l10n('Görevi yeniden başlat')
+                  : context.l10n('Görevi başlat'),
               onTap: () =>
                   Navigator.pop(context, _DailyTaskMenuAction.startFocus),
             ),
             _DailyTaskActionTile(
               icon: Icons.edit_outlined,
-              label: 'Görevi düzenle',
+              label: context.l10n('Görevi düzenle'),
               onTap: () => Navigator.pop(context, _DailyTaskMenuAction.edit),
             ),
             _DailyTaskActionTile(
               icon: Icons.delete_outline_rounded,
-              label: 'Görevi sil',
+              label: context.l10n('Görevi sil'),
               destructive: true,
               onTap: () => Navigator.pop(context, _DailyTaskMenuAction.delete),
             ),
@@ -2094,6 +2101,8 @@ class _DailyTaskCard extends ConsumerWidget {
           task,
           _dateOnly(selectedDate).add(const Duration(days: 1)),
         );
+      case _DailyTaskMenuAction.suggestBreakdown:
+        await suggestTaskBreakdown(context: context, ref: ref, task: task);
       case _DailyTaskMenuAction.startFocus:
         await ref.read(startTaskFocusProvider)(task);
         if (!context.mounted) return;
@@ -2121,11 +2130,12 @@ class _DailyTaskCard extends ConsumerWidget {
         initialDraft: _DailyTaskDraft(
           date: _dateOnly(task.scheduledAt ?? selectedDate),
           period: task.dayPeriod,
-          title: '${task.title} (Kopya)',
+          title: context.l10n('{title} (Kopya)', {'title': task.title}),
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmEnabled: task.alarmAt != null || task.reminderLeadMinutes != null,
+          alarmEnabled:
+              task.alarmAt != null || task.reminderLeadMinutes != null,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2151,7 +2161,8 @@ class _DailyTaskCard extends ConsumerWidget {
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmEnabled: task.alarmAt != null || task.reminderLeadMinutes != null,
+          alarmEnabled:
+              task.alarmAt != null || task.reminderLeadMinutes != null,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2217,7 +2228,7 @@ class _DailyTaskCard extends ConsumerWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Yapılacaklara Taşı',
+                context.l10n('Yapılacaklara Taşı'),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -2225,8 +2236,8 @@ class _DailyTaskCard extends ConsumerWidget {
               const SizedBox(height: 16),
               _DailyTodoListChoice(
                 key: const ValueKey('daily-move-list-default'),
-                name: 'To-do',
-                description: 'Varsayılan yapılacaklar listesi',
+                name: context.l10n('To-do'),
+                description: context.l10n('Varsayılan yapılacaklar listesi'),
                 onTap: () => Navigator.pop(context, defaultList),
               ),
               for (final list in lists) ...[
@@ -2268,6 +2279,7 @@ enum _DailyTaskMenuAction {
   moveToTodo,
   reschedule,
   tomorrow,
+  suggestBreakdown,
   startFocus,
   edit,
   delete,
@@ -2400,7 +2412,7 @@ class _DailyRescheduleSheetState extends State<_DailyRescheduleSheet> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Kapat',
+                  tooltip: context.l10n('Kapat'),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -2412,7 +2424,7 @@ class _DailyRescheduleSheetState extends State<_DailyRescheduleSheet> {
                   ),
                 ),
                 IconButton.filled(
-                  tooltip: 'Tarihi onayla',
+                  tooltip: context.l10n('Tarihi onayla'),
                   onPressed: () => Navigator.pop(context, _selectedDate),
                   icon: const Icon(Icons.check_rounded),
                 ),
@@ -2429,13 +2441,17 @@ class _DailyRescheduleSheetState extends State<_DailyRescheduleSheet> {
             const Divider(height: 18),
             _DailyRescheduleShortcut(
               icon: Icons.today_outlined,
-              label: 'Bugün (${_weekdayShortLabel(today)})',
+              label: context.l10n('Bugün ({weekday})', {
+                'weekday': _weekdayShortLabel(today),
+              }),
               onTap: () => Navigator.pop(context, today),
             ),
             _DailyRescheduleShortcut(
               icon: Icons.redo_rounded,
-              label:
-                  'Gelecek hafta (${nextWeekSameDay.day} ${_monthShortLabel(nextWeekSameDay)} ${_weekdayShortLabel(nextWeekSameDay)})',
+              label: context.l10n('Gelecek hafta ({date})', {
+                'date':
+                    '${nextWeekSameDay.day} ${_monthShortLabel(nextWeekSameDay)} ${_weekdayShortLabel(nextWeekSameDay)}',
+              }),
               onTap: () => Navigator.pop(context, nextWeekSameDay),
             ),
           ],
@@ -2657,14 +2673,14 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Yeni görev',
+                      context.l10n('Yeni görev'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Kapat',
+                    tooltip: context.l10n('Kapat'),
                     onPressed: () => Navigator.pop(context),
                     iconSize: 19,
                     style: IconButton.styleFrom(
@@ -2696,7 +2712,7 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   decoration: InputDecoration(
-                    hintText: 'Sırada ne var?',
+                    hintText: context.l10n('Sırada ne var?'),
                     border: InputBorder.none,
                     prefixIcon: ValueListenableBuilder(
                       valueListenable: _taskIcon,
@@ -2711,7 +2727,9 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                         children: [
                           IconButton(
                             key: const ValueKey('daily-quick-voice'),
-                            tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
+                            tooltip: _listening
+                                ? context.l10n('Konuşmayı bitir')
+                                : context.l10n('Konuş'),
                             onPressed: _toggleVoiceInput,
                             style: IconButton.styleFrom(
                               fixedSize: const Size.square(34),
@@ -2734,7 +2752,7 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const ValueKey('daily-quick-submit'),
-                            tooltip: 'Ekle',
+                            tooltip: context.l10n('Ekle'),
                             onPressed: _submit,
                             style: IconButton.styleFrom(
                               fixedSize: const Size.square(34),
@@ -2776,7 +2794,7 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                           const SizedBox(width: 7),
                           _QuickChip(
                             key: const ValueKey('daily-details-chip'),
-                            tooltip: 'Ayrıntılı görev oluştur',
+                            tooltip: context.l10n('Ayrıntılı görev oluştur'),
                             icon: Icons.more_horiz_rounded,
                             label: '',
                             onTap: () =>
@@ -2956,7 +2974,9 @@ class _DailyTaskDetailScreenState
 
   void _showSubtaskLimitWarning() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('En fazla 30 alt görev ekleyebilirsin.')),
+      SnackBar(
+        content: Text(context.l10n('En fazla 30 alt görev ekleyebilirsin.')),
+      ),
     );
   }
 
@@ -2972,14 +2992,17 @@ class _DailyTaskDetailScreenState
         _subtasks.length >= TaskModel.userSubtaskLimit) {
       return;
     }
-    if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
+    final usingReadyRoutineSteps =
+        widget.initialDraft.presetSubtasks.isNotEmpty;
+    if (!usingReadyRoutineSteps &&
+        !await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
       return;
     }
     if (!mounted) return;
 
     setState(() => _generatingSubtasks = true);
     try {
-      final generated = widget.initialDraft.presetSubtasks.isNotEmpty
+      final generated = usingReadyRoutineSteps
           ? await Future<List<String>>.delayed(
               const Duration(milliseconds: 450),
               () => widget.initialDraft.presetSubtasks,
@@ -2988,12 +3011,10 @@ class _DailyTaskDetailScreenState
                 .read(taskBreakdownServiceProvider)
                 .generateSubtasks(title);
       if (!mounted || _title.text.trim().isEmpty) return;
-      final existing = _subtasks.map((item) => item.toLowerCase()).toSet();
-      final remaining = TaskModel.userSubtaskLimit - _subtasks.length;
-      final additions = generated
-          .where((item) => existing.add(item.toLowerCase()))
-          .take(math.min(TaskModel.aiSubtaskLimit, remaining))
-          .toList();
+      final additions = selectAiSubtaskAdditions(
+        generated: generated,
+        existing: _subtasks,
+      );
       if (additions.isEmpty) return;
       setState(() => _subtasksExpanded = true);
       await revealSubtasksSequentially(
@@ -3020,9 +3041,9 @@ class _DailyTaskDetailScreenState
     );
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.screenTitle),
+        title: Text(context.l10n(widget.screenTitle)),
         leading: IconButton(
-          tooltip: 'Kapat',
+          tooltip: context.l10n('Kapat'),
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close_rounded),
         ),
@@ -3039,7 +3060,11 @@ class _DailyTaskDetailScreenState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_rounded),
-            label: Text(_saving ? 'Kaydediliyor...' : 'Görevi kaydet'),
+            label: Text(
+              _saving
+                  ? context.l10n('Kaydediliyor...')
+                  : context.l10n('Görevi kaydet'),
+            ),
           ),
         ),
       ),
@@ -3071,8 +3096,8 @@ class _DailyTaskDetailScreenState
                     Expanded(
                       child: Text(
                         widget.screenTitle == 'Görev ekle'
-                            ? 'Bugün için küçük bir adım'
-                            : 'Görevini düzenle',
+                            ? context.l10n('Bugün için küçük bir adım')
+                            : context.l10n('Görevini düzenle'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -3092,7 +3117,7 @@ class _DailyTaskDetailScreenState
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   decoration: InputDecoration(
-                    hintText: 'Ne yapmak istersin?',
+                    hintText: context.l10n('Ne yapmak istersin?'),
                     filled: true,
                     fillColor: context.palette.surface,
                     prefixIcon: ValueListenableBuilder(
@@ -3113,8 +3138,10 @@ class _DailyTaskDetailScreenState
                   icon: _isTimed
                       ? Icons.edit_calendar_outlined
                       : _periodIcon(_period),
-                  label: 'Günün saati',
-                  value: _isTimed ? 'Zamanında' : _periodLabel(_period),
+                  label: context.l10n('Günün saati'),
+                  value: _isTimed
+                      ? context.l10n('Zamanında')
+                      : _periodLabel(_period),
                   onTap: () async {
                     final value = await _showDayPeriodPicker(
                       context,
@@ -3141,7 +3168,7 @@ class _DailyTaskDetailScreenState
                 if (_isTimed) ...[
                   const Divider(height: 1),
                   _TimedDateTimeTile(
-                    label: 'Başlar',
+                    label: context.l10n('Başlar'),
                     value: _startsAt,
                     dateKey: const ValueKey('daily-start-date'),
                     timeKey: const ValueKey('daily-start-time'),
@@ -3150,7 +3177,7 @@ class _DailyTaskDetailScreenState
                   ),
                   const Divider(height: 1),
                   _TimedDateTimeTile(
-                    label: 'Biter',
+                    label: context.l10n('Biter'),
                     value: _endsAt,
                     dateKey: const ValueKey('daily-end-date'),
                     timeKey: const ValueKey('daily-end-time'),
@@ -3161,14 +3188,14 @@ class _DailyTaskDetailScreenState
                   const Divider(height: 1),
                   _DetailTile(
                     icon: Icons.calendar_today_outlined,
-                    label: 'Tarih',
+                    label: context.l10n('Tarih'),
                     value: _shortDate(_date),
                     onTap: _pickDate,
                   ),
                   const Divider(height: 1),
                   _DetailTile(
                     icon: Icons.timer_outlined,
-                    label: 'Süre',
+                    label: context.l10n('Süre'),
                     value: _durationLabel(_duration),
                     onTap: _pickDuration,
                   ),
@@ -3176,7 +3203,7 @@ class _DailyTaskDetailScreenState
                 const Divider(height: 1),
                 _DetailTile(
                   icon: Icons.repeat_rounded,
-                  label: 'Yinelemek',
+                  label: context.l10n('Yinelemek'),
                   value: _recurrenceLabel(_recurrence),
                   onTap: () async {
                     final value = await _showRecurrencePicker(
@@ -3193,8 +3220,8 @@ class _DailyTaskDetailScreenState
                   _DetailToggleTile(
                     key: const ValueKey('daily-alarm-toggle'),
                     icon: Icons.alarm_rounded,
-                    label: 'Alarm',
-                    subtitle: 'Görev başladığında çalar',
+                    label: context.l10n('Alarm'),
+                    subtitle: context.l10n('Görev başladığında çalar'),
                     value: _alarmEnabled,
                     onChanged: (enabled) async {
                       if (enabled &&
@@ -3219,13 +3246,17 @@ class _DailyTaskDetailScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _DailyFormSectionHeader(
+                  FlorienFormSectionHeader(
                     key: const ValueKey('daily-subtasks-section-toggle'),
                     icon: Icons.account_tree_outlined,
-                    title: 'Alt görevler',
+                    title: context.l10n('Alt görevler'),
                     subtitle: _subtasks.isEmpty
-                        ? 'Küçük adımlar başlatmayı kolaylaştırır.'
-                        : 'Adımları dilediğin sırayla düzenleyebilirsin.',
+                        ? context.l10n(
+                            'Küçük adımlar başlatmayı kolaylaştırır.',
+                          )
+                        : context.l10n(
+                            'Adımları dilediğin sırayla düzenleyebilirsin.',
+                          ),
                     color: FlorienColors.aiLavender,
                     trailing:
                         _title.text.trim().isNotEmpty &&
@@ -3234,8 +3265,8 @@ class _DailyTaskDetailScreenState
                             key: const ValueKey('daily-ai-subtasks-button'),
                             tooltip:
                                 widget.initialDraft.presetSubtasks.isNotEmpty
-                                ? 'Hazır alt görevleri ekle'
-                                : 'AI ile alt görev oluştur',
+                                ? context.l10n('Hazır alt görevleri ekle')
+                                : context.l10n('AI ile alt görev oluştur'),
                             onPressed: _generatingSubtasks
                                 ? null
                                 : _generateSubtasks,
@@ -3247,7 +3278,11 @@ class _DailyTaskDetailScreenState
                                     ),
                                   )
                                 : Icon(
-                                    !isPremium
+                                    !isPremium &&
+                                            widget
+                                                .initialDraft
+                                                .presetSubtasks
+                                                .isEmpty
                                         ? Icons.lock_outline_rounded
                                         : widget
                                               .initialDraft
@@ -3283,8 +3318,8 @@ class _DailyTaskDetailScreenState
                             key: const ValueKey('daily-detail-subtask-input'),
                             controller: _subtask,
                             onSubmitted: (_) => _addSubtask(),
-                            decoration: const InputDecoration(
-                              hintText: 'Yeni alt görev',
+                            decoration: InputDecoration(
+                              hintText: context.l10n('Yeni alt görev'),
                             ),
                           ),
                         ),
@@ -3311,11 +3346,11 @@ class _DailyTaskDetailScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _DailyFormSectionHeader(
+                  FlorienFormSectionHeader(
                     key: const ValueKey('daily-notes-section-toggle'),
                     icon: Icons.notes_rounded,
-                    title: 'Notlar',
-                    subtitle: 'Hatırlamak istediğin ayrıntılar.',
+                    title: context.l10n('Notlar'),
+                    subtitle: context.l10n('Hatırlamak istediğin ayrıntılar.'),
                     color: FlorienColors.softPink,
                     expanded: _notesExpanded,
                     onTap: () =>
@@ -3328,8 +3363,8 @@ class _DailyTaskDetailScreenState
                       controller: _notes,
                       minLines: 4,
                       maxLines: 8,
-                      decoration: const InputDecoration(
-                        hintText: 'Notlarını buraya yaz…',
+                      decoration: InputDecoration(
+                        hintText: context.l10n('Notlarını buraya yaz…'),
                       ),
                     ),
                   ],
@@ -3434,85 +3469,6 @@ class _DailyTaskDetailScreenState
             : _startsAt.add(const Duration(minutes: 5));
       }
     });
-  }
-}
-
-class _DailyFormSectionHeader extends StatelessWidget {
-  const _DailyFormSectionHeader({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    this.trailing,
-    this.expanded,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final Widget? trailing;
-  final bool? expanded;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        border: Border.all(
-          color: context.palette.border,
-          width: FlorienBorders.thin,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 21),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.palette.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ?trailing,
-          if (expanded case final expanded?)
-            Icon(
-              expanded
-                  ? Icons.keyboard_arrow_up_rounded
-                  : Icons.keyboard_arrow_down_rounded,
-            ),
-        ],
-      ),
-    );
-    if (onTap == null) return content;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        child: content,
-      ),
-    );
   }
 }
 
@@ -3753,7 +3709,7 @@ class _DayPeriodPicker extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
             child: Text(
-              'Günün saati',
+              context.l10n('Günün saati'),
               style: TextStyle(
                 color: context.palette.textSecondary,
                 fontWeight: FontWeight.w700,
@@ -3785,7 +3741,7 @@ class _DayPeriodPicker extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 3, 12, 3),
             child: Text(
-              'Etkinlik',
+              context.l10n('Etkinlik'),
               style: TextStyle(
                 color: context.palette.textSecondary,
                 fontWeight: FontWeight.w700,
@@ -3807,7 +3763,7 @@ class _DayPeriodPicker extends StatelessWidget {
                 ],
               ),
             ),
-            title: const Text('Zamanında'),
+            title: Text(context.l10n('Zamanında')),
             trailing: isPremium
                 ? null
                 : const Icon(Icons.lock_outline_rounded, size: 20),
@@ -3820,7 +3776,7 @@ class _DayPeriodPicker extends StatelessWidget {
           ListTile(
             key: const ValueKey('daily-todo-choice'),
             leading: Icon(Icons.move_to_inbox_outlined),
-            title: const Text('Yapılacaklar'),
+            title: Text(context.l10n('Yapılacaklar')),
             onTap: () => Navigator.pop(
               context,
               _DailyPeriodSelection(period: selected, isTodo: true),
@@ -3869,11 +3825,11 @@ Future<TimeOfDay?> _showFiveMinuteTimePicker(
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Vazgeç'),
+                    child: Text(context.l10n('Vazgeç')),
                   ),
                   const Spacer(),
                   Text(
-                    'Saat seç',
+                    context.l10n('Saat seç'),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const Spacer(),
@@ -3882,7 +3838,7 @@ Future<TimeOfDay?> _showFiveMinuteTimePicker(
                       context,
                       TimeOfDay.fromDateTime(selected),
                     ),
-                    child: const Text('Bitti'),
+                    child: Text(context.l10n('Bitti')),
                   ),
                 ],
               ),
@@ -4171,9 +4127,7 @@ class _DayButton extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected
-                ? context.palette.primaryMuted
-                : Colors.transparent,
+            color: selected ? context.palette.primaryMuted : Colors.transparent,
             borderRadius: BorderRadius.circular(FlorienRadius.md),
             border: selected
                 ? Border.all(
@@ -4334,17 +4288,17 @@ DateTime _scheduledAt(DateTime date, DayPeriod period) {
 }
 
 String _periodLabel(DayPeriod period) => switch (period) {
-  DayPeriod.anytime => 'Her zaman',
-  DayPeriod.morning => 'Sabah',
-  DayPeriod.daytime => 'Gündüz',
-  DayPeriod.evening => 'Akşam',
+  DayPeriod.anytime => ActiveLanguage.s('Her zaman'),
+  DayPeriod.morning => ActiveLanguage.s('Sabah'),
+  DayPeriod.daytime => ActiveLanguage.s('Gündüz'),
+  DayPeriod.evening => ActiveLanguage.s('Akşam'),
 };
 
 String _periodHint(DayPeriod period) => switch (period) {
-  DayPeriod.anytime => 'Bu gruba görev ekle',
-  DayPeriod.morning => 'Sabah için görev ekle',
-  DayPeriod.daytime => 'Gündüz için görev ekle',
-  DayPeriod.evening => 'Akşam için görev ekle',
+  DayPeriod.anytime => ActiveLanguage.s('Bu gruba görev ekle'),
+  DayPeriod.morning => ActiveLanguage.s('Sabah için görev ekle'),
+  DayPeriod.daytime => ActiveLanguage.s('Gündüz için görev ekle'),
+  DayPeriod.evening => ActiveLanguage.s('Akşam için görev ekle'),
 };
 
 IconData _periodIcon(DayPeriod period) => switch (period) {
@@ -4362,54 +4316,76 @@ Color _periodColor(DayPeriod period) => switch (period) {
 };
 
 String _recurrenceLabel(RecurrenceType value) => switch (value) {
-  RecurrenceType.none => 'Hayır',
-  RecurrenceType.daily => 'Her gün',
-  RecurrenceType.weekly => 'Her hafta',
-  RecurrenceType.monthly => 'Her ay',
-  RecurrenceType.yearly => 'Her yıl',
-  RecurrenceType.custom => 'Özel',
+  RecurrenceType.none => ActiveLanguage.s('Hayır'),
+  RecurrenceType.daily => ActiveLanguage.s('Her gün'),
+  RecurrenceType.weekly => ActiveLanguage.s('Her hafta'),
+  RecurrenceType.monthly => ActiveLanguage.s('Her ay'),
+  RecurrenceType.yearly => ActiveLanguage.s('Her yıl'),
+  RecurrenceType.custom => ActiveLanguage.s('Özel'),
 };
 
 String _durationLabel(int minutes) => switch (minutes) {
-  60 => '1 saat',
-  90 => '1,5 saat',
-  120 => '2 saat',
-  _ => '$minutes dk',
+  60 => ActiveLanguage.s('1 saat'),
+  90 => ActiveLanguage.s('1,5 saat'),
+  120 => ActiveLanguage.s('2 saat'),
+  _ => ActiveLanguage.s('{minutes} dk', {'minutes': '$minutes'}),
 };
 
 String _shortDate(DateTime date) =>
-    '${date.day} ${_monthName(date.month).substring(0, 3)} ${date.year}';
+    '${date.day} ${_monthShortLabel(date)} ${date.year}';
 
-String _weekdayName(DateTime date) => const [
-  'Pazartesi',
-  'Salı',
-  'Çarşamba',
-  'Perşembe',
-  'Cuma',
-  'Cumartesi',
-  'Pazar',
+String _weekdayName(DateTime date) => [
+  ActiveLanguage.s('Pazartesi'),
+  ActiveLanguage.s('Salı'),
+  ActiveLanguage.s('Çarşamba'),
+  ActiveLanguage.s('Perşembe'),
+  ActiveLanguage.s('Cuma'),
+  ActiveLanguage.s('Cumartesi'),
+  ActiveLanguage.s('Pazar'),
 ][date.weekday - 1];
 
-String _weekdayShort(DateTime date) =>
-    const ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'][date.weekday - 1];
+String _weekdayShortLabel(DateTime date) => [
+  ActiveLanguage.s('Pzt'),
+  ActiveLanguage.s('Sal'),
+  ActiveLanguage.s('Çar'),
+  ActiveLanguage.s('Per'),
+  ActiveLanguage.s('Cum'),
+  ActiveLanguage.s('Cmt'),
+  ActiveLanguage.s('Paz'),
+][date.weekday - 1];
 
-String _weekdayShortLabel(DateTime date) =>
-    const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][date.weekday - 1];
+String _weekdayShort(DateTime date) {
+  final label = _weekdayShortLabel(date);
+  if (label.isEmpty) return '';
+  return String.fromCharCodes(label.runes.take(1));
+}
 
-String _monthShortLabel(DateTime date) =>
-    _monthName(date.month).substring(0, 3);
+String _monthShortLabel(DateTime date) => [
+  ActiveLanguage.s('Oca'),
+  ActiveLanguage.s('Şub'),
+  ActiveLanguage.s('Mar'),
+  ActiveLanguage.s('Nis'),
+  ActiveLanguage.s('May'),
+  ActiveLanguage.s('Haz'),
+  ActiveLanguage.s('Tem'),
+  ActiveLanguage.s('Ağu'),
+  ActiveLanguage.s('Eyl'),
+  ActiveLanguage.s('Eki'),
+  ActiveLanguage.s('Kas'),
+  ActiveLanguage.s('Ara'),
+][date.month - 1];
 
-String _monthName(int month) => const [
-  'Ocak',
-  'Şubat',
-  'Mart',
-  'Nisan',
-  'Mayıs',
-  'Haziran',
-  'Temmuz',
-  'Ağustos',
-  'Eylül',
-  'Ekim',
-  'Kasım',
-  'Aralık',
+String _monthName(int month) => [
+  ActiveLanguage.s('Ocak'),
+  ActiveLanguage.s('Şubat'),
+  ActiveLanguage.s('Mart'),
+  ActiveLanguage.s('Nisan'),
+  ActiveLanguage.s('Mayıs'),
+  ActiveLanguage.s('Haziran'),
+  ActiveLanguage.s('Temmuz'),
+  ActiveLanguage.s('Ağustos'),
+  ActiveLanguage.s('Eylül'),
+  ActiveLanguage.s('Ekim'),
+  ActiveLanguage.s('Kasım'),
+  ActiveLanguage.s('Aralık'),
 ][month - 1];

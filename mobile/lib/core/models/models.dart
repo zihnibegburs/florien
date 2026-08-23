@@ -74,6 +74,7 @@ class TaskModel {
   final DateTime? startedAt;
   final DateTime? completedAt;
   final DateTime? alarmAt;
+
   /// Minutes before [scheduledAt]. `null` means use the account default.
   final int? reminderLeadMinutes;
   final bool isTimed;

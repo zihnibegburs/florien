@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "O Florien precisa do microfone para adicionares tarefas por voz.";
+"NSSpeechRecognitionUsageDescription" = "O Florien precisa de reconhecimento de voz para passar o que dizes a texto.";
+"NSHealthShareUsageDescription" = "O Florien precisa de acesso ao Saúde para sincronizar o teu humor com o Apple Saúde.";
+"NSHealthUpdateUsageDescription" = "O Florien precisa de permissão para guardar o humor no Apple Saúde.";
+"NSCalendarsUsageDescription" = "O Florien precisa de acesso ao calendário para trazer eventos como tarefas.";
+"NSCalendarsFullAccessUsageDescription" = "O Florien precisa de acesso completo ao calendário para trazer eventos como tarefas.";

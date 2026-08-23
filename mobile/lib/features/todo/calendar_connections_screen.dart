@@ -7,6 +7,7 @@ import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class CalendarConnectionsScreen extends ConsumerStatefulWidget {
   const CalendarConnectionsScreen({super.key});
@@ -37,9 +38,13 @@ class _CalendarConnectionsScreenState
           .connect(provider);
       if (!mounted || connection == null) return;
       ref.invalidate(calendarConnectionsProvider);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('${connection.name} bağlandı.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n('{name} bağlandı.', {'name': connection.name}),
+          ),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -110,7 +115,7 @@ class _CalendarConnectionsScreenState
                 ),
                 const SizedBox(width: 14),
                 Text(
-                  'Bağlı Takvimler',
+                  context.l10n('Bağlı Takvimler'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
@@ -120,14 +125,16 @@ class _CalendarConnectionsScreenState
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Takvimini bağla',
+              context.l10n('Takvimini bağla'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
-              'Apple ve Google Takvimini aynı anda bağlayabilirsin.',
+              context.l10n(
+                'Apple ve Google Takvimini aynı anda bağlayabilirsin.',
+              ),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: context.palette.textSecondary,
               ),
@@ -150,7 +157,7 @@ class _CalendarConnectionsScreenState
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
-              'Bağlı takvimler',
+              context.l10n('Bağlı takvimler'),
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
@@ -163,11 +170,14 @@ class _CalendarConnectionsScreenState
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (_, _) =>
-                  _CalendarEmptyState(message: 'Bağlı takvimler yüklenemedi.'),
+              error: (_, _) => _CalendarEmptyState(
+                message: context.l10n('Bağlı takvimler yüklenemedi.'),
+              ),
               data: (items) => items.isEmpty
-                  ? const _CalendarEmptyState(
-                      message: 'Bağlı takvimlerin burada görünecek.',
+                  ? _CalendarEmptyState(
+                      message: context.l10n(
+                        'Bağlı takvimlerin burada görünecek.',
+                      ),
                     )
                   : FlorienGroupedPanel(
                       children: [
@@ -205,8 +215,8 @@ class _CalendarConnectButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = switch (provider) {
-      CalendarProvider.apple => 'Apple Takvimini Bağla',
-      CalendarProvider.google => 'Google Takvimini Bağla',
+      CalendarProvider.apple => context.l10n('Apple Takvimini Bağla'),
+      CalendarProvider.google => context.l10n('Google Takvimini Bağla'),
     };
 
     return Material(
@@ -232,7 +242,9 @@ class _CalendarConnectButton extends StatelessWidget {
               const SizedBox(width: 14),
               Flexible(
                 child: Text(
-                  isConnected ? '$text · Bağlı' : text,
+                  isConnected
+                      ? context.l10n('{name} · Bağlı', {'name': text})
+                      : text,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
@@ -296,7 +308,7 @@ class _ConnectedCalendarCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Bağlantıyı kaldır',
+            tooltip: context.l10n('Bağlantıyı kaldır'),
             onPressed: onDisconnect,
             icon: const Icon(Icons.close_rounded),
           ),

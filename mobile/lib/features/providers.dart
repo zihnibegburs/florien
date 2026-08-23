@@ -39,9 +39,10 @@ final onboardingStorageProvider = Provider<OnboardingStorage>(
   (ref) => OnboardingStorage(),
 );
 
-final onboardingLoginIntentStorageProvider = Provider<OnboardingLoginIntentStorage>(
-  (ref) => OnboardingLoginIntentStorage(),
-);
+final onboardingLoginIntentStorageProvider =
+    Provider<OnboardingLoginIntentStorage>(
+      (ref) => OnboardingLoginIntentStorage(),
+    );
 
 final recentAuthIsNewUserProvider = StateProvider<bool?>((ref) => null);
 
@@ -153,9 +154,7 @@ final dailyReviewLaunchSignalProvider = StateProvider<int>((ref) => 0);
 
 /// Reconciles OS local notifications with preferences + upcoming timed tasks.
 final notificationReconcileProvider =
-    Provider<
-      Future<void> Function({int? previousDefaultLeadMinutes})
-    >((ref) {
+    Provider<Future<void> Function({int? previousDefaultLeadMinutes})>((ref) {
       return ({int? previousDefaultLeadMinutes}) async {
         final auth = ref.read(authStateProvider).valueOrNull;
         if (auth == null) return;
@@ -173,7 +172,6 @@ final notificationReconcileProvider =
         );
       };
     });
-
 
 final liveActivityServiceProvider = Provider<FlorienLiveActivityService>(
   (ref) => FlorienLiveActivityService(),
@@ -210,7 +208,7 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
     _ownerId = auth?.userId ?? 'guest';
     _fallbackName = auth?.firstName.isNotEmpty == true
         ? auth!.firstName
-        : 'Profilim';
+        : ActiveLanguage.s('Profilim');
     final profiles = await ref
         .read(profileStorageProvider)
         .load(ownerId: _ownerId, fallbackName: _fallbackName);
@@ -363,7 +361,9 @@ class MoodEntriesNotifier extends AsyncNotifier<List<MoodEntry>> {
       throw ArgumentError.value(
         entry.date,
         'entry.date',
-        'Ruh hali ve günlük yansıma gelecekteki bir güne kaydedilemez.',
+        ActiveLanguage.s(
+          'Ruh hali ve günlük yansıma gelecekteki bir güne kaydedilemez.',
+        ),
       );
     }
     final current = state.valueOrNull ?? const <MoodEntry>[];
@@ -515,8 +515,8 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       error: AsyncError.new,
     );
     result.whenData(
-      (value) =>
-          ref.read(recentAuthIsNewUserProvider.notifier).state = value.isNewUser,
+      (value) => ref.read(recentAuthIsNewUserProvider.notifier).state =
+          value.isNewUser,
     );
     _refreshPreferences();
   }
@@ -524,7 +524,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   Future<void> loginWithApple() async {
     if (!await ref.read(appleAuthServiceProvider).isAvailable) {
       state = AsyncError(
-        StateError('Apple ile giriş bu cihazda kullanılamıyor.'),
+        StateError(ActiveLanguage.s('Apple ile giriş bu cihazda kullanılamıyor.')),
         StackTrace.current,
       );
       return;
@@ -554,8 +554,8 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
           AsyncError(friendlySocialAuthError(error), stackTrace),
     );
     result.whenData(
-      (value) =>
-          ref.read(recentAuthIsNewUserProvider.notifier).state = value.isNewUser,
+      (value) => ref.read(recentAuthIsNewUserProvider.notifier).state =
+          value.isNewUser,
     );
     _refreshPreferences();
   }
@@ -820,7 +820,7 @@ final createStandaloneFocusTaskProvider =
         final duration = durationMinutes.clamp(1, 24 * 60);
         final scheduledAt = DateTime.now();
         final created = await repository.createTask(
-          title: 'Odaklan',
+          title: ActiveLanguage.s('Odaklan'),
           color: '#6C5CE7',
           icon: 'timer',
           durationMinutes: duration,

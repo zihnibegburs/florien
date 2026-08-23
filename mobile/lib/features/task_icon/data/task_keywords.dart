@@ -129,7 +129,15 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
     'fr': ['lire', 'lecture'],
   }),
   TaskCategory.writing: TaskKeywordSet({
-    'en': ['writing', 'write', 'draft', 'blog post', 'essay', 'design', 'figma'],
+    'en': [
+      'writing',
+      'write',
+      'draft',
+      'blog post',
+      'essay',
+      'design',
+      'figma',
+    ],
     'tr': ['yazi yaz', 'yazmak', 'makale'],
     'de': ['schreiben', 'text'],
     'es': ['escribir', 'redactar'],

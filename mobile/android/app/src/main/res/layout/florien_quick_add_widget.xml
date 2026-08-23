@@ -8,9 +8,10 @@
     android:padding="16dp">
 
     <TextView
+        android:id="@+id/quick_add_prompt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Aklına bir şey mi geldi?"
+        android:text="@string/widget_quick_prompt"
         android:textColor="#29262D"
         android:textSize="15sp"
         android:textStyle="bold" />
@@ -23,7 +24,7 @@
         android:background="@drawable/florien_widget_primary"
         android:paddingHorizontal="13dp"
         android:paddingVertical="8dp"
-        android:text="＋ To-do ekle"
+        android:text="@string/widget_quick_cta"
         android:textColor="#29262D"
         android:textSize="12sp"
         android:textStyle="bold" />

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class AppProfile {
   const AppProfile({required this.id, required this.name});
@@ -119,7 +120,7 @@ class ProfileStorage {
   }) async {
     final current = await load(ownerId: ownerId, fallbackName: fallbackName);
     if (!current.profiles.any((profile) => profile.id == profileId)) {
-      throw StateError('Profil bulunamadı.');
+      throw StateError(ActiveLanguage.s('Profil bulunamadı.'));
     }
     return _persist(ownerId, current.profiles, profileId);
   }
@@ -131,7 +132,7 @@ class ProfileStorage {
   }) async {
     final current = await load(ownerId: ownerId, fallbackName: fallbackName);
     if (current.profiles.length <= 1) {
-      throw StateError('En az bir profil kalmalıdır.');
+      throw StateError(ActiveLanguage.s('En az bir profil kalmalıdır.'));
     }
     final profiles = current.profiles
         .where((profile) => profile.id != profileId)
@@ -191,7 +192,7 @@ class ProfileStorage {
 
   String _normaliseName(String value) {
     final name = value.trim();
-    return name.isEmpty ? 'Profilim' : name;
+    return name.isEmpty ? ActiveLanguage.s('Profilim') : name;
   }
 
   DocumentReference<Map<String, dynamic>>? _remoteRef(String ownerId) {

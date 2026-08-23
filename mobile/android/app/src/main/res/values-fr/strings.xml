@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">Plan du jour</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">15 min focus</string>
+    <string name="widget_quick_actions">Actions rapides Florien</string>
+    <string name="widget_focus_duration">Durée de focus</string>
+    <string name="widget_quick_todo">To-do rapide</string>
+    <string name="widget_incomplete_tasks">Tâches ouvertes</string>
+    <string name="widget_focus_brand">Florien · Focus</string>
+    <string name="widget_focus_ready">Tes 15 minutes sont prêtes</string>
+    <string name="widget_start">▶ Commencer</string>
+    <string name="widget_focus_how_long">Combien de temps veux-tu rester focus ?</string>
+    <string name="widget_min_5">5 min</string>
+    <string name="widget_min_10">10 min</string>
+    <string name="widget_min_15">15 min</string>
+    <string name="widget_min_30">30 min</string>
+    <string name="widget_quick_prompt">Quelque chose t’est venu ?</string>
+    <string name="widget_quick_cta">＋ Ajouter un To-do</string>
+    <string name="widget_ai_prompt">C’est quoi le plan ?   ✦</string>
+    <string name="live_activity_focus">Mode focus</string>
+    <string name="widget_open_short">{count} ouvertes</string>
+    <string name="widget_open_tasks_count">{count} tâches ouvertes</string>
+</resources>

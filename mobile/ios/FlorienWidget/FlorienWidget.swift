@@ -6,6 +6,18 @@ import WidgetKit
 private let appGroupId = "group.com.florien.app"
 private let sharedDefault = UserDefaults(suiteName: appGroupId)!
 
+private func widgetChrome(_ key: String, fallback: String) -> String {
+    let value = sharedDefault.string(forKey: key) ?? ""
+    if !value.isEmpty { return value }
+    let catalogKey = "widget.\(key)"
+    let localized = String(localized: LocalizedStringResource(stringLiteral: catalogKey))
+    return localized == catalogKey ? fallback : localized
+}
+
+private func widgetChromeCount(_ key: String, fallback: String, count: Int) -> String {
+    widgetChrome(key, fallback: fallback).replacingOccurrences(of: "{count}", with: "\(count)")
+}
+
 struct FlorienWidgetTask: Identifiable {
     let id: String
     let title: String
@@ -80,10 +92,10 @@ struct FlorienWidgetView: View {
 
     var body: some View {
         FlorienTaskListWidgetView(
-            title: "Günlük plan",
+            title: widgetChrome("chrome_daily_title", fallback: "Günlük plan"),
             taskCount: entry.dailyTaskCount,
             tasks: entry.dailyTasks,
-            emptyMessage: "Bugün için planın boş",
+            emptyMessage: widgetChrome("chrome_daily_empty", fallback: "Bugün için planın boş"),
             rootURL: FlorienWidgetURL.today,
             addURL: FlorienWidgetURL.dailyAdd,
             profileId: entry.profileId
@@ -96,10 +108,10 @@ struct FlorienTodoWidgetView: View {
 
     var body: some View {
         FlorienTaskListWidgetView(
-            title: "To-do",
+            title: widgetChrome("chrome_todo_title", fallback: "To-do"),
             taskCount: entry.todoTaskCount,
             tasks: entry.todoTasks,
-            emptyMessage: "To-do listen şu an boş",
+            emptyMessage: widgetChrome("chrome_todo_empty", fallback: "To-do listen şu an boş"),
             rootURL: FlorienWidgetURL.todo,
             addURL: FlorienWidgetURL.todoAdd,
             profileId: entry.profileId
@@ -154,14 +166,14 @@ private struct FlorienTaskListWidgetView: View {
                     .frame(width: 26, height: 26)
                 }
             }
-            Text("\(taskCount) tamamlanmamış görev")
+            Text(widgetChromeCount("chrome_open_tasks", fallback: "{count} tamamlanmamış görev", count: taskCount))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(FlorienWidgetStyle.muted)
             if tasks.isEmpty {
                 Text(emptyMessage)
                     .font(.headline)
                     .foregroundStyle(FlorienWidgetStyle.ink)
-                Text("Kendine biraz alan aç.")
+                Text(widgetChrome("chrome_empty_hint", fallback: "Kendine biraz alan aç."))
                     .font(.caption)
                     .foregroundStyle(FlorienWidgetStyle.muted)
             } else {
@@ -296,8 +308,8 @@ struct FlorienWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { entry in
             FlorienWidgetView(entry: entry)
         }
-        .configurationDisplayName("Günlük Plan")
-        .description("Bugün tamamlanmamış görevlerini gör.")
+        .configurationDisplayName(widgetChrome("chrome_name_daily", fallback: "Günlük Plan"))
+        .description(LocalizedStringResource("widget.desc.daily"))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -309,8 +321,8 @@ struct FlorienTodoWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { entry in
             FlorienTodoWidgetView(entry: entry)
         }
-        .configurationDisplayName("To-do")
-        .description("Tamamlanmamış To-do görevlerini gör ve ekle.")
+        .configurationDisplayName(widgetChrome("chrome_name_todo", fallback: "To-do"))
+        .description(LocalizedStringResource("widget.desc.todo"))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -322,8 +334,8 @@ struct FlorienFocus15Widget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
             FlorienFocus15WidgetView()
         }
-        .configurationDisplayName("15 dk Odaklan")
-        .description("Tek dokunuşla 15 dakikalık odak turu başlat.")
+        .configurationDisplayName(widgetChrome("chrome_name_focus15", fallback: "15 dk Odaklan"))
+        .description(LocalizedStringResource("widget.desc.focus15"))
         .supportedFamilies([.systemSmall])
     }
 }
@@ -332,14 +344,14 @@ struct FlorienFocus15WidgetView: View {
     var body: some View {
         Link(destination: FlorienWidgetURL.focus(minutes: 15)) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Florien · Odaklan")
+                Text(widgetChrome("chrome_focus_brand", fallback: "Florien · Odaklan"))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(FlorienWidgetStyle.ink)
                 Spacer(minLength: 0)
-                Text("15 dakikalık\nalanın hazır")
+                Text(widgetChrome("chrome_focus_ready_nl", fallback: "15 dakikalık\nalanın hazır"))
                     .font(.headline.weight(.bold))
                     .foregroundStyle(FlorienWidgetStyle.ink)
-                FlorienWidgetPill(label: "▶ Başla", color: FlorienWidgetStyle.primary)
+                FlorienWidgetPill(label: widgetChrome("chrome_start", fallback: "▶ Başla"), color: FlorienWidgetStyle.primary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .padding()
@@ -355,8 +367,8 @@ struct FlorienFocusPresetsWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
             FlorienFocusPresetsWidgetView()
         }
-        .configurationDisplayName("Odak Süresi")
-        .description("5, 10, 15 veya 30 dakikalık odak turu başlat.")
+        .configurationDisplayName(widgetChrome("chrome_name_presets", fallback: "Odak Süresi"))
+        .description(LocalizedStringResource("widget.desc.presets"))
         .supportedFamilies([.systemMedium])
     }
 }
@@ -364,14 +376,14 @@ struct FlorienFocusPresetsWidget: Widget {
 struct FlorienFocusPresetsWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Ne kadar odaklanmak istersin?")
+            Text(widgetChrome("chrome_focus_how_long", fallback: "Ne kadar odaklanmak istersin?"))
                 .font(.headline.weight(.bold))
                 .foregroundStyle(FlorienWidgetStyle.ink)
             HStack(spacing: 7) {
                 ForEach([5, 10, 15, 30], id: \.self) { minutes in
                     Link(destination: FlorienWidgetURL.focus(minutes: minutes)) {
                         FlorienWidgetPill(
-                            label: "\(minutes) dk",
+                            label: widgetChrome("chrome_min_\(minutes)", fallback: "\(minutes) dk"),
                             color: minutes == 15
                                 ? FlorienWidgetStyle.primary
                                 : FlorienWidgetStyle.card
@@ -392,8 +404,8 @@ struct FlorienQuickAddWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
             FlorienQuickAddWidgetView()
         }
-        .configurationDisplayName("Hızlı To-do")
-        .description("Aklına geleni hızlıca To-do listene ekle.")
+        .configurationDisplayName(widgetChrome("chrome_name_quick_add", fallback: "Hızlı To-do"))
+        .description(LocalizedStringResource("widget.desc.quick_add"))
         .supportedFamilies([.systemSmall])
     }
 }
@@ -406,10 +418,10 @@ struct FlorienQuickAddWidgetView: View {
                     .font(.title2)
                     .foregroundStyle(FlorienWidgetStyle.ink)
                 Spacer(minLength: 0)
-                Text("Aklına bir şey mi geldi?")
+                Text(widgetChrome("chrome_quick_prompt", fallback: "Aklına bir şey mi geldi?"))
                     .font(.headline.weight(.bold))
                     .foregroundStyle(FlorienWidgetStyle.ink)
-                FlorienWidgetPill(label: "＋ To-do ekle", color: FlorienWidgetStyle.primary)
+                FlorienWidgetPill(label: widgetChrome("chrome_quick_cta", fallback: "＋ To-do ekle"), color: FlorienWidgetStyle.primary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .padding()
@@ -425,8 +437,8 @@ struct FlorienQuickActionsWidget: Widget {
         StaticConfiguration(kind: kind, provider: FlorienWidgetProvider()) { _ in
             FlorienQuickActionsWidgetView()
         }
-        .configurationDisplayName("Florien Hızlı Eylemler")
-        .description("AI, planlama, To-do ve odaklana tek dokunuşla ulaş.")
+        .configurationDisplayName(widgetChrome("chrome_name_quick_actions", fallback: "Florien Hızlı Eylemler"))
+        .description(LocalizedStringResource("widget.desc.quick_actions"))
         .supportedFamilies([.systemMedium])
     }
 }
@@ -439,7 +451,7 @@ private struct FlorienQuickActionsWidgetView: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(FlorienWidgetStyle.actionSurface)
                     HStack {
-                        Text("Planın nedir?")
+                        Text(widgetChrome("chrome_ai_prompt", fallback: "Planın nedir?"))
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(FlorienWidgetStyle.ink)
                         Spacer()
@@ -662,7 +674,7 @@ struct FlorienLiveActivityWidget: Widget {
                                 .padding(7)
                                 .background(FlorienWidgetStyle.primary, in: Circle())
                         }
-                        .accessibilityLabel("Odaklanmayı durdur")
+                        .accessibilityLabel(widgetChrome("chrome_stop_a11y", fallback: "Odaklanmayı durdur"))
                     }
                 }
             } compactLeading: {
@@ -738,7 +750,7 @@ private struct FlorienLockScreenLiveActivityView: View {
                 VStack(spacing: 4) {
                     Image(systemName: "stop.fill")
                         .font(.caption.bold())
-                    Text("Durdur")
+                    Text(widgetChrome("chrome_stop", fallback: "Durdur"))
                         .font(.caption2.bold())
                 }
                 .foregroundStyle(FlorienWidgetStyle.ink)
@@ -746,7 +758,7 @@ private struct FlorienLockScreenLiveActivityView: View {
                 .padding(.vertical, 8)
                 .background(FlorienWidgetStyle.primary, in: Capsule())
             }
-            .accessibilityLabel("Odaklanmayı durdur")
+            .accessibilityLabel(widgetChrome("chrome_stop_a11y", fallback: "Odaklanmayı durdur"))
         }
         .padding()
     }

@@ -1,10 +1,11 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
@@ -91,7 +92,9 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
 
   void _showSubtaskLimitWarning() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('En fazla 30 alt görev ekleyebilirsin.')),
+      SnackBar(
+        content: Text(context.l10n('En fazla 30 alt görev ekleyebilirsin.')),
+      ),
     );
   }
 
@@ -118,12 +121,10 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           .read(taskBreakdownServiceProvider)
           .generateSubtasks(title);
       if (!mounted || _title.text.trim().isEmpty) return;
-      final existing = _subtasks.map((item) => item.toLowerCase()).toSet();
-      final remaining = TaskModel.userSubtaskLimit - _subtasks.length;
-      final additions = generated
-          .where((item) => existing.add(item.toLowerCase()))
-          .take(math.min(TaskModel.aiSubtaskLimit, remaining))
-          .toList();
+      final additions = selectAiSubtaskAdditions(
+        generated: generated,
+        existing: _subtasks,
+      );
       if (additions.isEmpty) return;
       setState(() => _subtasksExpanded = true);
       await revealSubtasksSequentially(
@@ -185,7 +186,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
         (membership) => membership.valueOrNull?.hasActivePremium == true,
       ),
     );
-    var listName = 'To-do';
+    var listName = context.l10n('To-do');
     if (_todoListId != null) {
       for (final list in lists) {
         if (list.id == _todoListId) {
@@ -196,9 +197,13 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Görevi düzenle' : 'Görev ekle'),
+        title: Text(
+          widget.isEditing
+              ? context.l10n('Görevi düzenle')
+              : context.l10n('Görev ekle'),
+        ),
         leading: IconButton(
-          tooltip: 'Kapat',
+          tooltip: context.l10n('Kapat'),
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close_rounded),
         ),
@@ -215,7 +220,11 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_rounded),
-            label: Text(_saving ? 'Kaydediliyor...' : 'To-do’yu kaydet'),
+            label: Text(
+              _saving
+                  ? context.l10n('Kaydediliyor...')
+                  : context.l10n('To-do’yu kaydet'),
+            ),
           ),
         ),
       ),
@@ -244,12 +253,16 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                   children: [
                     const Icon(Icons.checklist_rounded, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                      widget.isEditing
-                          ? 'To-do görevini düzenle'
-                          : 'Aklındaki işi yakala',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Text(
+                        widget.isEditing
+                            ? context.l10n('To-do görevini düzenle')
+                            : context.l10n('Aklındaki işi yakala'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -264,7 +277,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   decoration: InputDecoration(
-                    hintText: 'Ne yapman gerekiyor?',
+                    hintText: context.l10n('Ne yapman gerekiyor?'),
                     filled: true,
                     fillColor: context.palette.surface,
                     prefixIcon: ValueListenableBuilder(
@@ -286,7 +299,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                     leading: const _DetailIcon(
                       Icons.format_list_bulleted_rounded,
                     ),
-                    title: const Text('Liste'),
+                    title: Text(context.l10n('Liste')),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -301,7 +314,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                 ],
                 ListTile(
                   leading: const _DetailIcon(Icons.timer_outlined),
-                  title: const Text('Süre'),
+                  title: Text(context.l10n('Süre')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -322,13 +335,17 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _TodoFormSectionHeader(
+                  FlorienFormSectionHeader(
                     key: const ValueKey('todo-subtasks-section-toggle'),
                     icon: Icons.account_tree_outlined,
-                    title: 'Alt görevler',
+                    title: context.l10n('Alt görevler'),
                     subtitle: _subtasks.isEmpty
-                        ? 'Küçük adımlar başlatmayı kolaylaştırır.'
-                        : 'Adımları dilediğin sırayla düzenleyebilirsin.',
+                        ? context.l10n(
+                            'Küçük adımlar başlatmayı kolaylaştırır.',
+                          )
+                        : context.l10n(
+                            'Adımları dilediğin sırayla düzenleyebilirsin.',
+                          ),
                     color: FlorienColors.aiLavender,
                     trailing:
                         _title.text.trim().isNotEmpty &&
@@ -336,8 +353,8 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                         ? IconButton.filledTonal(
                             key: const ValueKey('todo-ai-subtasks-button'),
                             tooltip: isPremium
-                                ? 'AI ile alt görev oluştur'
-                                : 'Alt görevler Premium',
+                                ? context.l10n('AI ile alt görev oluştur')
+                                : context.l10n('Alt görevler Premium'),
                             onPressed: _generatingSubtasks
                                 ? null
                                 : _generateSubtasks,
@@ -367,7 +384,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                         leading: const Icon(Icons.circle_outlined, size: 18),
                         title: Text(_subtasks[index]),
                         trailing: IconButton(
-                          tooltip: 'Sil',
+                          tooltip: context.l10n('Sil'),
                           onPressed: () =>
                               setState(() => _subtasks.removeAt(index)),
                           icon: const Icon(Icons.close_rounded, size: 18),
@@ -380,14 +397,14 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                             key: const ValueKey('todo-detail-subtask-input'),
                             controller: _subtask,
                             onSubmitted: (_) => _addSubtask(),
-                            decoration: const InputDecoration(
-                              hintText: 'Yeni alt görev',
+                            decoration: InputDecoration(
+                              hintText: context.l10n('Yeni alt görev'),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton.filledTonal(
-                          tooltip: 'Alt görev ekle',
+                          tooltip: context.l10n('Alt görev ekle'),
                           onPressed: () => _addSubtask(),
                           icon: Icon(
                             isPremium
@@ -409,11 +426,11 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _TodoFormSectionHeader(
+                  FlorienFormSectionHeader(
                     key: const ValueKey('todo-notes-section-toggle'),
                     icon: Icons.notes_rounded,
-                    title: 'Notlar',
-                    subtitle: 'Hatırlamak istediğin ayrıntılar.',
+                    title: context.l10n('Notlar'),
+                    subtitle: context.l10n('Hatırlamak istediğin ayrıntılar.'),
                     color: FlorienColors.softPink,
                     expanded: _notesExpanded,
                     onTap: () =>
@@ -427,8 +444,8 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                       minLines: 4,
                       maxLines: 8,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        hintText: 'Notlarını buraya yaz…',
+                      decoration: InputDecoration(
+                        hintText: context.l10n('Notlarını buraya yaz…'),
                       ),
                     ),
                   ],
@@ -458,11 +475,14 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           children: [
-            Text('Liste seç', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              context.l10n('Liste seç'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 10),
             ListTile(
               leading: const Icon(Icons.checklist_rounded),
-              title: const Text('To-do'),
+              title: Text(context.l10n('To-do')),
               trailing: _todoListId == null
                   ? const Icon(Icons.check_rounded)
                   : null,
@@ -483,85 +503,6 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
     );
     if (selected == null || !mounted) return;
     setState(() => _todoListId = selected == defaultList ? null : selected);
-  }
-}
-
-class _TodoFormSectionHeader extends StatelessWidget {
-  const _TodoFormSectionHeader({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    this.trailing,
-    this.expanded,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final Widget? trailing;
-  final bool? expanded;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        border: Border.all(
-          color: context.palette.border,
-          width: FlorienBorders.thin,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 21),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.palette.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ?trailing,
-          if (expanded case final expanded?)
-            Icon(
-              expanded
-                  ? Icons.keyboard_arrow_up_rounded
-                  : Icons.keyboard_arrow_down_rounded,
-            ),
-        ],
-      ),
-    );
-    if (onTap == null) return content;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        child: content,
-      ),
-    );
   }
 }
 
@@ -609,9 +550,4 @@ class _ValuePill extends StatelessWidget {
   );
 }
 
-String _durationLabel(int minutes) => switch (minutes) {
-  60 => '1 saat',
-  90 => '1,5 saat',
-  120 => '2 saat',
-  _ => '$minutes dk',
-};
+String _durationLabel(int minutes) => florienDurationLabel(minutes);

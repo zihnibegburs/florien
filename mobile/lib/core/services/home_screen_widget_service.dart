@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -51,8 +52,127 @@ abstract final class HomeScreenWidgetService {
     if (kIsWeb) return;
     try {
       if (Platform.isIOS) await HomeWidget.setAppGroupId(_appGroupId);
+      await syncChrome();
     } catch (error) {
       debugPrint('Home widgets could not be initialized: $error');
+    }
+  }
+
+  static Future<void> syncChrome() async {
+    if (kIsWeb) return;
+    String s(String source, [Map<String, String> params = const {}]) =>
+        ActiveLanguage.s(source, params);
+    try {
+      if (Platform.isIOS) await HomeWidget.setAppGroupId(_appGroupId);
+      await Future.wait([
+        HomeWidget.saveWidgetData<String>(
+          'chrome_daily_title',
+          s('Günlük plan'),
+        ),
+        HomeWidget.saveWidgetData<String>('chrome_todo_title', s('To-do')),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_daily_empty',
+          s('Bugün için planın boş'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_todo_empty',
+          s('To-do listen şu an boş'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_empty_hint',
+          s('Kendine biraz alan aç.'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_open_tasks',
+          s('{count} tamamlanmamış görev'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_open_short',
+          s('{count} tamamlanmamış'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_incomplete',
+          s('Tamamlanmamış görevler'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_focus_brand',
+          s('Florien · Odaklan'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_focus_ready',
+          s('15 dakikalık alanın hazır'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_focus_ready_nl',
+          s('15 dakikalık\nalanın hazır'),
+        ),
+        HomeWidget.saveWidgetData<String>('chrome_start', s('▶ Başla')),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_focus_how_long',
+          s('Ne kadar odaklanmak istersin?'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_min_5',
+          s('{minutes} dk', {'minutes': '5'}),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_min_10',
+          s('{minutes} dk', {'minutes': '10'}),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_min_15',
+          s('{minutes} dk', {'minutes': '15'}),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_min_30',
+          s('{minutes} dk', {'minutes': '30'}),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_quick_prompt',
+          s('Aklına bir şey mi geldi?'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_quick_cta',
+          s('＋ To-do ekle'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_ai_prompt',
+          s('Planın nedir?'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_ai_prompt_star',
+          s('Planın nedir?   ✦'),
+        ),
+        HomeWidget.saveWidgetData<String>('chrome_stop', s('Durdur')),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_stop_a11y',
+          s('Odaklanmayı durdur'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_name_daily',
+          s('Günlük Plan'),
+        ),
+        HomeWidget.saveWidgetData<String>('chrome_name_todo', s('To-do')),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_name_focus15',
+          s('15 dk Odaklan'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_name_presets',
+          s('Odak Süresi'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_name_quick_add',
+          s('Hızlı To-do'),
+        ),
+        HomeWidget.saveWidgetData<String>(
+          'chrome_name_quick_actions',
+          s('Florien Hızlı Eylemler'),
+        ),
+      ]);
+      await _refreshWidgets();
+    } catch (error) {
+      debugPrint('Home widget chrome could not be saved: $error');
     }
   }
 

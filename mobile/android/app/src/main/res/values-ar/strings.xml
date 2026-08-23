@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">الخطة اليومية</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">تركيز ١٥ د</string>
+    <string name="widget_quick_actions">إجراءات Florien السريعة</string>
+    <string name="widget_focus_duration">مدة التركيز</string>
+    <string name="widget_quick_todo">To-do سريع</string>
+    <string name="widget_incomplete_tasks">المهام غير المكتملة</string>
+    <string name="widget_focus_brand">Florien · تركيز</string>
+    <string name="widget_focus_ready">مساحة الـ ١٥ دقيقة جاهزة</string>
+    <string name="widget_start">▶ ابدأ</string>
+    <string name="widget_focus_how_long">كم تريد أن تركز؟</string>
+    <string name="widget_min_5">٥ د</string>
+    <string name="widget_min_10">١٠ د</string>
+    <string name="widget_min_15">١٥ د</string>
+    <string name="widget_min_30">٣٠ د</string>
+    <string name="widget_quick_prompt">هل خطر ببالك شيء؟</string>
+    <string name="widget_quick_cta">＋ أضف To-do</string>
+    <string name="widget_ai_prompt">ما الخطة؟   ✦</string>
+    <string name="live_activity_focus">وضع التركيز</string>
+    <string name="widget_open_short">{count} غير مكتملة</string>
+    <string name="widget_open_tasks_count">{count} مهام غير مكتملة</string>
+</resources>

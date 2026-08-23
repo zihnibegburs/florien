@@ -25,7 +25,20 @@ class FlorienWidgetProvider : HomeWidgetProvider() {
                     .getAppWidgetOptions(widgetId)
                     .getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) > 150
 
-                setTextViewText(R.id.widget_meta, "$taskCount tamamlanmamış · $dateLabel")
+                setTextViewText(
+                    R.id.widget_header,
+                    widgetChrome(widgetData, "chrome_daily_title", context.getString(R.string.widget_daily_plan)),
+                )
+                val openShort = widgetChromeCount(
+                    widgetData,
+                    "chrome_open_short",
+                    context.getString(R.string.widget_open_short),
+                    taskCount,
+                )
+                setTextViewText(
+                    R.id.widget_meta,
+                    if (dateLabel.isNullOrEmpty()) openShort else "$openShort · $dateLabel",
+                )
                 bindTask(this, context, widgetData, "daily_task", "daily", 1, R.id.widget_task_one, R.id.widget_complete_one, showCompletionControls)
                 bindTask(this, context, widgetData, "daily_task", "daily", 2, R.id.widget_task_two, R.id.widget_complete_two, showCompletionControls)
                 bindTask(this, context, widgetData, "daily_task", "daily", 3, R.id.widget_task_three, R.id.widget_complete_three, showCompletionControls)
@@ -88,7 +101,19 @@ class TodoWidgetProvider : HomeWidgetProvider() {
                 val showCompletionControls = appWidgetManager
                     .getAppWidgetOptions(widgetId)
                     .getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) > 150
-                setTextViewText(R.id.widget_meta, "$taskCount tamamlanmamış görev")
+                setTextViewText(
+                    R.id.widget_header,
+                    widgetChrome(widgetData, "chrome_todo_title", "To-do"),
+                )
+                setTextViewText(
+                    R.id.widget_meta,
+                    widgetChromeCount(
+                        widgetData,
+                        "chrome_open_tasks",
+                        context.getString(R.string.widget_open_tasks_count),
+                        taskCount,
+                    ),
+                )
                 bindTask(this, context, widgetData, "todo_task", "todo", 1, R.id.widget_task_one, R.id.widget_complete_one, showCompletionControls)
                 bindTask(this, context, widgetData, "todo_task", "todo", 2, R.id.widget_task_two, R.id.widget_complete_two, showCompletionControls)
                 bindTask(this, context, widgetData, "todo_task", "todo", 3, R.id.widget_task_three, R.id.widget_complete_three, showCompletionControls)

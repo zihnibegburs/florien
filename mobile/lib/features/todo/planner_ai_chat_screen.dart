@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai.dart';
+import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
@@ -46,8 +48,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   final _messages = <_PlannerChatMessage>[
     _PlannerChatMessage(
       role: 'assistant',
-      text:
-          'Merhaba! Yapmak istediklerini anlat; onları net, uygulanabilir görevlere dönüştüreyim.',
+      text: ActiveLanguage.s(
+        'Merhaba! Yapmak istediklerini anlat; onları net, uygulanabilir görevlere dönüştüreyim.',
+      ),
     ),
   ];
   late final SpeechInput _speechInput;
@@ -140,9 +143,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 
   String get _headerTitle => switch (_mode) {
     PlannerAiChatMode.chat => 'Florien AI',
-    PlannerAiChatMode.focus => 'Odak',
-    PlannerAiChatMode.daily => 'Günlük plan',
-    PlannerAiChatMode.todo => 'To-do',
+    PlannerAiChatMode.focus => context.l10n('Odak'),
+    PlannerAiChatMode.daily => context.l10n('Günlük plan'),
+    PlannerAiChatMode.todo => context.l10n('To-do'),
   };
 
   Future<void> _openVoiceInput() async {
@@ -308,7 +311,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
             role: 'assistant',
             text: error is PlannerAiException
                 ? error.message
-                : 'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+                : context.l10n(
+                    'Şu anda plan asistanına bağlanamadım. Biraz sonra tekrar deneyebilir misin?',
+                  ),
           ),
         );
       });
@@ -353,8 +358,10 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
         _messages.add(
           _PlannerChatMessage(
             role: 'assistant',
-            text:
-                '${message.tasks.length} görev To-do listene eklendi. İstersen yeni bir plan daha hazırlayabiliriz.',
+            text: context.l10n(
+              '{count} görev To-do listene eklendi. İstersen yeni bir plan daha hazırlayabiliriz.',
+              {'count': '${message.tasks.length}'},
+            ),
           ),
         );
       });
@@ -363,7 +370,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
       if (!mounted) return;
       setState(() => message.decision = _ProposalDecision.pending);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Görevler To-do listesine eklenemedi.')),
+        SnackBar(
+          content: Text(context.l10n('Görevler To-do listesine eklenemedi.')),
+        ),
       );
     }
   }
@@ -376,8 +385,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
       _messages.add(
         _PlannerChatMessage(
           role: 'assistant',
-          text:
-              'Tamam, bu taslakları eklemedim. Planı birlikte değiştirebiliriz.',
+          text: context.l10n(
+            'Tamam, bu taslakları eklemedim. Planı birlikte değiştirebiliriz.',
+          ),
         ),
       );
     });
@@ -411,11 +421,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     final alarms = ref.read(taskAlarmServiceProvider);
     final chatUsage = _chatUsage ?? premium?.aiChatUsage;
     final requiresPremiumToAdd = premium?.hasActivePremium != true;
-    final freeQuotaExhausted =
-        !requiresPremiumToAdd ? false : chatUsage?.isExhausted == true;
-    final inputHint = freeQuotaExhausted
-        ? 'Premium ile sınırsız AI sohbet'
-        : 'Ne yapmak istiyorsun?';
+    final freeQuotaExhausted = !requiresPremiumToAdd
+        ? false
+        : chatUsage?.isExhausted == true;
 
     return Theme(
       data: FlorienTheme.dark,
@@ -441,7 +449,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    tooltip: 'Kapat',
+                    tooltip: context.l10n('Kapat'),
                     onPressed: () => Navigator.pop(context),
                     style: IconButton.styleFrom(
                       backgroundColor: context.palette.textPrimary,
@@ -473,10 +481,6 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                         children: [
-                          if (chatUsage?.shouldShowFreeQuota == true &&
-                              premium?.hasActivePremium != true &&
-                              !freeQuotaExhausted)
-                            _FreeChatQuotaBanner(usage: chatUsage!),
                           for (var index = 0; index < _messages.length; index++)
                             _ChatMessageBubble(
                               message: _messages[index],
@@ -503,9 +507,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         launchRequest: requestedFocus ?? scheduledFocus,
                         resumeProgress: activeFocus,
                         resetSignal: ref.watch(focusTimerResetSignalProvider),
-                        finishSignal: ref.watch(
-                          focusTimerFinishSignalProvider,
-                        ),
+                        finishSignal: ref.watch(focusTimerFinishSignalProvider),
                         onStandaloneFocusStarted:
                             widget.onStandaloneFocusStarted,
                         onTaskProgressChanged: widget.onTaskProgressChanged,
@@ -574,8 +576,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                             controller: _controller,
                             enabled: !_sending && !freeQuotaExhausted,
                             premiumLocked: freeQuotaExhausted,
-                            onPremiumTap: () => unawaited(_openPremiumForChat()),
-                            hintText: inputHint,
+                            onPremiumTap: () =>
+                                unawaited(_openPremiumForChat()),
+                            hintText: context.l10n('Ne yapmak istiyorsun?'),
                             onSend: () => unawaited(_send()),
                             inputKey: const ValueKey('planner-ai-input'),
                             sendKey: const ValueKey('planner-ai-send'),
@@ -593,10 +596,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 }
 
 class _AiModeSwitcher extends StatelessWidget {
-  const _AiModeSwitcher({
-    required this.selected,
-    required this.onSelected,
-  });
+  const _AiModeSwitcher({required this.selected, required this.onSelected});
 
   final PlannerAiChatMode selected;
   final ValueChanged<PlannerAiChatMode> onSelected;
@@ -649,10 +649,10 @@ class _AiModeChip extends StatelessWidget {
   final VoidCallback onTap;
 
   String get _label => switch (mode) {
-    PlannerAiChatMode.chat => 'Sohbet',
-    PlannerAiChatMode.todo => 'To-do',
-    PlannerAiChatMode.daily => 'Günlük plan',
-    PlannerAiChatMode.focus => 'Odak',
+    PlannerAiChatMode.chat => ActiveLanguage.s('Sohbet'),
+    PlannerAiChatMode.todo => ActiveLanguage.s('To-do'),
+    PlannerAiChatMode.daily => ActiveLanguage.s('Günlük plan'),
+    PlannerAiChatMode.focus => ActiveLanguage.s('Odak'),
   };
 
   IconData get _icon => switch (mode) {
@@ -731,12 +731,12 @@ class _InlineVoiceCaptureArea extends StatelessWidget {
     final status =
         error ??
         (isApplying
-            ? 'Metnin ekleniyor…'
+            ? context.l10n('Metnin ekleniyor…')
             : isListening
-            ? 'Konuş, seni dinliyorum…'
+            ? context.l10n('Konuş, seni dinliyorum…')
             : hasTranscript
             ? 'Metni ekleyebilir veya dinlemeye devam edebilirsin.'
-            : 'Hazır olduğunda dinlemeyi başlat.');
+            : context.l10n('Hazır olduğunda dinlemeyi başlat.'));
 
     return Padding(
       key: const ValueKey('planner-ai-inline-voice-area'),
@@ -749,7 +749,9 @@ class _InlineVoiceCaptureArea extends StatelessWidget {
             children: [
               Semantics(
                 button: !isApplying,
-                label: isListening ? 'Dinlemeyi durdur' : 'Dinlemeyi başlat',
+                label: isListening
+                    ? 'Dinlemeyi durdur'
+                    : context.l10n('Dinlemeyi başlat'),
                 child: InkWell(
                   key: const ValueKey('planner-ai-inline-voice-toggle'),
                   onTap: isApplying ? null : onToggleListening,
@@ -766,10 +768,10 @@ class _InlineVoiceCaptureArea extends StatelessWidget {
                       soundLevel: soundLevel,
                     ),
                     semanticLabel: isApplying
-                        ? 'Florien AI metni ekliyor'
+                        ? context.l10n('Florien AI metni ekliyor')
                         : isListening
-                        ? 'Florien AI dinliyor'
-                        : 'Florien AI dinlemeye hazır',
+                        ? context.l10n('Florien AI dinliyor')
+                        : context.l10n('Florien AI dinlemeye hazır'),
                   ),
                 ),
               ),
@@ -778,7 +780,7 @@ class _InlineVoiceCaptureArea extends StatelessWidget {
                 right: 0,
                 child: IconButton(
                   key: const ValueKey('planner-ai-inline-voice-close'),
-                  tooltip: 'Sesli konuşmayı kapat',
+                  tooltip: context.l10n('Sesli konuşmayı kapat'),
                   onPressed: isApplying ? null : onClose,
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -824,7 +826,7 @@ class _InlineVoiceCaptureArea extends StatelessWidget {
                     isListening ? Icons.stop_rounded : Icons.mic_rounded,
                     size: 18,
                   ),
-                  label: Text(isListening ? 'Durdur' : 'Dinle'),
+                  label: Text(isListening ? context.l10n('Durdur') : 'Dinle'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -862,44 +864,6 @@ class _PlannerChatMessage {
   final String text;
   final List<PlannerTaskSuggestion> tasks;
   _ProposalDecision decision = _ProposalDecision.pending;
-}
-
-class _FreeChatQuotaBanner extends StatelessWidget {
-  const _FreeChatQuotaBanner({required this.usage});
-
-  final AiChatUsage usage;
-
-  @override
-  Widget build(BuildContext context) {
-    final remaining = usage.remaining;
-    final text = remaining <= 0
-        ? 'Bu ayki ücretsiz AI mesaj hakkın bitti.'
-        : remaining == 1
-        ? 'Bu ay 1 ücretsiz AI mesaj hakkın kaldı. Görev önerilerini görebilirsin; To-do\'ya eklemek Premium ile.'
-        : 'Bu ay $remaining ücretsiz AI mesaj hakkın var. Görev önerilerini görebilirsin; To-do\'ya eklemek Premium ile.';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.palette.surface,
-          borderRadius: BorderRadius.circular(FlorienRadius.md),
-          border: Border.all(
-            color: context.palette.border,
-            width: FlorienBorders.thin,
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: context.palette.textSecondary,
-            fontSize: 13.5,
-            height: 1.35,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _ChatMessageBubble extends StatelessWidget {
@@ -945,7 +909,7 @@ class _ChatMessageBubble extends StatelessWidget {
                       children: [
                         _PremiumGradientActionButton(
                           buttonKey: const ValueKey('planner-ai-approve'),
-                          label: 'To-do\'ya ekle',
+                          label: context.l10n('To-do\'ya ekle'),
                           caption: 'Premium gerekli',
                           icon: Icons.check_box_rounded,
                           onPressed: onApprove,
@@ -954,7 +918,7 @@ class _ChatMessageBubble extends StatelessWidget {
                         Center(
                           child: TextButton(
                             onPressed: onReject,
-                            child: const Text('Reddet'),
+                            child: Text(context.l10n('Reddet')),
                           ),
                         ),
                       ],
@@ -963,7 +927,7 @@ class _ChatMessageBubble extends StatelessWidget {
                       children: [
                         Expanded(
                           child: FlorienSecondaryButton(
-                            label: 'Reddet',
+                            label: context.l10n('Reddet'),
                             onPressed: onReject,
                           ),
                         ),
@@ -974,7 +938,7 @@ class _ChatMessageBubble extends StatelessWidget {
                             child: FilledButton(
                               key: const ValueKey('planner-ai-approve'),
                               onPressed: onApprove,
-                              child: const Text('To-do\'ya ekle'),
+                              child: Text(context.l10n('To-do\'ya ekle')),
                             ),
                           ),
                         ),
@@ -1116,7 +1080,9 @@ class _SuggestedTaskCard extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Text(
-                'To-do • ${_durationLabel(task.durationMinutes)}',
+                context.l10n('To-do • {duration}', {
+                  'duration': _durationLabel(task.durationMinutes),
+                }),
                 style: TextStyle(
                   color: context.palette.textSecondary,
                   fontSize: 12,
@@ -1189,9 +1155,16 @@ class _TypingBubble extends StatelessWidget {
 }
 
 String _durationLabel(int minutes) {
-  if (minutes < 60) return '$minutes dk';
+  if (minutes < 60 || minutes == 90 || minutes == 120) {
+    return florienDurationLabel(minutes);
+  }
   final hours = minutes ~/ 60;
   final remaining = minutes % 60;
-  if (remaining == 0) return '$hours sa';
-  return '$hours sa $remaining dk';
+  if (remaining == 0) {
+    return ActiveLanguage.s('{hours} sa', {'hours': '$hours'});
+  }
+  return ActiveLanguage.s('{hours} sa {minutes} dk', {
+    'hours': '$hours',
+    'minutes': '$remaining',
+  });
 }

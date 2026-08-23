@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "Florien needs microphone access so you can add tasks by voice.";
+"NSSpeechRecognitionUsageDescription" = "Florien needs speech recognition to turn what you say into text.";
+"NSHealthShareUsageDescription" = "Florien needs Health access to sync your mood entries with Apple Health.";
+"NSHealthUpdateUsageDescription" = "Florien needs permission to save the mood you log to Apple Health.";
+"NSCalendarsUsageDescription" = "Florien needs calendar access to bring events in as tasks.";
+"NSCalendarsFullAccessUsageDescription" = "Florien needs full calendar access to bring events in as tasks.";

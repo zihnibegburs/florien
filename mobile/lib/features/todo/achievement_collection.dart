@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/achievement.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -24,7 +25,7 @@ class AchievementSection extends ConsumerWidget {
             color: context.palette.surfaceMuted,
             borderRadius: BorderRadius.circular(FlorienRadius.lg),
           ),
-          child: const Text('Başarılar şu anda yüklenemiyor.'),
+          child: Text(context.l10n('Başarılar şu anda yüklenemiyor.')),
         ),
       ),
     );
@@ -52,7 +53,7 @@ class AchievementCollection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Başarılar',
+                  context.l10n('Başarılar'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
@@ -73,7 +74,9 @@ class AchievementCollection extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  '${progress.completedTaskCount} görev',
+                  context.l10n('{count} görev', {
+                    'count': '${progress.completedTaskCount}',
+                  }),
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: FlorienColors.onPrimary,
                     fontWeight: FontWeight.w800,
@@ -127,9 +130,10 @@ class _NextAchievementCard extends StatelessWidget {
     return Semantics(
       excludeSemantics: true,
       label: next == null
-          ? 'Tüm başarılar açıldı. ${progress.completedTaskCount} görev tamamlandı.'
-          : 'Sıradaki başarı ${next.name}. ${next.threshold} görev gerekiyor. '
-                '${progress.remainingForNext} görev kaldı.',
+          ? context.l10n('Tüm başarılar açıldı. {count} görev tamamlandı.', {
+              'count': '${progress.completedTaskCount}',
+            })
+          : '${context.l10n('Sıradaki başarı {name}. {count} görev gerekiyor.', {'name': context.l10n(next.name), 'count': '${next.threshold}'})} ${context.l10n('{count} görev kaldı.', {'count': '${progress.remainingForNext}'})}',
       child: Container(
         padding: const EdgeInsets.all(FlorienSpacing.lg),
         decoration: BoxDecoration(
@@ -163,8 +167,8 @@ class _NextAchievementCard extends StatelessWidget {
                     children: [
                       Text(
                         next == null
-                            ? 'Koleksiyon tamamlandı'
-                            : 'Sıradaki rozet',
+                            ? context.l10n('Koleksiyon tamamlandı')
+                            : context.l10n('Sıradaki rozet'),
                         style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(
                               color: context.palette.textSecondary,
@@ -173,7 +177,9 @@ class _NextAchievementCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        next?.name ?? 'Bütün başarılar açık',
+                        next == null
+                            ? context.l10n('Bütün başarılar açık')
+                            : context.l10n(next.name),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
@@ -184,7 +190,9 @@ class _NextAchievementCard extends StatelessWidget {
                 ),
                 if (next != null)
                   Text(
-                    '${progress.remainingForNext} kaldı',
+                    context.l10n('{count} kaldı', {
+                      'count': '${progress.remainingForNext}',
+                    }),
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -221,11 +229,12 @@ class _AchievementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = unlocked ? 'açıldı' : 'kilitli';
+    final status = unlocked ? context.l10n('açıldı') : context.l10n('kilitli');
     return Semantics(
       button: true,
       excludeSemantics: true,
-      label: '${achievement.name}, ${achievement.threshold} görev, $status',
+      label:
+          '${context.l10n(achievement.name)}, ${context.l10n('{count} görev', {'count': '${achievement.threshold}'})}, $status',
       child: Material(
         color: context.palette.surface,
         borderRadius: BorderRadius.circular(FlorienRadius.lg),
@@ -293,7 +302,7 @@ class _AchievementCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Expanded(
                   child: Text(
-                    achievement.name,
+                    context.l10n(achievement.name),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -316,7 +325,9 @@ class _AchievementCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        '${achievement.threshold} görev',
+                        context.l10n('{count} görev', {
+                          'count': '${achievement.threshold}',
+                        }),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -344,7 +355,7 @@ Future<void> showAchievementDetails(
   return showDialog<void>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Text(achievement.name, textAlign: TextAlign.center),
+      title: Text(context.l10n(achievement.name), textAlign: TextAlign.center),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -371,8 +382,12 @@ Future<void> showAchievementDetails(
               Flexible(
                 child: Text(
                   unlocked
-                      ? '${achievement.threshold} görevle açıldı'
-                      : '${achievement.threshold} görevde açılır',
+                      ? context.l10n('{count} görevle açıldı', {
+                          'count': '${achievement.threshold}',
+                        })
+                      : context.l10n('{threshold} görevde açılır', {
+                          'threshold': '${achievement.threshold}',
+                        }),
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -385,7 +400,7 @@ Future<void> showAchievementDetails(
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Kapat'),
+          child: Text(context.l10n('Kapat')),
         ),
       ],
     ),
@@ -399,7 +414,7 @@ Future<void> showAchievementCelebration(
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Kutlamayı kapat',
+    barrierLabel: context.l10n('Kutlamayı kapat'),
     transitionDuration: const Duration(milliseconds: 260),
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(
@@ -431,7 +446,7 @@ Future<void> showAchievementCelebration(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Yeni başarı açıldı!',
+                context.l10n('Yeni başarı açıldı!'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
@@ -448,7 +463,7 @@ Future<void> showAchievementCelebration(
                 excludeFromSemantics: true,
               ),
               Text(
-                achievement.name,
+                context.l10n(achievement.name),
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -456,7 +471,9 @@ Future<void> showAchievementCelebration(
               ),
               const SizedBox(height: 4),
               Text(
-                '${achievement.threshold} gerçek görev tamamladın.',
+                context.l10n('{threshold} gerçek görev tamamladın.', {
+                  'threshold': '${achievement.threshold}',
+                }),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: context.palette.textSecondary,
@@ -467,7 +484,7 @@ Future<void> showAchievementCelebration(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Harika'),
+                  child: Text(context.l10n('Harika')),
                 ),
               ),
             ],

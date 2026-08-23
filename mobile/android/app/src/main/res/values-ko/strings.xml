@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">하루 계획</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">15분 집중</string>
+    <string name="widget_quick_actions">Florien 빠른 동작</string>
+    <string name="widget_focus_duration">집중 시간</string>
+    <string name="widget_quick_todo">빠른 To-do</string>
+    <string name="widget_incomplete_tasks">미완료 할 일</string>
+    <string name="widget_focus_brand">Florien · 집중</string>
+    <string name="widget_focus_ready">15분 공간이 준비됐어요</string>
+    <string name="widget_start">▶ 시작</string>
+    <string name="widget_focus_how_long">얼마나 집중할까요?</string>
+    <string name="widget_min_5">5분</string>
+    <string name="widget_min_10">10분</string>
+    <string name="widget_min_15">15분</string>
+    <string name="widget_min_30">30분</string>
+    <string name="widget_quick_prompt">뭔가 떠올랐나요?</string>
+    <string name="widget_quick_cta">＋ To-do 추가</string>
+    <string name="widget_ai_prompt">계획이 뭐예요?   ✦</string>
+    <string name="live_activity_focus">집중 모드</string>
+    <string name="widget_open_short">미완료 {count}</string>
+    <string name="widget_open_tasks_count">미완료 {count}개</string>
+</resources>

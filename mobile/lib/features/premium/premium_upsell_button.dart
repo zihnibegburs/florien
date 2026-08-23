@@ -1,5 +1,6 @@
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class PremiumUpsellButton extends StatelessWidget {
   const PremiumUpsellButton({super.key, required this.onPressed});
@@ -25,7 +26,7 @@ class PremiumUpsellButton extends StatelessWidget {
               width: FlorienBorders.thin,
             ),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -35,7 +36,7 @@ class PremiumUpsellButton extends StatelessWidget {
               ),
               SizedBox(width: 5),
               Text(
-                'Premium ol',
+                context.l10n('Premium ol'),
                 style: TextStyle(
                   color: FlorienColors.onPrimary,
                   fontSize: 12,

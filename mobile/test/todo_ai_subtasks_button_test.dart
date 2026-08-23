@@ -199,4 +199,60 @@ void main() {
     expect(find.text('Alt görevler'), findsOneWidget);
     expect(find.text('Ücretsiz alt görev'), findsNothing);
   });
+
+  testWidgets(
+    'koyu temada notlar ve alt görev bannerları pastel yıkama kullanır',
+    (tester) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            todoListsProvider.overrideWith(_NoListsNotifier.new),
+            premiumMembershipProvider.overrideWith(
+              _ActivePremiumMembershipNotifier.new,
+            ),
+          ],
+          child: MaterialApp(
+            theme: FlorienTheme.dark,
+            home: const TodoDetailScreen(
+              initialTitle: 'Sunum hazırla',
+              initialDuration: 15,
+              todoListId: null,
+            ),
+          ),
+        ),
+      );
+
+      BoxDecoration decorationOf(Key key) {
+        final container = tester.widget<Container>(
+          find
+              .descendant(of: find.byKey(key), matching: find.byType(Container))
+              .first,
+        );
+        return container.decoration! as BoxDecoration;
+      }
+
+      final notes = decorationOf(const ValueKey('todo-notes-section-toggle'));
+      final subtasks = decorationOf(
+        const ValueKey('todo-subtasks-section-toggle'),
+      );
+      final surface = FlorienPalette.dark.surface;
+      expect(
+        notes.color,
+        Color.alphaBlend(
+          FlorienColors.softPink.withValues(alpha: 0.28),
+          surface,
+        ),
+      );
+      expect(
+        subtasks.color,
+        Color.alphaBlend(
+          FlorienColors.aiLavender.withValues(alpha: 0.28),
+          surface,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

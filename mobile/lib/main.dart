@@ -5,13 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/services/notification_payload.dart';
 import 'package:florien/core/firebase/firebase_providers.dart';
-import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/routing/startup_screen.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
@@ -160,6 +160,11 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
     }
   }
 
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    ref.invalidate(appLanguageProvider);
+  }
+
   Future<void> _refreshPremiumEntitlement() async {
     final auth = ref.read(authStateProvider).valueOrNull;
     if (auth == null) return;
@@ -202,12 +207,13 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       return;
     }
     ref.read(routerProvider).go('/todo');
-    ref.read(notificationLaunchProvider.notifier).state =
-        NotificationLaunchCommand(
-          target: payload.target,
-          taskId: payload.taskId,
-          kind: payload.kind,
-        );
+    ref
+        .read(notificationLaunchProvider.notifier)
+        .state = NotificationLaunchCommand(
+      target: payload.target,
+      taskId: payload.taskId,
+      kind: payload.kind,
+    );
   }
 
   Future<void> _reconcileNotifications() async {
@@ -265,7 +271,8 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
 
   @override
   Widget build(BuildContext context) {
-    final language = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final language =
+        ref.watch(appLanguageProvider).valueOrNull ?? ActiveLanguage.code;
     final themeMode =
         ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
 
@@ -282,7 +289,13 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       theme: FlorienTheme.light,
       darkTheme: FlorienTheme.dark,
       themeMode: themeMode,
-      locale: Locale(language),
+      locale: localeForLanguageCode(language),
+      supportedLocales: supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) => FlorienKeyboardDismiss(
         child: FlorienAmbientBackground(
@@ -312,7 +325,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final loggedIn = auth.valueOrNull != null;
-      final prefs = onboardingPrefs.valueOrNull ?? const OnboardingPreferences();
+      final prefs =
+          onboardingPrefs.valueOrNull ?? const OnboardingPreferences();
       final isAuthRoute =
           location == '/login' ||
           location == '/register' ||
@@ -352,9 +366,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      if (location == '/todo' ||
-          location == '/onboarding' ||
-          isAuthRoute) {
+      if (location == '/todo' || location == '/onboarding' || isAuthRoute) {
         return '/paywall';
       }
       return null;

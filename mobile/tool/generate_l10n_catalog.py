@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+"""Generate lib/core/l10n/catalog.dart from Turkish source keys."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+OUT = ROOT / "lib/core/l10n/catalog.dart"
+LANGS = ["en", "es", "de", "fr", "pt", "ja", "ko", "zh", "ar"]
+
+
+def e(tr: str, en: str, es: str, de: str, fr: str, pt: str, ja: str, ko: str, zh: str, ar: str):
+    return tr, [en, es, de, fr, pt, ja, ko, zh, ar]
+
+
+# fmt: off
+ENTRIES: list[tuple[str, list[str]]] = []
+
+
+def add(*rows: tuple[str, list[str]]) -> None:
+    ENTRIES.extend(rows)
+
+
+# Language / settings chrome
+add(
+    e("Dil", "Language", "Idioma", "Sprache", "Langue", "Idioma", "言語", "언어", "语言", "اللغة"),
+    e("Telefon dili", "Phone language", "Idioma del teléfono", "Telefonsprache", "Langue du téléphone", "Idioma do telefone", "端末の言語", "휴대폰 언어", "手机语言", "لغة الهاتف"),
+    e("Uygulama dili", "App language", "Idioma de la app", "App-Sprache", "Langue de l’app", "Idioma do app", "アプリの言語", "앱 언어", "应用语言", "لغة التطبيق"),
+    e("Dili seç", "Choose language", "Elige un idioma", "Sprache wählen", "Choisir la langue", "Escolher idioma", "言語を選ぶ", "언어 선택", "选择语言", "اختر اللغة"),
+    e("Ayarlar", "Settings", "Ajustes", "Einstellungen", "Réglages", "Ajustes", "設定", "설정", "设置", "الإعدادات"),
+    e("Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium", "Florien Premium"),
+    e("Bildirimler", "Notifications", "Notificaciones", "Mitteilungen", "Notifications", "Notificações", "通知", "알림", "通知", "الإشعارات"),
+    e("Canlı Etkinlikler", "Live Activities", "Actividades en vivo", "Live-Aktivitäten", "Activités en direct", "Atividades ao vivo", "ライブアクティビティ", "실시간 활동", "实时活动", "الأنشطة المباشرة"),
+    e("Bağlı Takvimler", "Connected calendars", "Calendarios conectados", "Verbundene Kalender", "Calendriers connectés", "Calendários ligados", "連携カレンダー", "연결된 캘린더", "已连接的日历", "التقويمات المتصلة"),
+    e("Görünüm", "Appearance", "Apariencia", "Darstellung", "Apparence", "Aparência", "表示", "화면", "外观", "المظهر"),
+    e("Profil", "Profile", "Perfil", "Profil", "Profil", "Perfil", "プロフィール", "프로필", "资料", "الملف"),
+    e("Hesap ve abonelik", "Account and subscription", "Cuenta y suscripción", "Konto und Abo", "Compte et abonnement", "Conta e assinatura", "アカウントと登録", "계정 및 구독", "账户与订阅", "الحساب والاشتراك"),
+    e("Yasal", "Legal", "Legal", "Rechtliches", "Mentions légales", "Jurídico", "法的情報", "법적 고지", "法律信息", "قانوني"),
+    e("Değiştir", "Change", "Cambiar", "Ändern", "Modifier", "Alterar", "変更", "변경", "更改", "تغيير"),
+    e("Yeni profil ekle", "Add a new profile", "Añadir un perfil", "Neues Profil", "Ajouter un profil", "Adicionar perfil", "プロフィールを追加", "새 프로필 추가", "添加新资料", "إضافة ملف"),
+    e("Profil adını düzenle", "Edit profile name", "Editar nombre del perfil", "Profilnamen bearbeiten", "Modifier le nom du profil", "Editar nome do perfil", "プロフィール名を編集", "프로필 이름 수정", "编辑资料名称", "تعديل اسم الملف"),
+    e("Satın alımı geri yükle", "Restore purchase", "Restaurar compra", "Kauf wiederherstellen", "Restaurer l’achat", "Restaurar compra", "購入を復元", "구매 복원", "恢复购买", "استعادة الشراء"),
+    e("Satın alımları geri yükle", "Restore purchases", "Restaurar compras", "Käufe wiederherstellen", "Restaurer les achats", "Restaurar compras", "購入を復元", "구매 복원", "恢复购买", "استعادة المشتريات"),
+    e("Çıkış yap", "Log out", "Cerrar sesión", "Abmelden", "Se déconnecter", "Sair", "ログアウト", "로그아웃", "退出登录", "تسجيل الخروج"),
+    e("Hesabı sil", "Delete account", "Eliminar cuenta", "Konto löschen", "Supprimer le compte", "Excluir conta", "アカウントを削除", "계정 삭제", "删除账户", "حذف الحساب"),
+    e("Hizmet şartları", "Terms of service", "Términos del servicio", "Nutzungsbedingungen", "Conditions d’utilisation", "Termos de serviço", "利用規約", "서비스 약관", "服务条款", "شروط الخدمة"),
+    e("Gizlilik politikası", "Privacy policy", "Política de privacidad", "Datenschutz", "Politique de confidentialité", "Política de privacidade", "プライバシーポリシー", "개인정보 처리방침", "隐私政策", "سياسة الخصوصية"),
+    e("Sayfa açılamadı.", "The page could not be opened.", "No se pudo abrir la página.", "Die Seite konnte nicht geöffnet werden.", "Impossible d’ouvrir la page.", "Não foi possível abrir a página.", "ページを開けませんでした。", "페이지를 열 수 없습니다.", "无法打开页面。", "تعذر فتح الصفحة."),
+    e("Çıkış yapılsın mı?", "Log out?", "¿Cerrar sesión?", "Abmelden?", "Se déconnecter ?", "Sair?", "ログアウトしますか？", "로그아웃할까요?", "要退出登录吗？", "هل تريد تسجيل الخروج؟"),
+    e("Hesabından çıkış yapacaksın.", "You will be signed out of your account.", "Se cerrará tu sesión.", "Du wirst abgemeldet.", "Tu seras déconnecté de ton compte.", "Você sairá da sua conta.", "アカウントからログアウトします。", "계정에서 로그아웃됩니다.", "你将退出当前账户。", "سيتم تسجيل خروجك من حسابك."),
+    e("Hesap silinsin mi?", "Delete account?", "¿Eliminar la cuenta?", "Konto löschen?", "Supprimer le compte ?", "Excluir conta?", "アカウントを削除しますか？", "계정을 삭제할까요?", "要删除账户吗？", "هل تريد حذف الحساب؟"),
+    e("Hesabın ve buluttaki görevlerin kalıcı olarak silinecek.", "Your account and cloud tasks will be permanently deleted.", "Tu cuenta y las tareas en la nube se eliminarán para siempre.", "Dein Konto und deine Cloud-Aufgaben werden dauerhaft gelöscht.", "Ton compte et tes tâches cloud seront définitivement supprimés.", "Sua conta e as tarefas na nuvem serão apagadas para sempre.", "アカウントとクラウド上のタスクは完全に削除されます。", "계정과 클라우드 할 일이 영구적으로 삭제됩니다.", "你的账户和云端任务将被永久删除。", "سيتم حذف حسابك ومهامك السحابية نهائيًا."),
+    e("Vazgeç", "Cancel", "Cancelar", "Abbrechen", "Annuler", "Cancelar", "キャンセル", "취소", "取消", "إلغاء"),
+    e("Aydınlık", "Light", "Claro", "Hell", "Clair", "Claro", "ライト", "라이트", "浅色", "فاتح"),
+    e("Karanlık", "Dark", "Oscuro", "Dunkel", "Sombre", "Escuro", "ダーク", "다크", "深色", "داكن"),
+    e("Sistem", "System", "Sistema", "System", "Système", "Sistema", "システム", "시스템", "系统", "النظام"),
+    e("Aydınlık mod", "Light mode", "Modo claro", "Heller Modus", "Mode clair", "Modo claro", "ライトモード", "라이트 모드", "浅色模式", "الوضع الفاتح"),
+    e("Karanlık mod", "Dark mode", "Modo oscuro", "Dunkler Modus", "Mode sombre", "Modo escuro", "ダークモード", "다크 모드", "深色模式", "الوضع الداكن"),
+    e("Profilim", "My profile", "Mi perfil", "Mein Profil", "Mon profil", "Meu perfil", "マイプロフィール", "내 프로필", "我的资料", "ملفي"),
+)
+
+# Auth / premium / onboarding (existing S strings, Turkish is source)
+add(
+    e("Görevlerin için sade bir alan", "A calm place for your tasks", "Un espacio calmo para tus tareas", "Ein ruhiger Ort für deine Aufgaben", "Un espace calme pour tes tâches", "Um lugar calmo para as suas tarefas", "タスクのための穏やかな場所", "할 일을 위한 차분한 공간", "安放任务的安静角落", "مكان هادئ لمهامك"),
+    e("E-posta", "Email", "Correo", "E-Mail", "E-mail", "E-mail", "メール", "이메일", "邮箱", "البريد الإلكتروني"),
+    e("E-posta gerekli", "Email is required", "El correo es obligatorio", "E-Mail ist erforderlich", "L’e-mail est requis", "O e-mail é obrigatório", "メールは必須です", "이메일은 필수입니다", "需要填写邮箱", "البريد الإلكتروني مطلوب"),
+    e("Şifre", "Password", "Contraseña", "Passwort", "Mot de passe", "Senha", "パスワード", "비밀번호", "密码", "كلمة المرور"),
+    e("En az 6 karakter", "At least 6 characters", "Al menos 6 caracteres", "Mindestens 6 Zeichen", "Au moins 6 caractères", "Pelo menos 6 caracteres", "6文字以上", "6자 이상", "至少 6 个字符", "٦ أحرف على الأقل"),
+    e("Giriş Yap", "Log in", "Iniciar sesión", "Anmelden", "Se connecter", "Entrar", "ログイン", "로그인", "登录", "تسجيل الدخول"),
+    e("veya şununla devam et", "or continue with", "o continúa con", "oder weiter mit", "ou continuer avec", "ou continuar com", "または次で続ける", "또는 다음으로 계속", "或使用以下方式继续", "أو المتابعة عبر"),
+    e("Google ile devam et", "Continue with Google", "Continuar con Google", "Mit Google fortfahren", "Continuer avec Google", "Continuar com o Google", "Googleで続ける", "Google로 계속", "使用 Google 继续", "المتابعة عبر Google"),
+    e("Apple ile devam et", "Continue with Apple", "Continuar con Apple", "Mit Apple fortfahren", "Continuer avec Apple", "Continuar com a Apple", "Appleで続ける", "Apple로 계속", "使用 Apple 继续", "المتابعة عبر Apple"),
+    e("E-posta ile devam et", "Continue with email", "Continuar con el correo", "Mit E-Mail fortfahren", "Continuer avec l’e-mail", "Continuar com e-mail", "メールで続ける", "이메일로 계속", "使用邮箱继续", "المتابعة عبر البريد"),
+    e("Hesap oluştur", "Create an account", "Crear una cuenta", "Konto erstellen", "Créer un compte", "Criar uma conta", "アカウントを作成", "계정 만들기", "创建账户", "إنشاء حساب"),
+    e("Görevlerini tek yerde toplamaya başla.", "Start keeping your tasks together.", "Empieza a reunir tus tareas en un solo lugar.", "Fange an, deine Aufgaben an einem Ort zu sammeln.", "Commence à rassembler tes tâches au même endroit.", "Comece a juntar as suas tarefas num só lugar.", "タスクをひとつにまとめよう。", "할 일을 한곳에 모아 보세요.", "开始把任务收拢到一处。", "ابدأ بجمع مهامك في مكان واحد."),
+    e("Adın", "Your name", "Tu nombre", "Dein Name", "Ton prénom", "O seu nome", "あなたの名前", "이름", "你的名字", "اسمك"),
+    e("En az 2 karakter gir", "Enter at least 2 characters", "Introduce al menos 2 caracteres", "Mindestens 2 Zeichen eingeben", "Saisis au moins 2 caractères", "Introduz pelo menos 2 caracteres", "2文字以上入力してください", "2자 이상 입력하세요", "至少输入 2 个字符", "أدخل حرفين على الأقل"),
+    e("Geçerli bir e-posta gir", "Enter a valid email", "Introduce un correo válido", "Gib eine gültige E-Mail ein", "Saisis un e-mail valide", "Introduz um e-mail válido", "有効なメールを入力", "유효한 이메일을 입력하세요", "请输入有效邮箱", "أدخل بريدًا صالحًا"),
+    e("Kayıt ol", "Register", "Registrarse", "Registrieren", "S’inscrire", "Registar", "登録", "가입", "注册", "إنشاء حساب"),
+    e("Premium aktif", "Premium is active", "Premium está activo", "Premium ist aktiv", "Premium est actif", "O Premium está ativo", "プレミアムは有効です", "프리미엄이 활성화됨", "Premium 已开通", "Premium مفعّل"),
+    e("Hesabın Premium olarak etkinleştirildi.", "Your account has been upgraded to Premium.", "Tu cuenta se ha actualizado a Premium.", "Dein Konto wurde auf Premium hochgestuft.", "Ton compte est passé à Premium.", "A tua conta foi atualizada para Premium.", "アカウントがプレミアムになりました。", "계정이 프리미엄으로 업그레이드되었습니다.", "你的账户已升级为 Premium。", "تم ترقية حسابك إلى Premium."),
+    e("Premium’a katıldığın için teşekkürler", "Thank you for joining Premium", "Gracias por unirte a Premium", "Danke, dass du Premium nutzt", "Merci d’avoir rejoint Premium", "Obrigado por aderires ao Premium", "プレミアムへの参加ありがとう", "프리미엄에 가입해 주셔서 감사합니다", "感谢加入 Premium", "شكرًا لانضمامك إلى Premium"),
+    e("Planın hazır. Tüm Premium özelliklerle planlamaya devam edebilirsin.", "Your plan is ready. You can keep planning with every Premium feature unlocked.", "Tu plan está listo. Sigue planificando con todas las funciones Premium.", "Dein Plan ist bereit. Du kannst mit allen Premium-Funktionen weiterplanen.", "Ton offre est prête. Continue à planifier avec toutes les fonctions Premium.", "O teu plano está pronto. Continua a planear com todos os recursos Premium.", "プランの準備が整いました。すべてのプレミアム機能で計画を続けられます。", "플랜이 준비되었습니다. 모든 프리미엄 기능으로 계속 계획하세요.", "方案已就绪。你可以继续使用全部 Premium 功能来规划。", "خطتك جاهزة. تابع التخطيط بكل ميزات Premium."),
+    e("Planlama şekline uygun desteği seç.", "Choose the support that fits the way you plan.", "Elige el apoyo que encaja con tu forma de planificar.", "Wähle die Unterstützung, die zu deiner Planung passt.", "Choisis le soutien qui correspond à ta façon de planifier.", "Escolhe o apoio que combina com a tua forma de planear.", "自分の計画の仕方に合うサポートを選ぼう。", "계획하는 방식에 맞는 지원을 고르세요.", "选择适合你规划方式的支持。", "اختر الدعم الذي يناسب طريقتك في التخطيط."),
+    e("Florien özellikleri", "Florien features", "Funciones de Florien", "Florien-Funktionen", "Fonctions Florien", "Recursos do Florien", "Florienの機能", "Florien 기능", "Florien 功能", "ميزات Florien"),
+    e("Özellik", "Feature", "Función", "Funktion", "Fonction", "Recurso", "機能", "기능", "功能", "الميزة"),
+    e("Standart", "Standard", "Estándar", "Standard", "Standard", "Padrão", "スタンダード", "스탠더드", "标准", "قياسي"),
+    e("Premium", "Premium", "Premium", "Premium", "Premium", "Premium", "プレミアム", "프리미엄", "Premium", "Premium"),
+    e("Yapılacaklar ve günlük plan", "To-dos and daily plan", "Tareas y plan diario", "To-dos und Tagesplan", "Tâches et plan du jour", "Tarefas e plano diário", "To-doと今日の計画", "할 일과 하루 계획", "待办与每日计划", "المهام والخطة اليومية"),
+    e("Odak zamanlayıcısı", "Focus timer", "Temporizador de foco", "Fokus-Timer", "Minuteur de focus", "Temporizador de foco", "フォーカスタイマー", "집중 타이머", "专注计时器", "مؤقت التركيز"),
+    e("Hazır rutinler", "Ready-made routines", "Rutinas listas", "Fertige Routinen", "Routines prêtes", "Rotinas prontas", "すぐ使えるルーティン", "준비된 루틴", "现成习惯", "روتينات جاهزة"),
+    e("Günlük yansımalar", "Daily reflections", "Reflexiones diarias", "Tägliche Reflexionen", "Réflexions du jour", "Reflexões diárias", "日々の振り返り", "하루 성찰", "每日回顾", "تأملات يومية"),
+    e("AI plan asistanı", "AI planning assistant", "Asistente de planificación IA", "KI-Planungsassistent", "Assistant de planification IA", "Assistente de planeamento IA", "AIプランアシスタント", "AI 계획 도우미", "AI 规划助手", "مساعد التخطيط بالذكاء الاصطناعي"),
+    e("Alt görevler", "Subtasks", "Subtareas", "Teilaufgaben", "Sous-tâches", "Subtarefas", "サブタスク", "하위 할 일", "子任务", "مهام فرعية"),
+    e("Birden fazla profil", "Multiple profiles", "Varios perfiles", "Mehrere Profile", "Plusieurs profils", "Vários perfis", "複数プロフィール", "여러 프로필", "多个资料", "ملفات متعددة"),
+    e("Takvim aktarma", "Calendar import", "Importar calendario", "Kalenderimport", "Import de calendrier", "Importação de calendário", "カレンダー取り込み", "캘린더 가져오기", "日历导入", "استيراد التقويم"),
+    e("Alarm ve hatırlatıcılar", "Alarms and reminders", "Alarmas y recordatorios", "Alarme und Erinnerungen", "Alarmes et rappels", "Alarmes e lembretes", "アラームとリマインダー", "알람과 알림", "闹钟与提醒", "التنبيهات والتذكيرات"),
+    e("Görev için özel saat", "Set a specific task time", "Pon una hora concreta a la tarea", "Eine genaue Uhrzeit setzen", "Définir une heure précise", "Definir uma hora específica", "タスクに時刻を設定", "할 일에 시간 지정", "为任务设定具体时间", "حدد وقتًا للمهمة"),
+    e("Planını seç", "Choose your plan", "Elige tu plan", "Wähle deinen Plan", "Choisis ton offre", "Escolhe o teu plano", "プランを選ぶ", "플랜을 선택하세요", "选择方案", "اختر خطتك"),
+    e("Aylık", "Monthly", "Mensual", "Monatlich", "Mensuel", "Mensal", "月額", "월간", "月付", "شهري"),
+    e("Her ay yenilenir", "Renews every month", "Se renueva cada mes", "Wird jeden Monat erneuert", "Se renouvelle chaque mois", "Renova-se todos os meses", "毎月更新", "매달 갱신", "每月续订", "يتجدد كل شهر"),
+    e("Esnek", "Flexible", "Flexible", "Flexibel", "Flexible", "Flexível", "柔軟", "유연함", "灵活", "مرن"),
+    e("Yıllık", "Yearly", "Anual", "Jährlich", "Annuel", "Anual", "年額", "연간", "年付", "سنوي"),
+    e("Yılda bir yenilenir", "Renews once a year", "Se renueva una vez al año", "Wird einmal im Jahr erneuert", "Se renouvelle une fois par an", "Renova-se uma vez por ano", "年に一度更新", "1년마다 갱신", "每年续订一次", "يتجدد مرة في السنة"),
+    e("En avantajlı", "Best value", "Mejor valor", "Bester Preis", "Le plus avantageux", "Melhor valor", "いちばんお得", "가장 이득", "最划算", "الأفضل قيمة"),
+    e("Günde yaklaşık {price}", "About {price} per day", "Unos {price} al día", "Etwa {price} pro Tag", "Environ {price} par jour", "Cerca de {price} por dia", "1日あたり約{price}", "하루 약 {price}", "每天大约 {price}", "حوالي {price} في اليوم"),
+    e("İşleniyor...", "Processing...", "Procesando...", "Wird verarbeitet...", "Traitement...", "A processar...", "処理中...", "처리 중...", "处理中...", "جارٍ المعالجة..."),
+    e("Premium yakında", "Premium coming soon", "Premium muy pronto", "Premium kommt bald", "Premium bientôt", "Premium em breve", "プレミアムは近日公開", "프리미엄 곧 출시", "Premium 即将推出", "Premium قريبًا"),
+    e("{price} karşılığında Premium ol", "Get Premium for {price}", "Hazte Premium por {price}", "Premium für {price}", "Passe à Premium pour {price}", "Torna-te Premium por {price}", "{price}でプレミアムに", "{price}에 프리미엄 시작", "{price} 开通 Premium", "احصل على Premium مقابل {price}"),
+    e("Devam et", "Continue", "Continuar", "Weiter", "Continuer", "Continuar", "続ける", "계속", "继续", "متابعة"),
+    e("Şimdilik geç", "Not now", "Ahora no", "Jetzt nicht", "Pas maintenant", "Agora não", "今はしない", "나중에", "暂不", "ليس الآن"),
+    e("Florien sana nazikçe hatırlatsın", "Let Florien gently remind you", "Deja que Florien te recuerde con suavidad", "Lass Florien dich behutsam erinnern", "Laisse Florien te le rappeler tout en douceur", "Deixa o Florien lembrar-te com calma", "Florienがやさしく知らせます", "Florien이 부드럽게 알려 줄게요", "让 Florien 轻轻提醒你", "دع Florien يذكّرك بلطف"),
+    e("Bir görevin zamanı geldiğinde veya odak süren bittiğinde haber verelim.", "Get a reminder when a task starts or a focus session ends.", "Recibe un aviso cuando empiece una tarea o termine un foco.", "Erinnerung, wenn eine Aufgabe startet oder der Fokus endet.", "Un rappel quand une tâche commence ou qu’un focus se termine.", "Um aviso quando uma tarefa começa ou o foco acaba.", "タスクの開始やフォーカス終了をお知らせします。", "할 일이 시작되거나 집중이 끝나면 알려 드릴게요.", "任务开始或专注结束时提醒你。", "سننبّهك عند بدء مهمة أو انتهاء جلسة التركيز."),
+    e("Gereksiz bildirim göndermeyiz. Bunu Ayarlar’dan istediğin zaman değiştirebilirsin.", "No unnecessary notifications. You can change this anytime in Settings.", "Sin avisos innecesarios. Puedes cambiarlo cuando quieras en Ajustes.", "Keine unnötigen Mitteilungen. Du kannst das jederzeit in den Einstellungen ändern.", "Pas de notifications inutiles. Tu peux changer ça quand tu veux dans Réglages.", "Sem notificações a mais. Podes mudar isto quando quiseres em Ajustes.", "不要な通知は送りません。設定からいつでも変えられます。", "불필요한 알림은 보내지 않아요. 설정에서 언제든 바꿀 수 있습니다.", "不会发送多余通知。你可以随时在设置里更改。", "لن نرسل إشعارات بلا داعٍ. يمكنك تغيير ذلك من الإعدادات في أي وقت."),
+    e("Bildirimlere izin ver", "Allow notifications", "Permitir notificaciones", "Mitteilungen erlauben", "Autoriser les notifications", "Permitir notificações", "通知を許可", "알림 허용", "允许通知", "السماح بالإشعارات"),
+    e("Bildirim izni istenemedi. Daha sonra Ayarlar’dan tekrar deneyebilirsin.", "Notification permission could not be requested. You can try again later in Settings.", "No se pudo pedir el permiso. Puedes intentarlo luego en Ajustes.", "Die Mitteilungsberechtigung konnte nicht angefragt werden. Versuche es später in den Einstellungen.", "L’autorisation n’a pas pu être demandée. Réessaie plus tard dans Réglages.", "Não foi possível pedir a permissão. Tenta mais tarde em Ajustes.", "通知の許可を求められませんでした。あとで設定から再試行できます。", "알림 권한을 요청하지 못했습니다. 나중에 설정에서 다시 시도하세요.", "无法请求通知权限。你可以稍后在设置中重试。", "تعذر طلب إذن الإشعارات. يمكنك المحاولة لاحقًا من الإعدادات."),
+    e("Florien’den haberdar olmak ister misin?", "Would you like to hear from Florien?", "¿Quieres enterarte de Florien?", "Möchtest du von Florien hören?", "Tu veux des nouvelles de Florien ?", "Queres saber novidades do Florien?", "Florienからのお知らせは受け取りますか？", "Florien 소식을 받고 싶으신가요?", "想收到 Florien 的消息吗？", "هل تريد سماع أخبار Florien؟"),
+    e("Yeni özellikleri, faydalı ipuçlarını ve özel kampanyaları ilk sen duy.", "Be the first to hear about new features, helpful tips and special campaigns.", "Entérate primero de novedades, consejos y campañas.", "Erfahre als Erste:r von neuen Funktionen, Tipps und Aktionen.", "Sois le premier à connaître les nouveautés, conseils et campagnes.", "Sê o primeiro a saber de novidades, dicas e campanhas.", "新機能、役立つヒント、キャンペーンをいち早く。", "새 기능, 유용한 팁, 특별 캠페인을 가장 먼저 들으세요.", "第一时间了解新功能、实用提示和特别活动。", "كن أول من يعرف الميزات الجديدة والنصائح والحملات."),
+    e("Yalnızca paylaşmaya değer bir şey olduğunda haber veririz. Tercihini istediğin zaman değiştirebilirsin.", "We will only contact you when there is something worthwhile. You can change this preference anytime.", "Solo te escribiremos cuando merezca la pena. Puedes cambiarlo cuando quieras.", "Wir schreiben nur, wenn es sich lohnt. Du kannst das jederzeit ändern.", "On t’écrit seulement quand ça vaut le coup. Tu peux changer d’avis quand tu veux.", "Só falamos quando vale a pena. Podes mudar isto quando quiseres.", "本当に伝える価値があるときだけ連絡します。いつでも変更できます。", "정말 전할 만한 일이 있을 때만 알려 드려요. 언제든 바꿀 수 있습니다.", "只在值得分享时联系你。你可以随时更改这项偏好。", "سنتواصل فقط عندما يستحق الأمر. يمكنك تغيير تفضيلك في أي وقت."),
+    e("Evet, haber ver", "Yes, keep me updated", "Sí, avísame", "Ja, halt mich auf dem Laufenden", "Oui, tenez-moi au courant", "Sim, avisa-me", "はい、知らせて", "네, 알려 주세요", "好，请通知我", "نعم، أبقوني على اطلاع"),
+    e("Hayır, teşekkürler", "No, thanks", "No, gracias", "Nein, danke", "Non, merci", "Não, obrigado", "いいえ、結構です", "괜찮아요", "不用，谢谢", "لا، شكرًا"),
+    e("Satın alma bilgisi alınamadı.", "Purchase information could not be loaded.", "No se pudo cargar la compra.", "Kaufinfos konnten nicht geladen werden.", "Impossible de charger l’achat.", "Não foi possível carregar a compra.", "購入情報を読み込めませんでした。", "구매 정보를 불러오지 못했습니다.", "无法加载购买信息。", "تعذر تحميل معلومات الشراء."),
+    e("Mağaza şu anda kullanılamıyor.", "The store is currently unavailable.", "La tienda no está disponible.", "Der Store ist gerade nicht verfügbar.", "Le store est indisponible.", "A loja está indisponível.", "ストアは現在利用できません。", "스토어를 사용할 수 없습니다.", "商店当前不可用。", "المتجر غير متاح الآن."),
+    e("Premium abonelikleri mağazada henüz yapılandırılmadı.", "Premium subscriptions have not been configured in the store yet.", "Las suscripciones Premium aún no están en la tienda.", "Premium-Abos sind im Store noch nicht eingerichtet.", "Les abonnements Premium ne sont pas encore configurés.", "As assinaturas Premium ainda não estão na loja.", "プレミアム定期購入はまだストアにありません。", "프리미엄 구독이 스토어에 아직 없습니다.", "商店里尚未配置 Premium 订阅。", "اشتراكات Premium غير مهيأة في المتجر بعد."),
+    e("Premium planları şu anda App Store’dan yüklenemedi.", "Premium plans could not be loaded from the App Store right now.", "No se pudieron cargar los planes de App Store.", "Premium-Pläne konnten nicht aus dem App Store geladen werden.", "Impossible de charger les offres de l’App Store.", "Não foi possível carregar os planos da App Store.", "App Storeからプランを読み込めませんでした。", "App Store에서 플랜을 불러오지 못했습니다.", "此刻无法从 App Store 加载方案。", "تعذر تحميل الخطط من App Store الآن."),
+    e("Planları tekrar yükle", "Try loading plans again", "Volver a cargar los planes", "Pläne erneut laden", "Recharger les offres", "Carregar os planos outra vez", "プランを再読み込み", "플랜 다시 불러오기", "重新加载方案", "إعادة تحميل الخطط"),
+    e("App Store fiyatı bekleniyor", "Waiting for App Store price", "Esperando el precio de App Store", "Warte auf den App-Store-Preis", "En attente du prix App Store", "A aguardar o preço da App Store", "App Storeの価格を待っています", "App Store 가격을 기다리는 중", "正在等待 App Store 价格", "بانتظار سعر App Store"),
+    e("Premium bilgisi alınamadı.", "Premium information is unavailable.", "No hay información de Premium.", "Premium-Infos sind nicht verfügbar.", "Les infos Premium sont indisponibles.", "As informações Premium não estão disponíveis.", "プレミアム情報を取得できません。", "프리미엄 정보를 가져올 수 없습니다.", "无法获取 Premium 信息。", "معلومات Premium غير متاحة."),
+    e("Premium ürünü şu anda satın alınamıyor.", "The Premium product is currently unavailable.", "El producto Premium no está disponible.", "Das Premium-Produkt ist gerade nicht verfügbar.", "Le produit Premium est indisponible.", "O produto Premium está indisponível.", "プレミアム商品は現在購入できません。", "프리미엄 상품을 지금은 구매할 수 없습니다.", "目前无法购买 Premium。", "منتج Premium غير متاح للشراء الآن."),
+    e("Satın alma başlatılamadı. Lütfen tekrar dene.", "The purchase could not be started. Please try again.", "No se pudo iniciar la compra. Inténtalo de nuevo.", "Der Kauf konnte nicht gestartet werden. Bitte erneut versuchen.", "L’achat n’a pas pu démarrer. Réessaie.", "A compra não pôde ser iniciada. Tenta outra vez.", "購入を開始できませんでした。もう一度どうぞ。", "구매를 시작하지 못했습니다. 다시 시도하세요.", "无法开始购买。请再试一次。", "تعذر بدء الشراء. حاول مرة أخرى."),
+    e("Satın alımlar geri yüklenemedi.", "Purchases could not be restored.", "No se pudieron restaurar las compras.", "Käufe konnten nicht wiederhergestellt werden.", "Impossible de restaurer les achats.", "Não foi possível restaurar as compras.", "購入を復元できませんでした。", "구매를 복원하지 못했습니다.", "无法恢复购买。", "تعذر استعادة المشتريات."),
+    e("Premium aboneliğin doğrulanamadı. Tekrar dene.", "Your Premium subscription could not be verified. Please try again.", "No se pudo verificar tu suscripción Premium.", "Dein Premium-Abo konnte nicht bestätigt werden.", "Ton abonnement Premium n’a pas pu être vérifié.", "Não foi possível verificar a tua assinatura Premium.", "プレミアム登録を確認できませんでした。", "프리미엄 구독을 확인하지 못했습니다.", "无法验证你的 Premium 订阅。", "تعذر التحقق من اشتراك Premium."),
+    e("Satın alma tamamlanamadı.", "The purchase could not be completed.", "No se pudo completar la compra.", "Der Kauf konnte nicht abgeschlossen werden.", "L’achat n’a pas pu aboutir.", "A compra não pôde ser concluída.", "購入を完了できませんでした。", "구매를 완료하지 못했습니다.", "无法完成购买。", "تعذر إتمام الشراء."),
+    e("Bu satın alma başka bir Florien hesabına bağlı.", "This purchase is linked to another Florien account.", "Esta compra está ligada a otra cuenta de Florien.", "Dieser Kauf ist mit einem anderen Florien-Konto verknüpft.", "Cet achat est lié à un autre compte Florien.", "Esta compra está ligada a outra conta Florien.", "この購入は別のFlorienアカウントに紐づいています。", "이 구매는 다른 Florien 계정에 연결되어 있습니다.", "此购买已绑定另一个 Florien 账户。", "هذا الشراء مرتبط بحساب Florien آخر."),
+    e("Premium doğrulaması şu anda kullanılamıyor. Biraz sonra tekrar dene.", "Premium verification is currently unavailable. Please try again later.", "La verificación Premium no está disponible ahora.", "Die Premium-Prüfung ist gerade nicht verfügbar.", "La vérification Premium est indisponible pour le moment.", "A verificação Premium está indisponível agora.", "プレミアム確認は現在利用できません。", "프리미엄 확인을 지금은 할 수 없습니다.", "目前无法验证 Premium。请稍后再试。", "التحقق من Premium غير متاح الآن. حاول لاحقًا."),
+    e("Aktif Premium abonelik doğrulanamadı.", "The active Premium subscription could not be verified.", "No se pudo verificar la suscripción Premium activa.", "Das aktive Premium-Abo konnte nicht bestätigt werden.", "L’abonnement Premium actif n’a pas pu être vérifié.", "Não foi possível verificar a assinatura Premium ativa.", "有効なプレミアム登録を確認できませんでした。", "활성 프리미엄 구독을 확인하지 못했습니다.", "无法验证当前的 Premium 订阅。", "تعذر التحقق من اشتراك Premium النشط."),
+)
+
+# Home / navigation / core UI
+add(
+    e("To-do", "To-do", "To-do", "To-do", "To-do", "To-do", "To-do", "To-do", "待办", "المهام"),
+    e("Günlük", "Daily", "Diario", "Heute", "Jour", "Diário", "今日", "하루", "每日", "اليوم"),
+    e("İstatistik", "Stats", "Estadísticas", "Statistik", "Stats", "Estatísticas", "統計", "통계", "统计", "إحصاءات"),
+    e("Plan asistanını aç", "Open the planning assistant", "Abrir el asistente", "Planungsassistent öffnen", "Ouvrir l’assistant", "Abrir o assistente", "プランアシスタントを開く", "계획 도우미 열기", "打开规划助手", "افتح مساعد التخطيط"),
+    e("Hepsi bir arada planlama\nve üretkenlik", "All-in-one planning\nand productivity", "Planificación y productividad\nen un solo lugar", "Planung und Produktivität\nan einem Ort", "Planification et productivité\nau même endroit", "Planeamento e produtividade\nnum só sítio", "計画も生産も\nひとつに", "계획과 생산성을\n한곳에서", "规划与效率\n集于一处", "تخطيط وإنتاجية\nفي مكان واحد"),
+    e("Gününü kendi ritmine göre düzenle.", "Shape your day to your own rhythm.", "Organiza tu día a tu ritmo.", "Gestalte deinen Tag in deinem Tempo.", "Organise ta journée à ton rythme.", "Organiza o teu dia ao teu ritmo.", "自分のリズムで一日を整えよう。", "하루를 나만의 리듬에 맞게 정리하세요.", "按自己的节奏安排一天。", "رتّب يومك على إيقاعك."),
+    e("Zaten bir hesabın var mı?", "Already have an account?", "¿Ya tienes una cuenta?", "Hast du schon ein Konto?", "Tu as déjà un compte ?", "Já tens uma conta?", "すでにアカウントがありますか？", "이미 계정이 있나요?", "已经有账户了？", "ألديك حساب بالفعل؟"),
+    e("Hesabın yok mu? Kayıt ol", "No account? Register", "¿No tienes cuenta? Regístrate", "Kein Konto? Registrieren", "Pas de compte ? Inscris-toi", "Não tens conta? Regista-te", "アカウントがない？登録する", "계정이 없나요? 가입하기", "没有账户？去注册", "ليس لديك حساب؟ سجّل"),
+    e("Tekrar hoş geldin", "Welcome back", "Bienvenido de nuevo", "Willkommen zurück", "Bon retour", "Bem-vindo de volta", "おかえり", "다시 환영해요", "欢迎回来", "مرحبًا بعودتك"),
+    e("Planlarına kaldığın yerden devam et.", "Pick up your plans where you left off.", "Sigue tus planes donde los dejaste.", "Mach bei deinen Plänen weiter.", "Reprends tes plans là où tu t’étais arrêté.", "Retoma os teus planos onde paraste.", "計画の続きから始めよう。", "계획을 멈춘 곳에서 이어 가세요.", "从停下的地方继续计划。", "تابع خططك من حيث توقفت."),
+    e("Geri", "Back", "Atrás", "Zurück", "Retour", "Voltar", "戻る", "뒤로", "返回", "رجوع"),
+    e("Bugün", "Today", "Hoy", "Heute", "Aujourd’hui", "Hoje", "今日", "오늘", "今天", "اليوم"),
+    e("Yarın", "Tomorrow", "Mañana", "Morgen", "Demain", "Amanhã", "明日", "내일", "明天", "غدًا"),
+    e("Kaydet", "Save", "Guardar", "Speichern", "Enregistrer", "Guardar", "保存", "저장", "保存", "حفظ"),
+    e("Sil", "Delete", "Eliminar", "Löschen", "Supprimer", "Apagar", "削除", "삭제", "删除", "حذف"),
+    e("Kapat", "Close", "Cerrar", "Schließen", "Fermer", "Fechar", "閉じる", "닫기", "关闭", "إغلاق"),
+    e("Ekle", "Add", "Añadir", "Hinzufügen", "Ajouter", "Adicionar", "追加", "추가", "添加", "إضافة"),
+    e("Bitti", "Done", "Listo", "Fertig", "Terminé", "Concluído", "完了", "완료", "完成", "تم"),
+    e("Uygula", "Apply", "Aplicar", "Übernehmen", "Appliquer", "Aplicar", "適用", "적용", "应用", "تطبيق"),
+    e("Başla", "Start", "Empezar", "Start", "Commencer", "Começar", "開始", "시작", "开始", "ابدأ"),
+    e("Reddet", "Dismiss", "Descartar", "Ablehnen", "Refuser", "Recusar", "却下", "닫기", "忽略", "رفض"),
+    e("Harika", "Great", "Genial", "Super", "Super", "Ótimo", "すばらしい", "좋아요", "太好了", "رائع"),
+    e("Odaklan", "Focus", "Foco", "Fokus", "Focus", "Foco", "フォーカス", "집중", "专注", "تركيز"),
+    e("Süre", "Duration", "Duración", "Dauer", "Durée", "Duração", "時間", "시간", "时长", "المدة"),
+    e("Saat", "Hour", "Hora", "Stunde", "Heure", "Hora", "時", "시", "小时", "ساعة"),
+    e("Dakika", "Minute", "Minuto", "Minute", "Minute", "Minuto", "分", "분", "分钟", "دقيقة"),
+    e("Tarih", "Date", "Fecha", "Datum", "Date", "Data", "日付", "날짜", "日期", "التاريخ"),
+    e("Liste", "List", "Lista", "Liste", "Liste", "Lista", "リスト", "목록", "列表", "القائمة"),
+    e("Notlar", "Notes", "Notas", "Notizen", "Notes", "Notas", "メモ", "메모", "备注", "ملاحظات"),
+    e("Alarm", "Alarm", "Alarma", "Wecker", "Alarme", "Alarme", "アラーム", "알람", "闹钟", "المنبّه"),
+    e("Sabah", "Morning", "Mañana", "Morgen", "Matin", "Manhã", "朝", "아침", "早晨", "صباح"),
+    e("Gündüz", "Daytime", "Día", "Tag", "Journée", "Dia", "昼", "낮", "白天", "نهار"),
+    e("Akşam", "Evening", "Tarde", "Abend", "Soir", "Noite", "夜", "저녁", "晚上", "مساء"),
+    e("Her zaman", "Anytime", "Cuando sea", "Jederzeit", "À tout moment", "A qualquer hora", "いつでも", "언제든", "随时", "في أي وقت"),
+    e("Her gün", "Every day", "Cada día", "Jeden Tag", "Tous les jours", "Todos os dias", "毎日", "매일", "每天", "كل يوم"),
+    e("Tamamlandı", "Done", "Hecho", "Erledigt", "Terminé", "Concluído", "完了", "완료", "已完成", "تم"),
+    e("Tamamlanamadı", "Not done", "Sin hacer", "Nicht erledigt", "Non terminé", "Por fazer", "未完了", "미완료", "未完成", "لم يكتمل"),
+    e("Planlandı", "Planned", "Planificado", "Geplant", "Planifié", "Planeado", "予定", "계획됨", "已安排", "مخطط"),
+    e("TAMAMLANDI", "DONE", "HECHO", "ERLEDIGT", "TERMINÉ", "CONCLUÍDO", "完了", "완료", "已完成", "تم"),
+    e("YAPILACAK", "TO DO", "POR HACER", "OFFEN", "À FAIRE", "A FAZER", "未完了", "할 일", "待办", "للتنفيذ"),
+    e("Çok zor", "Very hard", "Muy difícil", "Sehr schwer", "Très dur", "Muito difícil", "とてもつらい", "매우 힘듦", "非常艰难", "صعب جدًا"),
+    e("Zor", "Hard", "Difícil", "Schwer", "Dur", "Difícil", "つらい", "힘듦", "艰难", "صعب"),
+    e("Dengede", "Steady", "En equilibrio", "Im Gleichgewicht", "En équilibre", "Em equilíbrio", "落ち着いている", "균형", "平稳", "متوازن"),
+    e("İyi", "Good", "Bien", "Gut", "Bien", "Bem", "よい", "좋음", "不错", "جيد"),
+    e("Çok iyi", "Very good", "Muy bien", "Sehr gut", "Très bien", "Muito bem", "とてもよい", "아주 좋음", "很好", "جيد جدًا"),
+)
+
+# Remaining screens users see every day
+add(
+    e("Yapılacaklar yüklenemedi.", "To-dos could not be loaded.", "No se pudieron cargar las tareas.", "To-dos konnten nicht geladen werden.", "Impossible de charger les tâches.", "Não foi possível carregar as tarefas.", "To-doを読み込めませんでした。", "할 일을 불러오지 못했습니다.", "无法加载待办。", "تعذر تحميل المهام."),
+    e("Küçük bir adımla başla", "Start with a small step", "Empieza por un paso pequeño", "Fang mit einem kleinen Schritt an", "Commence par un petit pas", "Começa por um passo pequeno", "小さな一歩から始めよう", "작은 한 걸음으로 시작하세요", "从一小步开始", "ابدأ بخطوة صغيرة"),
+    e("İlk görevini ekleyerek gününü toparlamaya başlayabilirsin.", "Add your first task and start gathering your day.", "Añade tu primera tarea y empieza a ordenar el día.", "Füge deine erste Aufgabe hinzu und sortiere deinen Tag.", "Ajoute ta première tâche et commence à ranger ta journée.", "Adiciona a tua primeira tarefa e começa a arrumar o dia.", "最初のタスクを足して、一日を整えよう。", "첫 할 일을 더하고 하루를 정리해 보세요.", "加上第一件事后，一天就会开始收拢。", "أضف مهمتك الأولى وابدأ بترتيب يومك."),
+    e("İlk görevini ekle", "Add your first task", "Añade tu primera tarea", "Erste Aufgabe hinzufügen", "Ajouter ta première tâche", "Adicionar a primeira tarefa", "最初のタスクを追加", "첫 할 일 추가", "添加第一件事", "أضف مهمتك الأولى"),
+    e("Yeni To-do", "New to-do", "Nueva tarea", "Neues To-do", "Nouvelle tâche", "Nova tarefa", "新しいTo-do", "새 할 일", "新建待办", "مهمة جديدة"),
+    e("Yeni liste", "New list", "Nueva lista", "Neue Liste", "Nouvelle liste", "Nova lista", "新しいリスト", "새 목록", "新建列表", "قائمة جديدة"),
+    e("Listeleri düzenle", "Edit lists", "Editar listas", "Listen bearbeiten", "Modifier les listes", "Editar listas", "リストを編集", "목록 편집", "编辑列表", "تعديل القوائم"),
+    e("Görünüm ayarları", "View settings", "Ajustes de vista", "Ansichtseinstellungen", "Réglages d’affichage", "Definições de vista", "表示設定", "보기 설정", "视图设置", "إعدادات العرض"),
+    e("Görev süresi", "Task duration", "Duración de la tarea", "Aufgabendauer", "Durée de la tâche", "Duração da tarefa", "タスクの所要時間", "할 일 시간", "任务时长", "مدة المهمة"),
+    e("Kartlarda görünür", "Shown on cards", "Visible en las tarjetas", "Auf Karten sichtbar", "Visible sur les cartes", "Visível nos cartões", "カードに表示", "카드에 표시", "显示在卡片上", "ظاهر على البطاقات"),
+    e("Kartlarda gizli", "Hidden on cards", "Oculto en las tarjetas", "Auf Karten verborgen", "Masqué sur les cartes", "Oculto nos cartões", "カードでは非表示", "카드에서 숨김", "卡片上隐藏", "مخفي على البطاقات"),
+    e("Varsayılan liste", "Default list", "Lista predeterminada", "Standardliste", "Liste par défaut", "Lista predefinida", "デフォルトのリスト", "기본 목록", "默认列表", "القائمة الافتراضية"),
+    e("Tanım yok", "No description", "Sin descripción", "Keine Beschreibung", "Pas de description", "Sem descrição", "説明なし", "설명 없음", "暂无描述", "لا وصف"),
+    e("Listeye taşı", "Move to a list", "Mover a una lista", "In eine Liste verschieben", "Déplacer vers une liste", "Mover para uma lista", "リストへ移動", "목록으로 옮기기", "移到列表", "نقل إلى قائمة"),
+    e("Görevi başlat", "Start the task", "Empezar la tarea", "Aufgabe starten", "Démarrer la tâche", "Começar a tarefa", "タスクを開始", "할 일 시작", "开始任务", "ابدأ المهمة"),
+    e("Yapılacakları düzenle", "Edit to-do", "Editar la tarea", "To-do bearbeiten", "Modifier la tâche", "Editar a tarefa", "To-doを編集", "할 일 수정", "编辑待办", "تعديل المهمة"),
+    e("Yapılacakları sil", "Delete to-do", "Eliminar la tarea", "To-do löschen", "Supprimer la tâche", "Apagar a tarefa", "To-doを削除", "할 일 삭제", "删除待办", "حذف المهمة"),
+    e("Tamamla", "Complete", "Completar", "Erledigen", "Terminer", "Concluir", "完了にする", "완료", "完成", "إكمال"),
+    e("Tamamlanmadı olarak işaretle", "Mark as not done", "Marcar como no hecha", "Als offen markieren", "Marquer comme non terminée", "Marcar como por fazer", "未完了にする", "미완료로 표시", "标为未完成", "تعيين كغير مكتملة"),
+    e("Yeniden zamanla", "Reschedule", "Reprogramar", "Neu planen", "Replanifier", "Reagendar", "日程を変更", "다시 일정 잡기", "改期", "إعادة الجدولة"),
+    e("Görevleri yeniden zamanla", "Reschedule tasks", "Reprogramar tareas", "Aufgaben neu planen", "Replanifier les tâches", "Reagendar tarefas", "タスクの日程を変更", "할 일 다시 잡기", "重新安排任务", "إعادة جدولة المهام"),
+    e("Kalan görevler", "Remaining tasks", "Tareas que quedan", "Offene Aufgaben", "Tâches restantes", "Tarefas em falta", "残りのタスク", "남은 할 일", "剩余任务", "المهام المتبقية"),
+    e("Başka bir güne taşımak istediklerini seç.", "Choose the ones you want to move to another day.", "Elige las que quieras pasar a otro día.", "Wähle, was du auf einen anderen Tag schieben willst.", "Choisis celles que tu veux déplacer à un autre jour.", "Escolhe as que queres passar para outro dia.", "別の日に移したいものを選んで。", "다른 날로 옮기고 싶은 것을 고르세요.", "选出你想挪到另一天的。", "اختر ما تريد نقله إلى يوم آخر."),
+    e("Değerlendirmem bitti", "I’m done reviewing", "Ya terminé de revisar", "Ich bin fertig mit dem Review", "J’ai fini de faire le point", "Já acabei de rever", "見直しはここまで", "검토를 마쳤어요", "我看完了", "انتهيت من المراجعة"),
+    e("Değerlendirme bitti", "Review finished", "Revisión terminada", "Review beendet", "Point terminé", "Revisão concluída", "見直し完了", "검토 끝", "回顾结束", "انتهت المراجعة"),
+    e("Bugünün planı tamamlandı.\nDinlenme ve şarj olma zamanı.", "Today’s plan is complete.\nTime to rest and recharge.", "El plan de hoy está listo.\nToca descansar y recargar.", "Der Plan für heute ist fertig.\nZeit zum Ausruhen und Auftanken.", "Le plan du jour est complet.\nPlace au repos.", "O plano de hoje está completo.\nÉ tempo de descansar.", "今日の計画はここまで。\n休んで充電しよう。", "오늘의 계획은 여기까지.\n쉬고 충전할 시간이에요.", "今天的计划完成了。\n该休息充电了。", "خطة اليوم اكتملت.\nحان وقت الراحة وإعادة الشحن."),
+    e("Görevler taşınamadı. Tekrar deneyin.", "The tasks could not be moved. Try again.", "No se pudieron mover las tareas. Inténtalo de nuevo.", "Die Aufgaben konnten nicht verschoben werden.", "Impossible de déplacer les tâches. Réessaie.", "Não foi possível mover as tarefas. Tenta outra vez.", "タスクを移せませんでした。もう一度どうぞ。", "할 일을 옮기지 못했습니다. 다시 시도하세요.", "无法移动任务。请再试一次。", "تعذر نقل المهام. حاول مرة أخرى."),
+    e("Rutinleri keşfet", "Discover routines", "Descubrir rutinas", "Routinen entdecken", "Découvrir des routines", "Descobrir rotinas", "ルーティンを探す", "루틴 둘러보기", "发现习惯", "اكتشف الروتينات"),
+    e("Hazır rutinler", "Ready-made routines", "Rutinas listas", "Fertige Routinen", "Routines prêtes", "Rotinas prontas", "すぐ使えるルーティン", "준비된 루틴", "现成习惯", "روتينات جاهزة"),
+    e("En çok kullandıkların", "Your most used", "Las que más usas", "Deine meistgenutzten", "Tes plus utilisées", "As que mais usas", "よく使うもの", "가장 많이 쓴 것", "你最常用的", "الأكثر استخدامًا"),
+    e("Rutin veya kategori ara", "Search routines or categories", "Busca rutinas o categorías", "Routinen oder Kategorien suchen", "Chercher une routine ou une catégorie", "Pesquisar rotinas ou categorias", "ルーティンやカテゴリを検索", "루틴이나 분류 검색", "搜索习惯或分类", "ابحث عن روتين أو فئة"),
+    e("Aramayı temizle", "Clear search", "Borrar búsqueda", "Suche leeren", "Effacer la recherche", "Limpar pesquisa", "検索をクリア", "검색 지우기", "清除搜索", "مسح البحث"),
+    e("Görevin ne kadar süreceğini seç", "Choose how long the task will take", "Elige cuánto durará la tarea", "Wähle, wie lange die Aufgabe dauert", "Choisis la durée de la tâche", "Escolhe quanto vai durar a tarefa", "タスクの所要時間を選んで", "할 일이 얼마나 걸릴지 고르세요", "选择这件事要花多久", "اختر مدة المهمة"),
+    e("Günlük plan yüklenemedi.", "The daily plan could not be loaded.", "No se pudo cargar el plan del día.", "Der Tagesplan konnte nicht geladen werden.", "Impossible de charger le plan du jour.", "Não foi possível carregar o plano do dia.", "今日の計画を読み込めませんでした。", "하루 계획을 불러오지 못했습니다.", "无法加载每日计划。", "تعذر تحميل الخطة اليومية."),
+    e("Bugün için planlanmış görev yok.", "No tasks planned for today.", "No hay tareas previstas para hoy.", "Für heute sind keine Aufgaben geplant.", "Aucune tâche prévue pour aujourd’hui.", "Não há tarefas planeadas para hoje.", "今日の予定タスクはありません。", "오늘 계획된 할 일이 없습니다.", "今天没有安排任务。", "لا مهام مخططة لليوم."),
+    e("To-do listesi yüklenemedi.", "The to-do list could not be loaded.", "No se pudo cargar la lista.", "Die To-do-Liste konnte nicht geladen werden.", "Impossible de charger la liste.", "Não foi possível carregar a lista.", "To-doリストを読み込めませんでした。", "할 일 목록을 불러오지 못했습니다.", "无法加载待办列表。", "تعذر تحميل قائمة المهام."),
+    e("Henüz görev yok. Ne yapmak istediğini yaz.", "No tasks yet. Write what you want to do.", "Aún no hay tareas. Escribe lo que quieres hacer.", "Noch keine Aufgaben. Schreib auf, was du tun willst.", "Pas encore de tâches. Écris ce que tu veux faire.", "Ainda não há tarefas. Escreve o que queres fazer.", "まだタスクはありません。やりたいことを書いて。", "아직 할 일이 없어요. 하고 싶은 것을 적어 보세요.", "还没有任务。写下你想做的。", "لا مهام بعد. اكتب ما تريد فعله."),
+    e("Görev durumu güncellenemedi.", "The task status could not be updated.", "No se pudo actualizar el estado.", "Der Aufgabenstatus konnte nicht geändert werden.", "Impossible de mettre à jour le statut.", "Não foi possível atualizar o estado.", "タスクの状態を更新できませんでした。", "할 일 상태를 바꾸지 못했습니다.", "无法更新任务状态。", "تعذر تحديث حالة المهمة."),
+    e("En fazla 30 alt görev ekleyebilirsin.", "You can add up to 30 subtasks.", "Puedes añadir hasta 30 subtareas.", "Du kannst bis zu 30 Teilaufgaben hinzufügen.", "Tu peux ajouter jusqu’à 30 sous-tâches.", "Podes adicionar até 30 subtarefas.", "サブタスクは30個までです。", "하위 할 일은 최대 30개입니다.", "最多可以添加 30 个子任务。", "يمكنك إضافة حتى ٣٠ مهمة فرعية."),
+    e("Görevi düzenle", "Edit task", "Editar tarea", "Aufgabe bearbeiten", "Modifier la tâche", "Editar tarefa", "タスクを編集", "할 일 수정", "编辑任务", "تعديل المهمة"),
+    e("Görevi sil", "Delete task", "Eliminar tarea", "Aufgabe löschen", "Supprimer la tâche", "Apagar tarefa", "タスクを削除", "할 일 삭제", "删除任务", "حذف المهمة"),
+    e("Görevi kaydet", "Save task", "Guardar tarea", "Aufgabe speichern", "Enregistrer la tâche", "Guardar tarefa", "タスクを保存", "할 일 저장", "保存任务", "حفظ المهمة"),
+    e("To-do’yu kaydet", "Save to-do", "Guardar la tarea", "To-do speichern", "Enregistrer la tâche", "Guardar a tarefa", "To-doを保存", "할 일 저장", "保存待办", "حفظ المهمة"),
+    e("Kaydediliyor...", "Saving...", "Guardando...", "Wird gespeichert...", "Enregistrement...", "A guardar...", "保存中...", "저장 중...", "保存中...", "جارٍ الحفظ..."),
+    e("Görev ekle", "Add a task", "Añadir una tarea", "Aufgabe hinzufügen", "Ajouter une tâche", "Adicionar uma tarefa", "タスクを追加", "할 일 추가", "添加任务", "أضف مهمة"),
+    e("Ne yapman gerekiyor?", "What do you need to do?", "¿Qué tienes que hacer?", "Was musst du tun?", "Qu’est-ce que tu dois faire ?", "O que precisas de fazer?", "何をする必要がある？", "무엇을 해야 하나요?", "你需要做什么？", "ماذا تحتاج أن تفعل؟"),
+    e("Alt görev ekle", "Add a subtask", "Añadir una subtarea", "Teilaufgabe hinzufügen", "Ajouter une sous-tâche", "Adicionar uma subtarefa", "サブタスクを追加", "하위 할 일 추가", "添加子任务", "أضف مهمة فرعية"),
+    e("Liste seç", "Choose a list", "Elige una lista", "Liste wählen", "Choisir une liste", "Escolher uma lista", "リストを選ぶ", "목록 선택", "选择列表", "اختر قائمة"),
+    e("Başarılar", "Achievements", "Logros", "Erfolge", "Succès", "Conquistas", "実績", "업적", "成就", "الإنجازات"),
+    e("Başarılar şu anda yüklenemiyor.", "Achievements can’t be loaded right now.", "Ahora no se pueden cargar los logros.", "Erfolge können gerade nicht geladen werden.", "Les succès ne peuvent pas être chargés maintenant.", "As conquistas não podem ser carregadas agora.", "実績を読み込めません。", "업적을 지금 불러올 수 없습니다.", "此刻无法加载成就。", "تعذر تحميل الإنجازات الآن."),
+    e("Yeni başarı açıldı!", "New achievement unlocked!", "¡Nuevo logro desbloqueado!", "Neuer Erfolg freigeschaltet!", "Nouveau succès débloqué !", "Nova conquista desbloqueada!", "新しい実績を解除！", "새 업적 달성!", "解锁新成就！", "إنجاز جديد!"),
+    e("İlk adım", "First step", "Primer paso", "Erster Schritt", "Premier pas", "Primeiro passo", "最初の一歩", "첫걸음", "第一步", "الخطوة الأولى"),
+    e("Odaklanmaya başla", "Start focusing", "Empieza a enfocarte", "Fokus starten", "Commencer le focus", "Começar a focar", "フォーカスを始める", "집중 시작", "开始专注", "ابدأ التركيز"),
+    e("Odak turun tamamlandı", "Your focus round is done", "Tu ronda de foco ha terminado", "Deine Fokus-Runde ist fertig", "Ton round de focus est terminé", "A tua ronda de foco acabou", "フォーカスが終わったよ", "집중 라운드가 끝났어요", "这一轮专注结束了", "انتهت جولة التركيز"),
+    e("Harika iş!", "Great work!", "¡Buen trabajo!", "Super gemacht!", "Beau travail !", "Bom trabalho!", "よくやった！", "잘했어요!", "干得漂亮！", "عمل رائع!"),
+    e("Odağı bitir", "End focus", "Terminar el foco", "Fokus beenden", "Terminer le focus", "Terminar o foco", "フォーカスを終える", "집중 끝내기", "结束专注", "إنهاء التركيز"),
+    e("Sonlandır", "Finish", "Terminar", "Beenden", "Terminer", "Terminar", "終了", "끝내기", "结束", "إنهاء"),
+    e("Özel süre", "Custom duration", "Duración personalizada", "Eigene Dauer", "Durée perso", "Duração personalizada", "カスタム時間", "직접 시간", "自定义时长", "مدة مخصصة"),
+    e("Özel", "Custom", "Personalizado", "Eigene", "Perso", "Personalizado", "カスタム", "직접", "自定义", "مخصص"),
+    e("Müzik yok", "No music", "Sin música", "Keine Musik", "Pas de musique", "Sem música", "音楽なし", "음악 없음", "无音乐", "بدون موسيقى"),
+    e("Otomatik oynat", "Autoplay", "Reproducción automática", "Automatisch abspielen", "Lecture auto", "Reprodução automática", "自動再生", "자동 재생", "自动播放", "تشغيل تلقائي"),
+    e("Kaydedildi", "Saved", "Guardado", "Gespeichert", "Enregistré", "Guardado", "保存しました", "저장됨", "已保存", "تم الحفظ"),
+    e("Bugünün planı", "Today’s plan", "El plan de hoy", "Der Plan für heute", "Le plan du jour", "O plano de hoje", "今日の計画", "오늘의 계획", "今天的计划", "خطة اليوم"),
+    e("Sıradaki görevin", "Your next task", "Tu siguiente tarea", "Deine nächste Aufgabe", "Ta prochaine tâche", "A tua próxima tarefa", "次のタスク", "다음 할 일", "下一件事", "مهمتك التالية"),
+    e("Görevi silinsin mi?", "Delete this task?", "¿Eliminar esta tarea?", "Diese Aufgabe löschen?", "Supprimer cette tâche ?", "Apagar esta tarefa?", "このタスクを削除しますか？", "이 할 일을 삭제할까요?", "要删除这件事吗？", "هل تريد حذف هذه المهمة؟"),
+    e("Bazen plan yapmak bile yorucu gelebilir.", "Sometimes even making a plan can feel tiring.", "A veces hasta hacer un plan cansa.", "Manchmal fühlt sich schon das Planen anstrengend an.", "Parfois, rien que planifier fatigue.", "Por vezes até fazer um plano cansa.", "計画を立てるだけでも疲れることがある。", "가끔은 계획을 세우는 것만으로도 지칩니다.", "有时连做计划都会觉得累。", "أحيانًا حتى وضع خطة يُتعب."),
+    e("Seni daha iyi anlamak için birkaç kısa sorumuz var.", "We have a few short questions to understand you better.", "Tenemos unas preguntas cortas para entenderte mejor.", "Wir haben ein paar kurze Fragen, um dich besser zu verstehen.", "On a quelques questions courtes pour mieux te comprendre.", "Temos umas perguntas curtas para te perceber melhor.", "あなたをもっと知るための短い質問があるよ。", "당신을 더 잘 이해하기 위한 짧은 질문이 있어요.", "我们有几个短问题，好更懂你。", "لدينا أسئلة قصيرة لنفهمك أكثر."),
+    e("Başlayalım", "Let’s start", "Empecemos", "Los geht’s", "C’est parti", "Vamos começar", "はじめよう", "시작해요", "开始吧", "لنبدأ"),
+    e("Zaten hesabım var", "I already have an account", "Ya tengo una cuenta", "Ich habe schon ein Konto", "J’ai déjà un compte", "Já tenho uma conta", "すでにアカウントがある", "이미 계정이 있어요", "我已有账户", "لدي حساب بالفعل"),
+    e("Yalnız değilsin.", "You’re not alone.", "No estás solo.", "Du bist nicht allein.", "Tu n’es pas seul.", "Não estás sozinho.", "ひとりじゃない。", "혼자가 아니에요.", "你不是一个人。", "لست وحدك."),
+    e("Pazartesi", "Monday", "Lunes", "Montag", "Lundi", "Segunda", "月曜日", "월요일", "星期一", "الاثنين"),
+    e("Salı", "Tuesday", "Martes", "Dienstag", "Mardi", "Terça", "火曜日", "화요일", "星期二", "الثلاثاء"),
+    e("Çarşamba", "Wednesday", "Miércoles", "Mittwoch", "Mercredi", "Quarta", "水曜日", "수요일", "星期三", "الأربعاء"),
+    e("Perşembe", "Thursday", "Jueves", "Donnerstag", "Jeudi", "Quinta", "木曜日", "목요일", "星期四", "الخميس"),
+    e("Cuma", "Friday", "Viernes", "Freitag", "Vendredi", "Sexta", "金曜日", "금요일", "星期五", "الجمعة"),
+    e("Cumartesi", "Saturday", "Sábado", "Samstag", "Samedi", "Sábado", "土曜日", "토요일", "星期六", "السبت"),
+    e("Pazar", "Sunday", "Domingo", "Sonntag", "Dimanche", "Domingo", "日曜日", "일요일", "星期日", "الأحد"),
+    e("Ocak", "January", "Enero", "Januar", "Janvier", "Janeiro", "1月", "1월", "一月", "يناير"),
+    e("Şubat", "February", "Febrero", "Februar", "Février", "Fevereiro", "2月", "2월", "二月", "فبراير"),
+    e("Mart", "March", "Marzo", "März", "Mars", "Março", "3月", "3월", "三月", "مارس"),
+    e("Nisan", "April", "Abril", "April", "Avril", "Abril", "4月", "4월", "四月", "أبريل"),
+    e("Mayıs", "May", "Mayo", "Mai", "Mai", "Maio", "5月", "5월", "五月", "مايو"),
+    e("Haziran", "June", "Junio", "Juni", "Juin", "Junho", "6月", "6월", "六月", "يونيو"),
+    e("Temmuz", "July", "Julio", "Juli", "Juillet", "Julho", "7月", "7월", "七月", "يوليو"),
+    e("Ağustos", "August", "Agosto", "August", "Août", "Agosto", "8月", "8월", "八月", "أغسطس"),
+    e("Eylül", "September", "Septiembre", "September", "Septembre", "Setembro", "9月", "9월", "九月", "سبتمبر"),
+    e("Ekim", "October", "Octubre", "Oktober", "Octobre", "Outubro", "10月", "10월", "十月", "أكتوبر"),
+    e("Kasım", "November", "Noviembre", "November", "Novembre", "Novembro", "11月", "11월", "十一月", "نوفمبر"),
+    e("Aralık", "December", "Diciembre", "Dezember", "Décembre", "Dezembro", "12月", "12월", "十二月", "ديسمبر"),
+    e("Küçük bir hatırlatma", "A small reminder", "Un pequeño recordatorio", "Eine kleine Erinnerung", "Un petit rappel", "Um pequeno lembrete", "小さなリマインド", "작은 알림", "一点提醒", "تذكير صغير"),
+    e("Günü değerlendirelim", "Let’s review the day", "Revisemos el día", "Schauen wir auf den Tag", "Faisons le point sur la journée", "Vamos rever o dia", "一日を振り返ろう", "하루를 돌아봐요", "一起来回顾今天", "لنراجع اليوم"),
+    e("Haftayı planlayalım", "Let’s plan the week", "Planifiquemos la semana", "Planen wir die Woche", "Planifions la semaine", "Vamos planear a semana", "一週間を計画しよう", "한 주를 계획해요", "一起来安排这周", "لنخطط الأسبوع"),
+    e("Sıradaki görevlerin", "Your next tasks", "Tus siguientes tareas", "Deine nächsten Aufgaben", "Tes prochaines tâches", "As tuas próximas tarefas", "次のタスクたち", "다음 할 일들", "接下来的任务", "مهامك التالية"),
+    e("{title} şimdi başlıyor.", "{title} is starting now.", "{title} empieza ahora.", "{title} beginnt jetzt.", "{title} commence maintenant.", "{title} está a começar agora.", "{title}が始まるよ。", "{title}이(가) 지금 시작돼요.", "{title} 现在开始。", "{title} يبدأ الآن."),
+    e("{title} · {minutes} dk kaldı.", "{title} · {minutes} min left.", "{title} · quedan {minutes} min.", "{title} · noch {minutes} Min.", "{title} · plus que {minutes} min.", "{title} · faltam {minutes} min.", "{title} · あと{minutes}分", "{title} · {minutes}분 남음", "{title} · 还剩 {minutes} 分钟", "{title} · تبقّى {minutes} د."),
+    e("{count} görev: {preview}", "{count} tasks: {preview}", "{count} tareas: {preview}", "{count} Aufgaben: {preview}", "{count} tâches : {preview}", "{count} tarefas: {preview}", "{count}件のタスク: {preview}", "{count}개 할 일: {preview}", "{count} 项任务：{preview}", "{count} مهام: {preview}"),
+    e("{count} görev: {preview} ve {more} tane daha", "{count} tasks: {preview} and {more} more", "{count} tareas: {preview} y {more} más", "{count} Aufgaben: {preview} und {more} weitere", "{count} tâches : {preview} et {more} de plus", "{count} tarefas: {preview} e mais {more}", "{count}件: {preview} ほか{more}件", "{count}개: {preview} 외 {more}개", "{count} 项：{preview} 以及另外 {more} 项", "{count} مهام: {preview} و{more} أخرى"),
+    e("Günaydın. Bugünün planına birlikte bakalım.", "Good morning. Let’s look at today’s plan together.", "Buenos días. Miremos juntos el plan de hoy.", "Guten Morgen. Schauen wir gemeinsam auf den Plan.", "Bonjour. Regardons ensemble le plan du jour.", "Bom dia. Vamos ver juntos o plano de hoje.", "おはよう。今日の計画を一緒に見よう。", "좋은 아침. 오늘 계획을 같이 볼까요.", "早上好。一起看看今天的计划。", "صباح الخير. لننظر معًا إلى خطة اليوم."),
+    e("Her şeyi bir anda yapmak zorunda değilsin.", "You don’t have to do everything at once.", "No tienes que hacerlo todo de una vez.", "Du musst nicht alles auf einmal tun.", "Tu n’as pas à tout faire d’un coup.", "Não tens de fazer tudo de uma vez.", "全部を一度にしなくていい。", "모든 걸 한번에 할 필요 없어요.", "不必一次做完全部。", "لست مضطرًا لفعل كل شيء دفعة واحدة."),
+    e("Bugün nasıl geçti, kısaca bakalım.", "How did today go? Let’s take a quick look.", "¿Cómo fue el día? Miremos un momento.", "Wie war der Tag? Ein kurzer Blick genügt.", "Comment s’est passée la journée ? Un petit point.", "Como correu o dia? Vamos olhar um pouco.", "今日はどうだった？少し振り返ろう。", "오늘은 어땠나요? 잠깐 살펴봐요.", "今天过得怎样？我们快速看一眼。", "كيف مرّ اليوم؟ لنلقِ نظرة سريعة."),
+    e("Önümüzdeki haftayı birlikte tasarlayalım.", "Let’s design the coming week together.", "Diseñemos juntos la semana que viene.", "Lass uns die kommende Woche gemeinsam gestalten.", "Concevons ensemble la semaine à venir.", "Vamos desenhar juntos a próxima semana.", "来週を一緒に組み立てよう。", "다음 주를 같이 그려 봐요.", "一起来设计下周。", "لنصمّم الأسبوع القادم معًا."),
+    e("Odak turun tamamlandı.", "Your focus round is done.", "Tu ronda de foco ha terminado.", "Deine Fokus-Runde ist fertig.", "Ton round de focus est terminé.", "A tua ronda de foco acabou.", "フォーカスが終わったよ。", "집중 라운드가 끝났어요.", "这一轮专注结束了。", "انتهت جولة التركيز."),
+    e("Mikrofon veya ses tanıma izni verilmedi.", "Microphone or speech recognition permission was not granted.", "No se dio permiso de micrófono o reconocimiento de voz.", "Mikrofon- oder Spracherkennung wurde nicht erlaubt.", "Le micro ou la reconnaissance vocale n’a pas été autorisé.", "O microfone ou o reconhecimento de voz não foi permitido.", "マイクまたは音声認識の許可がありません。", "마이크 또는 음성 인식 권한이 없습니다.", "未授予麦克风或语音识别权限。", "لم يُمنح إذن الميكروفون أو التعرف على الكلام."),
+)
+
+try:
+    from l10n_more import MORE_ENTRIES
+
+    add(*MORE_ENTRIES)
+except ImportError:
+    pass
+
+
+def dart_str(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def write_catalog() -> None:
+    seen: dict[str, list[str]] = {}
+    for key, row in ENTRIES:
+        seen[key] = row
+    lines = [
+        "// Generated by tool/generate_l10n_catalog.py. Do not edit by hand.",
+        "",
+        "const kL10nLanguages = <String>[",
+        "  'en',",
+        "  'es',",
+        "  'de',",
+        "  'fr',",
+        "  'pt',",
+        "  'ja',",
+        "  'ko',",
+        "  'zh',",
+        "  'ar',",
+        "];",
+        "",
+        "const kL10nTable = <String, List<String>>{",
+    ]
+    for key, row in seen.items():
+        items = ", ".join(dart_str(part) for part in row)
+        lines.append(f"  {dart_str(key)}: <String>[{items}],")
+    lines.extend(
+        [
+            "};",
+            "",
+            "String lookupTranslation(",
+            "  String lang,",
+            "  String source, [",
+            "  Map<String, String> params = const {},",
+            "]) {",
+            "  var text = source;",
+            "  if (lang != 'tr') {",
+            "    final row = kL10nTable[source];",
+            "    if (row != null) {",
+            "      final index = kL10nLanguages.indexOf(lang);",
+            "      if (index >= 0 && index < row.length && row[index].isNotEmpty) {",
+            "        text = row[index];",
+            "      } else if (row.isNotEmpty) {",
+            "        text = row.first;",
+            "      }",
+            "    }",
+            "  }",
+            "  if (params.isEmpty) return text;",
+            "  params.forEach((key, value) {",
+            "    text = text.replaceAll('{$key}', value);",
+            "  });",
+            "  return text;",
+            "}",
+            "",
+        ]
+    )
+    OUT.write_text("\n".join(lines), encoding="utf-8")
+    print(f"wrote {len(seen)} keys -> {OUT}")
+
+
+if __name__ == "__main__":
+    write_catalog()
+

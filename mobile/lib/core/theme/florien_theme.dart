@@ -198,6 +198,16 @@ extension FlorienPaletteContext on BuildContext {
       Theme.of(this).extension<FlorienPalette>() ?? FlorienPalette.light;
 
   bool get isFlorienDark => Theme.of(this).brightness == Brightness.dark;
+
+  /// Pastel chip/banner fill. Full pastels stay on light surfaces; dark mode
+  /// washes them into [FlorienPalette.surface] so they don't blow out.
+  Color pastelFill(Color pastel, {double darkAlpha = 0.28}) {
+    if (!isFlorienDark) return pastel;
+    return Color.alphaBlend(
+      pastel.withValues(alpha: darkAlpha),
+      palette.surface,
+    );
+  }
 }
 
 enum AppThemePreference { system, light, dark }
@@ -550,8 +560,9 @@ class FlorienTheme {
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected) ? palette.primaryMuted : null,
+          (states) => states.contains(WidgetState.selected)
+              ? palette.primaryMuted
+              : null,
         ),
         checkColor: const WidgetStatePropertyAll(onPrimary),
         side: BorderSide(color: palette.border, width: FlorienBorders.thin),

@@ -127,10 +127,7 @@ class _PremiumMembershipNotifier extends PremiumMembershipNotifier {
 class _FreeQuotaExhaustedPremiumNotifier extends PremiumMembershipNotifier {
   static final membership = PremiumMembership(
     storeAvailable: false,
-    aiChatUsage: AiChatUsage(
-      usedThisMonth: 3,
-      limitThisMonth: 3,
-    ),
+    aiChatUsage: AiChatUsage(usedThisMonth: 3, limitThisMonth: 3),
   );
 
   @override
@@ -167,11 +164,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Premium ile sınırsız AI sohbet'), findsOneWidget);
+    expect(find.text('Ne yapmak istiyorsun?'), findsOneWidget);
     expect(
-      find.text('Ücretsiz mesaj hakkın bitti. Sınırsız AI sohbet için Premium gerekli.'),
-      findsOneWidget,
+      find.text(
+        'Ücretsiz mesaj hakkın bitti. Sınırsız AI sohbet için Premium gerekli.',
+      ),
+      findsNothing,
     );
+    expect(find.textContaining('ücretsiz AI mesaj hakkın'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('planner-ai-input')));
     await tester.pumpAndSettle();
@@ -190,7 +190,9 @@ void main() {
         overrides: [
           plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
           inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(_PremiumMembershipNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -243,7 +245,9 @@ void main() {
         overrides: [
           plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
           inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(_PremiumMembershipNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,

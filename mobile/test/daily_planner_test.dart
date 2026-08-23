@@ -401,6 +401,46 @@ void main() {
     expect(find.byKey(const ValueKey('daily-start-time')), findsNothing);
   });
 
+  testWidgets('free account can add a ready routine without Premium', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('daily-menu-routines')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('routine-discovery-screen')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('routine-task-10 Dakikada Ayağa Kalk')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PremiumMembershipScreen), findsNothing);
+    expect(find.text('10 Dakikada Ayağa Kalk'), findsWidgets);
+    expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
+  });
+
   testWidgets('free account opens Premium before enabling a task alarm', (
     tester,
   ) async {

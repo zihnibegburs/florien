@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "Görevlerinizi sesle yazabilmeniz için mikrofon erişimi gerekiyor.";
+"NSSpeechRecognitionUsageDescription" = "Konuşmanızı metne çevirmek için ses tanıma erişimi gerekiyor.";
+"NSHealthShareUsageDescription" = "Ruh hali kayıtlarınızı Apple Sağlık ile eşitlemek için Sağlık verilerinize erişim gerekiyor.";
+"NSHealthUpdateUsageDescription" = "Uygulamada belirttiğiniz ruh halini Apple Sağlık’a kaydetmek için izin gerekiyor.";
+"NSCalendarsUsageDescription" = "Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.";
+"NSCalendarsFullAccessUsageDescription" = "Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.";

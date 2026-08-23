@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "需要麦克风权限，以便你用语音添加任务。";
+"NSSpeechRecognitionUsageDescription" = "需要语音识别，才能把你说的话转成文字。";
+"NSHealthShareUsageDescription" = "需要健康数据权限，才能把心情记录同步到 Apple 健康。";
+"NSHealthUpdateUsageDescription" = "需要权限才能把你记录的心情写入 Apple 健康。";
+"NSCalendarsUsageDescription" = "需要日历权限，才能把日程导入为任务。";
+"NSCalendarsFullAccessUsageDescription" = "需要完整日历权限，才能把日程导入为任务。";

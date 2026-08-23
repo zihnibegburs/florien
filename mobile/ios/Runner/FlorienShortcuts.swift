@@ -14,6 +14,11 @@ struct FlorienShortcuts: AppShortcutsProvider {
                 "Añadir tarea en \(.applicationName)",
                 "Ajouter une tâche dans \(.applicationName)",
                 "Aufgabe in \(.applicationName) hinzufügen",
+                "Adicionar tarefa no \(.applicationName)",
+                "\(.applicationName)でタスクを追加",
+                "\(.applicationName)에서 할 일 추가",
+                "在\(.applicationName)中添加任务",
+                "أضف مهمة في \(.applicationName)",
             ],
             shortTitle: LocalizedStringResource("intent.add_task.title"),
             systemImageName: "plus.circle.fill"

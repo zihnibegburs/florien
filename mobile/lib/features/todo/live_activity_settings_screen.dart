@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class LiveActivitySettingsScreen extends ConsumerWidget {
   const LiveActivitySettingsScreen({super.key});
@@ -12,22 +13,25 @@ class LiveActivitySettingsScreen extends ConsumerWidget {
     final preferences = ref.watch(liveActivityPreferencesProvider);
     return Scaffold(
       backgroundColor: context.palette.background,
-      appBar: AppBar(title: const Text('Canlı Etkinlikler')),
+      appBar: AppBar(title: Text(context.l10n('Canlı Etkinlikler'))),
       body: preferences.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(child: Text('Ayarlar yüklenemedi.')),
+        error: (_, _) =>
+            Center(child: Text(context.l10n('Ayarlar yüklenemedi.'))),
         data: (value) => ListView(
           padding: const EdgeInsets.all(FlorienSpacing.screen),
           children: [
             Text(
-              'Kilit ekranında ve Dynamic Island’da odak sayacını göster.',
+              context.l10n(
+                'Kilit ekranında ve Dynamic Island’da odak sayacını göster.',
+              ),
               style: TextStyle(color: context.palette.textSecondary),
             ),
             const SizedBox(height: FlorienSpacing.lg),
             _LiveActivityTile(
               icon: Icons.timelapse_rounded,
-              title: 'Odak sayacı',
-              subtitle: 'Aktif odak turunun kalan süresi.',
+              title: context.l10n('Odak sayacı'),
+              subtitle: context.l10n('Aktif odak turunun kalan süresi.'),
               value: value.focusTimerEnabled,
               onChanged: (enabled) =>
                   _save(ref, value.copyWith(focusTimerEnabled: enabled)),

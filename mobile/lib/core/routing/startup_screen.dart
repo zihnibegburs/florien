@@ -29,9 +29,8 @@ class StartupScreen extends ConsumerWidget {
         });
         return const Scaffold(body: SizedBox.shrink());
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) context.go('/login');

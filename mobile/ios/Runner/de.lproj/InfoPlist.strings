@@ -1,0 +1,6 @@
+"NSMicrophoneUsageDescription" = "Florien braucht Mikrofonzugriff, damit du Aufgaben per Sprache hinzufügen kannst.";
+"NSSpeechRecognitionUsageDescription" = "Florien braucht Spracherkennung, um Gesagtes in Text zu verwandeln.";
+"NSHealthShareUsageDescription" = "Florien braucht Zugriff auf Gesundheit, um Stimmungen mit Apple Health abzugleichen.";
+"NSHealthUpdateUsageDescription" = "Florien braucht die Erlaubnis, deine Stimmung in Apple Health zu speichern.";
+"NSCalendarsUsageDescription" = "Florien braucht Kalenderzugriff, um Termine als Aufgaben zu übernehmen.";
+"NSCalendarsFullAccessUsageDescription" = "Florien braucht vollen Kalenderzugriff, um Termine als Aufgaben zu übernehmen.";

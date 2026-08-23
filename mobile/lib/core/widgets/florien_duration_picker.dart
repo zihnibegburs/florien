@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 
 const florienDurationPresets = [5, 10, 15, 30, 45, 60, 90, 120];
 
 String florienDurationLabel(int minutes) => switch (minutes) {
-  60 => '1 saat',
-  90 => '1,5 saat',
-  120 => '2 saat',
-  _ => '$minutes dk',
+  60 => ActiveLanguage.s('1 saat'),
+  90 => ActiveLanguage.s('1,5 saat'),
+  120 => ActiveLanguage.s('2 saat'),
+  _ => ActiveLanguage.s('{minutes} dk', {'minutes': '$minutes'}),
 };
 
 Future<int?> showFlorienDurationPicker({
@@ -36,13 +37,16 @@ class FlorienDurationPicker extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Süre', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            context.l10n('Süre'),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 4),
           Text(
-            'Görevin ne kadar süreceğini seç',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: palette.textSecondary,
-            ),
+            context.l10n('Görevin ne kadar süreceğini seç'),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: palette.textSecondary),
           ),
           const SizedBox(height: 14),
           for (var i = 0; i < florienDurationPresets.length; i += 2) ...[
@@ -80,9 +84,7 @@ class _DurationChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final foreground = selected
-        ? FlorienColors.onPrimary
-        : palette.textPrimary;
+    final foreground = selected ? FlorienColors.onPrimary : palette.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(

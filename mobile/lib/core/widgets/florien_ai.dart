@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
 
@@ -76,11 +77,14 @@ class FlorienAiInput extends StatelessWidget {
 
   final TextEditingController controller;
   final VoidCallback onSend;
+
   /// Send and voice actions (TextField stays tappable when false).
   final bool enabled;
+
   /// When null, follows [enabled]. Set true to keep the field editable while
   /// actions stay disabled (e.g. free monthly quota exhausted).
   final bool? textEnabled;
+
   /// Free quota exhausted — field read-only, premium affordance on send.
   final bool premiumLocked;
   final VoidCallback? onPremiumTap;
@@ -105,38 +109,6 @@ class FlorienAiInput extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (premiumLocked)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: FlorienColors.aiGradient,
-                  borderRadius: BorderRadius.circular(FlorienRadius.md),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.workspace_premium_rounded,
-                      size: 18,
-                      color: FlorienColors.onPrimary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Ücretsiz mesaj hakkın bitti. Sınırsız AI sohbet için Premium gerekli.',
-                        style: TextStyle(
-                          color: FlorienColors.onPrimary.withValues(alpha: 0.96),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
             decoration: BoxDecoration(
@@ -235,13 +207,13 @@ class FlorienAiInput extends StatelessWidget {
                           ),
                         ),
                         child: isListening
-                            ? const Padding(
-                                padding: EdgeInsets.all(3),
+                            ? Padding(
+                                padding: const EdgeInsets.all(3),
                                 child: FlorienAiAnimation(
                                   size: 40,
                                   speed: 1.4,
                                   animate: true,
-                                  semanticLabel: 'Sesli AI aktif',
+                                  semanticLabel: context.l10n('Sesli AI aktif'),
                                 ),
                               )
                             : const Icon(
@@ -266,7 +238,9 @@ class FlorienAiInput extends StatelessWidget {
                       height: 46,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: premiumLocked ? FlorienColors.aiGradient : null,
+                        gradient: premiumLocked
+                            ? FlorienColors.aiGradient
+                            : null,
                         color: premiumLocked
                             ? null
                             : (actionsEnabled

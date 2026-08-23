@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:live_activities/live_activities.dart';
 
 class FlorienLiveActivityService {
@@ -51,7 +52,9 @@ class FlorienLiveActivityService {
         title: title,
         taskIcon: taskIcon,
         usesDefaultFocusIcon: usesDefaultFocusIcon,
-        subtitle: isRunning ? 'Odaklanma sürüyor' : 'Odaklanma duraklatıldı',
+        subtitle: isRunning
+            ? ActiveLanguage.s('Odaklanma sürüyor')
+            : ActiveLanguage.s('Odaklanma duraklatıldı'),
         remaining: _durationLabel(remainingSeconds),
         start: now.subtract(Duration(seconds: totalSeconds - remainingSeconds)),
         end: now.add(Duration(seconds: remainingSeconds)),

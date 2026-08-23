@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/speech_input_service.dart';
@@ -12,6 +13,7 @@ import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/realtime_task_icon_controller.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/todo/completion_celebration_screen.dart';
+import 'package:florien/features/todo/task_breakdown_action.dart';
 import 'package:florien/features/todo/todo_detail_screen.dart';
 
 Future<void> showTodoQuickAdd({
@@ -90,7 +92,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
     return inbox.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) =>
-          const Center(child: Text('Yapılacaklar yüklenemedi.')),
+          Center(child: Text(context.l10n('Yapılacaklar yüklenemedi.'))),
       data: (tasks) {
         final visibleTasks = tasks
             .where((task) => task.todoListId == activeListId)
@@ -114,7 +116,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                           child: Row(
                             children: [
                               _ListTitle(
-                                label: 'To-do',
+                                label: context.l10n('To-do'),
                                 selected: activeListId == null,
                                 onTap: () =>
                                     setState(() => _selectedListId = null),
@@ -136,7 +138,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _TodoIconButton(
-                            tooltip: 'Liste seçenekleri',
+                            tooltip: context.l10n('Liste seçenekleri'),
                             onPressed: () => _showHeaderMenu(lists),
                             icon: Icons.more_horiz_rounded,
                             filled: false,
@@ -358,13 +360,13 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'To-do düzeni',
+                          context.l10n('To-do düzeni'),
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Listelerini ve görünümü düzenle.',
+                          context.l10n('Listelerini ve görünümü düzenle.'),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: context.palette.textSecondary),
                         ),
@@ -372,7 +374,7 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Kapat',
+                    tooltip: context.l10n('Kapat'),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -384,7 +386,7 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
                   Expanded(
                     child: _TodoMenuActionCard(
                       icon: Icons.add_rounded,
-                      label: 'Yeni liste',
+                      label: context.l10n('Yeni liste'),
                       color: context.palette.primaryMuted,
                       onTap: () =>
                           Navigator.pop(context, _TodoMenuAction.newList),
@@ -394,7 +396,7 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
                   Expanded(
                     child: _TodoMenuActionCard(
                       icon: Icons.edit_note_rounded,
-                      label: 'Düzenleme listeleri',
+                      label: context.l10n('Düzenleme listeleri'),
                       color: context.palette.aiSurface,
                       onTap: () =>
                           Navigator.pop(context, _TodoMenuAction.editLists),
@@ -404,7 +406,7 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'GÖRÜNÜM',
+                context.l10n('GÖRÜNÜM'),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: context.palette.textSecondary,
                   fontWeight: FontWeight.w800,
@@ -414,8 +416,10 @@ class _TodoHeaderMenuSheet extends StatelessWidget {
               const SizedBox(height: 8),
               _TodoMenuRow(
                 icon: Icons.visibility_outlined,
-                label: 'Görünüm ayarları',
-                value: showDuration ? 'Süre açık' : 'Süre kapalı',
+                label: context.l10n('Görünüm ayarları'),
+                value: showDuration
+                    ? context.l10n('Süre açık')
+                    : context.l10n('Süre kapalı'),
                 color: FlorienColors.softPink,
                 onTap: () => Navigator.pop(context, _TodoMenuAction.options),
               ),
@@ -606,7 +610,7 @@ class _ListAddButton extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(right: 6),
     child: Tooltip(
-      message: 'Yeni liste oluştur',
+      message: context.l10n('Yeni liste oluştur'),
       child: Material(
         color: context.palette.surfaceMuted,
         shape: const CircleBorder(),
@@ -688,22 +692,24 @@ class _ListEditorSheetState extends State<_ListEditorSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              widget.existing == null ? 'Yeni liste' : 'Listeyi düzenle',
+              widget.existing == null
+                  ? context.l10n('Yeni liste')
+                  : context.l10n('Listeyi düzenle'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _name,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Liste adı'),
+              decoration: InputDecoration(labelText: context.l10n('Liste adı')),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _description,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _save(),
-              decoration: const InputDecoration(
-                labelText: 'Tanım (isteğe bağlı)',
+              decoration: InputDecoration(
+                labelText: context.l10n('Tanım (isteğe bağlı)'),
               ),
               maxLines: 2,
             ),
@@ -713,14 +719,14 @@ class _ListEditorSheetState extends State<_ListEditorSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Vazgeç'),
+                    child: Text(context.l10n('Vazgeç')),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
-                    child: const Text('Kaydet'),
+                    child: Text(context.l10n('Kaydet')),
                   ),
                 ),
               ],
@@ -769,9 +775,9 @@ class _EditListsScreenState extends State<_EditListsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Listeleri düzenle'),
+      title: Text(context.l10n('Listeleri düzenle')),
       leading: IconButton(
-        tooltip: 'Geri',
+        tooltip: context.l10n('Geri'),
         onPressed: () => Navigator.pop(context),
         icon: const Icon(Icons.arrow_back_rounded),
       ),
@@ -793,12 +799,12 @@ class _EditListsScreenState extends State<_EditListsScreen> {
         if (index == _lists.length) {
           return Card(
             key: ValueKey('default'),
-            child: const ListTile(
+            child: ListTile(
               title: Text(
-                'To-do',
+                context.l10n('To-do'),
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text('Varsayılan liste'),
+              subtitle: Text(context.l10n('Varsayılan liste')),
               trailing: Icon(Icons.lock_outline_rounded),
             ),
           );
@@ -822,7 +828,7 @@ class _EditListsScreenState extends State<_EditListsScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: list.description.isEmpty
-                  ? const Text('Tanım yok')
+                  ? Text(context.l10n('Tanım yok'))
                   : Text(list.description),
               trailing: const Icon(Icons.drag_handle_rounded),
               onTap: () => _edit(list),
@@ -850,7 +856,7 @@ class _TodoOptionsDialogState extends State<_TodoOptionsDialog> {
   late bool _showDuration = widget.showDuration;
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Görünüm ayarları'),
+    title: Text(context.l10n('Görünüm ayarları')),
     contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
     content: Container(
       decoration: BoxDecoration(
@@ -877,8 +883,12 @@ class _TodoOptionsDialogState extends State<_TodoOptionsDialog> {
           ),
           child: const Icon(Icons.timer_outlined, size: 19),
         ),
-        title: const Text('Görev süresi'),
-        subtitle: Text(_showDuration ? 'Kartlarda görünür' : 'Kartlarda gizli'),
+        title: Text(context.l10n('Görev süresi')),
+        subtitle: Text(
+          _showDuration
+              ? context.l10n('Kartlarda görünür')
+              : context.l10n('Kartlarda gizli'),
+        ),
       ),
     ),
   );
@@ -920,11 +930,11 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   }
 
   String get _listName {
-    if (_todoListId == null) return 'To-do';
+    if (_todoListId == null) return context.l10n('To-do');
     for (final list in widget.lists) {
       if (list.id == _todoListId) return list.name;
     }
-    return 'To-do';
+    return context.l10n('To-do');
   }
 
   @override
@@ -1047,14 +1057,14 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Yeni To-do',
+                      context.l10n('Yeni To-do'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Kapat',
+                    tooltip: context.l10n('Kapat'),
                     onPressed: _isSaving ? null : _close,
                     iconSize: 19,
                     style: IconButton.styleFrom(
@@ -1086,7 +1096,7 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                     fontWeight: FontWeight.w700,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Ne yapman gerekiyor?',
+                    hintText: context.l10n('Ne yapman gerekiyor?'),
                     border: InputBorder.none,
                     prefixIcon: ValueListenableBuilder(
                       valueListenable: _taskIcon,
@@ -1101,7 +1111,9 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                         children: [
                           IconButton(
                             key: const ValueKey('todo-quick-voice'),
-                            tooltip: _listening ? 'Konuşmayı bitir' : 'Konuş',
+                            tooltip: _listening
+                                ? context.l10n('Konuşmayı bitir')
+                                : context.l10n('Konuş'),
                             onPressed: _isSaving ? null : _toggleVoiceInput,
                             style: IconButton.styleFrom(
                               fixedSize: const Size.square(34),
@@ -1124,7 +1136,9 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const ValueKey('todo-quick-submit'),
-                            tooltip: _isSaving ? 'Ekleniyor' : 'Ekle',
+                            tooltip: _isSaving
+                                ? 'Ekleniyor'
+                                : context.l10n('Ekle'),
                             onPressed: _isSaving ? null : _create,
                             style: IconButton.styleFrom(
                               fixedSize: const Size.square(34),
@@ -1204,16 +1218,16 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
           shrinkWrap: true,
           padding: const EdgeInsets.only(bottom: 8),
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 6),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
               child: Text(
-                'Liste seç',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                context.l10n('Liste seç'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.checklist_rounded),
-              title: const Text('To-do'),
+              title: Text(context.l10n('To-do')),
               trailing: _todoListId == null
                   ? const Icon(Icons.check_rounded)
                   : null,
@@ -1260,12 +1274,7 @@ class _TodoQuickDraft {
   final String icon;
 }
 
-String _durationLabel(int minutes) => switch (minutes) {
-  60 => '1 saat',
-  90 => '1,5 saat',
-  120 => '2 saat',
-  _ => '$minutes dk',
-};
+String _durationLabel(int minutes) => florienDurationLabel(minutes);
 
 class _QuickOptionChip extends StatelessWidget {
   const _QuickOptionChip({
@@ -1395,7 +1404,7 @@ class _TodoSection extends StatelessWidget {
                         Icon(section.icon, size: 16, color: section.color),
                         const SizedBox(width: 6),
                         Text(
-                          '${section.label} (${tasks.length})',
+                          '${context.l10n(section.label)} (${tasks.length})',
                           style: TextStyle(
                             color: context.palette.textPrimary,
                             fontSize: 12,
@@ -1418,7 +1427,7 @@ class _TodoSection extends StatelessWidget {
                 const Spacer(),
                 _TodoIconButton(
                   key: const ValueKey('todo-section-add'),
-                  tooltip: 'Yeni yapılacak ekle',
+                  tooltip: context.l10n('Yeni yapılacak ekle'),
                   onPressed: onAdd,
                   icon: Icons.add_rounded,
                   compact: true,
@@ -1534,7 +1543,7 @@ class _TodoDragPreview extends StatelessWidget {
                 ),
                 if (showDuration)
                   Text(
-                    '${task.durationMinutes} dk',
+                    _durationLabel(task.durationMinutes),
                     style: TextStyle(
                       color: context.palette.textSecondary,
                       fontSize: 12,
@@ -1579,7 +1588,7 @@ class _FirstTaskPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Küçük bir adımla başla',
+              context.l10n('Küçük bir adımla başla'),
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -1587,7 +1596,9 @@ class _FirstTaskPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'İlk görevini ekleyerek gününü toparlamaya başlayabilirsin.',
+              context.l10n(
+                'İlk görevini ekleyerek gününü toparlamaya başlayabilirsin.',
+              ),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: context.palette.textSecondary,
@@ -1599,7 +1610,7 @@ class _FirstTaskPrompt extends StatelessWidget {
               key: const ValueKey('todo-first-task-prompt'),
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('İlk görevini ekle'),
+              label: Text(context.l10n('İlk görevini ekle')),
             ),
           ],
         ),
@@ -1681,7 +1692,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
               ),
               subtitle: widget.showDuration
                   ? Text(
-                      '${task.durationMinutes} dk',
+                      _durationLabel(task.durationMinutes),
                       style: TextStyle(
                         color: context.palette.textSecondary,
                         fontSize: 10,
@@ -1694,8 +1705,8 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                   : null,
               trailing: _TodoIconButton(
                 tooltip: task.isCompleted
-                    ? 'Tamamlanmadı olarak işaretle'
-                    : 'Tamamla',
+                    ? context.l10n('Tamamlanmadı olarak işaretle')
+                    : context.l10n('Tamamla'),
                 icon: task.isCompleted
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
@@ -1710,8 +1721,8 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
               Divider(height: 1, color: context.palette.border),
               Tooltip(
                 message: _expanded
-                    ? 'Alt görevleri gizle'
-                    : 'Alt görevleri göster',
+                    ? context.l10n('Alt görevleri gizle')
+                    : context.l10n('Alt görevleri göster'),
                 child: InkWell(
                   onTap: () => setState(() => _expanded = !_expanded),
                   child: Padding(
@@ -1732,7 +1743,10 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                         const SizedBox(width: 9),
                         Expanded(
                           child: Text(
-                            '$completedSubtasks / ${task.subtasks.length} alt görev',
+                            context.l10n('{done} / {total} alt görev', {
+                              'done': '$completedSubtasks',
+                              'total': '${task.subtasks.length}',
+                            }),
                             style: TextStyle(
                               color: context.palette.textSecondary,
                               fontSize: 11,
@@ -1804,37 +1818,39 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
           children: [
             _TaskOptionTile(
               icon: Icons.copy_all_outlined,
-              label: 'Bir kopya oluştur',
+              label: context.l10n('Bir kopya oluştur'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.createCopy),
             ),
             _TaskOptionTile(
               icon: Icons.move_to_inbox_outlined,
-              label: 'Listeye taşı',
+              label: context.l10n('Listeye taşı'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.moveToList),
             ),
             _TaskOptionTile(
               icon: Icons.calendar_month_outlined,
-              label: 'Tarife',
+              label: context.l10n('Tarife'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.schedule),
             ),
             if (!task.hasSubtasks)
-              const _TaskOptionTile(
+              _TaskOptionTile(
                 icon: Icons.auto_awesome_rounded,
-                label: 'Ayrım öner',
+                label: context.l10n('Ayrım öner'),
+                onTap: () =>
+                    Navigator.pop(context, _TaskMenuAction.suggestBreakdown),
               ),
             _TaskOptionTile(
               icon: Icons.play_circle_outline_rounded,
-              label: 'Görevi başlat',
+              label: context.l10n('Görevi başlat'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.startFocus),
             ),
             _TaskOptionTile(
               icon: Icons.edit_outlined,
-              label: 'Yapılacakları düzenle',
+              label: context.l10n('Yapılacakları düzenle'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.edit),
             ),
             _TaskOptionTile(
               icon: Icons.delete_outline_rounded,
-              label: 'Yapılacakları sil',
+              label: context.l10n('Yapılacakları sil'),
               destructive: true,
               onTap: () => Navigator.pop(context, _TaskMenuAction.delete),
             ),
@@ -1848,7 +1864,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
         await pushFlorienOverlayRoute<bool>(
           context: context,
           builder: (_) => TodoDetailScreen(
-            initialTitle: '${task.title} (Kopya)',
+            initialTitle: context.l10n('{title} (Kopya)', {'title': task.title}),
             initialDescription: task.description ?? '',
             initialSubtasks: task.subtasks
                 .map((subtask) => subtask.title)
@@ -1862,6 +1878,8 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
         await _showMoveToList(context, ref);
       case _TaskMenuAction.schedule:
         await _showSchedule(context, ref);
+      case _TaskMenuAction.suggestBreakdown:
+        await suggestTaskBreakdown(context: context, ref: ref, task: task);
       case _TaskMenuAction.startFocus:
         await ref.read(startTaskFocusProvider)(task);
         if (!context.mounted) return;
@@ -1921,12 +1939,15 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           children: [
-            Text('Listeye taşı', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              context.l10n('Listeye taşı'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 12),
             FlorienGroupedPanel(
               children: [
                 _MoveListTile(
-                  label: 'To-do',
+                  label: context.l10n('To-do'),
                   selected: task.todoListId == null,
                   onTap: () => Navigator.pop(context, defaultList),
                 ),
@@ -1991,8 +2012,10 @@ class _TodoSubtaskRow extends ConsumerWidget {
           const SizedBox(width: 8),
           _TodoIconButton(
             tooltip: subtask.isCompleted
-                ? '${subtask.title} tamamlanmadı olarak işaretle'
-                : '${subtask.title} tamamla',
+                ? context.l10n('{title} tamamlanmadı olarak işaretle', {
+                    'title': subtask.title,
+                  })
+                : context.l10n('{title} tamamla', {'title': subtask.title}),
             icon: subtask.isCompleted
                 ? Icons.check_circle_rounded
                 : Icons.circle_outlined,
@@ -2022,6 +2045,7 @@ enum _TaskMenuAction {
   createCopy,
   moveToList,
   schedule,
+  suggestBreakdown,
   startFocus,
   edit,
   delete,
@@ -2073,19 +2097,19 @@ class _ScheduleTaskSheetState extends State<_ScheduleTaskSheet> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Kapat',
+                  tooltip: context.l10n('Kapat'),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
                 Expanded(
                   child: Text(
-                    'Tarife',
+                    context.l10n('Tarife'),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 IconButton.filled(
-                  tooltip: 'Tarihi onayla',
+                  tooltip: context.l10n('Tarihi onayla'),
                   onPressed: () => Navigator.pop(context, _selectedDate),
                   icon: const Icon(Icons.check_rounded),
                 ),
@@ -2102,23 +2126,31 @@ class _ScheduleTaskSheetState extends State<_ScheduleTaskSheet> {
             const Divider(height: 18),
             _ScheduleShortcut(
               icon: Icons.today_outlined,
-              label: 'Bugün (${_weekdayShortLabel(today)})',
+              label: context.l10n('Bugün ({weekday})', {
+                'weekday': _weekdayShortLabel(today),
+              }),
               onTap: () => Navigator.pop(context, today),
             ),
             _ScheduleShortcut(
               icon: Icons.light_mode_outlined,
-              label: 'Yarın (${_weekdayShortLabel(tomorrow)})',
+              label: context.l10n('Yarın ({weekday})', {
+                'weekday': _weekdayShortLabel(tomorrow),
+              }),
               onTap: () => Navigator.pop(context, tomorrow),
             ),
             _ScheduleShortcut(
               icon: Icons.weekend_outlined,
-              label: 'Bu hafta sonu (${_weekdayShortLabel(weekend)})',
+              label: context.l10n('Bu hafta sonu ({weekday})', {
+                'weekday': _weekdayShortLabel(weekend),
+              }),
               onTap: () => Navigator.pop(context, weekend),
             ),
             _ScheduleShortcut(
               icon: Icons.redo_rounded,
-              label:
-                  'Gelecek hafta (${nextWeek.day} ${_monthShortLabel(nextWeek)} ${_weekdayShortLabel(nextWeek)})',
+              label: context.l10n('Gelecek hafta ({date})', {
+                'date':
+                    '${nextWeek.day} ${_monthShortLabel(nextWeek)} ${_weekdayShortLabel(nextWeek)}',
+              }),
               onTap: () => Navigator.pop(context, nextWeek),
             ),
           ],
@@ -2153,22 +2185,29 @@ DateTime _nextWeekday(DateTime from, int weekday, {bool includeToday = false}) {
   return from.add(Duration(days: difference));
 }
 
-String _weekdayShortLabel(DateTime value) =>
-    const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][value.weekday - 1];
+String _weekdayShortLabel(DateTime value) => [
+  ActiveLanguage.s('Pzt'),
+  ActiveLanguage.s('Sal'),
+  ActiveLanguage.s('Çar'),
+  ActiveLanguage.s('Per'),
+  ActiveLanguage.s('Cum'),
+  ActiveLanguage.s('Cmt'),
+  ActiveLanguage.s('Paz'),
+][value.weekday - 1];
 
-String _monthShortLabel(DateTime value) => const [
-  'Oca',
-  'Şub',
-  'Mar',
-  'Nis',
-  'May',
-  'Haz',
-  'Tem',
-  'Ağu',
-  'Eyl',
-  'Eki',
-  'Kas',
-  'Ara',
+String _monthShortLabel(DateTime value) => [
+  ActiveLanguage.s('Oca'),
+  ActiveLanguage.s('Şub'),
+  ActiveLanguage.s('Mar'),
+  ActiveLanguage.s('Nis'),
+  ActiveLanguage.s('May'),
+  ActiveLanguage.s('Haz'),
+  ActiveLanguage.s('Tem'),
+  ActiveLanguage.s('Ağu'),
+  ActiveLanguage.s('Eyl'),
+  ActiveLanguage.s('Eki'),
+  ActiveLanguage.s('Kas'),
+  ActiveLanguage.s('Ara'),
 ][value.month - 1];
 
 class _MoveListTile extends StatelessWidget {

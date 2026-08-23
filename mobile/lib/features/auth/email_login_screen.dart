@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:florien/core/routing/startup_routing.dart';
@@ -53,7 +54,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             leading: IconButton(
-              tooltip: 'Geri',
+              tooltip: context.l10n('Geri'),
               onPressed: () => context.go('/login'),
               icon: const Icon(Icons.arrow_back_rounded),
             ),
@@ -68,13 +69,13 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tekrar hoş geldin',
+                      context.l10n('Tekrar hoş geldin'),
                       style: Theme.of(context).textTheme.headlineLarge
                           ?.copyWith(fontSize: 32, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Planlarına kaldığın yerden devam et.',
+                      context.l10n('Planlarına kaldığın yerden devam et.'),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: context.palette.textSecondary,
                       ),
@@ -84,13 +85,13 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(
-                        labelText: 'E-posta',
-                        prefixIcon: Icon(Icons.mail_outline_rounded),
+                      decoration: InputDecoration(
+                        labelText: context.l10n('E-posta'),
+                        prefixIcon: const Icon(Icons.mail_outline_rounded),
                       ),
                       validator: (value) =>
                           value == null || !value.contains('@')
-                          ? 'Geçerli bir e-posta gir.'
+                          ? context.l10n('Geçerli bir e-posta gir.')
                           : null,
                     ),
                     const SizedBox(height: 16),
@@ -100,7 +101,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       onFieldSubmitted: (_) => _login(),
                       autofillHints: const [AutofillHints.password],
                       decoration: InputDecoration(
-                        labelText: 'Şifre',
+                        labelText: context.l10n('Şifre'),
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                         suffixIcon: IconButton(
                           onPressed: () => setState(
@@ -114,7 +115,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         ),
                       ),
                       validator: (value) => value == null || value.length < 6
-                          ? 'Şifren en az 6 karakter olmalı.'
+                          ? context.l10n('Şifren en az 6 karakter olmalı.')
                           : null,
                     ),
                     const SizedBox(height: 28),
@@ -124,8 +125,8 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         onPressed: authState.isLoading ? null : _login,
                         child: Text(
                           authState.isLoading
-                              ? 'Giriş yapılıyor…'
-                              : 'Giriş yap',
+                              ? context.l10n('Giriş yapılıyor…')
+                              : context.l10n('Giriş yap'),
                         ),
                       ),
                     ),
@@ -133,7 +134,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                     Center(
                       child: TextButton(
                         onPressed: () => context.go('/register'),
-                        child: const Text('Hesabın yok mu? Kayıt ol'),
+                        child: Text(context.l10n('Hesabın yok mu? Kayıt ol')),
                       ),
                     ),
                   ],

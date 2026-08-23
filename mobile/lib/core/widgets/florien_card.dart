@@ -71,20 +71,20 @@ class FlorienGroupedPanel extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(FlorienRadius.lg - 1),
         child: Padding(
-        padding: padding,
-        child: Column(
-          children: [
-            for (var i = 0; i < children.length; i++) ...[
-              if (i > 0)
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: context.palette.border.withValues(alpha: 0.12),
-                ),
-              children[i],
+          padding: padding,
+          child: Column(
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: context.palette.border.withValues(alpha: 0.12),
+                  ),
+                children[i],
+              ],
             ],
-          ],
-        ),
+          ),
         ),
       ),
     );
@@ -110,10 +110,7 @@ class FlorienSectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
           ),
           if (trailing != null) trailing!,
         ],
@@ -232,6 +229,102 @@ class FlorienTaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(FlorienRadius.lg),
         child: card,
       ),
+    );
+  }
+}
+
+/// Collapsible pastel banner used on task create/edit forms.
+class FlorienFormSectionHeader extends StatelessWidget {
+  const FlorienFormSectionHeader({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    this.trailing,
+    this.expanded,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final Widget? trailing;
+  final bool? expanded;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final fill = context.pastelFill(color);
+    final radius = BorderRadius.circular(FlorienRadius.md);
+    final content = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: radius,
+        border: Border.all(color: palette.border, width: FlorienBorders.thin),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 21, color: palette.textPrimary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: palette.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palette.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          if (trailing case final trailing?)
+            IconButtonTheme(
+              data: IconButtonThemeData(
+                style: IconButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(40, 40),
+                  padding: const EdgeInsets.all(8),
+                  side: BorderSide.none,
+                  foregroundColor: palette.textPrimary,
+                  shape: const CircleBorder(),
+                ),
+              ),
+              child: trailing,
+            ),
+          if (expanded case final expanded?)
+            Icon(
+              expanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+              color: palette.textPrimary,
+            ),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(onTap: onTap, borderRadius: radius, child: content),
     );
   }
 }

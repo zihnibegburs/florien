@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 typedef ReviewTaskRescheduler =
     Future<void> Function(TaskModel task, DateTime date);
@@ -102,7 +103,9 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
       if (!mounted) return;
       setState(() => _moving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Görevler taşınamadı. Tekrar deneyin.')),
+        SnackBar(
+          content: Text(context.l10n('Görevler taşınamadı. Tekrar deneyin.')),
+        ),
       );
     }
   }
@@ -200,7 +203,7 @@ class _RemainingReview extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Kalan görevler',
+            context.l10n('Kalan görevler'),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 32,
               fontWeight: FontWeight.w700,
@@ -208,7 +211,7 @@ class _RemainingReview extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            'Başka bir güne taşımak istediklerini seç.',
+            context.l10n('Başka bir güne taşımak istediklerini seç.'),
             style: TextStyle(
               color: context.palette.textSecondary,
               fontSize: 15,
@@ -216,7 +219,9 @@ class _RemainingReview extends StatelessWidget {
           ),
           const SizedBox(height: 34),
           Text(
-            '$selectedCount yarın taşınsın mı?',
+            context.l10n('{count} yarın taşınsın mı?', {
+              'count': '$selectedCount',
+            }),
             key: const ValueKey('daily-review-selection-count'),
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
           ),
@@ -251,7 +256,11 @@ class _RemainingReview extends StatelessWidget {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text('($selectedCount) yarına taşı'),
+                : Text(
+                    context.l10n('({count}) yarına taşı', {
+                      'count': '$selectedCount',
+                    }),
+                  ),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
@@ -261,13 +270,17 @@ class _RemainingReview extends StatelessWidget {
               minimumSize: const Size.fromHeight(46),
               shape: const StadiumBorder(),
             ),
-            child: Text('($selectedCount) taşımak için daha fazla seçenek'),
+            child: Text(
+              context.l10n('({count}) taşımak için daha fazla seçenek', {
+                'count': '$selectedCount',
+              }),
+            ),
           ),
           TextButton(
             key: const ValueKey('daily-review-finish'),
             onPressed: moving ? null : onFinish,
-            child: const Text(
-              'Değerlendirmem bitti',
+            child: Text(
+              context.l10n('Değerlendirmem bitti'),
               style: TextStyle(decoration: TextDecoration.underline),
             ),
           ),
@@ -418,7 +431,7 @@ class _FinishedReview extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Değerlendirme bitti',
+                  context.l10n('Değerlendirme bitti'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontSize: 36,
@@ -427,7 +440,9 @@ class _FinishedReview extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Bugünün planı tamamlandı.\nDinlenme ve şarj olma zamanı.',
+                  context.l10n(
+                    'Bugünün planı tamamlandı.\nDinlenme ve şarj olma zamanı.',
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: context.palette.textSecondary,
@@ -479,7 +494,7 @@ class _ReviewCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     key: const ValueKey('daily-review-close'),
-    tooltip: 'Değerlendirmeyi kapat',
+    tooltip: context.l10n('Değerlendirmeyi kapat'),
     onPressed: onTap,
     iconSize: 18,
     constraints: const BoxConstraints.tightFor(width: 34, height: 34),
@@ -524,14 +539,14 @@ class _ReviewDatePickerSheetState extends State<_ReviewDatePickerSheet> {
                 const SizedBox(width: 34),
                 Expanded(
                   child: Text(
-                    'Taşıma tarihi',
+                    context.l10n('Taşıma tarihi'),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 IconButton(
                   key: const ValueKey('daily-review-date-close'),
-                  tooltip: 'Tarih seçimini kapat',
+                  tooltip: context.l10n('Tarih seçimini kapat'),
                   onPressed: () => Navigator.pop(context),
                   iconSize: 18,
                   constraints: const BoxConstraints.tightFor(
@@ -558,7 +573,11 @@ class _ReviewDatePickerSheetState extends State<_ReviewDatePickerSheet> {
                 minimumSize: const Size.fromHeight(46),
                 shape: const StadiumBorder(),
               ),
-              child: Text('${_fullDateLabel(_selectedDate)} tarihine taşı'),
+              child: Text(
+                context.l10n('{date} tarihine taşı', {
+                  'date': _fullDateLabel(_selectedDate),
+                }),
+              ),
             ),
           ],
         ),
@@ -576,7 +595,9 @@ String _taskScheduleLabel(TaskModel task) {
     final end = start.add(Duration(minutes: task.durationMinutes));
     return '${_clockLabel(start)} → ${_clockLabel(end)}';
   }
-  return '${task.durationMinutes} dk';
+  return ActiveLanguage.s('{minutes} dk', {
+    'minutes': '${task.durationMinutes}',
+  });
 }
 
 String _clockLabel(DateTime date) =>
@@ -584,7 +605,7 @@ String _clockLabel(DateTime date) =>
     '${date.minute.toString().padLeft(2, '0')}';
 
 String _fullDateLabel(DateTime date) =>
-    '${date.day} ${_months[date.month - 1]} ${_weekdays[date.weekday - 1]}';
+    '${date.day} ${ActiveLanguage.s(_months[date.month - 1])} ${ActiveLanguage.s(_weekdays[date.weekday - 1])}';
 
 const _months = <String>[
   'Ocak',

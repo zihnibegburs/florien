@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">Günlük plan</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">15 dk odaklan</string>
+    <string name="widget_quick_actions">Florien hızlı eylemler</string>
+    <string name="widget_focus_duration">Odak süresi</string>
+    <string name="widget_quick_todo">Hızlı To-do</string>
+    <string name="widget_incomplete_tasks">Tamamlanmamış görevler</string>
+    <string name="widget_focus_brand">Florien · Odaklan</string>
+    <string name="widget_focus_ready">15 dakikalık alanın hazır</string>
+    <string name="widget_start">▶ Başla</string>
+    <string name="widget_focus_how_long">Ne kadar odaklanmak istersin?</string>
+    <string name="widget_min_5">5 dk</string>
+    <string name="widget_min_10">10 dk</string>
+    <string name="widget_min_15">15 dk</string>
+    <string name="widget_min_30">30 dk</string>
+    <string name="widget_quick_prompt">Aklına bir şey mi geldi?</string>
+    <string name="widget_quick_cta">＋ To-do ekle</string>
+    <string name="widget_ai_prompt">Planın nedir?   ✦</string>
+    <string name="live_activity_focus">Odak modu</string>
+    <string name="widget_open_short">{count} tamamlanmamış</string>
+    <string name="widget_open_tasks_count">{count} tamamlanmamış görev</string>
+</resources>

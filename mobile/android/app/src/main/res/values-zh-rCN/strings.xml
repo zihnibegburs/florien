@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_daily_plan">每日计划</string>
+    <string name="widget_todo">To-do</string>
+    <string name="widget_focus15">15 分钟专注</string>
+    <string name="widget_quick_actions">Florien 快捷操作</string>
+    <string name="widget_focus_duration">专注时长</string>
+    <string name="widget_quick_todo">快速待办</string>
+    <string name="widget_incomplete_tasks">未完成的任务</string>
+    <string name="widget_focus_brand">Florien · 专注</string>
+    <string name="widget_focus_ready">15 分钟空间已就绪</string>
+    <string name="widget_start">▶ 开始</string>
+    <string name="widget_focus_how_long">你想专注多久？</string>
+    <string name="widget_min_5">5 分钟</string>
+    <string name="widget_min_10">10 分钟</string>
+    <string name="widget_min_15">15 分钟</string>
+    <string name="widget_min_30">30 分钟</string>
+    <string name="widget_quick_prompt">想到什么了吗？</string>
+    <string name="widget_quick_cta">＋ 添加待办</string>
+    <string name="widget_ai_prompt">计划是什么？   ✦</string>
+    <string name="live_activity_focus">专注模式</string>
+    <string name="widget_open_short">{count} 项未完成</string>
+    <string name="widget_open_tasks_count">{count} 项未完成</string>
+</resources>

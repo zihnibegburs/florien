@@ -1,40 +1,44 @@
+import 'package:florien/core/l10n/app_strings.dart';
+
 /// Date-stable notification titles and bodies (no random selection).
 class NotificationCopy {
   NotificationCopy._();
 
-  static const morningTitle = 'Bugünün planı';
-  static const motivationTitle = 'Küçük bir hatırlatma';
-  static const dailyReviewTitle = 'Günü değerlendirelim';
-  static const weeklyReviewTitle = 'Haftayı planlayalım';
-  static const taskTitle = 'Sıradaki görevin';
-  static const batchTitle = 'Sıradaki görevlerin';
+  static S get _s => ActiveLanguage.s;
 
-  static const morningBodies = [
-    'Günaydın. Bugünün planına birlikte bakalım.',
-    'Bugün ne var, kısaca gözden geçirelim.',
-    'Günün hazır. Sıradaki adımı seçmen yeterli.',
-    'Planına bir bak, sonra ilk adımdan başla.',
+  static String get morningTitle => _s('Bugünün planı');
+  static String get motivationTitle => _s('Küçük bir hatırlatma');
+  static String get dailyReviewTitle => _s('Günü değerlendirelim');
+  static String get weeklyReviewTitle => _s('Haftayı planlayalım');
+  static String get taskTitle => _s('Sıradaki görevin');
+  static String get batchTitle => _s('Sıradaki görevlerin');
+
+  static List<String> get morningBodies => [
+    _s('Günaydın. Bugünün planına birlikte bakalım.'),
+    _s('Bugün ne var, kısaca gözden geçirelim.'),
+    _s('Günün hazır. Sıradaki adımı seçmen yeterli.'),
+    _s('Planına bir bak, sonra ilk adımdan başla.'),
   ];
 
-  static const motivationBodies = [
-    'Her şeyi bir anda yapmak zorunda değilsin.',
-    'Küçük bir adım da ilerlemedir.',
-    'Plan değiştiyse kaldığın yerden devam edebilirsin.',
-    'Şimdi sadece sıradaki işe bak.',
+  static List<String> get motivationBodies => [
+    _s('Her şeyi bir anda yapmak zorunda değilsin.'),
+    _s('Küçük bir adım da ilerlemedir.'),
+    _s('Plan değiştiyse kaldığın yerden devam edebilirsin.'),
+    _s('Şimdi sadece sıradaki işe bak.'),
   ];
 
-  static const dailyReviewBodies = [
-    'Bugün nasıl geçti, kısaca bakalım.',
-    'Neler bitti, neler yarına kalabilir?',
-    'Günü kapatmadan kısa bir değerlendirme yapalım.',
-    'Bugünden aklında kalanı kaydetmek ister misin?',
+  static List<String> get dailyReviewBodies => [
+    _s('Bugün nasıl geçti, kısaca bakalım.'),
+    _s('Neler bitti, neler yarına kalabilir?'),
+    _s('Günü kapatmadan kısa bir değerlendirme yapalım.'),
+    _s('Bugünden aklında kalanı kaydetmek ister misin?'),
   ];
 
-  static const weeklyReviewBodies = [
-    'Önümüzdeki haftayı birlikte tasarlayalım.',
-    'Bu hafta neleri başarmak istiyoruz?',
-    'Yeni hafta başlamadan hedeflerimizi netleştirelim.',
-    'Yol haritamızı çizip ilk adımı atalım.',
+  static List<String> get weeklyReviewBodies => [
+    _s('Önümüzdeki haftayı birlikte tasarlayalım.'),
+    _s('Bu hafta neleri başarmak istiyoruz?'),
+    _s('Yeni hafta başlamadan hedeflerimizi netleştirelim.'),
+    _s('Yol haritamızı çizip ilk adımı atalım.'),
   ];
 
   static String pick(List<String> options, DateTime date) {
@@ -48,17 +52,27 @@ class NotificationCopy {
     required int leadMinutes,
   }) {
     if (leadMinutes <= 0) {
-      return '$taskTitle şimdi başlıyor.';
+      return _s('{title} şimdi başlıyor.', {'title': taskTitle});
     }
-    return '$taskTitle · $leadMinutes dk kaldı.';
+    return _s('{title} · {minutes} dk kaldı.', {
+      'title': taskTitle,
+      'minutes': '$leadMinutes',
+    });
   }
 
   static String batchBody(List<String> titles) {
     final count = titles.length;
     final preview = titles.take(3).join(', ');
     if (count <= 3) {
-      return '$count görev: $preview';
+      return _s('{count} görev: {preview}', {
+        'count': '$count',
+        'preview': preview,
+      });
     }
-    return '$count görev: $preview ve ${count - 3} tane daha';
+    return _s('{count} görev: {preview} ve {more} tane daha', {
+      'count': '$count',
+      'preview': preview,
+      'more': '${count - 3}',
+    });
   }
 }

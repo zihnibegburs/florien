@@ -23,9 +23,7 @@ class FlorienChip extends StatelessWidget {
     final bg = selected
         ? (accent ?? context.palette.selection)
         : context.palette.surface;
-    final fg = selected
-        ? FlorienColors.onPrimary
-        : context.palette.textPrimary;
+    final fg = selected ? FlorienColors.onPrimary : context.palette.textPrimary;
 
     return Material(
       color: Colors.transparent,

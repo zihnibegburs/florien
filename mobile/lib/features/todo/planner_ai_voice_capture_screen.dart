@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 
 class PlannerAiVoiceCaptureScreen extends StatefulWidget {
   const PlannerAiVoiceCaptureScreen({super.key});
@@ -23,7 +24,7 @@ class _PlannerAiVoiceCaptureScreenState
   bool _isListening = false;
   double _soundLevel = 0.12;
   String _transcript = '';
-  String _status = 'Mikrofon açılıyor…';
+  String _status = ActiveLanguage.s('Mikrofon açılıyor…');
 
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _PlannerAiVoiceCaptureScreenState
 
   Future<void> _startListening() async {
     if (_isListening) return;
-    setState(() => _status = 'Seni dinliyorum…');
+    setState(() => _status = context.l10n('Seni dinliyorum…'));
     await _speech.start(
       onText: (text) {
         if (mounted) setState(() => _transcript = text);
@@ -54,10 +55,10 @@ class _PlannerAiVoiceCaptureScreenState
         setState(() {
           _isListening = isListening;
           _status = isListening
-              ? 'Seni dinliyorum…'
+              ? context.l10n('Seni dinliyorum…')
               : _transcript.isEmpty
-              ? 'Tekrar denemek için ikona dokun.'
-              : 'Hazır olduğunda metni ekle.';
+              ? context.l10n('Tekrar denemek için ikona dokun.')
+              : context.l10n('Hazır olduğunda metni ekle.');
         });
       },
       onSoundLevelChanged: _updateSoundLevel,
@@ -110,7 +111,7 @@ class _PlannerAiVoiceCaptureScreenState
             leading: Padding(
               padding: const EdgeInsets.only(left: 16),
               child: IconButton(
-                tooltip: 'Sohbete dön',
+                tooltip: context.l10n('Sohbete dön'),
                 onPressed: _finish,
                 style: IconButton.styleFrom(
                   backgroundColor: context.palette.surface,
@@ -123,7 +124,7 @@ class _PlannerAiVoiceCaptureScreenState
                 icon: const Icon(Icons.arrow_back_rounded),
               ),
             ),
-            title: const Text('Sesli planlama'),
+            title: Text(context.l10n('Sesli planlama')),
           ),
           body: SafeArea(
             top: false,
@@ -131,7 +132,9 @@ class _PlannerAiVoiceCaptureScreenState
               children: [
                 const Spacer(flex: 2),
                 Text(
-                  _isListening ? 'Konuşabilirsin' : 'Hazır olduğunda konuş',
+                  _isListening
+                      ? context.l10n('Konuşabilirsin')
+                      : context.l10n('Hazır olduğunda konuş'),
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
@@ -166,7 +169,7 @@ class _PlannerAiVoiceCaptureScreenState
                         button: true,
                         label: _isListening
                             ? 'Dinlemeyi durdur'
-                            : 'Dinlemeyi başlat',
+                            : context.l10n('Dinlemeyi başlat'),
                         child: GestureDetector(
                           key: const ValueKey('planner-ai-voice-orb'),
                           onTap: _toggleListening,
@@ -212,8 +215,8 @@ class _PlannerAiVoiceCaptureScreenState
                                   soundLevel: _soundLevel,
                                 ),
                                 semanticLabel: _isListening
-                                    ? 'Florien AI seni dinliyor'
-                                    : 'Florien AI sesli giriş',
+                                    ? context.l10n('Florien AI seni dinliyor')
+                                    : context.l10n('Florien AI sesli giriş'),
                               ),
                             ),
                           ),
@@ -241,7 +244,7 @@ class _PlannerAiVoiceCaptureScreenState
                       ),
                       child: Text(
                         _transcript.isEmpty
-                            ? 'Söylediklerin burada görünecek.'
+                            ? context.l10n('Söylediklerin burada görünecek.')
                             : _transcript,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -263,7 +266,7 @@ class _PlannerAiVoiceCaptureScreenState
                       icon: const Icon(Icons.arrow_upward_rounded),
                       label: Text(
                         _transcript.isEmpty
-                            ? 'Sohbete dön'
+                            ? context.l10n('Sohbete dön')
                             : 'Metni sohbete ekle',
                       ),
                     ),

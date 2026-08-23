@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 
 class PlannerAiTodoCard extends ConsumerStatefulWidget {
-  const PlannerAiTodoCard({
-    super.key,
-    required this.onFocusTask,
-  });
+  const PlannerAiTodoCard({super.key, required this.onFocusTask});
 
   final ValueChanged<TaskModel> onFocusTask;
 
@@ -25,22 +24,22 @@ class _PlannerAiTodoCardState extends ConsumerState<PlannerAiTodoCard> {
   Widget build(BuildContext context) {
     final inbox = ref.watch(inboxProvider);
     return inbox.when(
-      loading: () => const _AiToolCardShell(
-        title: 'To-do',
+      loading: () => _AiToolCardShell(
+        title: context.l10n('To-do'),
         icon: Icons.check_circle_outline_rounded,
-        kicker: 'Yükleniyor',
+        kicker: context.l10n('Yükleniyor'),
         child: Padding(
           padding: EdgeInsets.all(20),
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       ),
-      error: (_, _) => const _AiToolCardShell(
-        title: 'To-do',
+      error: (_, _) => _AiToolCardShell(
+        title: context.l10n('To-do'),
         icon: Icons.check_circle_outline_rounded,
         kicker: 'Hata',
         child: Padding(
           padding: EdgeInsets.all(16),
-          child: Text('To-do listesi yüklenemedi.'),
+          child: Text(context.l10n('To-do listesi yüklenemedi.')),
         ),
       ),
       data: (tasks) {
@@ -50,17 +49,19 @@ class _PlannerAiTodoCardState extends ConsumerState<PlannerAiTodoCard> {
         final hasMore = visibleCount < tasks.length;
         return _AiToolCardShell(
           key: const ValueKey('planner-ai-todo-card'),
-          title: 'To-do',
+          title: context.l10n('To-do'),
           icon: Icons.check_circle_outline_rounded,
-          kicker: '$openCount açık görev',
+          kicker: context.l10n('{count} açık görev', {'count': '$openCount'}),
           onExpand: hasMore
               ? () => setState(() => _visibleCount += _pageSize)
               : null,
-          expandLabel: 'Daha fazlasını göster',
+          expandLabel: context.l10n('Daha fazlasını göster'),
           child: visible.isEmpty
-              ? const Padding(
+              ? Padding(
                   padding: EdgeInsets.fromLTRB(16, 8, 16, 18),
-                  child: Text('Henüz görev yok. Ne yapmak istediğini yaz.'),
+                  child: Text(
+                    context.l10n('Henüz görev yok. Ne yapmak istediğini yaz.'),
+                  ),
                 )
               : Column(
                   children: [
@@ -68,8 +69,8 @@ class _PlannerAiTodoCardState extends ConsumerState<PlannerAiTodoCard> {
                       _AiTaskRow(
                         task: task,
                         primaryLabel: task.isCompleted
-                            ? 'Tamamlandı'
-                            : '${task.durationMinutes} dk',
+                            ? context.l10n('Tamamlandı')
+                            : florienDurationLabel(task.durationMinutes),
                         onFocus: task.isCompleted
                             ? null
                             : () => widget.onFocusTask(task),
@@ -83,10 +84,7 @@ class _PlannerAiTodoCardState extends ConsumerState<PlannerAiTodoCard> {
 }
 
 class PlannerAiDailyCard extends ConsumerStatefulWidget {
-  const PlannerAiDailyCard({
-    super.key,
-    required this.onFocusTask,
-  });
+  const PlannerAiDailyCard({super.key, required this.onFocusTask});
 
   final ValueChanged<TaskModel> onFocusTask;
 
@@ -107,22 +105,22 @@ class _PlannerAiDailyCardState extends ConsumerState<PlannerAiDailyCard> {
   Widget build(BuildContext context) {
     final timeline = ref.watch(dailyTimelineProvider(_today));
     return timeline.when(
-      loading: () => const _AiToolCardShell(
-        title: 'Bugün',
+      loading: () => _AiToolCardShell(
+        title: context.l10n('Bugün'),
         icon: Icons.calendar_today_outlined,
-        kicker: 'Yükleniyor',
+        kicker: context.l10n('Yükleniyor'),
         child: Padding(
           padding: EdgeInsets.all(20),
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       ),
-      error: (_, _) => const _AiToolCardShell(
-        title: 'Bugün',
+      error: (_, _) => _AiToolCardShell(
+        title: context.l10n('Bugün'),
         icon: Icons.calendar_today_outlined,
         kicker: 'Hata',
         child: Padding(
           padding: EdgeInsets.all(16),
-          child: Text('Günlük plan yüklenemedi.'),
+          child: Text(context.l10n('Günlük plan yüklenemedi.')),
         ),
       ),
       data: (day) {
@@ -132,17 +130,17 @@ class _PlannerAiDailyCardState extends ConsumerState<PlannerAiDailyCard> {
         final hasMore = visibleCount < tasks.length;
         return _AiToolCardShell(
           key: const ValueKey('planner-ai-daily-card'),
-          title: 'Bugün',
+          title: context.l10n('Bugün'),
           icon: Icons.calendar_today_outlined,
-          kicker: '${tasks.length} görev',
+          kicker: context.l10n('{count} görev', {'count': '${tasks.length}'}),
           onExpand: hasMore
               ? () => setState(() => _visibleCount += _pageSize)
               : null,
-          expandLabel: 'Daha fazlasını göster',
+          expandLabel: context.l10n('Daha fazlasını göster'),
           child: visible.isEmpty
-              ? const Padding(
+              ? Padding(
                   padding: EdgeInsets.fromLTRB(16, 8, 16, 18),
-                  child: Text('Bugün için planlanmış görev yok.'),
+                  child: Text(context.l10n('Bugün için planlanmış görev yok.')),
                 )
               : Column(
                   children: [
@@ -162,7 +160,7 @@ class _PlannerAiDailyCardState extends ConsumerState<PlannerAiDailyCard> {
   }
 
   String _dailyPrimaryLabel(TaskModel task) {
-    if (task.isCompleted) return 'Tamamlandı';
+    if (task.isCompleted) return context.l10n('Tamamlandı');
     final start = task.scheduledAt;
     if (start == null) return 'Saat yok';
     final hh = start.hour.toString().padLeft(2, '0');
@@ -354,7 +352,7 @@ class _AiTaskRow extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text('Odaklan'),
+                child: Text(context.l10n('Odaklan')),
               ),
             ),
         ],

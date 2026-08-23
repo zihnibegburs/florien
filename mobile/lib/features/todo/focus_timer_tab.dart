@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter/services.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
@@ -200,7 +201,8 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    final keepRunningInBackground = _sessionActive && (_timer?.isActive ?? false);
+    final keepRunningInBackground =
+        _sessionActive && (_timer?.isActive ?? false);
     _timer?.cancel();
     if (keepRunningInBackground) {
       _publishTaskProgress(runningOverride: true);
@@ -257,7 +259,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       debugPrint('Focus music could not be played: $error');
       if (showError && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Müzik şu anda oynatılamadı.')),
+          SnackBar(content: Text(context.l10n('Müzik şu anda oynatılamadı.'))),
         );
       }
     }
@@ -351,7 +353,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
             _selectedMinutes = launch.durationMinutes.clamp(1, 24 * 60);
             _remainingSeconds = launch.endsAt == null
                 ? _selectedMinutes * 60
-                : math.max(0, launch.endsAt!.difference(DateTime.now()).inSeconds);
+                : math.max(
+                    0,
+                    launch.endsAt!.difference(DateTime.now()).inSeconds,
+                  );
             _sessionTotalSeconds = _remainingSeconds;
             _taskId = launch.taskId;
             _taskTitle = launch.title;
@@ -366,8 +371,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         debugPrint('Standalone focus task could not be persisted: $error');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Odak görevi kaydedilemedi. Tekrar deneyin.'),
+            SnackBar(
+              content: Text(
+                context.l10n('Odak görevi kaydedilemedi. Tekrar deneyin.'),
+              ),
             ),
           );
         }
@@ -605,7 +612,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       return;
     }
     try {
-      await schedule(alarmAt, _taskTitle ?? 'Odaklanma tamamlandı');
+      await schedule(
+        alarmAt,
+        _taskTitle ?? context.l10n('Odaklanma tamamlandı'),
+      );
       _focusAlarmScheduled = true;
     } catch (error) {
       debugPrint('Focus alarm could not be scheduled: $error');
@@ -616,7 +626,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     final complete = widget.onFocusAlarmCompleted;
     if (complete == null) return;
     try {
-      await complete(_taskTitle ?? 'Odaklanma tamamlandı');
+      await complete(_taskTitle ?? context.l10n('Odaklanma tamamlandı'));
       _focusAlarmScheduled = false;
     } catch (error) {
       debugPrint('Focus alarm could not be completed: $error');
@@ -764,13 +774,13 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Özel süre',
+                    context.l10n('Özel süre'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 6),
                   Text(
                     hours == 24
-                        ? '24 saat'
+                        ? context.l10n('24 saat')
                         : '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}',
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
@@ -779,14 +789,16 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                   const SizedBox(height: 18),
                   Row(
                     children: [
-                      const SizedBox(width: 58, child: Text('Saat')),
+                      SizedBox(width: 58, child: Text(context.l10n('Saat'))),
                       Expanded(
                         child: Slider(
                           value: hours.toDouble(),
                           min: 0,
                           max: 24,
                           divisions: 24,
-                          label: '$hours saat',
+                          label: context.l10n('{hours} saat', {
+                            'hours': '$hours',
+                          }),
                           onChanged: (value) => setModalState(() {
                             hours = value.round();
                             if (hours == 24) minutes = 0;
@@ -801,14 +813,16 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                   ),
                   Row(
                     children: [
-                      const SizedBox(width: 58, child: Text('Dakika')),
+                      SizedBox(width: 58, child: Text(context.l10n('Dakika'))),
                       Expanded(
                         child: Slider(
                           value: minutes.toDouble(),
                           min: 0,
                           max: 55,
                           divisions: 11,
-                          label: '$minutes dk',
+                          label: ActiveLanguage.s('{minutes} dk', {
+                            'minutes': '$minutes',
+                          }),
                           onChanged: hours == 24
                               ? null
                               : (value) => setModalState(
@@ -828,7 +842,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Vazgeç'),
+                          child: Text(context.l10n('Vazgeç')),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -837,7 +851,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                           onPressed: canSave
                               ? () => Navigator.pop(context, totalMinutes)
                               : null,
-                          child: const Text('Uygula'),
+                          child: Text(context.l10n('Uygula')),
                         ),
                       ),
                     ],
@@ -960,7 +974,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
               child: _sessionActive
                   ? _ActiveTimer(
                       key: const ValueKey('active-timer'),
-                      title: _taskTitle ?? 'Odaklan',
+                      title: _taskTitle ?? context.l10n('Odaklan'),
                       taskIcon: _usesDefaultFocusIcon || _taskTitle == null
                           ? null
                           : _taskIcon,
@@ -1005,9 +1019,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 353),
               child: Container(
-                key: ValueKey(
-                  _sessionActive ? 'active-timer' : 'timer-setup',
-                ),
+                key: ValueKey(_sessionActive ? 'active-timer' : 'timer-setup'),
                 decoration: BoxDecoration(
                   color: const Color(0xFF303034),
                   borderRadius: BorderRadius.circular(25),
@@ -1016,10 +1028,12 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                 padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
                 child: _sessionActive
                     ? _AiActiveFocusCard(
-                        title: _taskTitle ?? 'Odaklan',
+                        title: _taskTitle ?? context.l10n('Odaklan'),
                         remainingLabel: _remainingLabel,
                         isRunning: _isRunning,
-                        soundTitle: _selectedMusic?.title ?? 'Ses yok',
+                        soundTitle: context.l10n(
+                          _selectedMusic?.title ?? context.l10n('Ses yok'),
+                        ),
                         soundPlaying: _focusMusicPlayer.playing,
                         selectedMusic: _selectedMusic,
                         autoPlay: _musicAutoPlay,
@@ -1084,7 +1098,7 @@ class _AiFocusSetupCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Odaklan',
+          context.l10n('Odaklan'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontSize: 21,
             fontWeight: FontWeight.w700,
@@ -1104,12 +1118,9 @@ class _AiFocusSetupCard extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         Text(
-          'odak süresi',
+          context.l10n('odak süresi'),
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            color: context.palette.textSecondary,
-          ),
+          style: TextStyle(fontSize: 15, color: context.palette.textSecondary),
         ),
         const SizedBox(height: 26),
         Row(
@@ -1124,7 +1135,7 @@ class _AiFocusSetupCard extends StatelessWidget {
                   side: BorderSide(color: context.palette.border),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('-1 dk'),
+                child: Text(context.l10n('-1 dk')),
               ),
             ),
             const SizedBox(width: 9),
@@ -1138,7 +1149,7 @@ class _AiFocusSetupCard extends StatelessWidget {
                   side: BorderSide(color: context.palette.border),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('+1 dk'),
+                child: Text(context.l10n('+1 dk')),
               ),
             ),
           ],
@@ -1152,7 +1163,11 @@ class _AiFocusSetupCard extends StatelessWidget {
             foregroundColor: FlorienColors.onPrimary,
             shape: const StadiumBorder(),
           ),
-          child: Text(starting ? 'Hazırlanıyor…' : 'Odaklanmaya başla'),
+          child: Text(
+            starting
+                ? context.l10n('Hazırlanıyor…')
+                : context.l10n('Odaklanmaya başla'),
+          ),
         ),
       ],
     );
@@ -1223,12 +1238,9 @@ class _AiActiveFocusCard extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         Text(
-          isRunning ? 'kaldı' : 'duraklatıldı',
+          isRunning ? context.l10n('kaldı') : context.l10n('duraklatıldı'),
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            color: context.palette.textSecondary,
-          ),
+          style: TextStyle(fontSize: 15, color: context.palette.textSecondary),
         ),
         const SizedBox(height: 26),
         Row(
@@ -1243,7 +1255,7 @@ class _AiActiveFocusCard extends StatelessWidget {
                   side: BorderSide(color: context.palette.border),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('-1 dk'),
+                child: Text(context.l10n('-1 dk')),
               ),
             ),
             const SizedBox(width: 9),
@@ -1257,7 +1269,7 @@ class _AiActiveFocusCard extends StatelessWidget {
                   side: BorderSide(color: context.palette.border),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('+1 dk'),
+                child: Text(context.l10n('+1 dk')),
               ),
             ),
           ],
@@ -1305,7 +1317,9 @@ class _AiActiveFocusCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      soundPlaying ? 'Ses açık' : 'Ses kapalı',
+                      soundPlaying
+                          ? context.l10n('Ses açık')
+                          : context.l10n('Ses kapalı'),
                       style: TextStyle(
                         fontSize: 14,
                         color: context.palette.textSecondary,
@@ -1319,10 +1333,10 @@ class _AiActiveFocusCard extends StatelessWidget {
                 autoPlay: autoPlay,
                 isPlaying: soundPlaying,
                 onSelected: onMusicSelected,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                   child: Text(
-                    'Değiştir',
+                    context.l10n('Değiştir'),
                     style: TextStyle(
                       color: FlorienColors.primary,
                       fontWeight: FontWeight.w700,
@@ -1344,7 +1358,7 @@ class _AiActiveFocusCard extends StatelessWidget {
                   isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   size: 20,
                 ),
-                label: Text(isRunning ? 'Duraklat' : 'Devam et'),
+                label: Text(isRunning ? 'Duraklat' : context.l10n('Devam et')),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                   backgroundColor: FlorienColors.primary,
@@ -1364,7 +1378,7 @@ class _AiActiveFocusCard extends StatelessWidget {
                   side: BorderSide(color: context.palette.border),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('Odağı bitir'),
+                child: Text(context.l10n('Odağı bitir')),
               ),
             ),
           ],
@@ -1428,7 +1442,7 @@ class _TimerSetup extends StatelessWidget {
       const SizedBox(height: 38),
       _TimerControlButton(
         icon: Icons.play_arrow_rounded,
-        label: 'Başla',
+        label: context.l10n('Başla'),
         onTap: onStart,
       ),
     ],
@@ -1775,8 +1789,8 @@ class _ActiveTimerState extends State<_ActiveTimer>
                       children: [
                         TextButton(
                           onPressed: widget.onRemoveMinute,
-                          child: const Text(
-                            '− 1 dk',
+                          child: Text(
+                            context.l10n('− 1 dk'),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -1799,8 +1813,8 @@ class _ActiveTimerState extends State<_ActiveTimer>
                         const SizedBox(width: 10),
                         TextButton(
                           onPressed: widget.onAddMinute,
-                          child: const Text(
-                            '+ 1 dk',
+                          child: Text(
+                            context.l10n('+ 1 dk'),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -1814,8 +1828,8 @@ class _ActiveTimerState extends State<_ActiveTimer>
                       key: const ValueKey('finish-focus-session'),
                       onPressed: widget.onFinish,
                       icon: const Icon(Icons.stop_circle_outlined, size: 19),
-                      label: const Text(
-                        'Sonlandır',
+                      label: Text(
+                        context.l10n('Sonlandır'),
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -1888,7 +1902,7 @@ class _FocusCompletionHeading extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: [
       Text(
-        'Harika iş!',
+        context.l10n('Harika iş!'),
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.headlineLarge?.copyWith(
           fontSize: 38,
@@ -1898,7 +1912,7 @@ class _FocusCompletionHeading extends StatelessWidget {
       ),
       const SizedBox(height: 8),
       Text(
-        'Odak turun tamamlandı',
+        context.l10n('Odak turun tamamlandı'),
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
           color: context.palette.textSecondary,
           fontWeight: FontWeight.w600,
@@ -1926,7 +1940,7 @@ class _FocusTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    'Odaklan',
+    context.l10n('Odaklan'),
     textAlign: TextAlign.center,
     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
       fontSize: 38,
@@ -2051,20 +2065,38 @@ class _DurationMenuButton extends StatelessWidget {
     color: context.palette.surface,
     shape: StadiumBorder(side: BorderSide(color: context.palette.border)),
     child: PopupMenuButton<int>(
-      tooltip: 'Odaklanma süresi seç',
+      tooltip: context.l10n('Odaklanma süresi seç'),
       position: PopupMenuPosition.under,
       offset: const Offset(0, 6),
       useRootNavigator: true,
       onSelected: (value) {
         onSelected(value);
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(value: 5, child: _DurationMenuItem(5, '5 dk.')),
-        PopupMenuItem(value: 10, child: _DurationMenuItem(10, '10 dk.')),
-        PopupMenuItem(value: 15, child: _DurationMenuItem(15, '15 dk.')),
-        PopupMenuItem(value: 30, child: _DurationMenuItem(30, '30 dk.')),
-        PopupMenuItem(value: 45, child: _DurationMenuItem(45, '45 dk.')),
-        PopupMenuItem(value: 60, child: _DurationMenuItem(60, '1 saat')),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 5,
+          child: _DurationMenuItem(5, context.l10n('5 dk.')),
+        ),
+        PopupMenuItem(
+          value: 10,
+          child: _DurationMenuItem(10, context.l10n('10 dk.')),
+        ),
+        PopupMenuItem(
+          value: 15,
+          child: _DurationMenuItem(15, context.l10n('15 dk.')),
+        ),
+        PopupMenuItem(
+          value: 30,
+          child: _DurationMenuItem(30, context.l10n('30 dk.')),
+        ),
+        PopupMenuItem(
+          value: 45,
+          child: _DurationMenuItem(45, context.l10n('45 dk.')),
+        ),
+        PopupMenuItem(
+          value: 60,
+          child: _DurationMenuItem(60, context.l10n('1 saat')),
+        ),
         PopupMenuDivider(),
         PopupMenuItem(
           value: 0,
@@ -2072,21 +2104,21 @@ class _DurationMenuButton extends StatelessWidget {
             children: [
               Icon(Icons.tune_rounded, size: 22),
               SizedBox(width: 14),
-              Text('Özel'),
+              Text(context.l10n('Özel')),
             ],
           ),
         ),
       ],
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.timer_outlined, size: 19),
-            SizedBox(width: 7),
+            const Icon(Icons.timer_outlined, size: 19),
+            const SizedBox(width: 7),
             Flexible(
               child: Text(
-                'Odaklanmaya başla',
+                context.l10n('Odaklanmaya başla'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -2126,7 +2158,7 @@ class _DurationMenuItem extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 14),
-      Text(label),
+      Text(context.l10n(label)),
     ],
   );
 }
@@ -2147,8 +2179,8 @@ class _AlarmToggleButton extends StatelessWidget {
     button: true,
     toggled: enabled,
     label: !available
-        ? 'Alarm Premium'
-        : (enabled ? 'Alarm açık' : 'Alarm kapalı'),
+        ? context.l10n('Alarm Premium')
+        : (enabled ? context.l10n('Alarm açık') : context.l10n('Alarm kapalı')),
     child: Material(
       color: enabled
           ? Theme.of(context).colorScheme.primaryContainer
@@ -2182,10 +2214,10 @@ class _AlarmToggleButton extends StatelessWidget {
               const SizedBox(width: 7),
               Text(
                 !available
-                    ? 'Alarm Premium'
+                    ? context.l10n('Alarm Premium')
                     : enabled
-                    ? 'Alarm açık'
-                    : 'Alarm kapalı',
+                    ? context.l10n('Alarm açık')
+                    : context.l10n('Alarm kapalı'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -2221,7 +2253,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     key: const ValueKey('focus-music-menu'),
-    tooltip: 'Odak müziğini ayarla',
+    tooltip: context.l10n('Odak müziğini ayarla'),
     position: PopupMenuPosition.under,
     offset: const Offset(0, 5),
     color: context.palette.surface,
@@ -2244,7 +2276,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 7),
           child: _MusicMenuItemContent(
             icon: Icons.music_note_rounded,
-            label: track.title,
+            label: context.l10n(track.title),
             selected: selectedMusic?.id == track.id,
           ),
         ),
@@ -2254,7 +2286,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 7),
         child: _MusicMenuItemContent(
           icon: Icons.music_off_rounded,
-          label: 'Müzik yok',
+          label: context.l10n('Müzik yok'),
           selected: selectedMusic == null,
         ),
       ),
@@ -2267,7 +2299,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 7),
         child: _MusicMenuItemContent(
           icon: Icons.play_circle_outline_rounded,
-          label: 'Otomatik oynat',
+          label: context.l10n('Otomatik oynat'),
           selected: false,
           trailing: IgnorePointer(
             child: Switch.adaptive(
@@ -2304,7 +2336,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
                   const SizedBox(width: 7),
                   Flexible(
                     child: Text(
-                      selectedMusic?.title ?? 'Müzik',
+                      selectedMusic?.title ?? context.l10n('Müzik'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w700),
