@@ -7,6 +7,21 @@ import 'package:florien/features/task_icon/data/task_icon_lexicon.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 
+RoutinePresetTask _localizedRoutinePreset(
+  BuildContext context,
+  RoutinePresetTask task,
+) {
+  final title = context.l10n(task.title);
+  return RoutinePresetTask(
+    title: title,
+    description: '',
+    durationMinutes: task.durationMinutes,
+    period: task.period,
+    icon: task.icon,
+    subtasks: [for (final step in task.subtasks) context.l10n(step)],
+  );
+}
+
 class RoutineDiscoveryScreen extends StatefulWidget {
   const RoutineDiscoveryScreen({
     super.key,
@@ -40,7 +55,10 @@ class _RoutineDiscoveryScreenState extends State<RoutineDiscoveryScreen> {
     if (_selecting) return;
     setState(() => _selecting = true);
     try {
-      await widget.onTaskSelected(task, theme);
+      await widget.onTaskSelected(
+        _localizedRoutinePreset(context, task),
+        theme,
+      );
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _selecting = false);
@@ -198,15 +216,6 @@ class _FrequentlyUsedSection extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: FlorienSpacing.sm),
-      Text(
-        context.l10n(
-          'Kullanım sayısına göre; eşitlikte en son oluşturulan önce gelir.',
-        ),
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(color: context.palette.textSecondary),
       ),
       const SizedBox(height: FlorienSpacing.md),
       SizedBox(

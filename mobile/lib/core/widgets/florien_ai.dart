@@ -73,6 +73,7 @@ class FlorienAiInput extends StatelessWidget {
     this.voiceKey,
     this.onVoiceTap,
     this.isListening = false,
+    this.maxLength,
   });
 
   final TextEditingController controller;
@@ -94,6 +95,7 @@ class FlorienAiInput extends StatelessWidget {
   final Key? voiceKey;
   final VoidCallback? onVoiceTap;
   final bool isListening;
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +168,14 @@ class FlorienAiInput extends StatelessWidget {
                               : null,
                           minLines: 1,
                           maxLines: 4,
+                          maxLength: maxLength,
+                          buildCounter:
+                              (
+                                context, {
+                                required currentLength,
+                                required isFocused,
+                                maxLength,
+                              }) => const SizedBox.shrink(),
                           style: Theme.of(context).textTheme.bodyLarge,
                           decoration: InputDecoration(
                             hintText: hintText,
@@ -176,6 +186,7 @@ class FlorienAiInput extends StatelessWidget {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             filled: false,
+                            counterText: '',
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 12,
                             ),
@@ -265,6 +276,32 @@ class FlorienAiInput extends StatelessWidget {
               ],
             ),
           ),
+          if (maxLength != null && !premiumLocked)
+            ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) {
+                final used = controller.text.runes.length;
+                final showFrom = (maxLength! * 0.8).ceil();
+                if (used < showFrom) return const SizedBox.shrink();
+                final atLimit = used >= maxLength!;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6, right: 4),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$used / $maxLength',
+                      key: const ValueKey('planner-ai-char-count'),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: atLimit
+                            ? context.palette.error
+                            : context.palette.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

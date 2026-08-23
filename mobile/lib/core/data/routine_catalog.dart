@@ -53,7 +53,7 @@ RoutineTheme _routineTheme({
     tasks.map(
       (entry) => RoutinePresetTask(
         title: entry.title,
-        description: '${entry.title} için hazır ve düzenlenebilir bir rutin.',
+        description: '',
         durationMinutes: entry.minutes,
         period: period,
         icon: icon,

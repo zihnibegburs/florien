@@ -239,13 +239,25 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     if (!mounted) return;
 
     final existingText = _controller.text.trim();
-    final text = existingText.isEmpty
+    final combined = existingText.isEmpty
         ? spokenText
         : '$existingText $spokenText';
+    final text = clipPlannerAiChatText(combined);
     _controller.value = TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
     );
+    if (mounted && combined.runes.length > plannerAiChatMaxCharacters) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n('AI isteği en fazla {count} karakter olabilir.', {
+              'count': '$plannerAiChatMaxCharacters',
+            }),
+          ),
+        ),
+      );
+    }
     setState(() {
       _voicePanelOpen = false;
       _isListening = false;
@@ -261,7 +273,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   }
 
   Future<void> _send() async {
-    final text = _controller.text.trim();
+    final text = clipPlannerAiChatText(_controller.text.trim());
     if (text.isEmpty || _sending) return;
 
     final premium = ref.read(premiumMembershipProvider).valueOrNull;
@@ -579,6 +591,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                             onPremiumTap: () =>
                                 unawaited(_openPremiumForChat()),
                             hintText: context.l10n('Ne yapmak istiyorsun?'),
+                            maxLength: plannerAiChatMaxCharacters,
                             onSend: () => unawaited(_send()),
                             inputKey: const ValueKey('planner-ai-input'),
                             sendKey: const ValueKey('planner-ai-send'),

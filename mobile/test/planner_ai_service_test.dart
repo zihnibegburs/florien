@@ -39,4 +39,18 @@ void main() {
       'Fazladan adım',
     ]);
   });
+
+  test('clipPlannerAiChatText keeps text within the chat character limit', () {
+    expect(clipPlannerAiChatText('kısa not'), 'kısa not');
+    expect(
+      clipPlannerAiChatText('a' * plannerAiChatMaxCharacters).runes.length,
+      plannerAiChatMaxCharacters,
+    );
+    expect(
+      clipPlannerAiChatText(
+        'a' * (plannerAiChatMaxCharacters + 40),
+      ).runes.length,
+      plannerAiChatMaxCharacters,
+    );
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/data/routine_catalog.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/theme/florien_theme.dart';
@@ -33,6 +34,21 @@ void main() {
         expect(task.durationMinutes, greaterThan(0));
         expect(task.subtasks, isNotEmpty);
       }
+    }
+  });
+
+  test('ready routine copy has English translations', () {
+    final keys = <String>{};
+    for (final theme in routineThemes) {
+      keys.add(theme.name);
+      keys.add(theme.description);
+      for (final task in theme.tasks) {
+        keys.add(task.title);
+        keys.addAll(task.subtasks);
+      }
+    }
+    for (final key in keys) {
+      expect(const S('en')(key), isNot(key), reason: key);
     }
   });
 
@@ -176,6 +192,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedTask?.title, 'Kahvaltıyla Güç Topla');
     expect(selectedTask?.subtasks, isNotEmpty);
+  });
+
+  testWidgets('passes the localized title into the add form', (tester) async {
+    ActiveLanguage.code = 'en';
+    addTearDown(() => ActiveLanguage.code = 'tr');
+    RoutinePresetTask? selectedTask;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: RoutineDiscoveryScreen(
+          onTaskSelected: (task, _) async => selectedTask = task,
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('routine-task-10 Dakikada Ayağa Kalk')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(selectedTask?.title, 'Get up in 10 minutes');
+    expect(selectedTask?.description, isEmpty);
+    expect(selectedTask?.subtasks.first, 'Drink water and wake your body');
   });
 
   testWidgets('shows frequently used tasks in a horizontal slider', (

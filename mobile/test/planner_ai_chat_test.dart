@@ -344,4 +344,44 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('chat composer caps input at 1000 characters', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final input = find.byKey(const ValueKey('planner-ai-input'));
+    expect(
+      tester.widget<TextField>(input).maxLength,
+      plannerAiChatMaxCharacters,
+    );
+
+    await tester.enterText(input, 'a' * (plannerAiChatMaxCharacters + 80));
+    await tester.pump();
+
+    expect(
+      tester.widget<TextField>(input).controller?.text.runes.length,
+      plannerAiChatMaxCharacters,
+    );
+    expect(find.byKey(const ValueKey('planner-ai-char-count')), findsOneWidget);
+    expect(
+      find.text('$plannerAiChatMaxCharacters / $plannerAiChatMaxCharacters'),
+      findsOneWidget,
+    );
+  });
 }

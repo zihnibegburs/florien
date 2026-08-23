@@ -5,6 +5,13 @@ import 'package:florien/core/l10n/app_strings.dart';
 
 const _maxAiInputCharacters = 2000;
 const _maxAiChatTurns = 4;
+const plannerAiChatMaxCharacters = 1000;
+
+String clipPlannerAiChatText(String value) {
+  final units = value.runes.toList(growable: false);
+  if (units.length <= plannerAiChatMaxCharacters) return value;
+  return String.fromCharCodes(units.take(plannerAiChatMaxCharacters));
+}
 
 class PlannerChatTurn {
   const PlannerChatTurn({required this.role, required this.content});

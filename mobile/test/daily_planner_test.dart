@@ -438,6 +438,7 @@ void main() {
 
     expect(find.byType(PremiumMembershipScreen), findsNothing);
     expect(find.text('10 Dakikada Ayağa Kalk'), findsWidgets);
+    expect(find.textContaining('hazır ve düzenlenebilir bir rutin'), findsNothing);
     expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
     expect(find.text('Rutin için gerekenleri hazırla'), findsNothing);
   });
@@ -928,6 +929,7 @@ void main() {
       find.byKey(const ValueKey('daily-date-picker-sheet')),
       findsOneWidget,
     );
+    expect(find.text('Tarihe git'), findsOneWidget);
 
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     tester

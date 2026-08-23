@@ -66,6 +66,11 @@ void main() {
     expect(const S('de')('Ayarlar'), 'Einstellungen');
     expect(const S('en')('Hazır rutinler'), 'Ready-made routines');
     expect(const S('en')('Tarih seç'), 'Choose a date');
+    expect(const S('en')('Tarihe git'), 'Go to date');
+    expect(
+      const S('en')('Son ana kadar erteliyorum'),
+      'I put it off until the last minute',
+    );
     expect(const S('en')('Premium ol'), 'Go Premium');
     expect(const S('en')('Küçük bir adımla başla'), 'Start with a small step');
     expect(const S('en')('Liste adı'), 'List name');
@@ -77,5 +82,45 @@ void main() {
       'Günde yaklaşık ₺3,33',
     );
     expect(const S('en').premiumDailyPrice('{price}'), 'About {price} per day');
+  });
+
+  test('onboarding survey answers have English translations', () {
+    const answers = [
+      'Yapacaklarım kafamda birbirine giriyor',
+      'Nereden başlayacağımı bulamıyorum',
+      'Bir şeye başlayıp başka bir şeye geçiyorum',
+      'Zamanın nasıl geçtiğini anlamıyorum',
+      'Bunlardan birkaçı birden oluyor',
+      'Gözümde büyütüyorum',
+      'Doğru zamanı bekliyorum',
+      'Başka küçük işlerle oyalanıyorum',
+      'Son ana kadar erteliyorum',
+      'Duruma göre değişiyor',
+      'DEHB tanısı aldım',
+      'DEHB olabileceğimi düşünüyorum',
+      'Başka bir nöroçeşitliliğim var',
+      'Kendimi bunlardan biriyle tanımlamıyorum',
+      'Emin değilim',
+      'Birkaç gün iyi gidiyor, sonra bırakıyorum',
+      'Daha başlarken gözümde büyüyor',
+      'Bir şey aksayınca tamamen vazgeçiyorum',
+      'Planı unutup akışına bırakıyorum',
+      'Bir işin ne kadar süreceğini kestiremiyorum',
+      'Saate baksam da yine yetişemiyorum',
+      'Bir işe dalınca diğerlerini unutuyorum',
+      'Günün nasıl bittiğini anlamıyorum',
+      'Kendime yükleniyorum',
+      'Her şeye baştan başlamam gerektiğini düşünüyorum',
+      'Plan yapmayı bırakıyorum',
+      'Nasıl toparlanacağımı bulamıyorum',
+      'Nereden başlayacağımı bilmek',
+      'Kafamı biraz toparlamak',
+      'Günü daha kolay geçirmek',
+      'Başladığım şeyi sürdürebilmek',
+      'Henüz bilmiyorum',
+    ];
+    for (final answer in answers) {
+      expect(const S('en')(answer), isNot(answer), reason: answer);
+    }
   });
 }
