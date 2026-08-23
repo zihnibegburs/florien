@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_keyboard.dart';
 
 class FlorienChip extends StatelessWidget {
   const FlorienChip({
@@ -116,6 +117,7 @@ class FlorienTextField extends StatelessWidget {
       maxLines: obscureText ? 1 : maxLines,
       minLines: minLines,
       enabled: enabled,
+      onTapOutside: florienDismissKeyboard,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         hintText: hintText,

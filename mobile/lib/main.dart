@@ -17,6 +17,7 @@ import 'package:florien/core/routing/startup_screen.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_keyboard.dart';
 import 'package:florien/core/widgets/liquid_glass.dart';
 import 'package:florien/features/auth/email_login_screen.dart';
 import 'package:florien/features/auth/login_screen.dart';
@@ -283,8 +284,11 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       themeMode: themeMode,
       locale: Locale(language),
       routerConfig: ref.watch(routerProvider),
-      builder: (context, child) =>
-          FlorienAmbientBackground(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => FlorienKeyboardDismiss(
+        child: FlorienAmbientBackground(
+          child: child ?? const SizedBox.shrink(),
+        ),
+      ),
       debugShowCheckedModeBanner: false,
     );
   }

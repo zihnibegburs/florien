@@ -5,6 +5,7 @@ import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_card.dart';
+import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -18,7 +19,7 @@ Future<void> showTodoQuickAdd({
   required WidgetRef ref,
   String? todoListId,
   String initialTitle = '',
-  bool autofocus = true,
+  bool autofocus = false,
 }) async {
   final lists = await ref.read(todoListsProvider.future);
   if (!context.mounted) return;
@@ -688,7 +689,6 @@ class _ListEditorSheetState extends State<_ListEditorSheet> {
             const SizedBox(height: 16),
             TextField(
               controller: _name,
-              autofocus: true,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(labelText: 'Liste adı'),
             ),
@@ -884,7 +884,7 @@ class _AddTodoDialog extends ConsumerStatefulWidget {
     required this.todoListId,
     required this.lists,
     this.initialTitle = '',
-    this.autofocus = true,
+    this.autofocus = false,
   });
 
   final String? todoListId;
@@ -1183,23 +1183,9 @@ class _AddTodoDialogState extends ConsumerState<_AddTodoDialog> {
   }
 
   Future<void> _pickDuration() async {
-    final selected = await showModalBottomSheet<int>(
+    final selected = await showFlorienDurationPicker(
       context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [5, 10, 15, 30, 45, 60, 90, 120]
-              .map(
-                (value) => ListTile(
-                  title: Text(_durationLabel(value)),
-                  trailing: value == _duration
-                      ? const Icon(Icons.check_rounded)
-                      : null,
-                  onTap: () => Navigator.pop(context, value),
-                ),
-              )
-              .toList(),
-        ),
-      ),
+      selected: _duration,
     );
     if (selected != null && mounted) setState(() => _duration = selected);
   }

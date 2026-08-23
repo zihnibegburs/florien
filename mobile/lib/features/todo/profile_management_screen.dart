@@ -82,7 +82,6 @@ class _ProfileManagementScreenState
         title: Text(title),
         content: TextFormField(
           initialValue: initialValue,
-          autofocus: true,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(

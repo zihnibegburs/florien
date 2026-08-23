@@ -12,6 +12,7 @@ import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
@@ -2679,7 +2680,6 @@ class _DailyQuickAddSheetState extends ConsumerState<_DailyQuickAddSheet> {
                   key: const ValueKey('daily-quick-title'),
                   controller: _title,
                   onChanged: _taskIcon.onTaskChanged,
-                  autofocus: true,
                   textInputAction: TextInputAction.done,
                   textCapitalization: TextCapitalization.sentences,
                   onSubmitted: (_) => _submit(),
@@ -3078,7 +3078,6 @@ class _DailyTaskDetailScreenState
                   key: const ValueKey('daily-detail-title'),
                   controller: _title,
                   onChanged: _onTitleChanged,
-                  autofocus: _title.text.trim().isEmpty,
                   textCapitalization: TextCapitalization.sentences,
                   style: Theme.of(
                     context,
@@ -3345,23 +3344,9 @@ class _DailyTaskDetailScreenState
   }
 
   Future<void> _pickDuration() async {
-    final value = await showModalBottomSheet<int>(
+    final value = await showFlorienDurationPicker(
       context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [5, 10, 15, 30, 45, 60, 90, 120]
-              .map(
-                (duration) => ListTile(
-                  title: Text(_durationLabel(duration)),
-                  trailing: duration == _duration
-                      ? const Icon(Icons.check_rounded)
-                      : null,
-                  onTap: () => Navigator.pop(context, duration),
-                ),
-              )
-              .toList(),
-        ),
-      ),
+      selected: _duration,
     );
     if (value != null && mounted) setState(() => _duration = value);
   }

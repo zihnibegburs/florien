@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
@@ -258,7 +259,6 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                   key: const ValueKey('todo-detail-title'),
                   controller: _title,
                   onChanged: _onTitleChanged,
-                  autofocus: widget.initialTitle.trim().isEmpty,
                   textCapitalization: TextCapitalization.sentences,
                   style: Theme.of(
                     context,
@@ -302,35 +302,15 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                 ListTile(
                   leading: const _DetailIcon(Icons.timer_outlined),
                   title: const Text('Süre'),
-                  trailing: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: context.palette.surface,
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(
-                        color: context.palette.border,
-                        width: FlorienBorders.thin,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: DropdownButton<int>(
-                        value: _duration,
-                        underline: const SizedBox.shrink(),
-                        borderRadius: BorderRadius.circular(FlorienRadius.md),
-                        items: [5, 10, 15, 30, 45, 60, 90, 120]
-                            .map(
-                              (minutes) => DropdownMenuItem(
-                                value: minutes,
-                                child: Text(_durationLabel(minutes)),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) setState(() => _duration = value);
-                        },
-                      ),
-                    ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ValuePill(label: _durationLabel(_duration)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
                   ),
+                  onTap: _pickDuration,
                 ),
               ],
             ),
@@ -459,6 +439,14 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickDuration() async {
+    final selected = await showFlorienDurationPicker(
+      context: context,
+      selected: _duration,
+    );
+    if (selected != null && mounted) setState(() => _duration = selected);
   }
 
   Future<void> _pickList(List<TodoListDefinition> lists) async {
