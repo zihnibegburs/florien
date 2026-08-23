@@ -3,25 +3,42 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/florien_widget_background"
-    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
     android:padding="12dp">
 
-    <TextView
-        android:id="@+id/live_activity_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Odak modu"
-        android:textColor="#1C2826"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+    <ImageView
+        android:id="@+id/live_activity_app_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:contentDescription="Florien"
+        android:scaleType="centerCrop"
+        android:src="@mipmap/ic_launcher" />
 
-    <TextView
-        android:id="@+id/live_activity_remaining"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="00:00"
-        android:textColor="#4F52B2"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/live_activity_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Odak modu"
+            android:textColor="#1C2826"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/live_activity_remaining"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="00:00"
+            android:textColor="#4F52B2"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>

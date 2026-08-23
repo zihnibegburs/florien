@@ -514,27 +514,18 @@ class _QuestionStep extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          SizedBox(height: compact ? 18 : 28),
+          SizedBox(height: compact ? 14 : 20),
           Expanded(
-            child: Column(
-              children: [
-                for (
-                  var index = 0;
-                  index < question.answers.length;
-                  index++
-                ) ...[
-                  Expanded(
-                    child: _AnswerCard(
-                      answer: question.answers[index],
-                      selected: selectedAnswerId == question.answers[index].id,
-                      enabled: interactionEnabled,
-                      onTap: () => onSelected(question.answers[index]),
-                    ),
-                  ),
-                  if (index != question.answers.length - 1)
-                    SizedBox(height: compact ? 8 : 10),
-                ],
-              ],
+            child: ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: question.answers.length,
+              separatorBuilder: (_, _) => SizedBox(height: compact ? 6 : 8),
+              itemBuilder: (context, index) => _AnswerCard(
+                answer: question.answers[index],
+                selected: selectedAnswerId == question.answers[index].id,
+                enabled: interactionEnabled,
+                onTap: () => onSelected(question.answers[index]),
+              ),
             ),
           ),
         ],
@@ -573,7 +564,8 @@ class _AnswerCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(FlorienRadius.md),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 170),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: selected
                   ? context.palette.selection
@@ -589,18 +581,19 @@ class _AnswerCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     answer.label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: foreground,
-                      height: 1.15,
-                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Icon(
                   selected
                       ? Icons.check_circle_rounded
                       : Icons.radio_button_unchecked_rounded,
+                  size: 20,
                   color: selected ? FlorienColors.onPrimary : foreground,
                 ),
               ],

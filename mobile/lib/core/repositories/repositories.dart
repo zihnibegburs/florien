@@ -291,10 +291,11 @@ class TaskRepository {
     final localNow = now.toLocal();
     final today = DateTime(localNow.year, localNow.month, localNow.day);
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
-    final weeklySnapshotFuture = _tasks
+    final streakStart = today.subtract(const Duration(days: 90));
+    final recentSnapshotFuture = _tasks
         .where(
           'completedAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart.toUtc()),
+          isGreaterThanOrEqualTo: Timestamp.fromDate(streakStart.toUtc()),
         )
         .get();
     final totalSnapshotFuture = _tasks
@@ -302,12 +303,13 @@ class TaskRepository {
         .where('parentTaskId', isNull: true)
         .count()
         .get();
-    final weeklySnapshot = await weeklySnapshotFuture;
+    final recentSnapshot = await recentSnapshotFuture;
     final totalSnapshot = await totalSnapshotFuture;
 
     var todayCount = 0;
     var weekCount = 0;
-    for (final document in weeklySnapshot.docs) {
+    final completionDays = <DateTime>{};
+    for (final document in recentSnapshot.docs) {
       final data = document.data();
       if (data['parentTaskId'] != null || data['status'] != 'COMPLETED') {
         continue;
@@ -319,13 +321,20 @@ class TaskRepository {
         _ => null,
       };
       if (completedAt == null) continue;
-      weekCount++;
+      final day = DateTime(
+        completedAt.year,
+        completedAt.month,
+        completedAt.day,
+      );
+      completionDays.add(day);
+      if (!day.isBefore(weekStart)) weekCount++;
       if (!completedAt.isBefore(today)) todayCount++;
     }
     return CompletionCounts(
       today: todayCount,
       thisWeek: weekCount,
       total: totalSnapshot.count ?? 0,
+      streak: florienCompletionStreak(completionDays, today),
     );
   }
 
@@ -340,10 +349,16 @@ class TaskRepository {
     final data = snap.data()!;
     if (data['isInbox'] != true) throw StateError('Task is not in inbox');
 
+    final leavesToday = florienRescheduleLeavesToday(
+      scheduledAt,
+      DateTime.now(),
+    );
     await ref.update({
       'isInbox': false,
       'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
       'dayPeriod': _dayPeriodValue(dayPeriod),
+      if (leavesToday) 'status': 'PENDING',
+      if (leavesToday) 'startedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
     final updated = await ref.get();
@@ -692,6 +707,8 @@ class TaskRepository {
     DayPeriod? dayPeriod,
     String? todoListId,
     bool clearTodoListId = false,
+    TaskStatus? status,
+    bool clearStartedAt = false,
   }) async {
     final patch = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
@@ -720,6 +737,8 @@ class TaskRepository {
       if (dayPeriod != null) 'dayPeriod': _dayPeriodValue(dayPeriod),
       if (todoListId != null) 'todoListId': todoListId,
       if (clearTodoListId) 'todoListId': null,
+      if (status != null) 'status': _statusValue(status),
+      if (clearStartedAt) 'startedAt': null,
     };
     await _tasks.doc(id).update(patch);
     final snap = await _tasks.doc(id).get();
@@ -738,6 +757,14 @@ class TaskRepository {
       localAlarm.minute,
     );
   }
+
+  String _statusValue(TaskStatus status) => switch (status) {
+    TaskStatus.pending => 'PENDING',
+    TaskStatus.inProgress => 'IN_PROGRESS',
+    TaskStatus.paused => 'PAUSED',
+    TaskStatus.completed => 'COMPLETED',
+    TaskStatus.skipped => 'SKIPPED',
+  };
 
   String _priorityValue(TaskPriority priority) => switch (priority) {
     TaskPriority.high => 'HIGH',

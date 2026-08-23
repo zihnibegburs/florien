@@ -25,7 +25,7 @@ class StatisticsTab extends ConsumerWidget {
         ? profileName!
         : (authName == null || authName.isEmpty ? 'Florien' : authName);
     final week = counts.valueOrNull?.thisWeek ?? 0;
-    final streak = week.clamp(0, 7);
+    final streak = counts.valueOrNull?.streak ?? 0;
     final completedGoal = 30;
     final completed = week.clamp(0, completedGoal);
 
@@ -230,8 +230,8 @@ class _StatsSummaryCard extends StatelessWidget {
               child: _StatColumn(
                 value: '$streak',
                 label: 'GÜN SERİSİ',
-                progressLabel: '$streak/7 günler',
-                progress: streak / 7,
+                progressLabel: streak == 1 ? '1 gün' : '$streak gün',
+                progress: (streak / 7).clamp(0, 1),
                 accent: FlorienColors.accent,
                 icon: Icons.local_fire_department_rounded,
               ),

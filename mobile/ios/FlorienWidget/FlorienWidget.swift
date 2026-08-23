@@ -1,5 +1,6 @@
 import ActivityKit
 import SwiftUI
+import UIKit
 import WidgetKit
 
 private let appGroupId = "group.com.florien.app"
@@ -626,7 +627,8 @@ struct FlorienLiveActivityWidget: Widget {
 
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        FlorienAppMark(size: 26)
                         Text("Florien")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -637,7 +639,10 @@ struct FlorienLiveActivityWidget: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    FlorienTimerLabel(data: data, font: .title3.bold())
+                    HStack(spacing: 6) {
+                        FlorienAppMark(size: 18)
+                        FlorienTimerLabel(data: data, font: .title3.bold())
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(data.taskTitle)
@@ -661,11 +666,11 @@ struct FlorienLiveActivityWidget: Widget {
                     }
                 }
             } compactLeading: {
-                FlorienDynamicIslandAppIcon()
+                FlorienAppMark(size: 20)
             } compactTrailing: {
                 FlorienTimerLabel(data: data, font: .caption2.monospacedDigit().bold())
             } minimal: {
-                FlorienDynamicIslandAppIcon()
+                FlorienAppMark(size: 16)
             }
             .widgetURL(FlorienWidgetURL.focusScreen)
         }
@@ -673,14 +678,26 @@ struct FlorienLiveActivityWidget: Widget {
 }
 
 @available(iOS 16.1, *)
-private struct FlorienDynamicIslandAppIcon: View {
+private struct FlorienAppMark: View {
+    var size: CGFloat = 20
+
     var body: some View {
-        Image("florien-live-activity-icon")
+        iconImage
             .resizable()
+            .interpolation(.high)
             .renderingMode(.original)
-            .scaledToFit()
-            .frame(width: 20, height: 20)
-            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+            .accessibilityLabel("Florien")
+    }
+
+    private var iconImage: Image {
+        if let uiImage = UIImage(named: "FlorienAppIcon")
+            ?? UIImage(named: "florien-live-activity-icon") {
+            return Image(uiImage: uiImage)
+        }
+        return Image(systemName: "square.grid.2x2.fill")
     }
 }
 
@@ -708,8 +725,11 @@ private struct FlorienLockScreenLiveActivityView: View {
                 Text(data.taskTitle)
                     .font(.headline)
                     .lineLimit(2)
-                FlorienTimerLabel(data: data, font: .title3.bold())
-                    .foregroundStyle(data.accentColor)
+                HStack(spacing: 6) {
+                    FlorienAppMark(size: 18)
+                    FlorienTimerLabel(data: data, font: .title3.bold())
+                        .foregroundStyle(data.accentColor)
+                }
             }
 
             Spacer(minLength: 0)

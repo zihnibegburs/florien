@@ -23,6 +23,7 @@
 		A1FLORIENW0000000000000016 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000008 /* SwiftUI.framework */; };
 		A1FLORIENW0000000000000019 /* focus-default-hourglass.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001A /* focus-default-hourglass.png */; };
 		A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001C /* florien-live-activity-icon.png */; };
+		A1FLORIENW000000000000001E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001D /* Assets.xcassets */; };
 		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
 		A1SIRI0000000000000001 /* FlorienSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* FlorienSharedStorage.swift */; };
 		A1SIRI0000000000000002 /* FlorienTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* FlorienTaskApi.swift */; };
@@ -108,6 +109,7 @@
 		A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtension.xcconfig; path = Flutter/FlorienWidgetExtension.xcconfig; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001A /* focus-default-hourglass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "focus-default-hourglass.png"; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001C /* florien-live-activity-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "florien-live-activity-icon.png"; sourceTree = "<group>"; };
+		A1FLORIENW000000000000001D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A1SIRI0000000000000005 /* FlorienSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienSharedStorage.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000006 /* FlorienTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienTaskApi.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 			isa = PBXGroup;
 			children = (
 				A1FLORIENW0000000000000004 /* FlorienWidget.swift */,
+				A1FLORIENW000000000000001D /* Assets.xcassets */,
 				A1FLORIENW000000000000001A /* focus-default-hourglass.png */,
 				A1FLORIENW000000000000001C /* florien-live-activity-icon.png */,
 				A1FLORIENW0000000000000005 /* Info.plist */,
@@ -405,6 +408,7 @@
 			files = (
 				A1FLORIENW0000000000000019 /* focus-default-hourglass.png in Resources */,
 				A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */,
+				A1FLORIENW000000000000001E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

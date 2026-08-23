@@ -406,6 +406,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
 
     final requestedFocus = ref.watch(focusTaskLaunchProvider);
     final scheduledFocus = ref.watch(scheduledFocusLaunchProvider);
+    final activeFocus = ref.watch(activeFocusTaskProvider);
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     final alarms = ref.read(taskAlarmServiceProvider);
     final chatUsage = _chatUsage ?? premium?.aiChatUsage;
@@ -499,9 +500,8 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                       FocusTimerTab(
                         key: const ValueKey('planner-ai-focus-timer'),
                         aiShellLayout: true,
-                        launchRequest: _isFocusMode
-                            ? (requestedFocus ?? scheduledFocus)
-                            : null,
+                        launchRequest: requestedFocus ?? scheduledFocus,
+                        resumeProgress: activeFocus,
                         resetSignal: ref.watch(focusTimerResetSignalProvider),
                         finishSignal: ref.watch(
                           focusTimerFinishSignalProvider,

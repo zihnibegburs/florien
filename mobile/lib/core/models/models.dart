@@ -407,11 +407,39 @@ class CompletionCounts {
     required this.today,
     required this.thisWeek,
     this.total = 0,
+    this.streak = 0,
   });
 
   final int today;
   final int thisWeek;
   final int total;
+  final int streak;
+}
+
+/// Consecutive days with at least one completed task.
+/// Today is optional: if nothing is done yet today, yesterday still counts.
+int florienCompletionStreak(Iterable<DateTime> completionDays, DateTime now) {
+  final days = {
+    for (final day in completionDays) DateTime(day.year, day.month, day.day),
+  };
+  final today = DateTime(now.year, now.month, now.day);
+  var cursor = days.contains(today)
+      ? today
+      : today.subtract(const Duration(days: 1));
+  if (!days.contains(cursor)) return 0;
+  var streak = 0;
+  while (days.contains(cursor)) {
+    streak++;
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+  return streak;
+}
+
+/// True when [targetDate] is a different calendar day than [now].
+/// Moving a started task off today should clear start state and close focus.
+bool florienRescheduleLeavesToday(DateTime targetDate, DateTime now) {
+  return DateTime(targetDate.year, targetDate.month, targetDate.day) !=
+      DateTime(now.year, now.month, now.day);
 }
 
 class FocusSessionModel {

@@ -447,13 +447,53 @@ void main() {
       await tester.pump();
     }
 
+    expect(find.text('0:00'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('focus-dial-celebration')),
+      find.byKey(const ValueKey('focus-completion-check')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('timer-setup')), findsOneWidget);
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
+  });
+
+  testWidgets('minus one minute ends focus like the timer when under a minute', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    String? completedTaskId;
+    ActiveFocusTask? progress;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          body: FocusTimerTab(
+            launchRequest: const FocusTaskLaunch(
+              taskId: 'short-left-task',
+              title: 'Az kalan',
+              durationMinutes: 5,
+              icon: 'task',
+              color: '#6C5CE7',
+            ),
+            onTaskProgressChanged: (value) => progress = value,
+            onTaskCompleted: (taskId) async => completedTaskId = taskId,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 260));
+
+    expect(find.text('0:40'), findsOneWidget);
+    await tester.tap(find.text('− 1 dk'));
+    await tester.pump();
+
+    expect(completedTaskId, 'short-left-task');
+    expect(progress, isNull);
+    expect(find.text('0:00'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('focus-completion-check')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('focus session can be finished with a separate button', (
@@ -581,5 +621,109 @@ void main() {
     expect(find.text('Kapalı'), findsNothing);
     expect(find.byIcon(Icons.music_note_rounded), findsNWidgets(7));
     expect(find.byType(Switch), findsOneWidget);
+  });
+
+  testWidgets('persisting a standalone task does not reset remaining time', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    FocusTaskLaunch? launch;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlorienTheme.light,
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => FocusTimerTab(
+              launchRequest: launch,
+              onStandaloneFocusStarted: (minutes) async {
+                final now = DateTime.now();
+                final created = FocusTaskLaunch(
+                  taskId: 'standalone-1',
+                  title: 'Odaklan',
+                  durationMinutes: minutes,
+                  icon: 'timer',
+                  color: '#6C5CE7',
+                  startedAt: now,
+                  endsAt: now.add(Duration(minutes: minutes)),
+                );
+                setState(() => launch = created);
+                return created;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Odaklanmaya başla'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('5 dk.'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 12));
+    await tester.pump();
+
+    expect(find.text('5:00'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.data != null &&
+            RegExp(r'^4:4\d$').hasMatch(widget.data!),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('reopening a running session keeps remaining time', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final launch = FocusTaskLaunch(
+      taskId: 'resume-task',
+      title: 'Devam eden odak',
+      durationMinutes: 15,
+      icon: 'task',
+      color: '#6C5CE7',
+      startedAt: now.subtract(const Duration(minutes: 6)),
+      endsAt: now.add(const Duration(minutes: 9)),
+    );
+    final progress = ActiveFocusTask(
+      taskId: launch.taskId,
+      title: launch.title,
+      icon: launch.icon,
+      usesDefaultFocusIcon: true,
+      totalSeconds: 15 * 60,
+      remainingSeconds: 9 * 60,
+      isRunning: true,
+      startedAt: launch.startedAt,
+      endsAt: launch.endsAt,
+    );
+
+    Widget buildTimer() => MaterialApp(
+      theme: FlorienTheme.light,
+      home: Scaffold(
+        body: FocusTimerTab(
+          launchRequest: launch,
+          resumeProgress: progress,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(buildTimer());
+    await tester.pump();
+    expect(find.text('15:00'), findsNothing);
+    expect(find.text('Devam eden odak'), findsOneWidget);
+
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pump();
+    await tester.pumpWidget(buildTimer());
+    await tester.pump();
+
+    expect(find.text('15:00'), findsNothing);
+    expect(find.byKey(const ValueKey('active-timer')), findsOneWidget);
   });
 }

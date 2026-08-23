@@ -20,7 +20,53 @@ import home_widget
     }
     GeneratedPluginRegistrant.register(with: self)
     configureHealthMoodChannel()
+    configureNotificationSettingsChannel()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  private func configureNotificationSettingsChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+    let channel = FlutterMethodChannel(
+      name: "florien/notification_settings",
+      binaryMessenger: controller.binaryMessenger
+    )
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "authorizationStatus":
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          let status: String
+          switch settings.authorizationStatus {
+          case .notDetermined:
+            status = "notDetermined"
+          case .denied:
+            status = "denied"
+          case .authorized, .provisional, .ephemeral:
+            status = "authorized"
+          @unknown default:
+            status = "denied"
+          }
+          DispatchQueue.main.async { result(status) }
+        }
+      case "openNotificationSettings":
+        let url: URL?
+        if #available(iOS 16.0, *) {
+          url = URL(string: UIApplication.openNotificationSettingsURLString)
+        } else {
+          url = URL(string: UIApplication.openSettingsURLString)
+        }
+        guard let url else {
+          result(false)
+          return
+        }
+        UIApplication.shared.open(url) { opened in
+          DispatchQueue.main.async { result(opened) }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 
   private func configureHealthMoodChannel() {

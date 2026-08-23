@@ -681,11 +681,7 @@ final dailyMoveToTodoProvider =
       return (id, todoListId) async {
         await repository.moveToInbox(id, todoListId: todoListId);
         await ref.read(taskAlarmServiceProvider).cancel(id);
-        if (ref.read(activeFocusTaskProvider)?.taskId == id) {
-          ref.read(activeFocusTaskProvider.notifier).state = null;
-          ref.read(focusTaskLaunchProvider.notifier).state = null;
-          ref.read(focusTimerResetSignalProvider.notifier).state++;
-        }
+        abandonFocusForTask(ref, id);
         ref.invalidate(inboxProvider);
         ref.invalidate(dailyTimelineProvider);
         unawaited(ref.read(notificationReconcileProvider)());
@@ -742,6 +738,8 @@ class ActiveFocusTask {
     required this.totalSeconds,
     required this.remainingSeconds,
     required this.isRunning,
+    this.startedAt,
+    this.endsAt,
   });
 
   final String taskId;
@@ -751,14 +749,58 @@ class ActiveFocusTask {
   final int totalSeconds;
   final int remainingSeconds;
   final bool isRunning;
+  final DateTime? startedAt;
+  final DateTime? endsAt;
 
   double get progress {
     if (totalSeconds <= 0) return 0;
     return (1 - remainingSeconds / totalSeconds).clamp(0, 1);
   }
+
+  ActiveFocusTask copyWith({
+    int? remainingSeconds,
+    bool? isRunning,
+    DateTime? startedAt,
+    DateTime? endsAt,
+  }) {
+    return ActiveFocusTask(
+      taskId: taskId,
+      title: title,
+      icon: icon,
+      usesDefaultFocusIcon: usesDefaultFocusIcon,
+      totalSeconds: totalSeconds,
+      remainingSeconds: remainingSeconds ?? this.remainingSeconds,
+      isRunning: isRunning ?? this.isRunning,
+      startedAt: startedAt ?? this.startedAt,
+      endsAt: endsAt ?? this.endsAt,
+    );
+  }
 }
 
 final activeFocusTaskProvider = StateProvider<ActiveFocusTask?>((ref) => null);
+
+void abandonFocusForTask(Ref ref, String taskId) {
+  final matchesActive = ref.read(activeFocusTaskProvider)?.taskId == taskId;
+  final matchesLaunch = ref.read(focusTaskLaunchProvider)?.taskId == taskId;
+  final matchesScheduled =
+      ref.read(scheduledFocusLaunchProvider)?.taskId == taskId;
+  if (!matchesActive && !matchesLaunch && !matchesScheduled) return;
+
+  if (matchesActive) {
+    ref.read(activeFocusTaskProvider.notifier).state = null;
+  }
+  if (matchesLaunch) {
+    ref.read(focusTaskLaunchProvider.notifier).state = null;
+  }
+  if (matchesScheduled) {
+    ref.read(scheduledFocusLaunchProvider.notifier).state = null;
+  }
+  if (matchesActive || matchesLaunch) {
+    ref.read(focusTimerResetSignalProvider.notifier).state++;
+    unawaited(ref.read(taskAlarmServiceProvider).cancelFocusTimerAlarm());
+    unawaited(ref.read(liveActivityServiceProvider).endFocus());
+  }
+}
 
 final focusTimerResetSignalProvider = StateProvider<int>((ref) => 0);
 final focusTimerFinishSignalProvider = StateProvider<int>((ref) => 0);
@@ -877,6 +919,7 @@ final startTaskFocusProvider = Provider<Future<void> Function(TaskModel)>((
     await repository.startTask(task.id);
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);
+    ref.invalidate(completionCountsProvider);
   };
 });
 
@@ -895,6 +938,7 @@ final completeFocusedTaskProvider = Provider<Future<void> Function(String)>((
     }
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);
+    ref.invalidate(completionCountsProvider);
     unawaited(ref.read(notificationReconcileProvider)());
   };
 });
@@ -1041,18 +1085,23 @@ class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
   Future<void> completeTask(String id) async {
     await ref.read(taskRepositoryProvider).completeTask(id);
     await ref.read(taskAlarmServiceProvider).cancel(id);
+    ref.invalidate(completionCountsProvider);
     await refresh();
     unawaited(ref.read(notificationReconcileProvider)());
   }
 
   Future<void> uncompleteTask(String id) async {
     await ref.read(taskRepositoryProvider).uncompleteTask(id);
+    ref.invalidate(completionCountsProvider);
     await refresh();
     unawaited(ref.read(notificationReconcileProvider)());
   }
 
   Future<void> scheduleTask(String id, DateTime scheduledAt) async {
     await ref.read(taskRepositoryProvider).scheduleFromInbox(id, scheduledAt);
+    if (florienRescheduleLeavesToday(scheduledAt, DateTime.now())) {
+      abandonFocusForTask(ref, id);
+    }
     await refresh();
   }
 

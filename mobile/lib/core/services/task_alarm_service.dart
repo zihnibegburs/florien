@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/notification_copy.dart';
@@ -8,6 +9,8 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:url_launcher/url_launcher.dart';
+
+enum FlorienOsNotificationPermission { unknown, notDetermined, denied, granted }
 
 enum TaskAlarmReadiness {
   ready,
@@ -29,6 +32,9 @@ typedef NotificationActionHandler =
 class TaskAlarmService {
   TaskAlarmService(this._settingsStorage);
 
+  static const _notificationSettingsChannel = MethodChannel(
+    'florien/notification_settings',
+  );
   static const _focusTimerAlarmId = 'focus_timer_alarm';
   static const _taskCategoryId = 'florien_task_reminder';
   static const _completeActionId = 'complete';
@@ -96,24 +102,51 @@ class TaskAlarmService {
   }
 
   Future<bool> hasOsPermission() async {
+    final status = await osNotificationPermission();
+    return status == FlorienOsNotificationPermission.granted;
+  }
+
+  Future<FlorienOsNotificationPermission> osNotificationPermission() async {
     await initialize();
-    if (kIsWeb) return false;
+    if (kIsWeb) return FlorienOsNotificationPermission.denied;
+    try {
+      final status = await _notificationSettingsChannel
+          .invokeMethod<String>('authorizationStatus');
+      return switch (status) {
+        'authorized' => FlorienOsNotificationPermission.granted,
+        'notDetermined' => FlorienOsNotificationPermission.notDetermined,
+        'denied' => FlorienOsNotificationPermission.denied,
+        _ => FlorienOsNotificationPermission.denied,
+      };
+    } on MissingPluginException {
+      return _pluginOsPermission();
+    } on PlatformException {
+      return _pluginOsPermission();
+    }
+  }
+
+  Future<FlorienOsNotificationPermission> _pluginOsPermission() async {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       final ios = _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >();
       final options = await ios?.checkPermissions();
-      return options?.isEnabled ?? false;
+      return (options?.isEnabled ?? false)
+          ? FlorienOsNotificationPermission.granted
+          : FlorienOsNotificationPermission.denied;
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       final android = _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      return await android?.areNotificationsEnabled() ?? true;
+      final enabled = await android?.areNotificationsEnabled() ?? true;
+      return enabled
+          ? FlorienOsNotificationPermission.granted
+          : FlorienOsNotificationPermission.denied;
     }
-    return false;
+    return FlorienOsNotificationPermission.denied;
   }
 
   Future<bool> requestOsPermission() async {
@@ -124,6 +157,16 @@ class TaskAlarmService {
 
   Future<void> openSystemNotificationSettings() async {
     if (kIsWeb) return;
+    try {
+      final opened = await _notificationSettingsChannel.invokeMethod<bool>(
+        'openNotificationSettings',
+      );
+      if (opened == true) return;
+    } on MissingPluginException {
+      // Tests and unsupported platforms fall through to the URL fallback.
+    } on PlatformException {
+      // Fall through to the URL fallback.
+    }
     final uri = Uri.parse('app-settings:');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

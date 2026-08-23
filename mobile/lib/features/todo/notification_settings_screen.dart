@@ -19,7 +19,8 @@ class _NotificationSettingsScreenState
     extends ConsumerState<NotificationSettingsScreen>
     with WidgetsBindingObserver {
   bool _saving = false;
-  bool? _osPermissionGranted;
+  FlorienOsNotificationPermission _osPermission =
+      FlorienOsNotificationPermission.unknown;
 
   @override
   void initState() {
@@ -43,12 +44,20 @@ class _NotificationSettingsScreenState
 
   Future<void> _refreshPermission({bool reschedule = false}) async {
     final alarms = ref.read(taskAlarmServiceProvider);
-    final granted = await alarms.hasOsPermission();
+    final status = await alarms.osNotificationPermission();
     if (!mounted) return;
-    setState(() => _osPermissionGranted = granted);
-    if (reschedule && granted) {
+    setState(() => _osPermission = status);
+    if (reschedule && status == FlorienOsNotificationPermission.granted) {
       await ref.read(notificationReconcileProvider)();
     }
+  }
+
+  Future<void> _requestOsPermission() async {
+    final granted = await ref
+        .read(taskAlarmServiceProvider)
+        .requestOsPermission();
+    if (!mounted) return;
+    await _refreshPermission(reschedule: granted);
   }
 
   Future<void> _persist(
@@ -95,7 +104,9 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final preferences = ref.watch(notificationPreferencesProvider);
-    final permissionDenied = _osPermissionGranted == false;
+    final permissionBlocked =
+        _osPermission == FlorienOsNotificationPermission.denied ||
+        _osPermission == FlorienOsNotificationPermission.notDetermined;
 
     return Scaffold(
       key: const ValueKey('notification-settings-screen'),
@@ -138,9 +149,13 @@ class _NotificationSettingsScreenState
                 ),
               ],
             ),
-            if (permissionDenied) ...[
+            if (permissionBlocked) ...[
               const SizedBox(height: FlorienSpacing.xl),
               _PermissionDeniedCard(
+                needsInAppPrompt:
+                    _osPermission ==
+                    FlorienOsNotificationPermission.notDetermined,
+                onAllow: () => unawaited(_requestOsPermission()),
                 onOpenSettings: () async {
                   await ref
                       .read(taskAlarmServiceProvider)
@@ -389,8 +404,14 @@ String _leadLabel(int minutes) {
 }
 
 class _PermissionDeniedCard extends StatelessWidget {
-  const _PermissionDeniedCard({required this.onOpenSettings});
+  const _PermissionDeniedCard({
+    required this.needsInAppPrompt,
+    required this.onAllow,
+    required this.onOpenSettings,
+  });
 
+  final bool needsInAppPrompt;
+  final VoidCallback onAllow;
   final VoidCallback onOpenSettings;
 
   @override
@@ -416,16 +437,26 @@ class _PermissionDeniedCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Hatırlatmalar için iOS ayarlarından Florien bildirimlerine izin ver.',
+            needsInAppPrompt
+                ? 'Hatırlatmalar için Florien’e bildirim izni vermen gerekiyor.'
+                : 'Ayarlar → Bildirimler → Florien yolundan izin ver.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: context.palette.textSecondary,
             ),
           ),
           const SizedBox(height: FlorienSpacing.md),
           FilledButton.icon(
-            onPressed: onOpenSettings,
-            icon: const Icon(Icons.settings_rounded),
-            label: const Text('iOS ayarlarını aç'),
+            onPressed: needsInAppPrompt ? onAllow : onOpenSettings,
+            icon: Icon(
+              needsInAppPrompt
+                  ? Icons.notifications_active_outlined
+                  : Icons.settings_rounded,
+            ),
+            label: Text(
+              needsInAppPrompt
+                  ? 'İzin ver'
+                  : 'Florien bildirim ayarlarını aç',
+            ),
           ),
         ],
       ),

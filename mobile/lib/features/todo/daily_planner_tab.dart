@@ -123,6 +123,7 @@ final dailyTaskGroupMoverProvider = Provider<DailyTaskGroupMover>((ref) {
       }
     }
     ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    ref.invalidate(completionCountsProvider);
     unawaited(ref.read(notificationReconcileProvider)());
   };
 });
@@ -131,17 +132,22 @@ final dailyTaskReschedulerProvider = Provider<DailyTaskRescheduler>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
   return (task, date) async {
     if (task.isCompleted) await repository.uncompleteTask(task.id);
+    final leavesToday = florienRescheduleLeavesToday(date, DateTime.now());
     await repository.updateTask(
       id: task.id,
       scheduledAt: _scheduledAt(date, task.dayPeriod),
       dayPeriod: task.dayPeriod,
       isInbox: false,
+      status: leavesToday ? TaskStatus.pending : null,
+      clearStartedAt: leavesToday,
     );
+    if (leavesToday) abandonFocusForTask(ref, task.id);
     final previousDate = task.scheduledAt;
     if (previousDate != null) {
       ref.invalidate(dailyTimelineProvider(_dateOnly(previousDate)));
     }
     ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    ref.invalidate(completionCountsProvider);
     unawaited(ref.read(notificationReconcileProvider)());
   };
 });
@@ -1847,6 +1853,7 @@ class _DailyTaskCard extends ConsumerWidget {
         try {
           if (task.isCompleted) {
             await ref.read(taskRepositoryProvider).uncompleteTask(task.id);
+            ref.invalidate(completionCountsProvider);
             unawaited(ref.read(notificationReconcileProvider)());
           } else {
             final counts = await ref.read(dailyTaskCompleterProvider)(task.id);
@@ -4131,9 +4138,7 @@ class _SquareButton extends StatelessWidget {
             child: Icon(
               icon,
               size: compact ? 18 : 21,
-              color: palette.textSecondary.withValues(
-                alpha: emphasized ? 0.72 : 1,
-              ),
+              color: emphasized ? palette.background : palette.textSecondary,
             ),
           ),
         ),

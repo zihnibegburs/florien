@@ -35,6 +35,9 @@ void main() {
       ),
     );
 
+    expect(find.text('Hizmet şartları'), findsOneWidget);
+    expect(find.text('Gizlilik politikası'), findsOneWidget);
+
     await tester.tap(find.text('Bağlı Takvimler'));
     await tester.pumpAndSettle();
 

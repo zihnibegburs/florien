@@ -18,6 +18,7 @@ class FocusTimerTab extends StatefulWidget {
   const FocusTimerTab({
     super.key,
     this.launchRequest,
+    this.resumeProgress,
     this.resetSignal = 0,
     this.finishSignal = 0,
     this.onStandaloneFocusStarted,
@@ -33,6 +34,7 @@ class FocusTimerTab extends StatefulWidget {
   });
 
   final FocusTaskLaunch? launchRequest;
+  final ActiveFocusTask? resumeProgress;
   final int resetSignal;
   final int finishSignal;
   final Future<FocusTaskLaunch> Function(int durationMinutes)?
@@ -53,7 +55,7 @@ class FocusTimerTab extends StatefulWidget {
 }
 
 class _FocusTimerTabState extends State<FocusTimerTab>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const _selectedMusicPreferenceKey = 'focus_timer_selected_music';
   static const _musicAutoPlayPreferenceKey = 'focus_timer_music_auto_play';
 
@@ -76,6 +78,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _usesDefaultFocusIcon = false;
   bool _creatingStandaloneTask = false;
   bool _isFinishing = false;
+  bool _focusDurationEnded = false;
   bool _focusAlarmScheduled = false;
   late final AudioPlayer _focusMusicPlayer;
   _FocusMusicTrack? _selectedMusic;
@@ -89,6 +92,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _alarmEnabled = widget.alarmAvailable;
     _focusMusicPlayer = AudioPlayer();
     unawaited(_focusMusicPlayer.setLoopMode(LoopMode.one));
@@ -174,11 +178,20 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _startTaskFocus(request),
       );
-    } else if (request == null && oldWidget.launchRequest?.automatic == true) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _closeSession();
-      });
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !_sessionActive) return;
+    _syncRemainingFromClock(force: true);
+    if (!mounted) return;
+    if (_remainingSeconds <= 0) {
+      unawaited(_completeAndCloseSession());
+      return;
+    }
+    setState(() {});
+    _publishTaskProgress();
   }
 
   bool get _isRunning => _timer?.isActive ?? false;
@@ -186,8 +199,14 @@ class _FocusTimerTabState extends State<FocusTimerTab>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    final keepRunningInBackground = _sessionActive && (_timer?.isActive ?? false);
     _timer?.cancel();
-    unawaited(_cancelFocusAlarm());
+    if (keepRunningInBackground) {
+      _publishTaskProgress(runningOverride: true);
+    } else {
+      unawaited(_cancelFocusAlarm());
+    }
     unawaited(_focusMusicPlayer.dispose());
     _completionController.dispose();
     super.dispose();
@@ -325,18 +344,24 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       try {
         final launch = await widget.onStandaloneFocusStarted!(_selectedMinutes);
         if (!mounted) return;
-        setState(() {
-          _selectedMinutes = launch.durationMinutes.clamp(1, 24 * 60);
-          _remainingSeconds = _selectedMinutes * 60;
-          _sessionTotalSeconds = _remainingSeconds;
-          _taskId = launch.taskId;
-          _taskTitle = launch.title;
-          _taskIcon = launch.icon;
-          _taskColor = launch.color;
-          _taskCompletionRequested = false;
-          _automaticTask = false;
-          _usesDefaultFocusIcon = true;
-        });
+        if (_taskId == launch.taskId && _sessionActive) {
+          if (_isRunning) return;
+        } else {
+          setState(() {
+            _selectedMinutes = launch.durationMinutes.clamp(1, 24 * 60);
+            _remainingSeconds = launch.endsAt == null
+                ? _selectedMinutes * 60
+                : math.max(0, launch.endsAt!.difference(DateTime.now()).inSeconds);
+            _sessionTotalSeconds = _remainingSeconds;
+            _taskId = launch.taskId;
+            _taskTitle = launch.title;
+            _taskIcon = launch.icon;
+            _taskColor = launch.color;
+            _taskCompletionRequested = false;
+            _automaticTask = false;
+            _usesDefaultFocusIcon = true;
+          });
+        }
       } catch (error) {
         debugPrint('Standalone focus task could not be persisted: $error');
         if (mounted) {
@@ -363,21 +388,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
+      _syncRemainingFromClock();
       if (_remainingSeconds <= 1) {
         timer.cancel();
-        _musicActiveForSession = false;
-        unawaited(_stopFocusMusic());
-        setState(() => _remainingSeconds = 0);
-        _publishTaskProgress();
-        final taskId = _taskId;
-        if (taskId != null && !_automaticTask) {
-          unawaited(_completeTaskAfterTimer(taskId));
-        }
-        if (_alarmEnabled) {
-          unawaited(_completeFocusAlarm());
-          unawaited(SystemSound.play(SystemSoundType.alert));
-          unawaited(HapticFeedback.heavyImpact());
-        }
+        unawaited(_endFocusDuration());
       } else {
         setState(() => _remainingSeconds--);
         _publishTaskProgress();
@@ -408,39 +422,79 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _automaticTask = false;
       _usesDefaultFocusIcon = false;
       _isFinishing = false;
+      _focusDurationEnded = false;
     });
     widget.onTaskProgressChanged?.call(null);
     widget.onSessionClosed?.call();
   }
 
+  void _syncRemainingFromClock({bool force = false}) {
+    final end = _plannedEndAt;
+    if (end == null) return;
+    final fromClock = math.max(0, end.difference(DateTime.now()).inSeconds);
+    if (force || fromClock < _remainingSeconds - 1) {
+      _remainingSeconds = fromClock;
+    }
+  }
+
   void _startTaskFocus(FocusTaskLaunch request) {
     if (!mounted) return;
-    _timer?.cancel();
-    unawaited(_cancelFocusAlarm());
-    _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
-    final duration = request.durationMinutes.clamp(1, 24 * 60);
+    if (_taskId == request.taskId && _sessionActive) {
+      return;
+    }
+
     final now = DateTime.now();
-    final scheduledEnd = request.endsAt;
-    final scheduledStart = request.startedAt;
-    final automaticRemaining = scheduledEnd?.difference(now).inSeconds;
+    final resume = widget.resumeProgress?.taskId == request.taskId
+        ? widget.resumeProgress
+        : null;
+    final duration = request.durationMinutes.clamp(1, 24 * 60);
+    var remaining = duration * 60;
+    var total = remaining;
+    DateTime? startedAt = request.startedAt;
+    DateTime? endsAt = request.endsAt;
+    var paused = false;
+
+    if (resume != null) {
+      total = resume.totalSeconds > 0 ? resume.totalSeconds : total;
+      if (resume.isRunning && resume.endsAt != null) {
+        remaining = resume.endsAt!.difference(now).inSeconds;
+        endsAt = resume.endsAt;
+        startedAt = resume.startedAt ?? startedAt;
+      } else {
+        remaining = resume.remainingSeconds;
+        paused = !resume.isRunning;
+        endsAt = resume.isRunning
+            ? now.add(Duration(seconds: remaining))
+            : resume.endsAt;
+        startedAt = resume.startedAt ?? startedAt;
+      }
+    } else if (endsAt != null) {
+      remaining = endsAt.difference(now).inSeconds;
+      if (startedAt != null) {
+        total = math.max(remaining, endsAt.difference(startedAt).inSeconds);
+      }
+    }
+
     if (request.automatic &&
-        (scheduledStart == null ||
-            scheduledEnd == null ||
-            automaticRemaining == null ||
-            automaticRemaining <= 0)) {
+        (request.startedAt == null ||
+            request.endsAt == null ||
+            remaining <= 0)) {
       _closeSession();
       return;
     }
+    if (remaining <= 0) {
+      _closeSession();
+      return;
+    }
+
+    _timer?.cancel();
+    _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
     setState(() {
       _selectedMinutes = duration;
-      _remainingSeconds = request.automatic
-          ? automaticRemaining!
-          : duration * 60;
-      _sessionTotalSeconds = request.automatic
-          ? scheduledEnd!.difference(scheduledStart!).inSeconds
-          : _remainingSeconds;
-      _sessionStartedAt = request.automatic ? scheduledStart : null;
-      _plannedEndAt = request.automatic ? scheduledEnd : null;
+      _remainingSeconds = remaining;
+      _sessionTotalSeconds = total;
+      _sessionStartedAt = startedAt;
+      _plannedEndAt = endsAt;
       _taskId = request.taskId;
       _taskTitle = request.title;
       _taskIcon = request.icon;
@@ -448,8 +502,13 @@ class _FocusTimerTabState extends State<FocusTimerTab>
       _taskCompletionRequested = false;
       _taskCompletionFuture = null;
       _automaticTask = request.automatic;
-      _usesDefaultFocusIcon = false;
+      _usesDefaultFocusIcon = resume?.usesDefaultFocusIcon ?? false;
     });
+    if (paused) {
+      _sessionStartedAt ??= now;
+      _publishTaskProgress();
+      return;
+    }
     unawaited(_toggleTimer());
   }
 
@@ -480,22 +539,17 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   }
 
   void _removeMinute() {
+    _syncRemainingFromClock();
+    if (_remainingSeconds <= 60) {
+      unawaited(_endFocusDuration());
+      return;
+    }
+
     final elapsedSeconds = math.max(
       0,
       _sessionTotalSeconds - _remainingSeconds,
     );
-    final reducedTotalSeconds = math.max(0, _sessionTotalSeconds - 60);
-    if (reducedTotalSeconds <= elapsedSeconds) {
-      setState(() {
-        _sessionTotalSeconds = math.max(1, elapsedSeconds);
-        _remainingSeconds = 0;
-        _plannedEndAt = DateTime.now();
-      });
-      _publishTaskProgress();
-      unawaited(_completeAndCloseSession());
-      return;
-    }
-
+    final reducedTotalSeconds = _sessionTotalSeconds - 60;
     setState(() {
       _sessionTotalSeconds = reducedTotalSeconds;
       _remainingSeconds = reducedTotalSeconds - elapsedSeconds;
@@ -505,6 +559,30 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     });
     _publishTaskProgress();
     unawaited(_scheduleFocusAlarm());
+  }
+
+  Future<void> _endFocusDuration() async {
+    if (_focusDurationEnded || _isFinishing) return;
+    _focusDurationEnded = true;
+    _timer?.cancel();
+    _musicActiveForSession = false;
+    unawaited(_stopFocusMusic());
+    if (mounted) {
+      setState(() {
+        _remainingSeconds = 0;
+        _plannedEndAt = DateTime.now();
+      });
+    }
+    _publishTaskProgress();
+    final taskId = _taskId;
+    if (taskId != null && !_automaticTask) {
+      unawaited(_completeTaskAfterTimer(taskId));
+    }
+    if (_alarmEnabled) {
+      unawaited(_completeFocusAlarm());
+      unawaited(SystemSound.play(SystemSoundType.alert));
+      unawaited(HapticFeedback.heavyImpact());
+    }
   }
 
   void _toggleAlarm() {
@@ -556,7 +634,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     }
   }
 
-  void _publishTaskProgress() {
+  void _publishTaskProgress({bool? runningOverride}) {
     final taskId = _taskId;
     if (taskId == null) {
       widget.onTaskProgressChanged?.call(null);
@@ -570,7 +648,9 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         usesDefaultFocusIcon: _usesDefaultFocusIcon,
         totalSeconds: _sessionTotalSeconds,
         remainingSeconds: _remainingSeconds,
-        isRunning: _isRunning,
+        isRunning: runningOverride ?? _isRunning,
+        startedAt: _sessionStartedAt,
+        endsAt: _plannedEndAt,
       ),
     );
   }

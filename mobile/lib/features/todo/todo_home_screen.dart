@@ -101,10 +101,10 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_refreshScheduledFocus());
     });
-    _scheduledFocusClock = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => unawaited(_refreshScheduledFocus()),
-    );
+    _scheduledFocusClock = Timer.periodic(const Duration(seconds: 1), (_) {
+      unawaited(_refreshScheduledFocus());
+      _tickBackgroundFocus();
+    });
   }
 
   @override
@@ -240,6 +240,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       await ref.read(taskRepositoryProvider).completeTask(taskId);
       ref.invalidate(inboxProvider);
       ref.invalidate(dailyTimelineProvider);
+      ref.invalidate(completionCountsProvider);
     } catch (error) {
       debugPrint('Home widget task could not be completed: $error');
     }
@@ -303,6 +304,32 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       a?.taskId == b?.taskId &&
       a?.startedAt == b?.startedAt &&
       a?.endsAt == b?.endsAt;
+
+  void _tickBackgroundFocus() {
+    if (_plannerAiOpen) return;
+    final progress = ref.read(activeFocusTaskProvider);
+    final end = progress?.endsAt;
+    if (progress == null || !progress.isRunning || end == null) return;
+    final remaining = end.difference(DateTime.now()).inSeconds;
+    if (remaining <= 0) {
+      unawaited(_expireBackgroundFocus(progress));
+      return;
+    }
+    if (remaining == progress.remainingSeconds) return;
+    final next = progress.copyWith(remainingSeconds: remaining);
+    ref.read(activeFocusTaskProvider.notifier).state = next;
+    unawaited(_syncFocusLiveActivity(next));
+  }
+
+  Future<void> _expireBackgroundFocus(ActiveFocusTask progress) async {
+    ref.read(activeFocusTaskProvider.notifier).state = null;
+    if (ref.read(focusTaskLaunchProvider)?.taskId == progress.taskId) {
+      ref.read(focusTaskLaunchProvider.notifier).state = null;
+    }
+    await _completeFocusedTask(progress.taskId);
+    if (!mounted) return;
+    await ref.read(liveActivityServiceProvider).endFocus();
+  }
 
   Future<void> _completeFocusedTask(String taskId) async {
     if (ref.read(scheduledFocusLaunchProvider)?.taskId == taskId) {
