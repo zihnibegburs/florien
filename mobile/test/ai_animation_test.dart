@@ -93,9 +93,8 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('bottom banner keeps a decorative special button on the right', (
-    tester,
-  ) async {
+  testWidgets('bottom banner AI button reports taps', (tester) async {
+    var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
         theme: FlorienTheme.light,
@@ -103,6 +102,7 @@ void main() {
           bottomNavigationBar: FlorienBottomNavigation(
             selectedIndex: 0,
             onDestinationSelected: (_) {},
+            onAiPressed: () => tapped = true,
             destinations: const [
               FlorienNavDestination(
                 label: 'To-do',
@@ -115,8 +115,9 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const ValueKey('florien-nav-special-button')), findsOneWidget);
+    expect(find.byKey(const ValueKey('planner-ai-chat-button')), findsOneWidget);
     expect(find.byKey(const ValueKey('florien-nav-special-image')), findsOneWidget);
-    expect(find.byKey(const ValueKey('planner-ai-chat-button')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
+    expect(tapped, isTrue);
   });
 }

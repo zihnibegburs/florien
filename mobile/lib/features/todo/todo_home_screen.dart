@@ -466,6 +466,8 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
             selectedIcon: Icons.bar_chart_rounded,
           ),
         ],
+        onAiPressed: () => unawaited(_openPlannerAi()),
+        aiTooltip: 'Plan asistanını aç',
       ),
     );
   }

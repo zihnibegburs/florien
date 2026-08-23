@@ -154,15 +154,18 @@ class FlorienBottomNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
+    this.onAiPressed,
+    this.aiTooltip,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<FlorienNavDestination> destinations;
+  final VoidCallback? onAiPressed;
+  final String? aiTooltip;
 
   static const double _barHeight = 68;
-  static const double _aiSize = 58;
-  static const double _aiLift = 10;
+  static const double _aiSize = 52;
 
   @override
   Widget build(BuildContext context) {
@@ -171,47 +174,35 @@ class FlorienBottomNavigation extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           FlorienSpacing.screen,
-          FlorienSpacing.sm + _aiLift,
+          FlorienSpacing.sm,
           FlorienSpacing.screen,
           FlorienSpacing.md,
         ),
-        child: SizedBox(
+        child: Container(
           height: _barHeight,
-          child: Stack(
-            clipBehavior: Clip.none,
+          padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
+          decoration: BoxDecoration(
+            color: context.palette.surface,
+            borderRadius: BorderRadius.circular(FlorienRadius.pill),
+            border: Border.all(
+              color: context.palette.border,
+              width: FlorienBorders.thin,
+            ),
+          ),
+          child: Row(
             children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: context.palette.surface,
-                    borderRadius: BorderRadius.circular(FlorienRadius.pill),
-                    border: Border.all(
-                      color: context.palette.border,
-                      width: FlorienBorders.thin,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(6, 4, 8, 4),
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < destinations.length; i++)
-                          Expanded(
-                            child: _NavItem(
-                              destination: destinations[i],
-                              selected: selectedIndex == i,
-                              onTap: () => onDestinationSelected(i),
-                            ),
-                          ),
-                        const SizedBox(width: _aiSize - 8),
-                      ],
-                    ),
+              for (var i = 0; i < destinations.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    destination: destinations[i],
+                    selected: selectedIndex == i,
+                    onTap: () => onDestinationSelected(i),
                   ),
                 ),
-              ),
-              const Positioned(
-                right: 5,
-                top: -_aiLift,
-                child: _SpecialNavButton(size: _aiSize),
+              _SpecialNavButton(
+                size: _aiSize,
+                onTap: onAiPressed,
+                tooltip: aiTooltip,
               ),
             ],
           ),
@@ -234,21 +225,30 @@ class FlorienNavDestination {
 }
 
 class _SpecialNavButton extends StatelessWidget {
-  const _SpecialNavButton({this.size = 58});
+  const _SpecialNavButton({
+    this.size = 58,
+    this.onTap,
+    this.tooltip,
+  });
 
   final double size;
+  final VoidCallback? onTap;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: SizedBox.square(
-        key: const ValueKey('florien-nav-special-button'),
-        dimension: size,
-        child: FlorienAiMark(
-          size: size,
-          premium: true,
-          semanticLabel: '',
-          imageKey: const ValueKey('florien-nav-special-image'),
+    return Tooltip(
+      message: tooltip ?? 'Plan asistanı',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('planner-ai-chat-button'),
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: FlorienAiMark(
+            size: size,
+            imageKey: const ValueKey('florien-nav-special-image'),
+          ),
         ),
       ),
     );

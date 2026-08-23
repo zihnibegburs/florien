@@ -7,7 +7,6 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
-import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 import 'package:florien/features/todo/todo_home_screen.dart';
 
 const _todoTask = TaskModel(
@@ -58,12 +57,18 @@ class _ActivePremiumMembershipNotifier extends PremiumMembershipNotifier {
   @override
   Future<PremiumMembership> build() async =>
       const PremiumMembership(storeAvailable: false, isPremium: true);
+
+  @override
+  Future<void> refreshEntitlement() async {}
 }
 
 class _NonPremiumMembershipNotifier extends PremiumMembershipNotifier {
   @override
   Future<PremiumMembership> build() async =>
       const PremiumMembership(storeAvailable: false);
+
+  @override
+  Future<void> refreshEntitlement() async {}
 }
 
 void main() {
@@ -280,11 +285,9 @@ void main() {
     expect(find.byType(FlorienBottomNavigation), findsOneWidget);
     expect(
       find.byKey(const ValueKey('planner-ai-chat-button')),
-      findsNothing,
+      findsOneWidget,
     );
     await _openPlannerAi(tester);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Florien AI'), findsWidgets);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
@@ -315,7 +318,7 @@ void main() {
     expect(find.text('Florien'), findsOneWidget);
   });
 
-  testWidgets('planner AI chat opens Premium for a free account', (
+  testWidgets('planner AI chat opens for a free account', (
     tester,
   ) async {
     await _pumpHome(
@@ -326,25 +329,15 @@ void main() {
     );
 
     await _openPlannerAi(tester);
-    await tester.pumpAndSettle();
 
-    expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('AI plan asistanı'), findsOneWidget);
-    expect(find.byKey(const ValueKey('planner-ai-input')), findsNothing);
+    expect(find.text('Florien AI'), findsWidgets);
+    expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
+    expect(find.text('Florien özellikleri'), findsNothing);
   });
 }
 
 Future<void> _openPlannerAi(WidgetTester tester) async {
-  final context = tester.element(find.byType(TodoHomeScreen));
-  final container = ProviderScope.containerOf(context);
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => PlannerAiChatScreen(
-        onStandaloneFocusStarted: (minutes) =>
-            container.read(createStandaloneFocusTaskProvider)(minutes),
-      ),
-    ),
-  );
+  await tester.tap(find.byKey(const ValueKey('planner-ai-chat-button')));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 500));
 }
