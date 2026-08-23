@@ -139,7 +139,7 @@ class FlorienPalette extends ThemeExtension<FlorienPalette> {
     background: FlorienColors.darkBackground,
     surface: FlorienColors.darkSurface,
     surfaceMuted: Color(0xFF3A3A3E),
-    primaryMuted: Color(0xFF4A3A2E),
+    primaryMuted: Color(0xFFC99262),
     textPrimary: FlorienColors.darkTextPrimary,
     textSecondary: FlorienColors.darkTextSecondary,
     border: FlorienColors.darkBorder,
