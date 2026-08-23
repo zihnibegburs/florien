@@ -438,8 +438,53 @@ void main() {
 
     expect(find.byType(PremiumMembershipScreen), findsNothing);
     expect(find.text('10 Dakikada Ayağa Kalk'), findsWidgets);
-    expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
+    expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
+    expect(find.text('Rutin için gerekenleri hazırla'), findsNothing);
   });
+
+  testWidgets(
+    'premium user gets ready routine steps from the AI button',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 1100));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dailyTimelineProvider.overrideWith(
+              (ref, date) async => TimelineModel(date: date, tasks: const []),
+            ),
+            premiumMembershipProvider.overrideWith(
+              _ActivePremiumMembershipNotifier.new,
+            ),
+          ],
+          child: MaterialApp(
+            theme: FlorienTheme.light,
+            home: const Scaffold(body: DailyPlannerTab()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('daily-menu-routines')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('routine-task-10 Dakikada Ayağa Kalk')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('daily-ai-subtasks-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(PremiumMembershipScreen), findsNothing);
+      expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
+      expect(find.text('Rutin için gerekenleri hazırla'), findsOneWidget);
+      expect(find.text('Başlangıcı tamamlayıp güne geç'), findsOneWidget);
+    },
+  );
 
   testWidgets('free account opens Premium before enabling a task alarm', (
     tester,

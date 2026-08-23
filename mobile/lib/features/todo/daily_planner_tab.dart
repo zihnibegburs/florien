@@ -437,7 +437,6 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
                   durationMinutes: task.durationMinutes,
                   icon: task.icon,
                   color: readyRoutineTaskColor,
-                  subtasks: List<String>.from(task.subtasks),
                   presetSubtasks: task.subtasks,
                   openDetails: true,
                 ),
@@ -2992,17 +2991,14 @@ class _DailyTaskDetailScreenState
         _subtasks.length >= TaskModel.userSubtaskLimit) {
       return;
     }
-    final usingReadyRoutineSteps =
-        widget.initialDraft.presetSubtasks.isNotEmpty;
-    if (!usingReadyRoutineSteps &&
-        !await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
+    if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
       return;
     }
     if (!mounted) return;
 
     setState(() => _generatingSubtasks = true);
     try {
-      final generated = usingReadyRoutineSteps
+      final generated = widget.initialDraft.presetSubtasks.isNotEmpty
           ? await Future<List<String>>.delayed(
               const Duration(milliseconds: 450),
               () => widget.initialDraft.presetSubtasks,
@@ -3263,10 +3259,7 @@ class _DailyTaskDetailScreenState
                             _subtasks.length < TaskModel.userSubtaskLimit
                         ? IconButton.filledTonal(
                             key: const ValueKey('daily-ai-subtasks-button'),
-                            tooltip:
-                                widget.initialDraft.presetSubtasks.isNotEmpty
-                                ? context.l10n('Hazır alt görevleri ekle')
-                                : context.l10n('AI ile alt görev oluştur'),
+                            tooltip: context.l10n('AI ile alt görev oluştur'),
                             onPressed: _generatingSubtasks
                                 ? null
                                 : _generateSubtasks,
@@ -3278,18 +3271,9 @@ class _DailyTaskDetailScreenState
                                     ),
                                   )
                                 : Icon(
-                                    !isPremium &&
-                                            widget
-                                                .initialDraft
-                                                .presetSubtasks
-                                                .isEmpty
-                                        ? Icons.lock_outline_rounded
-                                        : widget
-                                              .initialDraft
-                                              .presetSubtasks
-                                              .isNotEmpty
-                                        ? Icons.playlist_add_check_rounded
-                                        : Icons.auto_awesome_rounded,
+                                    isPremium
+                                        ? Icons.auto_awesome_rounded
+                                        : Icons.lock_outline_rounded,
                                   ),
                           )
                         : null,
