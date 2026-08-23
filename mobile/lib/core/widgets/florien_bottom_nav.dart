@@ -25,19 +25,11 @@ class FlorienAiMark extends StatelessWidget {
     final star = Semantics(
       image: true,
       label: semanticLabel,
-      child: ColorFiltered(
-        colorFilter: const ColorFilter.matrix(<double>[
-          1, 0, 0, 0, 0,
-          0, 1, 0, 0, 0,
-          0, 0, 1, 0, 0,
-          0.28, 0.42, 0.30, 0, -0.04,
-        ]),
-        child: Image.asset(
-          florienAiFabImageAsset,
-          key: imageKey,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-        ),
+      child: Image.asset(
+        florienAiFabImageAsset,
+        key: imageKey,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
       ),
     );
 

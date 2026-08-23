@@ -59,10 +59,9 @@ class _LiveActivityTile extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: FlorienSpacing.sm),
+  Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: context.palette.surface,
+      color: context.palette.background,
       borderRadius: BorderRadius.circular(FlorienRadius.lg),
       border: Border.all(
         color: context.palette.border,

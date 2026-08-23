@@ -14,7 +14,7 @@ abstract final class LiquidGlassTokens {
 
   static Color tint(BuildContext context, {double? opacity}) {
     final o = opacity ?? 1;
-    return context.palette.surface.withValues(alpha: o);
+    return context.palette.background.withValues(alpha: o);
   }
 
   static Color highlight(BuildContext context) => context.palette.border;

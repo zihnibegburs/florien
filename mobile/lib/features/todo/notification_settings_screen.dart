@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/providers.dart';
 
 class NotificationSettingsScreen extends ConsumerStatefulWidget {
@@ -169,126 +170,135 @@ class _NotificationSettingsScreenState
                     ),
                   ),
                   const SizedBox(height: FlorienSpacing.lg),
-                  _TypeTile(
-                    icon: Icons.notifications_active_outlined,
-                    title: 'Görev hatırlatması',
-                    subtitle: _leadLabel(value.taskReminderLeadMinutes),
-                    enabled: value.taskRemindersEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) =>
-                          current.copyWith(taskRemindersEnabled: enabled),
-                    ),
-                    trailing: _LeadPicker(
-                      value: value.taskReminderLeadMinutes,
-                      enabled: value.taskRemindersEnabled && !_saving,
-                      onChanged: (minutes) => _persist(
-                        (current) => current.copyWith(
-                          taskReminderLeadMinutes: minutes,
+                  FlorienGroupedPanel(
+                    children: [
+                      _TypeTile(
+                        icon: Icons.notifications_active_outlined,
+                        title: 'Görev hatırlatması',
+                        subtitle: _leadLabel(value.taskReminderLeadMinutes),
+                        enabled: value.taskRemindersEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(taskRemindersEnabled: enabled),
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: FlorienSpacing.sm),
-                  _TypeTile(
-                    icon: Icons.wb_sunny_outlined,
-                    title: 'Sabah plan özeti',
-                    subtitle: _formatTime(value.morningSummaryTime),
-                    enabled: value.morningSummaryEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) =>
-                          current.copyWith(morningSummaryEnabled: enabled),
-                    ),
-                    trailing: _TimeButton(
-                      label: _formatTime(value.morningSummaryTime),
-                      enabled: value.morningSummaryEnabled && !_saving,
-                      onTap: () => _pickTime(
-                        initial: value.morningSummaryTime,
-                        onPicked: (time) => _persist(
-                          (current) => current.copyWith(
-                            morningSummaryMinutes:
-                                NotificationPreferences.minutesFromTime(time),
+                        trailing: _LeadPicker(
+                          value: value.taskReminderLeadMinutes,
+                          enabled: value.taskRemindersEnabled && !_saving,
+                          onChanged: (minutes) => _persist(
+                            (current) => current.copyWith(
+                              taskReminderLeadMinutes: minutes,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: FlorienSpacing.sm),
-                  _TypeTile(
-                    icon: Icons.favorite_outline_rounded,
-                    title: 'Motivasyon',
-                    subtitle:
-                        'Salı ve perşembe · ${_formatTime(value.motivationTime)}',
-                    enabled: value.motivationEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) => current.copyWith(motivationEnabled: enabled),
-                    ),
-                    trailing: _TimeButton(
-                      label: _formatTime(value.motivationTime),
-                      enabled: value.motivationEnabled && !_saving,
-                      onTap: () => _pickTime(
-                        initial: value.motivationTime,
-                        onPicked: (time) => _persist(
-                          (current) => current.copyWith(
-                            motivationMinutes:
-                                NotificationPreferences.minutesFromTime(time),
+                      _TypeTile(
+                        icon: Icons.wb_sunny_outlined,
+                        title: 'Sabah plan özeti',
+                        subtitle: _formatTime(value.morningSummaryTime),
+                        enabled: value.morningSummaryEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(morningSummaryEnabled: enabled),
+                        ),
+                        trailing: _TimeButton(
+                          label: _formatTime(value.morningSummaryTime),
+                          enabled: value.morningSummaryEnabled && !_saving,
+                          onTap: () => _pickTime(
+                            initial: value.morningSummaryTime,
+                            onPicked: (time) => _persist(
+                              (current) => current.copyWith(
+                                morningSummaryMinutes:
+                                    NotificationPreferences.minutesFromTime(
+                                      time,
+                                    ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: FlorienSpacing.sm),
-                  _TypeTile(
-                    icon: Icons.nightlight_round,
-                    title: 'Günlük değerlendirme',
-                    subtitle: _formatTime(value.dailyReviewTime),
-                    enabled: value.dailyReviewEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) =>
-                          current.copyWith(dailyReviewEnabled: enabled),
-                    ),
-                    trailing: _TimeButton(
-                      label: _formatTime(value.dailyReviewTime),
-                      enabled: value.dailyReviewEnabled && !_saving,
-                      onTap: () => _pickTime(
-                        initial: value.dailyReviewTime,
-                        onPicked: (time) => _persist(
-                          (current) => current.copyWith(
-                            dailyReviewMinutes:
-                                NotificationPreferences.minutesFromTime(time),
+                      _TypeTile(
+                        icon: Icons.favorite_outline_rounded,
+                        title: 'Motivasyon',
+                        subtitle:
+                            'Salı ve perşembe · ${_formatTime(value.motivationTime)}',
+                        enabled: value.motivationEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(motivationEnabled: enabled),
+                        ),
+                        trailing: _TimeButton(
+                          label: _formatTime(value.motivationTime),
+                          enabled: value.motivationEnabled && !_saving,
+                          onTap: () => _pickTime(
+                            initial: value.motivationTime,
+                            onPicked: (time) => _persist(
+                              (current) => current.copyWith(
+                                motivationMinutes:
+                                    NotificationPreferences.minutesFromTime(
+                                      time,
+                                    ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: FlorienSpacing.sm),
-                  _TypeTile(
-                    icon: Icons.calendar_view_week_rounded,
-                    title: 'Haftalık değerlendirme',
-                    subtitle:
-                        'Pazar · ${_formatTime(value.weeklyReviewTime)}',
-                    enabled: value.weeklyReviewEnabled,
-                    interactive: !_saving,
-                    onEnabledChanged: (enabled) => _persist(
-                      (current) =>
-                          current.copyWith(weeklyReviewEnabled: enabled),
-                    ),
-                    trailing: _TimeButton(
-                      label: _formatTime(value.weeklyReviewTime),
-                      enabled: value.weeklyReviewEnabled && !_saving,
-                      onTap: () => _pickTime(
-                        initial: value.weeklyReviewTime,
-                        onPicked: (time) => _persist(
-                          (current) => current.copyWith(
-                            weeklyReviewMinutes:
-                                NotificationPreferences.minutesFromTime(time),
+                      _TypeTile(
+                        icon: Icons.nightlight_round,
+                        title: 'Günlük değerlendirme',
+                        subtitle: _formatTime(value.dailyReviewTime),
+                        enabled: value.dailyReviewEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(dailyReviewEnabled: enabled),
+                        ),
+                        trailing: _TimeButton(
+                          label: _formatTime(value.dailyReviewTime),
+                          enabled: value.dailyReviewEnabled && !_saving,
+                          onTap: () => _pickTime(
+                            initial: value.dailyReviewTime,
+                            onPicked: (time) => _persist(
+                              (current) => current.copyWith(
+                                dailyReviewMinutes:
+                                    NotificationPreferences.minutesFromTime(
+                                      time,
+                                    ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      _TypeTile(
+                        icon: Icons.calendar_view_week_rounded,
+                        title: 'Haftalık değerlendirme',
+                        subtitle:
+                            'Pazar · ${_formatTime(value.weeklyReviewTime)}',
+                        enabled: value.weeklyReviewEnabled,
+                        interactive: !_saving,
+                        onEnabledChanged: (enabled) => _persist(
+                          (current) =>
+                              current.copyWith(weeklyReviewEnabled: enabled),
+                        ),
+                        trailing: _TimeButton(
+                          label: _formatTime(value.weeklyReviewTime),
+                          enabled: value.weeklyReviewEnabled && !_saving,
+                          onTap: () => _pickTime(
+                            initial: value.weeklyReviewTime,
+                            onPicked: (time) => _persist(
+                              (current) => current.copyWith(
+                                weeklyReviewMinutes:
+                                    NotificationPreferences.minutesFromTime(
+                                      time,
+                                    ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: FlorienSpacing.xxxl),
                   Text(
@@ -305,7 +315,9 @@ class _NotificationSettingsScreenState
                     ),
                   ),
                   const SizedBox(height: FlorienSpacing.lg),
-                  _TypeTile(
+                  FlorienGroupedPanel(
+                    children: [
+                      _TypeTile(
                     icon: Icons.do_not_disturb_on_outlined,
                     title: 'Sessiz saatler',
                     subtitle:
@@ -352,6 +364,8 @@ class _NotificationSettingsScreenState
                         ),
                       ],
                     ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -443,16 +457,8 @@ class _TypeTile extends StatelessWidget {
     final active = enabled;
     return Opacity(
       opacity: active ? 1 : 0.72,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 10, 12),
-        decoration: BoxDecoration(
-          color: active ? context.palette.surface : context.palette.surfaceMuted,
-          borderRadius: BorderRadius.circular(FlorienRadius.lg),
-          border: Border.all(
-            color: context.palette.border,
-            width: FlorienBorders.thin,
-          ),
-        ),
         child: Column(
           children: [
             Row(

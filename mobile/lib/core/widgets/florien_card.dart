@@ -46,6 +46,51 @@ class FlorienCard extends StatelessWidget {
   }
 }
 
+/// Single outlined group for stacked settings or picker rows.
+class FlorienGroupedPanel extends StatelessWidget {
+  const FlorienGroupedPanel({
+    super.key,
+    required this.children,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.palette.background,
+        borderRadius: BorderRadius.circular(FlorienRadius.lg),
+        border: Border.all(
+          color: context.palette.border,
+          width: FlorienBorders.thin,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(FlorienRadius.lg - 1),
+        child: Padding(
+        padding: padding,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: context.palette.border.withValues(alpha: 0.12),
+                ),
+              children[i],
+            ],
+          ],
+        ),
+        ),
+      ),
+    );
+  }
+}
+
 class FlorienSectionHeader extends StatelessWidget {
   const FlorienSectionHeader({
     super.key,

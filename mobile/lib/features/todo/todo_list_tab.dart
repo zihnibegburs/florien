@@ -4,6 +4,7 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/core/widgets/florien_soft_overlay.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
@@ -1914,19 +1915,21 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
           children: [
             Text('Listeye taşı', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            _MoveListTile(
-              label: 'To-do',
-              selected: task.todoListId == null,
-              onTap: () => Navigator.pop(context, defaultList),
+            FlorienGroupedPanel(
+              children: [
+                _MoveListTile(
+                  label: 'To-do',
+                  selected: task.todoListId == null,
+                  onTap: () => Navigator.pop(context, defaultList),
+                ),
+                for (final list in lists)
+                  _MoveListTile(
+                    label: list.name,
+                    selected: task.todoListId == list.id,
+                    onTap: () => Navigator.pop(context, list.id),
+                  ),
+              ],
             ),
-            for (final list in lists) ...[
-              const SizedBox(height: 8),
-              _MoveListTile(
-                label: list.name,
-                selected: task.todoListId == list.id,
-                onTap: () => Navigator.pop(context, list.id),
-              ),
-            ],
           ],
         ),
       ),
@@ -2163,13 +2166,9 @@ class _MoveListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected
-        ? Theme.of(context).colorScheme.primaryContainer
-        : context.palette.surfaceMuted,
-    borderRadius: BorderRadius.circular(FlorienRadius.md),
+    color: selected ? FlorienColors.primary.withValues(alpha: 0.35) : Colors.transparent,
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(FlorienRadius.md),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -2177,7 +2176,6 @@ class _MoveListTile extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),

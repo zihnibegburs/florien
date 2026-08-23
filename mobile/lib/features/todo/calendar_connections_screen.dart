@@ -3,6 +3,7 @@ import 'package:flutter_icon_park/flutter_icon_park.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/premium/premium_membership.dart';
@@ -168,17 +169,14 @@ class _CalendarConnectionsScreenState
                   ? const _CalendarEmptyState(
                       message: 'Bağlı takvimlerin burada görünecek.',
                     )
-                  : Column(
+                  : FlorienGroupedPanel(
                       children: [
-                        for (final connection in items) ...[
+                        for (final connection in items)
                           _ConnectedCalendarCard(
                             connection: connection,
                             onDisconnect: () =>
                                 _disconnect(connection.provider),
                           ),
-                          if (connection != items.last)
-                            const SizedBox(height: 10),
-                        ],
                       ],
                     ),
             ),
@@ -271,16 +269,8 @@ class _ConnectedCalendarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(FlorienRadius.lg),
-        border: Border.all(
-          color: context.palette.border,
-          width: FlorienBorders.thin,
-        ),
-      ),
       child: Row(
         children: [
           _ProviderIcon(provider: connection.provider, size: 28),

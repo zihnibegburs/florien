@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/premium/premium_membership.dart';
@@ -204,9 +205,9 @@ class _ProfileManagementScreenState
                 'Profiller yüklenemedi.',
                 style: TextStyle(color: context.palette.error),
               ),
-              data: (state) => Column(
+              data: (state) => FlorienGroupedPanel(
                 children: [
-                  for (final profile in state.profiles) ...[
+                  for (final profile in state.profiles)
                     _ProfileCard(
                       profile: profile,
                       isActive: profile.id == state.activeProfileId,
@@ -220,9 +221,6 @@ class _ProfileManagementScreenState
                       onRename: () => _renameProfile(profile),
                       onDelete: () => _deleteProfile(profile),
                     ),
-                    if (profile != state.profiles.last)
-                      const SizedBox(height: FlorienSpacing.sm),
-                  ],
                 ],
               ),
             ),
@@ -265,17 +263,13 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isActive ? context.palette.accent : context.palette.surface,
-        borderRadius: BorderRadius.circular(FlorienRadius.lg),
-        border: Border.all(
-          color: context.palette.border,
-          width: FlorienBorders.thin,
-        ),
-      ),
-      child: Row(
+    return ColoredBox(
+      color: isActive
+          ? context.palette.accent.withValues(alpha: 0.28)
+          : Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
         children: [
           Icon(
             isActive ? Icons.person_rounded : Icons.person_outline_rounded,
@@ -335,6 +329,7 @@ class _ProfileCard extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -382,7 +377,7 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
       decoration: BoxDecoration(
-        color: context.palette.surface,
+        color: context.palette.background,
         borderRadius: BorderRadius.circular(FlorienRadius.xl),
         border: Border.all(
           color: context.palette.border,
@@ -433,62 +428,49 @@ class _ProfileSwitcherSheet extends ConsumerWidget {
                   style: TextStyle(color: context.palette.error),
                 ),
               ),
-              data: (state) => ListView.separated(
-                shrinkWrap: true,
-                itemCount: state.profiles.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final profile = state.profiles[index];
-                  final selected = profile.id == state.activeProfileId;
-                  return Material(
-                    color: selected
-                        ? FlorienColors.primary
-                        : context.palette.surfaceMuted,
-                    borderRadius: BorderRadius.circular(FlorienRadius.md),
-                    child: InkWell(
-                      key: ValueKey('switch-profile-${profile.id}'),
-                      onTap: () => Navigator.of(context).pop(profile.id),
-                      borderRadius: BorderRadius.circular(FlorienRadius.md),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 13,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(FlorienRadius.md),
-                          border: Border.all(
-                            color: context.palette.border,
-                            width: FlorienBorders.thin,
+              data: (state) => FlorienGroupedPanel(
+                children: [
+                  for (final profile in state.profiles)
+                    Material(
+                      color: profile.id == state.activeProfileId
+                          ? FlorienColors.primary.withValues(alpha: 0.4)
+                          : Colors.transparent,
+                      child: InkWell(
+                        key: ValueKey('switch-profile-${profile.id}'),
+                        onTap: () => Navigator.of(context).pop(profile.id),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 13,
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              selected
-                                  ? Icons.person_rounded
-                                  : Icons.person_outline_rounded,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                profile.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w800),
+                          child: Row(
+                            children: [
+                              Icon(
+                                profile.id == state.activeProfileId
+                                    ? Icons.person_rounded
+                                    : Icons.person_outline_rounded,
                               ),
-                            ),
-                            Icon(
-                              selected
-                                  ? Icons.check_circle_rounded
-                                  : Icons.circle_outlined,
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  profile.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              Icon(
+                                profile.id == state.activeProfileId
+                                    ? Icons.check_circle_rounded
+                                    : Icons.circle_outlined,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  );
-                },
+                ],
               ),
             ),
           ),

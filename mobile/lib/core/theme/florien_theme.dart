@@ -362,7 +362,7 @@ class FlorienTheme {
         iconTheme: IconThemeData(color: palette.textPrimary),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: palette.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         modalElevation: 0,
@@ -376,7 +376,7 @@ class FlorienTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: palette.background,
         surfaceTintColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
         shape: RoundedRectangleBorder(
@@ -493,13 +493,12 @@ class FlorienTheme {
         ),
       ),
       listTileTheme: ListTileThemeData(
-        tileColor: palette.surface,
+        tileColor: Colors.transparent,
         iconColor: palette.textPrimary,
         textColor: palette.textPrimary,
         minTileHeight: 56,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(FlorienRadius.md),
-          side: BorderSide(color: palette.border, width: FlorienBorders.thin),
         ),
       ),
       cardTheme: CardThemeData(
@@ -576,7 +575,7 @@ class FlorienTheme {
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: palette.surface,
+        color: palette.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -606,7 +605,7 @@ class FlorienTheme {
         textStyle: TextStyle(color: palette.textPrimary),
       ),
       datePickerTheme: DatePickerThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: palette.background,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: palette.border, width: FlorienBorders.thin),
@@ -614,7 +613,7 @@ class FlorienTheme {
         ),
       ),
       timePickerTheme: TimePickerThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: palette.background,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: palette.border, width: FlorienBorders.thin),
           borderRadius: BorderRadius.circular(FlorienRadius.lg),

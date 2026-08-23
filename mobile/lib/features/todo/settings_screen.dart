@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/features/todo/calendar_connections_screen.dart';
 import 'package:florien/features/todo/notification_settings_screen.dart';
 import 'package:florien/features/todo/live_activity_settings_screen.dart';
@@ -74,47 +75,51 @@ class SettingsScreen extends ConsumerWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
-            _SettingsRow(
-              icon: Icons.workspace_premium_rounded,
-              label: 'Florien Premium',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const PremiumMembershipScreen(),
+            FlorienGroupedPanel(
+              children: [
+                _SettingsRow(
+                  icon: Icons.workspace_premium_rounded,
+                  label: 'Florien Premium',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PremiumMembershipScreen(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            _SettingsRow(
-              icon: Icons.notifications_none_rounded,
-              label: 'Bildirimler',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NotificationSettingsScreen(),
+                _SettingsRow(
+                  icon: Icons.notifications_none_rounded,
+                  label: 'Bildirimler',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationSettingsScreen(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            _SettingsRow(
-              icon: Icons.timelapse_rounded,
-              label: 'Canlı Etkinlikler',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const LiveActivitySettingsScreen(),
+                _SettingsRow(
+                  icon: Icons.timelapse_rounded,
+                  label: 'Canlı Etkinlikler',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const LiveActivitySettingsScreen(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            _SettingsRow(
-              icon: Icons.calendar_month_outlined,
-              label: 'Bağlı Takvimler',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const CalendarConnectionsScreen(),
+                _SettingsRow(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Bağlı Takvimler',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const CalendarConnectionsScreen(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            _SettingsRow(
-              icon: Icons.wb_sunny_outlined,
-              label: 'Görünüm',
-              trailingLabel: _themeLabel(themeMode),
-              onTap: () => _showAppearanceSheet(context, ref, themeMode),
+                _SettingsRow(
+                  icon: Icons.wb_sunny_outlined,
+                  label: 'Görünüm',
+                  trailingLabel: _themeLabel(themeMode),
+                  onTap: () => _showAppearanceSheet(context, ref, themeMode),
+                ),
+              ],
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
@@ -124,22 +129,26 @@ class SettingsScreen extends ConsumerWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
-            _SettingsRow(
-              key: const ValueKey('settings-profile-switcher'),
-              icon: Icons.switch_account_outlined,
-              label: activeProfileName,
-              trailingLabel: 'Değiştir',
-              onTap: () => showProfileSwitcher(context, ref),
-            ),
-            _SettingsRow(
-              icon: Icons.person_add_alt_1_outlined,
-              label: 'Yeni profil ekle',
-              onTap: () => _openProfiles(context),
-            ),
-            _SettingsRow(
-              icon: Icons.person_outline_rounded,
-              label: 'Profil adını düzenle',
-              onTap: () => _openProfiles(context),
+            FlorienGroupedPanel(
+              children: [
+                _SettingsRow(
+                  key: const ValueKey('settings-profile-switcher'),
+                  icon: Icons.switch_account_outlined,
+                  label: activeProfileName,
+                  trailingLabel: 'Değiştir',
+                  onTap: () => showProfileSwitcher(context, ref),
+                ),
+                _SettingsRow(
+                  icon: Icons.person_add_alt_1_outlined,
+                  label: 'Yeni profil ekle',
+                  onTap: () => _openProfiles(context),
+                ),
+                _SettingsRow(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profil adını düzenle',
+                  onTap: () => _openProfiles(context),
+                ),
+              ],
             ),
             const SizedBox(height: FlorienSpacing.xxxl),
             Text(
@@ -149,19 +158,23 @@ class SettingsScreen extends ConsumerWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: FlorienSpacing.lg),
-            const _SettingsRow(
-              icon: Icons.restart_alt_rounded,
-              label: 'Satın alımı geri yükle',
-            ),
-            _SettingsRow(
-              icon: Icons.logout_rounded,
-              label: 'Çıkış yap',
-              onTap: () => _confirmLogout(context, ref),
-            ),
-            _SettingsRow(
-              icon: Icons.delete_outline_rounded,
-              label: 'Hesabı sil',
-              onTap: () => _confirmDeleteAccount(context, ref),
+            FlorienGroupedPanel(
+              children: [
+                const _SettingsRow(
+                  icon: Icons.restart_alt_rounded,
+                  label: 'Satın alımı geri yükle',
+                ),
+                _SettingsRow(
+                  icon: Icons.logout_rounded,
+                  label: 'Çıkış yap',
+                  onTap: () => _confirmLogout(context, ref),
+                ),
+                _SettingsRow(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'Hesabı sil',
+                  onTap: () => _confirmDeleteAccount(context, ref),
+                ),
+              ],
             ),
           ],
         ),
@@ -256,7 +269,7 @@ class SettingsScreen extends ConsumerWidget {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             decoration: BoxDecoration(
-              color: context.palette.surface,
+              color: context.palette.background,
               borderRadius: BorderRadius.circular(FlorienRadius.xl),
               border: Border.all(
                 color: context.palette.border,
@@ -379,7 +392,7 @@ class _SettingsRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(FlorienRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Icon(icon, size: 24, color: context.palette.textPrimary),
