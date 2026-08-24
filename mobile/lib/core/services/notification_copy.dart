@@ -12,6 +12,10 @@ class NotificationCopy {
   static String get weeklyReviewTitle => _s('Haftayı planlayalım');
   static String get taskTitle => _s('Sıradaki görevin');
   static String get batchTitle => _s('Sıradaki görevlerin');
+  static String get planAlarmTitle => _s('Alarm');
+
+  static String planAlarmBody(String taskTitle) =>
+      _s('{title} alarmı çalıyor.', {'title': taskTitle});
 
   static List<String> get morningBodies => [
     _s('Günaydın. Bugünün planına birlikte bakalım.'),

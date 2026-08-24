@@ -190,6 +190,18 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
         }
         return;
       }
+      if (actionId == 'dismiss_alarm') {
+        ref.read(planAlarmRingProvider.notifier).state = null;
+        final taskId = payload.taskId;
+        if (taskId != null) {
+          try {
+            await ref.read(taskAlarmServiceProvider).cancelPlanAlarm(taskId);
+          } catch (error) {
+            debugPrint('Plan alarm dismiss failed: $error');
+          }
+        }
+        return;
+      }
       await _dispatchNotificationPayload(payload);
     };
     _notificationHandlersReady = true;

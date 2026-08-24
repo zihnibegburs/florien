@@ -148,6 +148,16 @@ final notificationLaunchProvider = StateProvider<NotificationLaunchCommand?>(
   (ref) => null,
 );
 
+class PlanAlarmRingRequest {
+  const PlanAlarmRingRequest({required this.taskId, required this.title});
+
+  final String taskId;
+  final String title;
+}
+
+/// Active full-screen plan alarm ring (loops until dismissed).
+final planAlarmRingProvider = StateProvider<PlanAlarmRingRequest?>((ref) => null);
+
 final dailyPlannerDateRequestProvider = StateProvider<DateTime?>((ref) => null);
 
 final dailyReviewLaunchSignalProvider = StateProvider<int>((ref) => 0);
@@ -161,8 +171,11 @@ final notificationReconcileProvider =
         final alarms = ref.read(taskAlarmServiceProvider);
         final repository = ref.read(taskRepositoryProvider);
         final now = DateTime.now();
+        // Start of local day so period tasks (morning/daytime anchors) with a
+        // later alarmAt are still fetched after their scheduledAt has passed.
+        final dayStart = DateTime(now.year, now.month, now.day);
         final tasks = await repository.getUpcomingTimedTasks(
-          from: now.subtract(const Duration(hours: 1)),
+          from: dayStart,
           to: now.add(const Duration(days: 14)),
         );
         await alarms.reconcile(

@@ -22,6 +22,7 @@
 		A1FLORIENW0000000000000015 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000007 /* WidgetKit.framework */; };
 		A1FLORIENW0000000000000016 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1FLORIENW0000000000000008 /* SwiftUI.framework */; };
 		A1FLORIENW0000000000000019 /* focus-default-hourglass.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001A /* focus-default-hourglass.png */; };
+		A1PLANALARM00000000000001 /* plan_alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1PLANALARM00000000000002 /* plan_alarm.caf */; };
 		A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001C /* florien-live-activity-icon.png */; };
 		A1FLORIENW000000000000001E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001D /* Assets.xcassets */; };
 		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
@@ -110,6 +111,7 @@
 		A1FLORIENW0000000000000017 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		A1FLORIENW0000000000000018 /* FlorienWidgetExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = FlorienWidgetExtension.xcconfig; path = Flutter/FlorienWidgetExtension.xcconfig; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001A /* focus-default-hourglass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "focus-default-hourglass.png"; sourceTree = "<group>"; };
+		A1PLANALARM00000000000002 /* plan_alarm.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = plan_alarm.caf; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001C /* florien-live-activity-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "florien-live-activity-icon.png"; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -230,6 +232,7 @@
 				A1L10N0000000000000001 /* Localizable.xcstrings */,
 				A1IPLGRP0000000000000001 /* InfoPlist.strings */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				A1PLANALARM00000000000002 /* plan_alarm.caf */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -422,6 +425,7 @@
 				A1L10N0000000000000002 /* Localizable.xcstrings in Resources */,
 				A1IPLRES0000000000000001 /* InfoPlist.strings in Resources */,
 				8579399C84F0B5BFE495A128 /* GoogleService-Info.plist in Resources */,
+				A1PLANALARM00000000000001 /* plan_alarm.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

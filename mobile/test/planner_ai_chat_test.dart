@@ -9,7 +9,6 @@ import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
-import 'package:florien/core/widgets/florien_bottom_nav.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
@@ -207,10 +206,7 @@ void main() {
       find.byKey(const ValueKey('planner-ai-mode-switcher')),
       findsOneWidget,
     );
-    final headerImage = tester.widget<Image>(
-      find.byKey(const ValueKey('planner-ai-header-image')),
-    );
-    expect((headerImage.image as AssetImage).assetName, florienAiFabImageAsset);
+    expect(find.byKey(const ValueKey('planner-ai-header-image')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('planner-ai-input')),

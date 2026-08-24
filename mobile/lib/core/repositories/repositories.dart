@@ -1119,26 +1119,39 @@ class TaskRepository {
     await batch.commit();
   }
 
-  /// Timed, incomplete tasks in the local schedule window (for notification reconcile).
+  /// Incomplete tasks that may need a reminder in [from, to].
+  ///
+  /// Includes timed plans by [TaskModel.scheduledAt], and also any plan whose
+  /// absolute [TaskModel.alarmAt] falls in the window — so a morning period task
+  /// with a later alarm is still scheduled after its period anchor has passed.
   Future<List<TaskModel>> getUpcomingTimedTasks({
     required DateTime from,
     required DateTime to,
   }) async {
-    final snap = await _tasks
-        .where(
-          'scheduledAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(from.toUtc()),
-        )
-        .where('scheduledAt', isLessThan: Timestamp.fromDate(to.toUtc()))
+    final fromTs = Timestamp.fromDate(from.toUtc());
+    final toTs = Timestamp.fromDate(to.toUtc());
+    final scheduledSnap = await _tasks
+        .where('scheduledAt', isGreaterThanOrEqualTo: fromTs)
+        .where('scheduledAt', isLessThan: toTs)
         .get();
-    return snap.docs
-        .map((doc) => TaskModel.fromFirestore(doc.id, doc.data()))
+    final alarmSnap = await _tasks
+        .where('alarmAt', isGreaterThanOrEqualTo: fromTs)
+        .where('alarmAt', isLessThan: toTs)
+        .get();
+
+    final byId = <String, TaskModel>{};
+    for (final doc in [...scheduledSnap.docs, ...alarmSnap.docs]) {
+      byId.putIfAbsent(
+        doc.id,
+        () => TaskModel.fromFirestore(doc.id, doc.data()),
+      );
+    }
+    return byId.values
         .where(
           (task) =>
-              task.isTimed &&
-              task.scheduledAt != null &&
               !task.isCompleted &&
-              task.status != TaskStatus.skipped,
+              task.status != TaskStatus.skipped &&
+              (task.isTimed || task.alarmAt != null),
         )
         .toList();
   }

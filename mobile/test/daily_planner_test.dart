@@ -120,7 +120,8 @@ void main() {
     expect(find.text('Tarih'), findsOneWidget);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Yinelemek'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsNothing);
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
+    expect(find.text('İstediğin saatte çalar'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('daily-detail-subtask-input')),
       findsNothing,
@@ -143,12 +144,28 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('daily-detail-notes')), findsOneWidget);
 
+    final expectedAlarm = defaultDailyAlarmAt(DateTime.now());
+    final expectedLabel =
+        '${expectedAlarm.hour.toString().padLeft(2, '0')}:'
+        '${expectedAlarm.minute.toString().padLeft(2, '0')}';
+    await tester.ensureVisible(find.byKey(const ValueKey('daily-alarm-toggle')));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('daily-alarm-toggle')),
+        matching: find.byType(Switch),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text("$expectedLabel'da çalar"), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
+    expect(find.text(expectedLabel), findsWidgets);
+
     await tester.tap(find.text('Günün saati'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
-    expect(find.text('Görev başladığında çalar'), findsOneWidget);
+    expect(find.text("$expectedLabel'da çalar"), findsOneWidget);
   });
 
   test('daily alarm defaults to the next half or full hour', () {
@@ -167,6 +184,18 @@ void main() {
     expect(
       nextDailyAlarmSlot(DateTime(2026, 8, 14, 23, 45)),
       DateTime(2026, 8, 15),
+    );
+  });
+
+  test('default daily alarm maps next slot onto the plan date', () {
+    final now = DateTime(2026, 8, 14, 1, 12);
+    expect(
+      defaultDailyAlarmAt(DateTime(2026, 8, 14), now),
+      DateTime(2026, 8, 14, 1, 30),
+    );
+    expect(
+      defaultDailyAlarmAt(DateTime(2026, 8, 15), now),
+      DateTime(2026, 8, 15, 1, 30),
     );
   });
 
@@ -518,14 +547,19 @@ void main() {
     );
     await tester.tap(find.byKey(const ValueKey('daily-details-chip')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Günün saati'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
+
+    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const ValueKey('daily-alarm-toggle')));
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('daily-alarm-toggle')),
+        matching: find.byType(Switch),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('Görev için özel saat'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsNothing);
+    expect(find.text('Alarm ve hatırlatıcılar'), findsOneWidget);
   });
 
   testWidgets('daily grouping switches between list and timeline views', (
@@ -1131,6 +1165,9 @@ void main() {
     expect(find.text(task.description!), findsOneWidget);
     expect(find.text('İlk adım'), findsOneWidget);
     expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
+    expect(find.text("12:30'da çalar"), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
+    expect(find.text('Alarm saati'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('daily-detail-title')),
@@ -1144,6 +1181,7 @@ void main() {
     expect(savedInput?.durationMinutes, 30);
     expect(savedInput?.period, DayPeriod.daytime);
     expect(savedInput?.alarmEnabled, isTrue);
+    expect(savedInput?.alarmAt, DateTime(2026, 8, 14, 12, 30));
     expect(savedInput?.subtasks, ['İlk adım']);
   });
 

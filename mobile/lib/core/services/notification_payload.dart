@@ -3,6 +3,7 @@ import 'dart:convert';
 enum FlorienNotificationKind {
   taskReminder,
   taskBatch,
+  planAlarm,
   morningSummary,
   motivation,
   dailyReview,

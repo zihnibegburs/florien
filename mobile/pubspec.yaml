@@ -55,6 +55,7 @@ flutter:
     - assets/task_icons/
     - assets/focus/
     - assets/focus_music/
+    - assets/sounds/
     - assets/achievements/
     - assets/achievements/assets/
     - assets/ai/

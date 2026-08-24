@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/l10n/app_strings.dart';
@@ -23,29 +25,37 @@ class FlorienAiMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = context.isFlorienDark;
-    final star = Semantics(
+    final sparkle = Semantics(
       image: true,
       label: ActiveLanguage.s(semanticLabel),
-      child: Image.asset(
-        florienAiFabImageAsset,
+      child: CustomPaint(
         key: imageKey,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+        size: Size.square(size),
+        painter: _FlorienSparklePainter(
+          color: dark ? const Color(0xFFF7F4FF) : const Color(0xFF3D2A6E),
+        ),
       ),
     );
 
     if (!showRing) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: ClipOval(child: star),
-      );
+      return SizedBox(width: size, height: size, child: sparkle);
     }
 
-    final fill = [
-      FlorienPalette.dark.aiSurface,
-      Color.lerp(FlorienPalette.dark.aiSurface, FlorienColors.accent, 0.42)!,
-    ];
+    final fill = dark
+        ? const [
+            Color(0xFF4A3F6B),
+            Color(0xFF6B5B95),
+            Color(0xFF8B7BC8),
+          ]
+        : const [
+            Color(0xFFF4F0FF),
+            Color(0xFFE4D9FF),
+            Color(0xFFD4ECFF),
+          ];
+    final rim = dark
+        ? FlorienColors.accent.withValues(alpha: 0.45)
+        : const Color(0xFFC9B8F2);
+    final glow = FlorienColors.accent.withValues(alpha: dark ? 0.34 : 0.22);
 
     return SizedBox(
       width: size,
@@ -53,17 +63,13 @@ class FlorienAiMark extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          boxShadow: premium
-              ? [
-                  BoxShadow(
-                    color: FlorienColors.accent.withValues(
-                      alpha: dark ? 0.28 : 0.18,
-                    ),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow: [
+            BoxShadow(
+              color: glow,
+              blurRadius: premium ? 16 : 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -73,16 +79,75 @@ class FlorienAiMark extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: fill,
             ),
-            border: Border.all(
-              color: context.palette.border,
-              width: FlorienBorders.thin,
-            ),
+            border: Border.all(color: rim, width: FlorienBorders.thin),
           ),
-          child: Padding(padding: EdgeInsets.all(size * 0.12), child: star),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.35, -0.45),
+                    radius: 0.9,
+                    colors: [
+                      Colors.white.withValues(alpha: dark ? 0.16 : 0.72),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(size * 0.26),
+                child: sparkle,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _FlorienSparklePainter extends CustomPainter {
+  const _FlorienSparklePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.drawPath(_sparklePath(size.shortestSide * 0.52), paint);
+    canvas.restore();
+  }
+
+  Path _sparklePath(double radius) {
+    const points = 4;
+    final inner = radius * 0.32;
+    final path = Path();
+    for (var i = 0; i < points * 2; i++) {
+      final r = i.isEven ? radius : inner;
+      final angle = -math.pi / 2 + (i * math.pi / points);
+      final x = math.cos(angle) * r;
+      final y = math.sin(angle) * r;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _FlorienSparklePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class FlorienBottomNavigation extends StatelessWidget {
@@ -102,7 +167,7 @@ class FlorienBottomNavigation extends StatelessWidget {
   final String? aiTooltip;
 
   static const double _barHeight = 68;
-  static const double _aiSize = 52;
+  static const double _aiSize = 48;
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +201,13 @@ class FlorienBottomNavigation extends StatelessWidget {
                     onTap: () => onDestinationSelected(i),
                   ),
                 ),
-              _SpecialNavButton(
-                size: _aiSize,
-                onTap: onAiPressed,
-                tooltip: aiTooltip,
+              Padding(
+                padding: const EdgeInsets.only(left: 4, right: 4),
+                child: _SpecialNavButton(
+                  size: _aiSize,
+                  onTap: onAiPressed,
+                  tooltip: aiTooltip,
+                ),
               ),
             ],
           ),

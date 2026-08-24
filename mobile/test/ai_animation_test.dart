@@ -84,10 +84,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('florien-ai-fab-image')), findsOneWidget);
-    final image = tester.widget<Image>(
-      find.byKey(const ValueKey('florien-ai-fab-image')),
-    );
-    expect((image.image as AssetImage).assetName, florienAiFabImageAsset);
+    expect(find.byType(FlorienAiMark), findsOneWidget);
     expect(find.byType(FlorienAiAnimation), findsNothing);
     await tester.tap(find.byType(FlorienAiFab));
     expect(tapped, isTrue);
