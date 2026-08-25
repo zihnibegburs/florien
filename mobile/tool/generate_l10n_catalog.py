@@ -178,6 +178,7 @@ add(
     e("Tamamlandı", "Done", "Hecho", "Erledigt", "Terminé", "Concluído", "完了", "완료", "已完成", "تم"),
     e("Tamamlanamadı", "Not done", "Sin hacer", "Nicht erledigt", "Non terminé", "Por fazer", "未完了", "미완료", "未完成", "لم يكتمل"),
     e("Planlandı", "Planned", "Planificado", "Geplant", "Planifié", "Planeado", "予定", "계획됨", "已安排", "مخطط"),
+    e("PLANLANDI", "PLANNED", "PLANIFICADO", "GEPLANT", "PLANIFIÉ", "PLANEADO", "予定", "계획됨", "已安排", "مخطط"),
     e("TAMAMLANDI", "DONE", "HECHO", "ERLEDIGT", "TERMINÉ", "CONCLUÍDO", "完了", "완료", "已完成", "تم"),
     e("YAPILACAK", "TO DO", "POR HACER", "OFFEN", "À FAIRE", "A FAZER", "未完了", "할 일", "待办", "للتنفيذ"),
     e("Çok zor", "Very hard", "Muy difícil", "Sehr schwer", "Très dur", "Muito difícil", "とてもつらい", "매우 힘듦", "非常艰难", "صعب جدًا"),

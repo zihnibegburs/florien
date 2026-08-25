@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
@@ -711,6 +712,65 @@ void main() {
       );
     },
   );
+
+  testWidgets('daily planner section headers follow the app language', (
+    tester,
+  ) async {
+    ActiveLanguage.code = 'en';
+    addTearDown(() => ActiveLanguage.code = 'tr');
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final planned = TaskModel(
+      id: 'english-planned',
+      title: 'Write notes',
+      color: '#EAA4C4',
+      icon: 'task',
+      durationMinutes: 30,
+      scheduledAt: now.add(const Duration(hours: 1)),
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: false,
+      isTimed: true,
+    );
+    final completed = TaskModel(
+      id: 'english-completed',
+      title: 'Done already',
+      color: '#6C5CE7',
+      icon: 'task',
+      durationMinutes: 20,
+      status: TaskStatus.completed,
+      sortOrder: 1,
+      isInbox: false,
+      isTimed: false,
+      dayPeriod: DayPeriod.daytime,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          stringsProvider.overrideWithValue(const S('en')),
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async =>
+                TimelineModel(date: date, tasks: [planned, completed]),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('DONE (1)'), findsOneWidget);
+    expect(find.text('TAMAMLANDI (1)'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('daily-grouping-timeline')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PLANNED (1)'), findsOneWidget);
+    expect(find.text('PLANLANDI (1)'), findsNothing);
+  });
 
   testWidgets('daily destination is between todo and stats', (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));

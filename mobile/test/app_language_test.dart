@@ -66,6 +66,8 @@ void main() {
     expect(const S('de')('Ayarlar'), 'Einstellungen');
     expect(const S('en')('Hazır rutinler'), 'Ready-made routines');
     expect(const S('en')('Tarih seç'), 'Choose a date');
+    expect(const S('en')('PLANLANDI'), 'PLANNED');
+    expect(const S('en')('TAMAMLANDI'), 'DONE');
     expect(const S('en')('Tarihe git'), 'Go to date');
     expect(
       const S('en')('Son ana kadar erteliyorum'),

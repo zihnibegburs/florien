@@ -1230,7 +1230,7 @@ class _PlannedTimelineHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'PLANLANDI ($count)',
+            '${context.l10n('PLANLANDI')} ($count)',
             style: const TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -1661,7 +1661,7 @@ class _DailyCompletedSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 7),
                   Text(
-                    'TAMAMLANDI (${tasks.length})',
+                    '${context.l10n('TAMAMLANDI')} (${tasks.length})',
                     style: TextStyle(
                       color: FlorienColors.success,
                       fontSize: 12,
