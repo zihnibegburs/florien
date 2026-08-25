@@ -723,6 +723,9 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: const []),
           ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -730,7 +733,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('To-do'), findsWidgets);
     expect(find.text('Günlük'), findsOneWidget);
@@ -738,7 +742,8 @@ void main() {
     expect(find.text('Odaklan'), findsNothing);
 
     await tester.tap(find.text('Günlük'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
   });
 

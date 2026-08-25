@@ -24,8 +24,14 @@ import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/mood_storage.dart';
 import 'package:florien/core/storage/profile_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
+import 'package:florien/core/storage/firestore_task_collection.dart';
+import 'package:florien/core/storage/local_task_collection.dart';
+import 'package:florien/core/storage/task_storage_mode.dart';
+import 'package:florien/core/storage/task_storage_router.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
+import 'package:florien/features/premium/premium_membership.dart';
+import 'package:florien/firebase_options.dart';
 
 final googleAuthServiceProvider = Provider<GoogleAuthService>(
   (ref) => GoogleAuthService(),
@@ -454,12 +460,56 @@ bool _isSameDay(DateTime first, DateTime second) =>
     first.month == second.month &&
     first.day == second.day;
 
-final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  return TaskRepository(
-    ref.watch(firestoreProvider),
-    ref.watch(firebaseAuthProvider),
-    profileId: ref.watch(activeAppProfileProvider)?.id ?? 'primary',
+final taskStorageModeStoreProvider = Provider<TaskStorageModeStore>(
+  (ref) => TaskStorageModeStore(),
+);
+
+final taskStorageRouterProvider = Provider<TaskStorageRouter?>((ref) {
+  final uid = ref.watch(firebaseUserProvider).valueOrNull?.uid;
+  if (uid == null) return null;
+  final profileId = ref.watch(activeAppProfileProvider)?.id ?? 'primary';
+  final firestore = ref.watch(optionalFirestoreProvider);
+  final router = TaskStorageRouter(
+    uid: uid,
+    profileId: profileId,
+    openLocal: () => LocalTaskCollection.open(uid: uid, profileId: profileId),
+    cloud: firestore == null
+        ? null
+        : FirestoreTaskCollection(tasksCol(firestore, uid, profileId)),
+    isPremium: () {
+      final membership = ref.read(premiumMembershipProvider);
+      if (membership.isLoading && membership.valueOrNull == null) return null;
+      return membership.valueOrNull?.hasActivePremium ?? false;
+    },
+    modeStore: ref.watch(taskStorageModeStoreProvider),
+    confirmPremium: () async {
+      if (!DefaultFirebaseOptions.isConfigured) return false;
+      try {
+        final entitlement = await ref
+            .read(premiumPurchaseServiceProvider)
+            .fetchEntitlement()
+            .timeout(const Duration(seconds: 8));
+        return entitlement.isPremium;
+      } catch (_) {
+        return false;
+      }
+    },
   );
+  ref.listen(premiumMembershipProvider, (previous, next) {
+    final wasPremium = previous?.valueOrNull?.hasActivePremium;
+    final isPremium = next.valueOrNull?.hasActivePremium;
+    if (wasPremium == isPremium) return;
+    unawaited(router.resolve());
+  });
+  return router;
+});
+
+final taskRepositoryProvider = Provider<TaskRepository>((ref) {
+  final router = ref.watch(taskStorageRouterProvider);
+  if (router == null) {
+    return TaskRepository(LocalTaskCollection.memory('signed-out'));
+  }
+  return TaskRepository(RoutedTaskCollection(router.resolve));
 });
 
 final plannerAiGatewayProvider = Provider<PlannerAiGateway>(

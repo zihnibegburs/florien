@@ -11,11 +11,12 @@ import 'package:go_router/go_router.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/services/notification_payload.dart';
-import 'package:florien/core/firebase/firebase_providers.dart';
 import 'package:florien/core/routing/startup_routing.dart';
 import 'package:florien/core/routing/startup_screen.dart';
 import 'package:florien/core/storage/onboarding_storage.dart';
 import 'package:florien/core/storage/settings_storage.dart';
+import 'package:florien/core/storage/local_task_collection.dart';
+import 'package:florien/core/storage/task_background_completion.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_keyboard.dart';
 import 'package:florien/core/widgets/liquid_glass.dart';
@@ -39,7 +40,12 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
   }
+  await initLocalTaskStore();
   unawaited(HomeScreenWidgetService.initialize());
   if (!kIsWeb) {
     await HomeWidget.registerInteractivityCallback(
@@ -64,6 +70,10 @@ Future<void> florienWidgetBackgroundCallback(Uri? uri) async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
   }
 
   final command = HomeScreenWidgetService.commandFromUri(uri);
@@ -75,43 +85,12 @@ Future<void> florienWidgetBackgroundCallback(Uri? uri) async {
   final userId = FirebaseAuth.instance.currentUser?.uid;
   if (userId == null) return;
   final profileId = uri?.queryParameters['profileId'] ?? 'primary';
-  final taskRef = tasksCol(
-    FirebaseFirestore.instance,
-    userId,
-    profileId,
-  ).doc(command!.taskId);
-  final task = await taskRef.get();
-  if (!task.exists || task.data()?['status'] == 'COMPLETED') return;
-
-  await taskRef.update({
-    'status': 'COMPLETED',
-    'completedAt': FieldValue.serverTimestamp(),
-    'updatedAt': FieldValue.serverTimestamp(),
-  });
-  final parentTaskId = task.data()?['parentTaskId'] as String?;
-  if (parentTaskId != null) {
-    final siblings = await tasksCol(
-      FirebaseFirestore.instance,
-      userId,
-      profileId,
-    ).where('parentTaskId', isEqualTo: parentTaskId).get();
-    final allCompleted = siblings.docs.every(
-      (sibling) =>
-          sibling.id == command.taskId ||
-          sibling.data()['status'] == 'COMPLETED',
-    );
-    if (allCompleted) {
-      await tasksCol(
-        FirebaseFirestore.instance,
-        userId,
-        profileId,
-      ).doc(parentTaskId).update({
-        'status': 'COMPLETED',
-        'completedAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
-  }
+  final completed = await completeTaskFromBackground(
+    taskId: command!.taskId!,
+    userId: userId,
+    profileId: profileId,
+  );
+  if (!completed) return;
   await HomeScreenWidgetService.removeCompletedTask(
     taskId: command.taskId!,
     isDailyPlan: command.isDailyPlan,
@@ -157,6 +136,7 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
     if (state == AppLifecycleState.resumed) {
       unawaited(_reconcileNotifications());
       unawaited(_refreshPremiumEntitlement());
+      unawaited(_refreshTaskCloudCache());
     }
   }
 
@@ -172,6 +152,16 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       await ref.read(premiumMembershipProvider.notifier).refreshEntitlement();
     } catch (error) {
       debugPrint('Premium entitlement refresh failed: $error');
+    }
+  }
+
+  Future<void> _refreshTaskCloudCache() async {
+    try {
+      await ref.read(taskStorageRouterProvider)?.refreshCloudCache();
+      ref.invalidate(inboxProvider);
+      ref.invalidate(dailyTimelineProvider);
+    } catch (error) {
+      debugPrint('Task cloud cache refresh failed: $error');
     }
   }
 
@@ -282,6 +272,16 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       if (!wasLoggedIn && isLoggedIn) {
         unawaited(_reconcileNotifications());
       }
+    });
+    ref.listen(premiumMembershipProvider, (previous, next) {
+      final wasPremium = previous?.valueOrNull?.hasActivePremium;
+      final isPremium = next.valueOrNull?.hasActivePremium;
+      if (wasPremium == isPremium) return;
+      unawaited(() async {
+        await ref.read(taskStorageRouterProvider)?.resolve();
+        ref.invalidate(inboxProvider);
+        ref.invalidate(dailyTimelineProvider);
+      }());
     });
 
     return MaterialApp.router(

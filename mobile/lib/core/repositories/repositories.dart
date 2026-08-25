@@ -8,6 +8,7 @@ import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
+import 'package:florien/core/storage/task_collection.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
 import 'package:florien/firebase_options.dart';
 import 'package:florien/core/l10n/app_strings.dart';
@@ -203,20 +204,9 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 class TaskRepository {
-  TaskRepository(this._db, this._auth, {required this.profileId});
+  TaskRepository(this._tasks);
 
-  final FirebaseFirestore _db;
-  final FirebaseAuth _auth;
-  final String profileId;
-
-  String get _uid {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) throw StateError('Not signed in');
-    return uid;
-  }
-
-  CollectionReference<Map<String, dynamic>> get _tasks =>
-      tasksCol(_db, _uid, profileId);
+  final TaskCollection _tasks;
 
   Future<List<TaskUsageSummary>> getFrequentlyUsedTasks({
     int limit = 10,
@@ -335,6 +325,7 @@ class TaskRepository {
       final completedAt = switch (value) {
         Timestamp timestamp => timestamp.toDate().toLocal(),
         DateTime date => date.toLocal(),
+        String text => DateTime.tryParse(text)?.toLocal(),
         _ => null,
       };
       if (completedAt == null) continue;
@@ -574,7 +565,7 @@ class TaskRepository {
       unit: recurrence.type == RecurrenceType.custom ? recurrence.unit : null,
     );
 
-    var batch = _db.batch();
+    var batch = _tasks.newBatch();
     var ops = 0;
     for (final occurrence in occurrences) {
       final ref = _tasks.doc();
@@ -614,7 +605,7 @@ class TaskRepository {
       ops++;
       if (ops >= 400) {
         await batch.commit();
-        batch = _db.batch();
+        batch = _tasks.newBatch();
         ops = 0;
       }
     }
@@ -901,7 +892,7 @@ class TaskRepository {
           (b.data()['sortOrder'] as num?)?.toInt() ?? 0,
         ),
       );
-    final batch = _db.batch();
+    final batch = _tasks.newBatch();
     var scheduledAt = parent.scheduledAt?.toUtc();
 
     for (var index = 0; index < cappedTitles.length; index++) {
@@ -969,7 +960,7 @@ class TaskRepository {
     }
 
     final active = await _tasks.where('status', isEqualTo: 'IN_PROGRESS').get();
-    final batch = _db.batch();
+    final batch = _tasks.newBatch();
     for (final doc in active.docs) {
       if (doc.id == id) continue;
       batch.update(doc.reference, {
@@ -1079,7 +1070,7 @@ class TaskRepository {
       return;
     }
 
-    QuerySnapshot<Map<String, dynamic>> toDelete;
+    TaskQuerySnapshot toDelete;
     if (scope == DeleteRecurrenceScope.all) {
       toDelete = await _tasks
           .where('recurrenceSeriesId', isEqualTo: seriesId)
@@ -1099,12 +1090,12 @@ class TaskRepository {
           .get();
     }
 
-    var batch = _db.batch();
+    var batch = _tasks.newBatch();
     var ops = 0;
     Future<void> flush() async {
       if (ops == 0) return;
       await batch.commit();
-      batch = _db.batch();
+      batch = _tasks.newBatch();
       ops = 0;
     }
 
@@ -1126,7 +1117,7 @@ class TaskRepository {
 
   Future<void> _deleteSingle(String id) async {
     final children = await _tasks.where('parentTaskId', isEqualTo: id).get();
-    final batch = _db.batch();
+    final batch = _tasks.newBatch();
     for (final child in children.docs) {
       batch.delete(child.reference);
     }
@@ -1218,7 +1209,7 @@ class TaskRepository {
 
     final affected = <String>[current.id];
     final localStart = current.scheduledAt?.toLocal();
-    var batch = _db.batch();
+    var batch = _tasks.newBatch();
     var ops = 0;
     for (final doc in following.docs) {
       if (doc.id == id) continue;
@@ -1268,7 +1259,7 @@ class TaskRepository {
       ops++;
       if (ops >= 400) {
         await batch.commit();
-        batch = _db.batch();
+        batch = _tasks.newBatch();
         ops = 0;
       }
     }

@@ -11,31 +11,15 @@ service cloud.firestore {
           .data.premiumUntil > request.time;
     }
 
-    function freeTaskCreateAllowed() {
-      return request.resource.data.get('parentTaskId', null) == null &&
-        request.resource.data.get('alarmAt', null) == null &&
-        request.resource.data.get('isTimed', false) != true;
-    }
-
-    function freeTaskUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return !(changed.hasAny(['parentTaskId']) &&
-          request.resource.data.get('parentTaskId', null) != null) &&
-        !(changed.hasAny(['alarmAt']) &&
-          request.resource.data.get('alarmAt', null) != null) &&
-        !(changed.hasAny(['isTimed', 'scheduledAt']) &&
-          request.resource.data.get('isTimed', false) == true);
-    }
-
     match /users/{userId} {
       allow read, write: if owns(userId);
 
       match /tasks/{taskId} {
+        // Free clients keep tasks in Hive. Reads stay allowed so a one-time
+        // upgrade/downgrade/legacy import can copy documents; writes require
+        // Premium so Free users cannot keep a cloud copy in sync.
         allow read, delete: if owns(userId);
-        allow create: if owns(userId) &&
-          (hasPremium(userId) || freeTaskCreateAllowed());
-        allow update: if owns(userId) &&
-          (hasPremium(userId) || freeTaskUpdateAllowed());
+        allow create, update: if hasPremium(userId);
       }
 
       match /onboarding_surveys/{surveyVersion} {
