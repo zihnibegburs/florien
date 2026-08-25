@@ -15,7 +15,6 @@ import 'package:florien/features/premium/premium_membership_screen.dart';
 import 'package:florien/features/premium/premium_upsell_button.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
-import 'package:florien/features/todo/plan_alarm_ring_overlay.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 import 'package:florien/features/todo/statistics_tab.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
@@ -30,7 +29,6 @@ class TodoHomeScreen extends ConsumerStatefulWidget {
 class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   int _selectedIndex = 0;
   int _todoQuickAddSignal = 0;
-  final Set<String> _rungPlanAlarmIds = {};
   late final ProviderSubscription<FocusTaskLaunch?> _focusLaunchSubscription;
   late final ProviderSubscription<HomeWidgetLaunchCommand?>
   _homeWidgetLaunchSubscription;
@@ -107,12 +105,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     _scheduledFocusClock = Timer.periodic(const Duration(seconds: 1), (_) {
       unawaited(_refreshScheduledFocus());
       _tickBackgroundFocus();
-      final todayTimeline = ref
-          .read(dailyTimelineProvider(_today()))
-          .valueOrNull;
-      if (todayTimeline != null) {
-        _tickPlanAlarms(todayTimeline.tasks);
-      }
     });
   }
 
@@ -137,27 +129,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   ) async {
     if (command == null || !mounted) return;
     ref.read(notificationLaunchProvider.notifier).state = null;
-    if (command.kind == FlorienNotificationKind.planAlarm) {
-      final taskId = command.taskId;
-      if (taskId == null) {
-        _selectTab(1);
-        return;
-      }
-      try {
-        final task = await ref.read(taskRepositoryProvider).getTaskById(taskId);
-        if (task == null || task.isCompleted) {
-          _selectTab(1);
-          return;
-        }
-        ref.read(planAlarmRingProvider.notifier).state = PlanAlarmRingRequest(
-          taskId: task.id,
-          title: task.title,
-        );
-      } catch (_) {
-        _selectTab(1);
-      }
-      return;
-    }
     switch (command.target) {
       case NotificationTargetScreen.taskFocus:
         final taskId = command.taskId;
@@ -196,26 +167,6 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         }
         ref.read(dailyPlannerDateRequestProvider.notifier).state = monday;
         _selectTab(1);
-    }
-  }
-
-  void _tickPlanAlarms(List<TaskModel> tasks) {
-    final active = ref.read(planAlarmRingProvider);
-    if (active != null) return;
-    final now = DateTime.now();
-    for (final task in tasks) {
-      final alarmAt = task.alarmAt?.toLocal();
-      if (alarmAt == null || task.isCompleted) continue;
-      final elapsed = now.difference(alarmAt);
-      // Ring while the app is open if the alarm just fired (0–90s window).
-      if (elapsed.inMilliseconds < 0 || elapsed.inSeconds > 90) continue;
-      if (_rungPlanAlarmIds.contains(task.id)) continue;
-      _rungPlanAlarmIds.add(task.id);
-      ref.read(planAlarmRingProvider.notifier).state = PlanAlarmRingRequest(
-        taskId: task.id,
-        title: task.title,
-      );
-      return;
     }
   }
 
@@ -478,86 +429,74 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
-    final ringing = ref.watch(planAlarmRingProvider);
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: context.palette.background,
-          appBar: _selectedIndex == 0
-              ? AppBar(
-                  title: const Row(
-                    key: ValueKey('todo-home-scroll-chrome-header'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FlorienLogo(
-                        key: ValueKey('todo-home-brand-icon'),
-                        size: 34,
-                      ),
-                      SizedBox(width: 10),
-                      Text('Florien'),
-                    ],
-                  ),
-                  actions: [
-                    if (premium != null && !premium.hasActivePremium)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: PremiumUpsellButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const PremiumMembershipScreen(),
-                            ),
-                          ),
+    return Scaffold(
+      backgroundColor: context.palette.background,
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              title: const Row(
+                key: ValueKey('todo-home-scroll-chrome-header'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FlorienLogo(key: ValueKey('todo-home-brand-icon'), size: 34),
+                  SizedBox(width: 10),
+                  Text('Florien'),
+                ],
+              ),
+              actions: [
+                if (premium != null && !premium.hasActivePremium)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: PremiumUpsellButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PremiumMembershipScreen(),
                         ),
                       ),
-                  ],
-                )
-              : null,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: [
-              TodoListTab(quickAddSignal: _todoQuickAddSignal),
-              DailyPlannerTab(
-                quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
-                showPremiumUpsell: premium != null && !premium.hasActivePremium,
-                onPremiumUpsellPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const PremiumMembershipScreen(),
+                    ),
                   ),
-                ),
+              ],
+            )
+          : null,
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          TodoListTab(quickAddSignal: _todoQuickAddSignal),
+          DailyPlannerTab(
+            quickAddSignal: ref.watch(dailyPlannerQuickAddSignalProvider),
+            showPremiumUpsell: premium != null && !premium.hasActivePremium,
+            onPremiumUpsellPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PremiumMembershipScreen(),
               ),
-              const StatisticsTab(),
-            ],
+            ),
           ),
-          bottomNavigationBar: FlorienBottomNavigation(
-            key: const ValueKey('home-scroll-chrome-navigation'),
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: _selectTab,
-            destinations: [
-              FlorienNavDestination(
-                label: context.l10n('To-do'),
-                icon: Icons.check_box_outlined,
-                selectedIcon: Icons.check_box_rounded,
-              ),
-              FlorienNavDestination(
-                label: context.l10n('Günlük'),
-                icon: Icons.calendar_today_outlined,
-                selectedIcon: Icons.calendar_today_rounded,
-              ),
-              FlorienNavDestination(
-                label: context.l10n('İstatistik'),
-                icon: Icons.bar_chart_rounded,
-                selectedIcon: Icons.bar_chart_rounded,
-              ),
-            ],
-            onAiPressed: () => unawaited(_openPlannerAi()),
-            aiTooltip: context.l10n('Plan asistanını aç'),
+          const StatisticsTab(),
+        ],
+      ),
+      bottomNavigationBar: FlorienBottomNavigation(
+        key: const ValueKey('home-scroll-chrome-navigation'),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _selectTab,
+        destinations: [
+          FlorienNavDestination(
+            label: context.l10n('To-do'),
+            icon: Icons.check_box_outlined,
+            selectedIcon: Icons.check_box_rounded,
           ),
-        ),
-        if (ringing != null)
-          Positioned.fill(
-            child: PlanAlarmRingOverlay(request: ringing),
+          FlorienNavDestination(
+            label: context.l10n('Günlük'),
+            icon: Icons.calendar_today_outlined,
+            selectedIcon: Icons.calendar_today_rounded,
           ),
-      ],
+          FlorienNavDestination(
+            label: context.l10n('İstatistik'),
+            icon: Icons.bar_chart_rounded,
+            selectedIcon: Icons.bar_chart_rounded,
+          ),
+        ],
+        onAiPressed: () => unawaited(_openPlannerAi()),
+        aiTooltip: context.l10n('Plan asistanını aç'),
+      ),
     );
   }
 }

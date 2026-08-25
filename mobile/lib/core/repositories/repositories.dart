@@ -106,13 +106,20 @@ class AuthRepository {
     final user = _auth.currentUser;
     if (user == null) return null;
     try {
-      // Firebase can keep a valid cached ID token for a deleted account.
-      // Reload first so a Console-side deletion is detected immediately.
+      // iOS Keychain keeps Firebase Auth after app uninstall. Reload + force
+      // token refresh so a Console-deleted account is rejected immediately.
       await user.reload();
       final refreshedUser = _auth.currentUser;
       if (refreshedUser == null) return null;
       await refreshedUser.getIdToken(true);
-      await _profiles.ensureUserDocument(user: refreshedUser);
+
+      // Do not recreate users/{uid} here — that undoes Console deletions and
+      // makes a Keychain-restored session look like a fresh login.
+      final profile = await _profiles.loadProfile(refreshedUser.uid);
+      if (profile == null) {
+        await _auth.signOut();
+        return null;
+      }
       return authResponseFromUser(refreshedUser);
     } on FirebaseAuthException catch (error) {
       const invalidUserCodes = {
@@ -120,8 +127,16 @@ class AuthRepository {
         'user-disabled',
         'invalid-user-token',
         'user-token-expired',
+        'invalid-credential',
       };
       if (!invalidUserCodes.contains(error.code)) rethrow;
+      await _auth.signOut();
+      return null;
+    } on FirebaseException catch (error) {
+      if (error.code != 'permission-denied' &&
+          error.code != 'unauthenticated') {
+        rethrow;
+      }
       await _auth.signOut();
       return null;
     }
@@ -1119,11 +1134,7 @@ class TaskRepository {
     await batch.commit();
   }
 
-  /// Incomplete tasks that may need a reminder in [from, to].
-  ///
-  /// Includes timed plans by [TaskModel.scheduledAt], and also any plan whose
-  /// absolute [TaskModel.alarmAt] falls in the window — so a morning period task
-  /// with a later alarm is still scheduled after its period anchor has passed.
+  /// Incomplete timed tasks that may need a reminder in [from, to].
   Future<List<TaskModel>> getUpcomingTimedTasks({
     required DateTime from,
     required DateTime to,
@@ -1134,13 +1145,9 @@ class TaskRepository {
         .where('scheduledAt', isGreaterThanOrEqualTo: fromTs)
         .where('scheduledAt', isLessThan: toTs)
         .get();
-    final alarmSnap = await _tasks
-        .where('alarmAt', isGreaterThanOrEqualTo: fromTs)
-        .where('alarmAt', isLessThan: toTs)
-        .get();
 
     final byId = <String, TaskModel>{};
-    for (final doc in [...scheduledSnap.docs, ...alarmSnap.docs]) {
+    for (final doc in scheduledSnap.docs) {
       byId.putIfAbsent(
         doc.id,
         () => TaskModel.fromFirestore(doc.id, doc.data()),
@@ -1151,7 +1158,7 @@ class TaskRepository {
           (task) =>
               !task.isCompleted &&
               task.status != TaskStatus.skipped &&
-              (task.isTimed || task.alarmAt != null),
+              task.isTimed,
         )
         .toList();
   }

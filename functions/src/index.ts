@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import { logger } from "firebase-functions";
 import {
   normalizeAiInput,
   protectAiChatGeneration,
@@ -10,8 +11,11 @@ import {
 } from "./ai-protection";
 import { callGeminiJson } from "./gemini-ai";
 import { AI_CHAT_MAX_TRANSCRIPT_TURNS } from "./ai-config";
+import { persistAppleAppAccountToken } from "./apple-account-token";
+import { handleAppleServerNotificationV2 } from "./apple-notifications";
 import {
   getPremiumEntitlement,
+  parseAppleCredentials,
   verifyAndPersistPremium,
 } from "./premium-verification";
 
@@ -48,11 +52,54 @@ export const verifyPremiumPurchase = onCall(
   }
 );
 
+export const registerAppleAppAccountToken = onCall(async (request) => {
+  const uid = requireAuthenticatedUid(request.auth?.uid);
+  const appAccountToken = await persistAppleAppAccountToken(uid);
+  return { appAccountToken };
+});
+
+/**
+ * App Store Connect → App Information → App Store Server Notifications V2:
+ * https://us-central1-florien-74ad8.cloudfunctions.net/appleServerNotifications
+ */
+export const appleServerNotifications = onRequest(
+  {
+    secrets: [appleIapCredentials],
+    cors: false,
+    invoker: "public",
+    maxInstances: 10,
+  },
+  async (request, response) => {
+    if (request.method !== "POST") {
+      response.status(405).send("Method Not Allowed");
+      return;
+    }
+    const signedPayload = request.body?.signedPayload;
+    if (typeof signedPayload !== "string" || !signedPayload) {
+      response.status(400).send("Missing signedPayload");
+      return;
+    }
+    try {
+      await handleAppleServerNotificationV2(
+        signedPayload,
+        parseAppleCredentials(appleIapCredentials.value())
+      );
+      response.status(200).send("OK");
+    } catch (error) {
+      logger.error("Apple S2S notification failed.", error);
+      response.status(503).send("Notification processing failed");
+    }
+  }
+);
+
 export const getPremiumStatus = onCall(async (request) => {
   const uid = requireAuthenticatedUid(request.auth?.uid);
   const [entitlement, aiChat] = await Promise.all([
     getPremiumEntitlement(uid),
     readAiChatUsage(uid),
+    persistAppleAppAccountToken(uid).catch((error) => {
+      logger.warn("Failed to persist Apple appAccountToken mapping.", error);
+    }),
   ]);
   return {
     ...entitlement,

@@ -90,6 +90,7 @@ final premiumPurchaseServiceProvider = Provider<PremiumPurchaseService>(
   (ref) => PremiumPurchaseService(
     functions: ref.watch(cloudFunctionsProvider),
     firestore: ref.watch(firestoreProvider),
+    auth: ref.watch(optionalFirebaseAuthProvider),
   ),
 );
 

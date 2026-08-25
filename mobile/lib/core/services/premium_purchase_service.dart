@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:florien/core/services/apple_app_account_token.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -82,15 +84,38 @@ class PremiumPurchaseService {
     InAppPurchase? store,
     FirebaseFunctions? functions,
     FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
   }) : _store = store ?? InAppPurchase.instance,
        _functions =
            functions ?? FirebaseFunctions.instanceFor(region: 'us-central1'),
-       _firestore = firestore;
+       _firestore = firestore,
+       _auth = auth;
 
   final InAppPurchase _store;
   final FirebaseFunctions _functions;
   final FirebaseFirestore? _firestore;
+  final FirebaseAuth? _auth;
   bool _iosPrepared = false;
+
+  String? get _appAccountToken {
+    final uid = _auth?.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return null;
+    return appAccountTokenForUid(uid);
+  }
+
+  PurchaseParam _purchaseParam(ProductDetails product) => PurchaseParam(
+    productDetails: product,
+    applicationUserName: _appAccountToken,
+  );
+
+  Future<void> _registerAppleAppAccountToken() async {
+    if (_appAccountToken == null) return;
+    try {
+      await _functions.httpsCallable('registerAppleAppAccountToken').call();
+    } catch (error) {
+      debugPrint('[PremiumStore] registerAppleAppAccountToken failed: $error');
+    }
+  }
 
   Stream<List<PurchaseDetails>> get purchaseStream => _store.purchaseStream;
 
@@ -245,9 +270,10 @@ class PremiumPurchaseService {
       return PremiumBuyResult(started: false, entitledUntil: grantedUntil);
     }
 
+    await _registerAppleAppAccountToken();
     try {
       final started = await _store.buyNonConsumable(
-        purchaseParam: PurchaseParam(productDetails: product),
+        purchaseParam: _purchaseParam(product),
       );
       debugPrint('[PremiumStore] buy started=$started');
       return PremiumBuyResult(started: started);
@@ -268,7 +294,7 @@ class PremiumPurchaseService {
         }
         try {
           final started = await _store.buyNonConsumable(
-            purchaseParam: PurchaseParam(productDetails: product),
+            purchaseParam: _purchaseParam(product),
           );
           debugPrint('[PremiumStore] buy retry started=$started');
           return PremiumBuyResult(started: started);
@@ -292,7 +318,8 @@ class PremiumPurchaseService {
   Future<void> restore() async {
     await prepareStore();
     debugPrint('[PremiumStore] restorePurchases');
-    await _store.restorePurchases();
+    await _registerAppleAppAccountToken();
+    await _store.restorePurchases(applicationUserName: _appAccountToken);
   }
 
   Future<void> complete(PurchaseDetails purchase) =>

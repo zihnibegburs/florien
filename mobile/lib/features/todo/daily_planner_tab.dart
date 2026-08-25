@@ -48,8 +48,6 @@ class DailyTaskEditInput {
     required this.startsAt,
     required this.endsAt,
     required this.recurrence,
-    required this.alarmEnabled,
-    this.alarmAt,
     required this.subtasks,
     required this.icon,
   });
@@ -63,10 +61,6 @@ class DailyTaskEditInput {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final RecurrenceSelection recurrence;
-
-  /// When true, alarm fires at [alarmAt] (any daily plan type).
-  final bool alarmEnabled;
-  final DateTime? alarmAt;
   final List<String> subtasks;
   final String icon;
 }
@@ -84,10 +78,6 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
     final durationMinutes = input.isTimed
         ? input.endsAt!.difference(input.startsAt!).inMinutes
         : input.durationMinutes;
-    final alarmAt = input.alarmEnabled
-        ? (input.alarmAt ??
-              defaultDailyAlarmAt(input.isTimed ? scheduledAt : input.date))
-        : null;
     await repository.updateTaskAndFollowing(
       id: task.id,
       title: input.title,
@@ -96,8 +86,6 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       icon: input.icon,
       durationMinutes: durationMinutes,
       scheduledAt: scheduledAt,
-      alarmAt: alarmAt,
-      clearAlarmAt: alarmAt == null,
       isTimed: input.isTimed,
       recurrence: input.recurrence,
       dayPeriod: input.period,
@@ -2136,8 +2124,6 @@ class _DailyTaskCard extends ConsumerWidget {
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmEnabled: task.alarmAt != null,
-          alarmAt: task.alarmAt,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2163,8 +2149,6 @@ class _DailyTaskCard extends ConsumerWidget {
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
           recurrence: RecurrenceSelection(type: task.recurrenceType),
-          alarmEnabled: task.alarmAt != null,
-          alarmAt: task.alarmAt,
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2186,8 +2170,6 @@ class _DailyTaskCard extends ConsumerWidget {
             startsAt: draft.startsAt,
             endsAt: draft.endsAt,
             recurrence: draft.recurrence,
-            alarmEnabled: draft.alarmEnabled,
-            alarmAt: draft.alarmAt,
             subtasks: draft.subtasks,
             icon: draft.icon,
           ),
@@ -2893,8 +2875,6 @@ class _DailyTaskDetailScreenState
   late DateTime _endsAt =
       widget.initialDraft.endsAt ?? _startsAt.add(const Duration(minutes: 30));
   late RecurrenceType _recurrence = widget.initialDraft.recurrence.type;
-  late bool _alarmEnabled = widget.initialDraft.alarmEnabled;
-  late DateTime? _alarmAt = widget.initialDraft.alarmAt;
   late final List<String> _subtasks = [...widget.initialDraft.subtasks];
   late bool _subtasksExpanded = widget.initialDraft.subtasks.isNotEmpty;
   late bool _notesExpanded = widget.initialDraft.description.trim().isNotEmpty;
@@ -2941,9 +2921,6 @@ class _DailyTaskDetailScreenState
         endsAt: _isTimed ? _endsAt : null,
         clearTimedRange: !_isTimed,
         recurrence: RecurrenceSelection(type: _recurrence),
-        alarmEnabled: _alarmEnabled,
-        alarmAt: _alarmEnabled ? _effectiveAlarmAt : null,
-        clearAlarm: !_alarmEnabled,
         icon: _taskIcon.value.category.storageName,
         subtasks: _subtasks,
         openDetails: false,
@@ -3217,46 +3194,6 @@ class _DailyTaskDetailScreenState
                     }
                   },
                 ),
-                const Divider(height: 1),
-                _DetailToggleTile(
-                  key: const ValueKey('daily-alarm-toggle'),
-                  icon: Icons.alarm_rounded,
-                  label: context.l10n('Alarm'),
-                  subtitle: _alarmEnabled
-                      ? context.l10n(
-                          "{time}'da çalar",
-                          {'time': _clockLabel(_effectiveAlarmAt)},
-                        )
-                      : context.l10n('İstediğin saatte çalar'),
-                  value: _alarmEnabled,
-                  onChanged: (enabled) async {
-                    if (enabled &&
-                        !await requirePremiumAccess(
-                          context,
-                          ref,
-                          PremiumFeature.reminders,
-                        )) {
-                      return;
-                    }
-                    if (!mounted) return;
-                    setState(() {
-                      _alarmEnabled = enabled;
-                      if (enabled) {
-                        _alarmAt ??= defaultDailyAlarmAt(_alarmPlanDate);
-                      }
-                    });
-                  },
-                ),
-                if (_alarmEnabled) ...[
-                  const Divider(height: 1),
-                  _DetailTile(
-                    key: const ValueKey('daily-alarm-time'),
-                    icon: Icons.schedule_rounded,
-                    label: context.l10n('Alarm saati'),
-                    value: _clockLabel(_effectiveAlarmAt),
-                    onTap: _pickAlarmTime,
-                  ),
-                ],
               ],
             ),
           ),
@@ -3396,7 +3333,6 @@ class _DailyTaskDetailScreenState
     if (value != null && mounted) {
       setState(() {
         _date = _dateOnly(value);
-        _remapAlarmToPlanDate(_date);
       });
     }
   }
@@ -3440,7 +3376,6 @@ class _DailyTaskDetailScreenState
         if (!_endsAt.isAfter(_startsAt)) {
           _endsAt = _startsAt.add(const Duration(minutes: 30));
         }
-        _remapAlarmToPlanDate(updated);
       } else {
         _endsAt = updated.isAfter(_startsAt)
             ? updated
@@ -3478,7 +3413,6 @@ class _DailyTaskDetailScreenState
         if (!_endsAt.isAfter(_startsAt)) {
           _endsAt = _startsAt.add(const Duration(minutes: 30));
         }
-        _remapAlarmToPlanDate(updated);
       } else {
         _endsAt = updated.isAfter(_startsAt)
             ? updated
@@ -3486,54 +3420,10 @@ class _DailyTaskDetailScreenState
       }
     });
   }
-
-  DateTime get _alarmPlanDate => _isTimed ? _startsAt : _date;
-
-  DateTime get _effectiveAlarmAt {
-    final planDate = _alarmPlanDate;
-    final current = _alarmAt ?? defaultDailyAlarmAt(planDate);
-    return DateTime(
-      planDate.year,
-      planDate.month,
-      planDate.day,
-      current.hour,
-      current.minute,
-    );
-  }
-
-  void _remapAlarmToPlanDate(DateTime planDate) {
-    if (_alarmAt == null) return;
-    _alarmAt = DateTime(
-      planDate.year,
-      planDate.month,
-      planDate.day,
-      _alarmAt!.hour,
-      _alarmAt!.minute,
-    );
-  }
-
-  Future<void> _pickAlarmTime() async {
-    final current = _effectiveAlarmAt;
-    final value = await _showFiveMinuteTimePicker(
-      context,
-      TimeOfDay.fromDateTime(current),
-    );
-    if (value == null || !mounted) return;
-    setState(() {
-      _alarmAt = DateTime(
-        current.year,
-        current.month,
-        current.day,
-        value.hour,
-        value.minute,
-      );
-    });
-  }
 }
 
 class _DetailTile extends StatelessWidget {
   const _DetailTile({
-    super.key,
     required this.icon,
     required this.label,
     required this.value,
@@ -3594,63 +3484,6 @@ class _DetailTile extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
-}
-
-class _DetailToggleTile extends StatelessWidget {
-  const _DetailToggleTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: context.palette.aiSurface,
-            borderRadius: BorderRadius.circular(FlorienRadius.sm),
-          ),
-          child: Icon(icon, size: 19),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: context.palette.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Switch.adaptive(value: value, onChanged: onChanged),
-      ],
     ),
   );
 }
@@ -3970,8 +3803,6 @@ class _DailyTaskDraft {
     this.startsAt,
     this.endsAt,
     this.recurrence = const RecurrenceSelection(),
-    this.alarmEnabled = false,
-    this.alarmAt,
     this.subtasks = const [],
     this.presetSubtasks = const [],
     this.icon = TaskIcons.defaultName,
@@ -3989,8 +3820,6 @@ class _DailyTaskDraft {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final RecurrenceSelection recurrence;
-  final bool alarmEnabled;
-  final DateTime? alarmAt;
   final List<String> subtasks;
   final List<String> presetSubtasks;
   final String icon;
@@ -4009,9 +3838,6 @@ class _DailyTaskDraft {
     DateTime? endsAt,
     bool clearTimedRange = false,
     RecurrenceSelection? recurrence,
-    bool? alarmEnabled,
-    DateTime? alarmAt,
-    bool clearAlarm = false,
     List<String>? subtasks,
     List<String>? presetSubtasks,
     String? icon,
@@ -4028,8 +3854,6 @@ class _DailyTaskDraft {
     startsAt: clearTimedRange ? null : (startsAt ?? this.startsAt),
     endsAt: clearTimedRange ? null : (endsAt ?? this.endsAt),
     recurrence: recurrence ?? this.recurrence,
-    alarmEnabled: clearAlarm ? false : (alarmEnabled ?? this.alarmEnabled),
-    alarmAt: clearAlarm ? null : (alarmAt ?? this.alarmAt),
     subtasks: subtasks ?? this.subtasks,
     presetSubtasks: presetSubtasks ?? this.presetSubtasks,
     icon: icon ?? this.icon,
@@ -4046,10 +3870,6 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
   final durationMinutes = draft.isTimed
       ? draft.endsAt!.difference(draft.startsAt!).inMinutes
       : draft.durationMinutes;
-  final alarmAt = draft.alarmEnabled
-      ? (draft.alarmAt ??
-            defaultDailyAlarmAt(draft.isTimed ? scheduledAt : draft.date))
-      : null;
   final task = await ref
       .read(taskRepositoryProvider)
       .createTask(
@@ -4059,7 +3879,6 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
             : draft.description,
         durationMinutes: durationMinutes,
         scheduledAt: scheduledAt,
-        alarmAt: alarmAt,
         isTimed: draft.isTimed,
         isInbox: false,
         recurrence: draft.recurrence,
@@ -4304,7 +4123,7 @@ DateTime nextDailyAlarmSlot(DateTime now) {
   return nextHour;
 }
 
-/// Default alarm clock for a plan: next :00 or :30 from [now], mapped onto
+/// Default start for a timed plan: next :00 or :30 from [now], mapped onto
 /// [date] when the plan is on another day.
 DateTime defaultDailyAlarmAt(DateTime date, [DateTime? now]) {
   final current = (now ?? DateTime.now()).toLocal();

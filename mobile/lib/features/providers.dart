@@ -148,21 +148,11 @@ final notificationLaunchProvider = StateProvider<NotificationLaunchCommand?>(
   (ref) => null,
 );
 
-class PlanAlarmRingRequest {
-  const PlanAlarmRingRequest({required this.taskId, required this.title});
-
-  final String taskId;
-  final String title;
-}
-
-/// Active full-screen plan alarm ring (loops until dismissed).
-final planAlarmRingProvider = StateProvider<PlanAlarmRingRequest?>((ref) => null);
-
 final dailyPlannerDateRequestProvider = StateProvider<DateTime?>((ref) => null);
 
 final dailyReviewLaunchSignalProvider = StateProvider<int>((ref) => 0);
 
-/// Reconciles OS local notifications with preferences + upcoming timed tasks.
+/// Reconciles OS local notifications with upcoming tasks.
 final notificationReconcileProvider =
     Provider<Future<void> Function({int? previousDefaultLeadMinutes})>((ref) {
       return ({int? previousDefaultLeadMinutes}) async {
@@ -171,11 +161,8 @@ final notificationReconcileProvider =
         final alarms = ref.read(taskAlarmServiceProvider);
         final repository = ref.read(taskRepositoryProvider);
         final now = DateTime.now();
-        // Start of local day so period tasks (morning/daytime anchors) with a
-        // later alarmAt are still fetched after their scheduledAt has passed.
-        final dayStart = DateTime(now.year, now.month, now.day);
         final tasks = await repository.getUpcomingTimedTasks(
-          from: dayStart,
+          from: now,
           to: now.add(const Duration(days: 14)),
         );
         await alarms.reconcile(
@@ -537,7 +524,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   Future<void> loginWithApple() async {
     if (!await ref.read(appleAuthServiceProvider).isAvailable) {
       state = AsyncError(
-        StateError(ActiveLanguage.s('Apple ile giriş bu cihazda kullanılamıyor.')),
+        StateError(
+          ActiveLanguage.s('Apple ile giriş bu cihazda kullanılamıyor.'),
+        ),
         StackTrace.current,
       );
       return;

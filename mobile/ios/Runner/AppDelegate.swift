@@ -12,7 +12,9 @@ import home_widget
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
+    }
     if #available(iOS 17, *) {
       HomeWidgetBackgroundWorker.setPluginRegistrantCallback { registry in
         GeneratedPluginRegistrant.register(with: registry)
@@ -21,7 +23,63 @@ import home_widget
     GeneratedPluginRegistrant.register(with: self)
     configureHealthMoodChannel()
     configureNotificationSettingsChannel()
+    configureStoreKitChannel()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  private func configureStoreKitChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+    let channel = FlutterMethodChannel(
+      name: "florien/storekit",
+      binaryMessenger: controller.binaryMessenger
+    )
+    channel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "appAccountToken":
+        guard let uid = (call.arguments as? [String: Any])?["uid"] as? String,
+              !uid.isEmpty
+        else {
+          result(FlutterError(
+            code: "invalid_arguments",
+            message: "Firebase uid is required.",
+            details: nil
+          ))
+          return
+        }
+        result(FlorienAppAccountToken.uuid(forFirebaseUID: uid).uuidString.lowercased())
+      case "purchase":
+        guard let values = call.arguments as? [String: Any],
+              let productId = values["productId"] as? String,
+              let firebaseUID = values["firebaseUid"] as? String
+        else {
+          result(FlutterError(
+            code: "invalid_arguments",
+            message: "productId and firebaseUid are required.",
+            details: nil
+          ))
+          return
+        }
+        Task { @MainActor in
+          do {
+            let payload = try await FlorienStoreKit.purchase(
+              productId: productId,
+              firebaseUID: firebaseUID
+            )
+            result(payload)
+          } catch {
+            result(FlutterError(
+              code: "storekit_purchase_failed",
+              message: error.localizedDescription,
+              details: nil
+            ))
+          }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 
   private func configureNotificationSettingsChannel() {

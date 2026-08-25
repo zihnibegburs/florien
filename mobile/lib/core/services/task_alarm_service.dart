@@ -35,13 +35,7 @@ class TaskAlarmService {
   );
   static const _focusTimerAlarmId = 'focus_timer_alarm';
   static const _taskCategoryId = 'florien_task_reminder';
-  static const _planAlarmCategoryId = 'florien_plan_alarm';
   static const _completeActionId = 'complete';
-  static const _dismissAlarmActionId = 'dismiss_alarm';
-  static const _planAlarmSound = 'plan_alarm.caf';
-  static const planAlarmAssetPath = 'assets/sounds/plan_alarm.wav';
-  static const _planAlarmRepeatCount = 4;
-  static const _planAlarmRepeatGap = Duration(seconds: 30);
 
   /// iOS pending notification soft limit (~64). Keep headroom for general kinds.
   static const _maxPendingNotifications = 60;
@@ -68,18 +62,6 @@ class TaskAlarmService {
           DarwinNotificationAction.plain(
             _completeActionId,
             ActiveLanguage.s('Tamamlandı'),
-            options: <DarwinNotificationActionOption>{
-              DarwinNotificationActionOption.foreground,
-            },
-          ),
-        ],
-      ),
-      DarwinNotificationCategory(
-        _planAlarmCategoryId,
-        actions: <DarwinNotificationAction>[
-          DarwinNotificationAction.plain(
-            _dismissAlarmActionId,
-            ActiveLanguage.s('Kapat'),
             options: <DarwinNotificationActionOption>{
               DarwinNotificationActionOption.foreground,
             },
@@ -269,16 +251,6 @@ class TaskAlarmService {
     await initialize();
     if (kIsWeb) return;
     await _notifications.cancel(_notificationId(_taskIdKey(taskId)));
-    await cancelPlanAlarm(taskId);
-  }
-
-  /// Stops a ringing plan alarm, including follow-up OS repeats.
-  Future<void> cancelPlanAlarm(String taskId) async {
-    await initialize();
-    if (kIsWeb) return;
-    for (final key in _planAlarmIdKeys(taskId)) {
-      await _notifications.cancel(_notificationId(key));
-    }
   }
 
   Future<void> cancelAccountNotifications(String accountId) async {
@@ -359,10 +331,14 @@ class TaskAlarmService {
     );
   }
 
-  Future<void> cancelFocusTimerAlarm() => cancel(_focusTimerAlarmId);
+  Future<void> cancelFocusTimerAlarm() async {
+    await initialize();
+    if (kIsWeb) return;
+    await _notifications.cancel(_notificationId(_focusTimerAlarmId));
+  }
 
-  /// Full reconcile of general + task notifications for the signed-in account.
-  /// Local plan notifications are iOS-only (see product scope).
+  /// Full reconcile of Settings-driven local notifications.
+  /// Local notifications are iOS-only (see product scope).
   Future<void> reconcile({
     required String accountId,
     required List<TaskModel> upcomingTasks,
@@ -384,6 +360,11 @@ class TaskAlarmService {
       final payload = FlorienNotificationPayload.tryParse(request.payload);
       if (payload == null) continue;
       if (payload.kind == FlorienNotificationKind.focusTimer) continue;
+      // Drop leftover plan-alarm notifications from the previous native-alarm era.
+      if (payload.kind == FlorienNotificationKind.planAlarm) {
+        await _notifications.cancel(request.id);
+        continue;
+      }
       if (payload.accountId.isNotEmpty && payload.accountId != accountId) {
         continue;
       }
@@ -395,9 +376,7 @@ class TaskAlarmService {
       preferences: preferences,
     );
 
-    // Plan alarms (alarmAt) always schedule when OS permits. Lead-based
-    // "Görev hatırlatması" still respects taskRemindersEnabled inside
-    // computeTaskFireTime.
+    // Lead-based "Görev hatırlatması" only.
     final taskSlots = (_maxPendingNotifications - generalScheduled).clamp(
       0,
       _maxPendingNotifications,
@@ -414,18 +393,7 @@ class TaskAlarmService {
     required TaskModel task,
     required NotificationPreferences preferences,
   }) {
-    // Prefer absolute plan alarm when present (legacy single-return helper).
-    return computePlanAlarmFireTime(task) ??
-        computeTaskReminderFireTime(task: task, preferences: preferences);
-  }
-
-  /// Per-plan alarm clock. Independent of notification settings.
-  DateTime? computePlanAlarmFireTime(TaskModel task) {
-    if (task.isCompleted || task.status == TaskStatus.skipped) return null;
-    final alarmAt = task.alarmAt?.toLocal();
-    if (alarmAt == null) return null;
-    if (!alarmAt.isAfter(DateTime.now())) return null;
-    return alarmAt;
+    return computeTaskReminderFireTime(task: task, preferences: preferences);
   }
 
   /// Settings-driven task reminder (e.g. 10 minutes before start).
@@ -646,33 +614,6 @@ class TaskAlarmService {
     return entries;
   }
 
-  List<_Schedulable> _planAlarmEntries({
-    required TaskModel task,
-    required String accountId,
-    required DateTime alarmAt,
-  }) {
-    final payload = FlorienNotificationPayload(
-      kind: FlorienNotificationKind.planAlarm,
-      accountId: accountId,
-      target: NotificationTargetScreen.dailyPlan,
-      taskId: task.id,
-      occurrenceKey: task.id,
-    );
-    final keys = _planAlarmIdKeys(task.id);
-    return [
-      for (var i = 0; i < keys.length; i++)
-        _Schedulable(
-          idKey: keys[i],
-          when: alarmAt.add(_planAlarmRepeatGap * i),
-          title: NotificationCopy.planAlarmTitle,
-          body: NotificationCopy.planAlarmBody(task.title),
-          payload: payload,
-          categoryId: _planAlarmCategoryId,
-          isPlanAlarm: true,
-        ),
-    ];
-  }
-
   Future<void> _scheduleTaskNotifications({
     required String accountId,
     required NotificationPreferences preferences,
@@ -681,21 +622,9 @@ class TaskAlarmService {
   }) async {
     if (taskSlots <= 0) return;
 
-    final alarmEntries = <_Schedulable>[];
     final reminderCandidates = <_TaskFireCandidate>[];
 
     for (final task in tasks) {
-      final alarmAt = computePlanAlarmFireTime(task);
-      if (alarmAt != null) {
-        alarmEntries.addAll(
-          _planAlarmEntries(
-            task: task,
-            accountId: accountId,
-            alarmAt: alarmAt,
-          ),
-        );
-      }
-
       final reminderAt = computeTaskReminderFireTime(
         task: task,
         preferences: preferences,
@@ -711,7 +640,6 @@ class TaskAlarmService {
       }
     }
 
-    alarmEntries.sort((a, b) => a.when.compareTo(b.when));
     reminderCandidates.sort((a, b) => a.fireAt.compareTo(b.fireAt));
 
     final reminderGroups = <String, List<_TaskFireCandidate>>{};
@@ -771,9 +699,7 @@ class TaskAlarmService {
       }
     }
 
-    // Plan alarms first so they keep slots; then settings reminders.
-    final ordered = <_Schedulable>[...alarmEntries, ...reminderEntries];
-    for (final entry in ordered.take(taskSlots)) {
+    for (final entry in reminderEntries.take(taskSlots)) {
       await _zonedSchedule(
         idKey: entry.idKey,
         title: entry.title,
@@ -782,7 +708,6 @@ class TaskAlarmService {
         preferences: preferences,
         payload: entry.payload,
         categoryId: entry.categoryId,
-        isPlanAlarm: entry.isPlanAlarm,
       );
     }
   }
@@ -833,7 +758,6 @@ class TaskAlarmService {
     required NotificationPreferences preferences,
     required FlorienNotificationPayload payload,
     String? categoryId,
-    bool isPlanAlarm = false,
     String channelPrefix = 'florien_local_v2',
     String? channelName,
     String? channelDescription,
@@ -843,13 +767,10 @@ class TaskAlarmService {
     final scheduled = tz.TZDateTime.from(when.toLocal(), tz.local);
     final details = _notificationDetails(
       preferences,
-      channelPrefix: isPlanAlarm ? 'florien_plan_alarm_v3' : channelPrefix,
-      channelName: isPlanAlarm ? 'Plan alarmları' : channelName,
-      channelDescription: isPlanAlarm
-          ? 'Görev bazlı çalan alarmlar'
-          : channelDescription,
+      channelPrefix: channelPrefix,
+      channelName: channelName,
+      channelDescription: channelDescription,
       categoryId: categoryId,
-      isPlanAlarm: isPlanAlarm,
     );
     try {
       await _notifications.zonedSchedule(
@@ -891,15 +812,12 @@ class TaskAlarmService {
     String? channelName,
     String? channelDescription,
     String? categoryId,
-    bool isPlanAlarm = false,
   }) {
-    final playSound = isPlanAlarm || preferences.soundEnabled;
-    final vibrate = isPlanAlarm || preferences.vibrationEnabled;
+    final playSound = preferences.soundEnabled;
+    final vibrate = preferences.vibrationEnabled;
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        isPlanAlarm
-            ? 'florien_plan_alarm_v3_sound_vibrate'
-            : _androidChannelId(channelPrefix, preferences),
+        _androidChannelId(channelPrefix, preferences),
         ActiveLanguage.s(channelName ?? 'Florien hatırlatmaları'),
         channelDescription: ActiveLanguage.s(
           channelDescription ?? 'Yerel plan ve görev bildirimleri',
@@ -910,27 +828,12 @@ class TaskAlarmService {
         priority: Priority.max,
         playSound: playSound,
         enableVibration: vibrate,
-        category: isPlanAlarm ? AndroidNotificationCategory.alarm : null,
-        audioAttributesUsage: isPlanAlarm
-            ? AudioAttributesUsage.alarm
-            : AudioAttributesUsage.notification,
-        sound: isPlanAlarm
-            ? const RawResourceAndroidNotificationSound('plan_alarm')
-            : null,
-        fullScreenIntent: isPlanAlarm,
+        audioAttributesUsage: AudioAttributesUsage.notification,
         actions: categoryId == _taskCategoryId
             ? <AndroidNotificationAction>[
                 AndroidNotificationAction(
                   _completeActionId,
                   ActiveLanguage.s('Tamamlandı'),
-                  showsUserInterface: true,
-                ),
-              ]
-            : categoryId == _planAlarmCategoryId
-            ? <AndroidNotificationAction>[
-                AndroidNotificationAction(
-                  _dismissAlarmActionId,
-                  ActiveLanguage.s('Kapat'),
                   showsUserInterface: true,
                 ),
               ]
@@ -942,7 +845,6 @@ class TaskAlarmService {
         presentBanner: true,
         presentList: true,
         interruptionLevel: InterruptionLevel.timeSensitive,
-        sound: isPlanAlarm ? _planAlarmSound : null,
         categoryIdentifier: categoryId,
       ),
     );
@@ -1014,14 +916,6 @@ class TaskAlarmService {
 
   static String _taskIdKey(String taskId) => 'task_$taskId';
 
-  static String _planAlarmIdKey(String taskId) => 'plan_alarm_$taskId';
-
-  static List<String> _planAlarmIdKeys(String taskId) => [
-    _planAlarmIdKey(taskId),
-    for (var i = 1; i < _planAlarmRepeatCount; i++)
-      '${_planAlarmIdKey(taskId)}_n$i',
-  ];
-
   static String _dayKey(DateTime day) =>
       '${day.year.toString().padLeft(4, '0')}'
       '${day.month.toString().padLeft(2, '0')}'
@@ -1065,7 +959,6 @@ class _Schedulable {
     required this.body,
     required this.payload,
     required this.categoryId,
-    this.isPlanAlarm = false,
   });
 
   final String idKey;
@@ -1074,7 +967,6 @@ class _Schedulable {
   final String body;
   final FlorienNotificationPayload payload;
   final String? categoryId;
-  final bool isPlanAlarm;
 }
 
 @pragma('vm:entry-point')

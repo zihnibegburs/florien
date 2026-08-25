@@ -89,6 +89,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // UUID v5(Firebase uid) → uid. Used to resolve StoreKit 2 appAccountToken.
+    match /appleAppAccountTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
     // Public-to-signed-in, read-only UI copy. Admins update this document
     // through the Firebase Console or Admin SDK.
     match /appConfig/premiumPaywall {

@@ -5,7 +5,7 @@ import 'package:florien/core/storage/settings_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('rejects a plan alarm whose time is in the past', () async {
+  test('rejects a notification whose time is in the past', () async {
     final alarms = TaskAlarmService(SettingsStorage());
 
     final readiness = await alarms.prepareTaskAlarm(
@@ -40,10 +40,7 @@ void main() {
       quietHoursEndMinutes: 8 * 60,
     );
     final afternoon = DateTime(2026, 8, 21, 14, 0);
-    expect(
-      TaskAlarmService.applyQuietHoursShift(afternoon, prefs),
-      afternoon,
-    );
+    expect(TaskAlarmService.applyQuietHoursShift(afternoon, prefs), afternoon);
   });
 
   test('disabled quiet hours never shift', () {
@@ -147,52 +144,6 @@ void main() {
     );
   });
 
-  test('plan alarm fires at absolute alarmAt', () {
-    final alarms = TaskAlarmService(SettingsStorage());
-    final alarmAt = DateTime.now().add(const Duration(hours: 2));
-    final task = TaskModel(
-      id: 't3b',
-      title: 'Sabah planı',
-      color: '#000',
-      icon: 'task',
-      durationMinutes: 30,
-      scheduledAt: DateTime.now().add(const Duration(hours: 3)),
-      alarmAt: alarmAt,
-      status: TaskStatus.pending,
-      sortOrder: 0,
-      isInbox: false,
-      isTimed: false,
-      dayPeriod: DayPeriod.morning,
-    );
-    expect(alarms.computePlanAlarmFireTime(task), alarmAt);
-  });
-
-  test('plan alarm fires even when task reminders preference is off', () {
-    final alarms = TaskAlarmService(SettingsStorage());
-    final alarmAt = DateTime.now().add(const Duration(hours: 1));
-    final task = TaskModel(
-      id: 't3c',
-      title: 'Bağımsız alarm',
-      color: '#000',
-      icon: 'task',
-      durationMinutes: 15,
-      scheduledAt: DateTime.now().add(const Duration(hours: 3)),
-      alarmAt: alarmAt,
-      status: TaskStatus.pending,
-      sortOrder: 0,
-      isInbox: false,
-      isTimed: false,
-    );
-    expect(alarms.computePlanAlarmFireTime(task), alarmAt);
-    expect(
-      alarms.computeTaskFireTime(
-        task: task,
-        preferences: const NotificationPreferences(taskRemindersEnabled: false),
-      ),
-      alarmAt,
-    );
-  });
-
   test('notification titles match product copy', () {
     expect(NotificationCopy.morningTitle, 'Bugünün planı');
     expect(NotificationCopy.motivationTitle, 'Küçük bir hatırlatma');
@@ -200,6 +151,5 @@ void main() {
     expect(NotificationCopy.weeklyReviewTitle, 'Haftayı planlayalım');
     expect(NotificationCopy.taskTitle, 'Sıradaki görevin');
     expect(NotificationCopy.batchTitle, 'Sıradaki görevlerin');
-    expect(NotificationCopy.planAlarmTitle, 'Alarm');
   });
 }

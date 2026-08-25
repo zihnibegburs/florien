@@ -120,8 +120,6 @@ void main() {
     expect(find.text('Tarih'), findsOneWidget);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Yinelemek'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
-    expect(find.text('İstediğin saatte çalar'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('daily-detail-subtask-input')),
       findsNothing,
@@ -144,28 +142,11 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('daily-detail-notes')), findsOneWidget);
 
-    final expectedAlarm = defaultDailyAlarmAt(DateTime.now());
-    final expectedLabel =
-        '${expectedAlarm.hour.toString().padLeft(2, '0')}:'
-        '${expectedAlarm.minute.toString().padLeft(2, '0')}';
-    await tester.ensureVisible(find.byKey(const ValueKey('daily-alarm-toggle')));
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('daily-alarm-toggle')),
-        matching: find.byType(Switch),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text("$expectedLabel'da çalar"), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
-    expect(find.text(expectedLabel), findsWidgets);
-
     await tester.tap(find.text('Günün saati'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('daily-timed-choice')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
-    expect(find.text("$expectedLabel'da çalar"), findsOneWidget);
+    expect(find.text('Başlar'), findsOneWidget);
   });
 
   test('daily alarm defaults to the next half or full hour', () {
@@ -467,56 +448,15 @@ void main() {
 
     expect(find.byType(PremiumMembershipScreen), findsNothing);
     expect(find.text('10 Dakikada Ayağa Kalk'), findsWidgets);
-    expect(find.textContaining('hazır ve düzenlenebilir bir rutin'), findsNothing);
+    expect(
+      find.textContaining('hazır ve düzenlenebilir bir rutin'),
+      findsNothing,
+    );
     expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
     expect(find.text('Rutin için gerekenleri hazırla'), findsNothing);
   });
 
-  testWidgets(
-    'premium user gets ready routine steps from the AI button',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(430, 1100));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            dailyTimelineProvider.overrideWith(
-              (ref, date) async => TimelineModel(date: date, tasks: const []),
-            ),
-            premiumMembershipProvider.overrideWith(
-              _ActivePremiumMembershipNotifier.new,
-            ),
-          ],
-          child: MaterialApp(
-            theme: FlorienTheme.light,
-            home: const Scaffold(body: DailyPlannerTab()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const ValueKey('daily-menu-routines')));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey('routine-task-10 Dakikada Ayağa Kalk')),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
-
-      await tester.tap(find.byKey(const ValueKey('daily-ai-subtasks-button')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
-
-      expect(find.byType(PremiumMembershipScreen), findsNothing);
-      expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
-      expect(find.text('Rutin için gerekenleri hazırla'), findsOneWidget);
-      expect(find.text('Başlangıcı tamamlayıp güne geç'), findsOneWidget);
-    },
-  );
-
-  testWidgets('free account opens Premium before enabling a task alarm', (
+  testWidgets('premium user gets ready routine steps from the AI button', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 1100));
@@ -528,7 +468,7 @@ void main() {
             (ref, date) async => TimelineModel(date: date, tasks: const []),
           ),
           premiumMembershipProvider.overrideWith(
-            _NonPremiumMembershipNotifier.new,
+            _ActivePremiumMembershipNotifier.new,
           ),
         ],
         child: MaterialApp(
@@ -539,27 +479,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Bu gruba görev ekle'));
+    await tester.tap(find.byKey(const ValueKey('daily-menu-routines')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('daily-quick-title')),
-      'Doktor randevusu',
-    );
-    await tester.tap(find.byKey(const ValueKey('daily-details-chip')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
-    await tester.ensureVisible(find.byKey(const ValueKey('daily-alarm-toggle')));
     await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('daily-alarm-toggle')),
-        matching: find.byType(Switch),
-      ),
+      find.byKey(const ValueKey('routine-task-10 Dakikada Ayağa Kalk')),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('Alarm ve hatırlatıcılar'), findsOneWidget);
+    expect(find.text('Su iç ve bedenini uyandır'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('daily-ai-subtasks-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(PremiumMembershipScreen), findsNothing);
+    expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
+    expect(find.text('Rutin için gerekenleri hazırla'), findsOneWidget);
+    expect(find.text('Başlangıcı tamamlayıp güne geç'), findsOneWidget);
   });
 
   testWidgets('daily grouping switches between list and timeline views', (
@@ -1110,7 +1047,6 @@ void main() {
       icon: 'task',
       durationMinutes: 30,
       scheduledAt: DateTime(2026, 8, 14, 13),
-      alarmAt: DateTime(2026, 8, 14, 12, 30),
       status: TaskStatus.pending,
       sortOrder: 0,
       isInbox: false,
@@ -1164,10 +1100,6 @@ void main() {
     expect(title.controller?.text, task.title);
     expect(find.text(task.description!), findsOneWidget);
     expect(find.text('İlk adım'), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-toggle')), findsOneWidget);
-    expect(find.text("12:30'da çalar"), findsOneWidget);
-    expect(find.byKey(const ValueKey('daily-alarm-time')), findsOneWidget);
-    expect(find.text('Alarm saati'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('daily-detail-title')),
@@ -1180,8 +1112,6 @@ void main() {
     expect(savedInput?.description, 'Eski not');
     expect(savedInput?.durationMinutes, 30);
     expect(savedInput?.period, DayPeriod.daytime);
-    expect(savedInput?.alarmEnabled, isTrue);
-    expect(savedInput?.alarmAt, DateTime(2026, 8, 14, 12, 30));
     expect(savedInput?.subtasks, ['İlk adım']);
   });
 

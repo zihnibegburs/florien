@@ -1,17 +1,22 @@
 import * as admin from "firebase-admin";
-import { createHash, sign } from "node:crypto";
+import { sign } from "node:crypto";
 import { GoogleAuth } from "google-auth-library";
 import { HttpsError } from "firebase-functions/v2/https";
 import { aiAccessDocument } from "./ai-protection";
+import { persistAppleAppAccountToken } from "./apple-account-token";
+import {
+  applyAppStoreEntitlementChange,
+  premiumOwnershipDocument,
+} from "./premium-entitlement";
 
-const APP_ID = "com.florien.app";
-const PREMIUM_PRODUCT_IDS = new Set([
+export const APP_ID = "com.florien.app";
+export const PREMIUM_PRODUCT_IDS = new Set([
   "com.florien.app.subscription.monthly",
   "com.florien.app.subscription.yearly",
 ]);
 const MAX_VERIFICATION_DATA_LENGTH = 200_000;
 
-type AppleCredentials = {
+export type AppleCredentials = {
   sharedSecret?: string;
   issuerId?: string;
   keyId?: string;
@@ -23,9 +28,10 @@ type VerifiedPremium = {
   productId: string;
   premiumUntil: Date;
   ownershipId: string;
+  appAccountToken?: string;
 };
 
-type AppleTransaction = {
+export type AppleTransaction = {
   transactionId?: string;
   originalTransactionId?: string;
   bundleId?: string;
@@ -33,6 +39,7 @@ type AppleTransaction = {
   expiresDate?: number;
   revocationDate?: number;
   environment?: string;
+  appAccountToken?: string;
 };
 
 function invalidPurchase(message: string): HttpsError {
@@ -41,7 +48,7 @@ function invalidPurchase(message: string): HttpsError {
   });
 }
 
-function parseAppleCredentials(raw: string): AppleCredentials {
+export function parseAppleCredentials(raw: string): AppleCredentials {
   try {
     const parsed = JSON.parse(raw) as AppleCredentials;
     return parsed && typeof parsed === "object" ? parsed : {};
@@ -54,7 +61,7 @@ function parseAppleCredentials(raw: string): AppleCredentials {
   }
 }
 
-function decodeJwsPayload<T>(jws: string): T {
+export function decodeJwsPayload<T>(jws: string): T {
   const parts = jws.split(".");
   if (parts.length !== 3) throw invalidPurchase("Invalid App Store transaction.");
   try {
@@ -95,7 +102,7 @@ function appleApiToken(credentials: AppleCredentials): string {
   return `${unsigned}.${signature}`;
 }
 
-async function fetchAppleTransaction(
+export async function fetchAppleTransaction(
   transactionId: string,
   environment: string | undefined,
   credentials: AppleCredentials
@@ -141,7 +148,13 @@ function validateAppleTransaction(transaction: AppleTransaction): VerifiedPremiu
   }
   const ownershipId = transaction.originalTransactionId ?? transaction.transactionId;
   if (!ownershipId) throw invalidPurchase("App Store transaction is incomplete.");
-  return { provider: "app_store", productId, premiumUntil, ownershipId };
+  return {
+    provider: "app_store",
+    productId,
+    premiumUntil,
+    ownershipId,
+    appAccountToken: transaction.appAccountToken,
+  };
 }
 
 async function verifyAppleLegacyReceipt(
@@ -283,11 +296,26 @@ async function verifyGoogle(purchaseToken: string): Promise<VerifiedPremium> {
 }
 
 async function persistVerifiedPremium(uid: string, verified: VerifiedPremium): Promise<Date> {
+  if (verified.provider === "app_store") {
+    await persistAppleAppAccountToken(uid);
+    const result = await applyAppStoreEntitlementChange({
+      originalTransactionId: verified.ownershipId,
+      productId: verified.productId,
+      premiumUntil: verified.premiumUntil,
+      bindUid: uid,
+      reason: "client_verify",
+      appAccountToken: verified.appAccountToken,
+    });
+    if (result.uid !== uid) {
+      throw new HttpsError("internal", "Premium entitlement could not be bound.", {
+        reason: "PREMIUM_VERIFICATION_UNAVAILABLE",
+      });
+    }
+    return verified.premiumUntil;
+  }
+
   const db = admin.firestore();
-  const ownershipHash = createHash("sha256")
-    .update(`${verified.provider}:${verified.ownershipId}`)
-    .digest("hex");
-  const ownershipRef = db.collection("premiumTransactions").doc(ownershipHash);
+  const ownershipRef = premiumOwnershipDocument(verified.provider, verified.ownershipId);
   const accessRef = aiAccessDocument(uid);
 
   return db.runTransaction(async (transaction) => {
@@ -318,6 +346,8 @@ async function persistVerifiedPremium(uid: string, verified: VerifiedPremium): P
       premiumProvider: verified.provider,
       premiumProductId: verified.productId,
       premiumVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      premiumOwnershipId: ownershipRef.id,
+      premiumStatus: "active",
     }, { merge: true });
     return effectiveUntil;
   });
