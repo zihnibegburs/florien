@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide DayPeriod;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/daily_planner_tab.dart';
@@ -34,8 +35,9 @@ void main() {
           dailyTaskGroupMoverProvider.overrideWithValue((
             movedTask,
             period,
-            date,
-          ) async {
+            date, {
+            RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+          }) async {
             expect(movedTask.id, task.id);
             movedPeriod = period;
           }),

@@ -125,18 +125,19 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
   }
 
   Future<void> _focusTaskFromSurface(TaskModel task) async {
+    var started = task;
     try {
-      await ref.read(startTaskFocusProvider)(task);
+      started = await ref.read(startTaskFocusProvider)(task);
     } catch (_) {
       // Launch still proceeds so the focus surface can open.
     }
     if (!mounted) return;
     ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
-      taskId: task.id,
-      title: task.title,
-      durationMinutes: task.durationMinutes,
-      icon: task.icon,
-      color: task.color,
+      taskId: started.id,
+      title: started.title,
+      durationMinutes: started.durationMinutes,
+      icon: started.icon,
+      color: started.color,
     );
     setState(() => _mode = PlannerAiChatMode.focus);
   }
@@ -661,11 +662,11 @@ class _AiModeChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  String get _label => switch (mode) {
-    PlannerAiChatMode.chat => ActiveLanguage.s('Sohbet'),
-    PlannerAiChatMode.todo => ActiveLanguage.s('To-do'),
-    PlannerAiChatMode.daily => ActiveLanguage.s('Günlük plan'),
-    PlannerAiChatMode.focus => ActiveLanguage.s('Odak'),
+  String _label(BuildContext context) => switch (mode) {
+    PlannerAiChatMode.chat => context.l10n('Sohbet'),
+    PlannerAiChatMode.todo => context.l10n('To-do'),
+    PlannerAiChatMode.daily => context.l10n('Günlük plan'),
+    PlannerAiChatMode.focus => context.l10n('Odak'),
   };
 
   IconData get _icon => switch (mode) {
@@ -698,7 +699,7 @@ class _AiModeChip extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                _label,
+                _label(context),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

@@ -8,6 +8,7 @@ import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_card.dart';
 import 'package:florien/core/widgets/florien_duration_picker.dart';
 import 'package:florien/core/utils/subtask_sequence.dart';
+import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_gate.dart';
 import 'package:florien/features/premium/premium_membership.dart';
@@ -381,7 +382,10 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                     for (var index = 0; index < _subtasks.length; index++)
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.circle_outlined, size: 18),
+                        leading: TaskIconBadge.forTask(
+                          icon: TaskIcons.nameForTitle(_subtasks[index]),
+                          size: 28,
+                        ),
                         title: Text(_subtasks[index]),
                         trailing: IconButton(
                           tooltip: context.l10n('Sil'),

@@ -52,8 +52,10 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
       'call',
       'phone',
       'dial',
+      'notification',
+      'silent mode',
     ],
-    'tr': ['telefon et', 'telefon', 'ara'],
+    'tr': ['telefon et', 'telefon', 'ara', 'bildirim', 'telefonsuz'],
     'de': ['anrufen', 'anruf', 'telefonieren'],
     'es': ['llamar', 'llamada', 'telefono', 'teléfono'],
     'fr': ['appeler', 'appel', 'telephone', 'téléphone'],
@@ -334,8 +336,15 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
     'fr': ['patisserie', 'pâtisserie', 'cuire gateau'],
   }),
   TaskCategory.drinks: TaskKeywordSet({
-    'en': ['drinks', 'cocktail', 'happy hour', 'wine'],
-    'tr': ['icecek', 'kokteyl', 'ici'],
+    'en': [
+      'drinks',
+      'cocktail',
+      'happy hour',
+      'wine',
+      'drink water',
+      'hydrate',
+    ],
+    'tr': ['icecek', 'kokteyl', 'ici', 'su ic'],
     'de': ['getranke', 'getränke', 'cocktail'],
     'es': ['bebidas', 'copas'],
     'fr': ['boissons', 'verre'],
@@ -411,8 +420,14 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
     'fr': ['prise de sang', 'analyse'],
   }),
   TaskCategory.meditation: TaskKeywordSet({
-    'en': ['meditation', 'meditate', 'mindfulness'],
-    'tr': ['meditasyon'],
+    'en': [
+      'meditation',
+      'meditate',
+      'mindfulness',
+      'quiet break',
+      'take a breath',
+    ],
+    'tr': ['meditasyon', 'nefes', 'sessiz mola'],
     'de': ['meditation'],
     'es': ['meditacion', 'meditación'],
     'fr': ['meditation', 'méditation'],
@@ -474,8 +489,8 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
     'fr': ['football', 'basket'],
   }),
   TaskCategory.stretching: TaskKeywordSet({
-    'en': ['stretching', 'stretch', 'mobility'],
-    'tr': ['esneme', 'stretch'],
+    'en': ['stretching', 'stretch', 'mobility', 'get up', 'wake your body'],
+    'tr': ['esneme', 'stretch', 'ayaga kalk', 'gevset'],
     'de': ['dehnen', 'stretching'],
     'es': ['estiramientos', 'estirar'],
     'fr': ['etirements', 'étirements'],
@@ -516,8 +531,8 @@ const Map<TaskCategory, TaskKeywordSet> taskCategoryKeywords = {
     'fr': ['vacances'],
   }),
   TaskCategory.luggage: TaskKeywordSet({
-    'en': ['luggage', 'suitcase', 'pack bags', 'packing'],
-    'tr': ['bavul', 'valiz', 'esya topla'],
+    'en': ['luggage', 'suitcase', 'pack bags', 'packing', 'pack your bag'],
+    'tr': ['bavul', 'valiz', 'esya topla', 'canta'],
     'de': ['koffer', 'gepäck'],
     'es': ['maleta', 'equipaje'],
     'fr': ['valise', 'bagages'],
@@ -814,6 +829,9 @@ const taskKeywordTokenGroups = <(List<String>, TaskCategory)>[
   (['home', 'repair'], TaskCategory.homeRepair),
   (['pay', 'bill'], TaskCategory.bills),
   (['buy', 'milk'], TaskCategory.groceries),
+  (['su', 'ic'], TaskCategory.drinks),
+  (['drink', 'water'], TaskCategory.drinks),
+  (['wake', 'body'], TaskCategory.stretching),
 ];
 
 /// Folded Turkish verb stems; longer stems first.

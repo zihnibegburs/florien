@@ -32,7 +32,14 @@ void main() {
     expect(TaskIconLexicon.match('Flight to Bangkok'), TaskCategory.flight);
     expect(TaskIconLexicon.match('laufen'), TaskCategory.running);
     expect(TaskIconLexicon.match('correr'), TaskCategory.running);
-    expect(TaskIconLexicon.match('courir'), TaskCategory.running);
+    expect(
+      TaskIconLexicon.match('Su iç ve bedenini uyandır'),
+      TaskCategory.drinks,
+    );
+    expect(
+      TaskIconLexicon.match('Drink water and wake your body'),
+      TaskCategory.drinks,
+    );
   });
 
   test('classifier uses the lexicon without needing the ONNX model', () async {

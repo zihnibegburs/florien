@@ -3,85 +3,83 @@ import 'package:florien/core/models/recurrence.dart';
 class RecurrenceGenerator {
   RecurrenceGenerator._();
 
-  static List<DateTime> generateOccurrences({
+  static bool occursOn({
+    required DateTime date,
     required DateTime start,
     required RecurrenceType type,
     int interval = 1,
     RecurrenceUnit? unit,
+    DateTime? until,
   }) {
-    if (type == RecurrenceType.none) return const [];
+    if (type == RecurrenceType.none) return false;
+    final day = RecurrenceOccurrence.dateOnly(date);
+    final startDay = RecurrenceOccurrence.dateOnly(start);
+    if (day.isBefore(startDay)) return false;
+    if (until != null && !day.isBefore(RecurrenceOccurrence.dateOnly(until))) {
+      return false;
+    }
 
     final safeInterval = interval < 1 ? 1 : interval;
-    final max = _maxOccurrences(type, safeInterval, unit);
-    var cursor = start.toUtc();
-    final occurrences = <DateTime>[];
-
-    for (var i = 0; i < max; i++) {
-      cursor = _next(cursor, type, safeInterval, unit);
-      occurrences.add(cursor);
-    }
-    return occurrences;
-  }
-
-  static int _maxOccurrences(
-    RecurrenceType type,
-    int interval,
-    RecurrenceUnit? unit,
-  ) {
     return switch (type) {
-      RecurrenceType.daily => 89,
-      RecurrenceType.weekly => 51,
-      RecurrenceType.monthly => 11,
-      RecurrenceType.yearly => 4,
+      RecurrenceType.daily =>
+        day.difference(startDay).inDays % safeInterval == 0,
+      RecurrenceType.weekly =>
+        day.weekday == startDay.weekday &&
+            day.difference(startDay).inDays % (7 * safeInterval) == 0,
+      RecurrenceType.monthly => _monthlyOccurs(day, startDay, safeInterval),
+      RecurrenceType.yearly =>
+        day.month == startDay.month &&
+            day.day == startDay.day &&
+            (day.year - startDay.year) % safeInterval == 0,
       RecurrenceType.custom => switch (unit) {
-        RecurrenceUnit.days => (89 / interval).floor().clamp(1, 89),
-        RecurrenceUnit.weeks => (51 / interval).floor().clamp(1, 51),
-        RecurrenceUnit.months => (11 / interval).floor().clamp(1, 11),
-        null => 0,
+        RecurrenceUnit.days =>
+          day.difference(startDay).inDays % safeInterval == 0,
+        RecurrenceUnit.weeks =>
+          day.weekday == startDay.weekday &&
+              day.difference(startDay).inDays % (7 * safeInterval) == 0,
+        RecurrenceUnit.months => _monthlyOccurs(day, startDay, safeInterval),
+        null => false,
       },
-      RecurrenceType.none => 0,
+      RecurrenceType.none => false,
     };
   }
 
-  static DateTime _next(
-    DateTime current,
-    RecurrenceType type,
-    int interval,
-    RecurrenceUnit? unit,
-  ) {
-    return switch (type) {
-      RecurrenceType.daily => current.add(Duration(days: interval)),
-      RecurrenceType.weekly => current.add(Duration(days: 7 * interval)),
-      RecurrenceType.monthly => DateTime.utc(
-        current.year,
-        current.month + interval,
-        current.day,
-        current.hour,
-        current.minute,
-        current.second,
-      ),
-      RecurrenceType.yearly => DateTime.utc(
-        current.year + interval,
-        current.month,
-        current.day,
-        current.hour,
-        current.minute,
-        current.second,
-      ),
-      RecurrenceType.custom => switch (unit) {
-        RecurrenceUnit.days => current.add(Duration(days: interval)),
-        RecurrenceUnit.weeks => current.add(Duration(days: 7 * interval)),
-        RecurrenceUnit.months => DateTime.utc(
-          current.year,
-          current.month + interval,
-          current.day,
-          current.hour,
-          current.minute,
-          current.second,
-        ),
-        null => current,
-      },
-      RecurrenceType.none => current,
-    };
+  static DateTime scheduledAtFor({
+    required DateTime start,
+    required DateTime date,
+  }) {
+    final localStart = start.toLocal();
+    final day = RecurrenceOccurrence.dateOnly(date);
+    return DateTime(
+      day.year,
+      day.month,
+      day.day,
+      localStart.hour,
+      localStart.minute,
+      localStart.second,
+    );
+  }
+
+  static DateTime? alarmAtFor({
+    required DateTime? alarmAt,
+    required DateTime occurrence,
+  }) {
+    if (alarmAt == null) return null;
+    final localAlarm = alarmAt.toLocal();
+    final localOccurrence = occurrence.toLocal();
+    return DateTime(
+      localOccurrence.year,
+      localOccurrence.month,
+      localOccurrence.day,
+      localAlarm.hour,
+      localAlarm.minute,
+    );
+  }
+
+  static bool _monthlyOccurs(DateTime day, DateTime startDay, int interval) {
+    if (day.day != startDay.day) return false;
+    final months =
+        (day.year - startDay.year) * 12 + (day.month - startDay.month);
+    return months >= 0 && months % interval == 0;
   }
 }

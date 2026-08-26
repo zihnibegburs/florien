@@ -10,6 +10,7 @@ import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/storage/task_collection.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
+import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/firebase_options.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 
@@ -235,6 +236,7 @@ class TaskRepository {
     for (final entry in tasksById.entries) {
       final task = entry.value;
       if (task.parentTaskId != null) continue;
+      if (task.recurrenceException != RecurrenceExceptionKind.none) continue;
       final data = dataById[entry.key]!;
       candidates.add(
         TaskUsageCandidate(
@@ -374,6 +376,7 @@ class TaskRepository {
   }
 
   Future<TaskModel> moveToInbox(String id, {String? todoListId}) async {
+    id = (await _ensureMaterialized(id)).id;
     final ref = _tasks.doc(id);
     final snapshot = await ref.get();
     if (!snapshot.exists) throw StateError('Task not found');
@@ -393,8 +396,10 @@ class TaskRepository {
   }
 
   Future<TimelineModel> getTimeline(DateTime date) async {
-    final dayStart = DateTime(date.year, date.month, date.day).toUtc();
+    final day = RecurrenceOccurrence.dateOnly(date);
+    final dayStart = DateTime(day.year, day.month, day.day).toUtc();
     final dayEnd = dayStart.add(const Duration(days: 1));
+    final dateKey = RecurrenceOccurrence.dateKey(day);
 
     final snap = await _tasks
         .where(
@@ -404,11 +409,60 @@ class TaskRepository {
         .where('scheduledAt', isLessThan: Timestamp.fromDate(dayEnd))
         .orderBy('scheduledAt')
         .get();
+    final exceptionSnap = await _tasks
+        .where('occurrenceDate', isEqualTo: dateKey)
+        .get();
+    final seriesSnap = await _tasks
+        .where(
+          'recurrenceType',
+          whereIn: const ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'],
+        )
+        .get();
 
-    final all = snap.docs
-        .map((d) => TaskModel.fromFirestore(d.id, d.data()))
-        .where((t) => t.parentTaskId == null && !t.isInbox)
-        .toList();
+    final byId = <String, TaskModel>{};
+    for (final doc in [...snap.docs, ...exceptionSnap.docs]) {
+      byId[doc.id] = TaskModel.fromFirestore(doc.id, doc.data());
+    }
+
+    final seriesById = <String, TaskModel>{};
+    for (final doc in seriesSnap.docs) {
+      final task = TaskModel.fromFirestore(doc.id, doc.data());
+      if (task.isSeriesMaster) seriesById[doc.id] = task;
+    }
+
+    final visible = <TaskModel>[];
+    for (final task in byId.values) {
+      if (task.parentTaskId != null || task.isInbox || task.isSeriesMaster) {
+        continue;
+      }
+      if (task.recurrenceException == RecurrenceExceptionKind.skip) {
+        continue;
+      }
+      final scheduledDay = task.scheduledAt == null
+          ? null
+          : RecurrenceOccurrence.dateOnly(task.scheduledAt!);
+      if (scheduledDay != null && scheduledDay != day) continue;
+      final master = seriesById[task.recurrenceSeriesId];
+      visible.add(
+        master == null
+            ? task
+            : task.copyWith(recurrenceType: master.recurrenceType),
+      );
+    }
+
+    for (final master in seriesById.values) {
+      if (master.isInbox || master.parentTaskId != null) continue;
+      if (!_seriesOccursOn(master, day)) continue;
+      if (_seriesOccupiedOnDay(master.id, day, byId.values)) continue;
+      visible.add(_virtualOccurrence(master, day));
+    }
+
+    final all = visible.toList()
+      ..sort((a, b) {
+        final left = a.scheduledAt ?? day;
+        final right = b.scheduledAt ?? day;
+        return left.compareTo(right);
+      });
 
     final parentIds = all.map((t) => t.id).toList();
     final subtasksByParent = <String, List<TaskModel>>{};
@@ -502,7 +556,11 @@ class TaskRepository {
       'recurrenceType': recurrence.apiType(),
       'recurrenceInterval': recurrence.interval,
       'recurrenceUnit': recurrence.apiUnit(),
-      'recurrenceSeriesId': null,
+      'recurrenceSeriesId': recurrence.hasRecurrence ? ref.id : null,
+      'recurrenceRootId': recurrence.hasRecurrence ? ref.id : null,
+      'recurrenceUntil': null,
+      'occurrenceDate': null,
+      'recurrenceException': null,
       'priority': _priorityValue(priority),
       'dayPeriod': _dayPeriodValue(dayPeriod),
       'todoListId': todoListId,
@@ -511,105 +569,8 @@ class TaskRepository {
     };
 
     await ref.set(data);
-
-    if (recurrence.hasRecurrence && scheduledAt != null) {
-      await ref.update({'recurrenceSeriesId': ref.id});
-      await _createRecurringInstances(
-        templateId: ref.id,
-        title: title.trim(),
-        description: description,
-        color: color,
-        icon: icon,
-        durationMinutes: durationMinutes,
-        start: scheduledAt,
-        alarmAt: alarmAt,
-        reminderLeadMinutes: reminderLeadMinutes,
-        isTimed: isTimed,
-        recurrence: recurrence,
-        reward: _normalizeText(reward),
-        energyLevel: energyLevel?.apiValue,
-        motivation: _normalizeText(motivation),
-        transitionBufferMinutes: transitionBufferMinutes,
-        priority: priority,
-        dayPeriod: dayPeriod,
-      );
-    }
-
     final snap = await ref.get();
     return TaskModel.fromFirestore(ref.id, snap.data()!);
-  }
-
-  Future<void> _createRecurringInstances({
-    required String templateId,
-    required String title,
-    String? description,
-    required String color,
-    required String icon,
-    required int durationMinutes,
-    required DateTime start,
-    DateTime? alarmAt,
-    int? reminderLeadMinutes,
-    required bool isTimed,
-    required RecurrenceSelection recurrence,
-    String? reward,
-    String? energyLevel,
-    String? motivation,
-    required int transitionBufferMinutes,
-    required TaskPriority priority,
-    required DayPeriod dayPeriod,
-  }) async {
-    final occurrences = RecurrenceGenerator.generateOccurrences(
-      start: start.toUtc(),
-      type: recurrence.type,
-      interval: recurrence.interval,
-      unit: recurrence.type == RecurrenceType.custom ? recurrence.unit : null,
-    );
-
-    var batch = _tasks.newBatch();
-    var ops = 0;
-    for (final occurrence in occurrences) {
-      final ref = _tasks.doc();
-      batch.set(ref, {
-        'title': title,
-        'description': description,
-        'color': color,
-        'icon': icon,
-        'durationMinutes': durationMinutes,
-        'scheduledAt': Timestamp.fromDate(occurrence),
-        'alarmAt': alarmAt == null
-            ? null
-            : Timestamp.fromDate(
-                _alarmForOccurrence(alarmAt, occurrence).toUtc(),
-              ),
-        'reminderLeadMinutes': reminderLeadMinutes,
-        'isTimed': isTimed,
-        'status': 'PENDING',
-        'sortOrder': 0,
-        'isInbox': false,
-        'startedAt': null,
-        'completedAt': null,
-        'parentTaskId': null,
-        'reward': reward,
-        'energyLevel': energyLevel,
-        'motivation': motivation,
-        'transitionBufferMinutes': transitionBufferMinutes,
-        'recurrenceType': 'NONE',
-        'recurrenceInterval': 1,
-        'recurrenceUnit': null,
-        'recurrenceSeriesId': templateId,
-        'priority': _priorityValue(priority),
-        'dayPeriod': _dayPeriodValue(dayPeriod),
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      ops++;
-      if (ops >= 400) {
-        await batch.commit();
-        batch = _tasks.newBatch();
-        ops = 0;
-      }
-    }
-    if (ops > 0) await batch.commit();
   }
 
   Future<TaskModel> createTaskWithSubtasks({
@@ -658,7 +619,7 @@ class TaskRepository {
         'title': sub.title.trim(),
         'description': null,
         'color': sub.color,
-        'icon': icon,
+        'icon': TaskIcons.nameForTitle(sub.title, fallback: icon),
         'durationMinutes': sub.durationMinutes,
         'scheduledAt': Timestamp.fromDate(current),
         'status': 'PENDING',
@@ -718,6 +679,12 @@ class TaskRepository {
     TaskStatus? status,
     bool clearStartedAt = false,
   }) async {
+    final current = await _ensureMaterialized(id);
+    id = current.id;
+    final applyRecurrence =
+        recurrence != null &&
+        current.occurrenceDate == null &&
+        current.recurrenceException == RecurrenceExceptionKind.none;
     final patch = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
       if (title != null) 'title': title.trim(),
@@ -734,7 +701,7 @@ class TaskRepository {
         'reminderLeadMinutes': reminderLeadMinutes,
       if (clearReminderLeadMinutes) 'reminderLeadMinutes': null,
       if (isTimed != null) 'isTimed': isTimed,
-      if (recurrence != null) ...recurrence.toApiJson(),
+      if (applyRecurrence) ...recurrence!.toApiJson(),
       if (reward != null) 'reward': _normalizeText(reward) ?? '',
       if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
       if (motivation != null) 'motivation': _normalizeText(motivation) ?? '',
@@ -752,18 +719,6 @@ class TaskRepository {
     final snap = await _tasks.doc(id).get();
     if (!snap.exists) throw StateError('Task not found');
     return TaskModel.fromFirestore(id, snap.data()!);
-  }
-
-  DateTime _alarmForOccurrence(DateTime alarmAt, DateTime occurrence) {
-    final localAlarm = alarmAt.toLocal();
-    final localOccurrence = occurrence.toLocal();
-    return DateTime(
-      localOccurrence.year,
-      localOccurrence.month,
-      localOccurrence.day,
-      localAlarm.hour,
-      localAlarm.minute,
-    );
   }
 
   String _statusValue(TaskStatus status) => switch (status) {
@@ -829,7 +784,7 @@ class TaskRepository {
         'title': sub.title.trim(),
         'description': null,
         'color': sub.color,
-        'icon': parent.icon,
+        'icon': TaskIcons.nameForTitle(sub.title, fallback: parent.icon),
         'durationMinutes': sub.durationMinutes,
         'scheduledAt': current != null ? Timestamp.fromDate(current) : null,
         'status': 'PENDING',
@@ -870,6 +825,7 @@ class TaskRepository {
     required String parentId,
     required List<String> titles,
   }) async {
+    parentId = (await _ensureMaterialized(parentId)).id;
     final cappedTitles = titles
         .map((title) => title.trim())
         .where((title) => title.isNotEmpty)
@@ -901,6 +857,7 @@ class TaskRepository {
         final document = existing[index];
         batch.update(document.reference, {
           'title': title,
+          'icon': TaskIcons.nameForTitle(title, fallback: parent.icon),
           'sortOrder': index,
           if (scheduledAt != null)
             'scheduledAt': Timestamp.fromDate(scheduledAt),
@@ -917,7 +874,7 @@ class TaskRepository {
           'title': title,
           'description': null,
           'color': parent.color,
-          'icon': parent.icon,
+          'icon': TaskIcons.nameForTitle(title, fallback: parent.icon),
           'durationMinutes': 5,
           'scheduledAt': scheduledAt == null
               ? null
@@ -951,6 +908,7 @@ class TaskRepository {
   }
 
   Future<TaskModel> startTask(String id) async {
+    id = (await _ensureMaterialized(id)).id;
     final ref = _tasks.doc(id);
     final snap = await ref.get();
     if (!snap.exists) throw StateError('Task not found');
@@ -982,6 +940,7 @@ class TaskRepository {
   }
 
   Future<TaskModel> pauseTask(String id) async {
+    id = (await _ensureMaterialized(id)).id;
     await _tasks.doc(id).update({
       'status': 'PAUSED',
       'updatedAt': FieldValue.serverTimestamp(),
@@ -991,6 +950,7 @@ class TaskRepository {
   }
 
   Future<TaskModel> completeTask(String id) async {
+    id = (await _ensureMaterialized(id)).id;
     final ref = _tasks.doc(id);
     final snap = await ref.get();
     if (!snap.exists) throw StateError('Task not found');
@@ -1024,6 +984,7 @@ class TaskRepository {
   }
 
   Future<TaskModel> uncompleteTask(String id) async {
+    id = (await _ensureMaterialized(id)).id;
     final ref = _tasks.doc(id);
     final snap = await ref.get();
     if (!snap.exists) throw StateError('Task not found');
@@ -1058,61 +1019,26 @@ class TaskRepository {
 
   Future<void> deleteTask(
     String id, {
-    DeleteRecurrenceScope scope = DeleteRecurrenceScope.thisOccurrence,
+    RecurrenceScope scope = RecurrenceScope.thisOccurrence,
   }) async {
-    final snap = await _tasks.doc(id).get();
-    if (!snap.exists) return;
-    final task = TaskModel.fromFirestore(id, snap.data()!);
-    final seriesId = task.recurrenceSeriesId;
-
-    if (scope == DeleteRecurrenceScope.thisOccurrence || seriesId == null) {
-      await _deleteSingle(id);
+    final resolved = await _resolveTask(id, materialize: false);
+    if (resolved == null) return;
+    final seriesId = resolved.recurrenceSeriesId;
+    if (seriesId == null || !resolved.isRecurring) {
+      if (resolved.isVirtualOccurrence) return;
+      await _deleteSingle(resolved.id);
       return;
     }
 
-    TaskQuerySnapshot toDelete;
-    if (scope == DeleteRecurrenceScope.all) {
-      toDelete = await _tasks
-          .where('recurrenceSeriesId', isEqualTo: seriesId)
-          .get();
-    } else {
-      final cutoff = task.scheduledAt?.toUtc();
-      if (cutoff == null) {
-        await _deleteSingle(id);
-        return;
-      }
-      toDelete = await _tasks
-          .where('recurrenceSeriesId', isEqualTo: seriesId)
-          .where(
-            'scheduledAt',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(cutoff),
-          )
-          .get();
+    final occurrenceDay = _occurrenceDay(resolved);
+    switch (scope) {
+      case RecurrenceScope.thisOccurrence:
+        await _skipOccurrence(resolved, occurrenceDay);
+      case RecurrenceScope.future:
+        await _endSeriesFrom(resolved, occurrenceDay);
+      case RecurrenceScope.all:
+        await _deleteSeriesTree(resolved);
     }
-
-    var batch = _tasks.newBatch();
-    var ops = 0;
-    Future<void> flush() async {
-      if (ops == 0) return;
-      await batch.commit();
-      batch = _tasks.newBatch();
-      ops = 0;
-    }
-
-    for (final doc in toDelete.docs) {
-      final children = await _tasks
-          .where('parentTaskId', isEqualTo: doc.id)
-          .get();
-      for (final child in children.docs) {
-        batch.delete(child.reference);
-        ops++;
-        if (ops >= 400) await flush();
-      }
-      batch.delete(doc.reference);
-      ops++;
-      if (ops >= 400) await flush();
-    }
-    await flush();
   }
 
   Future<void> _deleteSingle(String id) async {
@@ -1136,33 +1062,54 @@ class TaskRepository {
         .where('scheduledAt', isGreaterThanOrEqualTo: fromTs)
         .where('scheduledAt', isLessThan: toTs)
         .get();
+    final seriesSnap = await _tasks
+        .where(
+          'recurrenceType',
+          whereIn: const ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'],
+        )
+        .get();
 
     final byId = <String, TaskModel>{};
     for (final doc in scheduledSnap.docs) {
-      byId.putIfAbsent(
-        doc.id,
-        () => TaskModel.fromFirestore(doc.id, doc.data()),
-      );
+      final task = TaskModel.fromFirestore(doc.id, doc.data());
+      if (task.isSeriesMaster) continue;
+      byId.putIfAbsent(doc.id, () => task);
     }
+
+    var cursor = RecurrenceOccurrence.dateOnly(from);
+    final last = RecurrenceOccurrence.dateOnly(to);
+    while (cursor.isBefore(last)) {
+      for (final doc in seriesSnap.docs) {
+        final master = TaskModel.fromFirestore(doc.id, doc.data());
+        if (!master.isSeriesMaster || !master.isTimed || master.isInbox) {
+          continue;
+        }
+        if (!_seriesOccursOn(master, cursor)) continue;
+        if (_seriesOccupiedOnDay(master.id, cursor, byId.values)) continue;
+        final virtual = _virtualOccurrence(master, cursor);
+        byId.putIfAbsent(virtual.id, () => virtual);
+      }
+      cursor = cursor.add(const Duration(days: 1));
+    }
+
     return byId.values
         .where(
           (task) =>
               !task.isCompleted &&
               task.status != TaskStatus.skipped &&
-              task.isTimed,
+              task.isTimed &&
+              task.recurrenceException != RecurrenceExceptionKind.skip,
         )
         .toList();
   }
 
   Future<TaskModel?> getTaskById(String id) async {
-    final snap = await _tasks.doc(id).get();
-    if (!snap.exists) return null;
-    return TaskModel.fromFirestore(id, snap.data()!);
+    return _resolveTask(id, materialize: false);
   }
 
-  /// Applies an edit to [id] and every later occurrence in the same series.
   Future<List<String>> updateTaskAndFollowing({
     required String id,
+    RecurrenceScope scope = RecurrenceScope.future,
     String? title,
     String? description,
     bool clearDescription = false,
@@ -1179,8 +1126,9 @@ class TaskRepository {
     DayPeriod? dayPeriod,
     bool? isInbox,
   }) async {
-    final current = await updateTask(
+    final updated = await updateRecurringTask(
       id: id,
+      scope: scope,
       title: title,
       description: description,
       clearDescription: clearDescription,
@@ -1197,75 +1145,512 @@ class TaskRepository {
       dayPeriod: dayPeriod,
       isInbox: isInbox,
     );
+    return [updated.id];
+  }
 
-    final seriesId = current.recurrenceSeriesId;
-    final cutoff = current.scheduledAt?.toUtc();
-    if (seriesId == null || cutoff == null) return [current.id];
+  Future<TaskModel> updateRecurringTask({
+    required String id,
+    RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+    String? title,
+    String? description,
+    bool clearDescription = false,
+    String? color,
+    String? icon,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+    DateTime? alarmAt,
+    bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool clearReminderLeadMinutes = false,
+    bool? isTimed,
+    RecurrenceSelection? recurrence,
+    DayPeriod? dayPeriod,
+    bool? isInbox,
+  }) async {
+    final resolved = await _resolveTask(id, materialize: false);
+    if (resolved == null) throw StateError('Task not found');
+    if (scope == RecurrenceScope.thisOccurrence && resolved.isRecurring) {
+      final target = await _materializeThisOccurrence(resolved, id);
+      return updateTask(
+        id: target.id,
+        title: title,
+        description: description,
+        clearDescription: clearDescription,
+        color: color,
+        icon: icon,
+        durationMinutes: durationMinutes,
+        scheduledAt: scheduledAt,
+        alarmAt: alarmAt,
+        clearAlarmAt: clearAlarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
+        clearReminderLeadMinutes: clearReminderLeadMinutes,
+        isTimed: isTimed,
+        dayPeriod: dayPeriod,
+        isInbox: isInbox,
+      );
+    }
+    if (!resolved.isRecurring) {
+      return updateTask(
+        id: resolved.id,
+        title: title,
+        description: description,
+        clearDescription: clearDescription,
+        color: color,
+        icon: icon,
+        durationMinutes: durationMinutes,
+        scheduledAt: scheduledAt,
+        alarmAt: alarmAt,
+        clearAlarmAt: clearAlarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
+        clearReminderLeadMinutes: clearReminderLeadMinutes,
+        isTimed: isTimed,
+        recurrence: recurrence,
+        dayPeriod: dayPeriod,
+        isInbox: isInbox,
+      );
+    }
 
-    final following = await _tasks
-        .where('recurrenceSeriesId', isEqualTo: seriesId)
-        .where('scheduledAt', isGreaterThan: Timestamp.fromDate(cutoff))
-        .get();
+    final occurrenceDay = _occurrenceDay(resolved);
+    if (scope == RecurrenceScope.future) {
+      final target = await _splitSeriesFrom(resolved, occurrenceDay);
+      return updateTask(
+        id: target.id,
+        title: title,
+        description: description,
+        clearDescription: clearDescription,
+        color: color,
+        icon: icon,
+        durationMinutes: durationMinutes,
+        scheduledAt:
+            scheduledAt ??
+            RecurrenceGenerator.scheduledAtFor(
+              start: target.scheduledAt ?? occurrenceDay,
+              date: occurrenceDay,
+            ),
+        alarmAt: alarmAt,
+        clearAlarmAt: clearAlarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
+        clearReminderLeadMinutes: clearReminderLeadMinutes,
+        isTimed: isTimed,
+        recurrence: recurrence,
+        dayPeriod: dayPeriod,
+        isInbox: isInbox,
+      );
+    }
 
-    final affected = <String>[current.id];
-    final localStart = current.scheduledAt?.toLocal();
-    var batch = _tasks.newBatch();
-    var ops = 0;
-    for (final doc in following.docs) {
-      if (doc.id == id) continue;
-      final existing = TaskModel.fromFirestore(doc.id, doc.data());
-      final existingStart = existing.scheduledAt?.toLocal();
-      DateTime? nextScheduled;
-      if (localStart != null &&
-          existingStart != null &&
-          (isTimed ?? current.isTimed)) {
-        nextScheduled = DateTime(
-          existingStart.year,
-          existingStart.month,
-          existingStart.day,
-          localStart.hour,
-          localStart.minute,
+    final masters = await _mastersForRoot(_rootId(resolved));
+    TaskModel? latest;
+    for (final master in masters) {
+      latest = await updateTask(
+        id: master.id,
+        title: title,
+        description: description,
+        clearDescription: clearDescription,
+        color: color,
+        icon: icon,
+        durationMinutes: durationMinutes,
+        scheduledAt: scheduledAt == null || master.scheduledAt == null
+            ? scheduledAt
+            : RecurrenceGenerator.scheduledAtFor(
+                start: scheduledAt,
+                date: master.scheduledAt!,
+              ),
+        alarmAt: alarmAt,
+        clearAlarmAt: clearAlarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
+        clearReminderLeadMinutes: clearReminderLeadMinutes,
+        isTimed: isTimed,
+        recurrence: recurrence,
+        dayPeriod: dayPeriod,
+        isInbox: isInbox,
+      );
+    }
+    return latest ?? resolved;
+  }
+
+  Future<TaskModel> _materializeThisOccurrence(
+    TaskModel resolved,
+    String id,
+  ) async {
+    if (resolved.isVirtualOccurrence) {
+      return _ensureMaterialized(id);
+    }
+    if (resolved.isSeriesMaster) {
+      return _materializeOccurrence(resolved, _occurrenceDay(resolved));
+    }
+    return resolved;
+  }
+
+  Future<TaskModel> _ensureMaterialized(String id) async {
+    if (!RecurrenceOccurrence.isVirtualId(id)) {
+      final snap = await _tasks.doc(id).get();
+      if (!snap.exists) throw StateError('Task not found');
+      return TaskModel.fromFirestore(id, snap.data()!);
+    }
+    final resolved = await _resolveTask(id, materialize: true);
+    if (resolved == null) throw StateError('Task not found');
+    return resolved;
+  }
+
+  Future<TaskModel?> _resolveTask(String id, {bool materialize = false}) async {
+    final virtual = RecurrenceOccurrence.parse(id);
+    if (virtual == null) {
+      final snap = await _tasks.doc(id).get();
+      if (!snap.exists) return null;
+      final task = TaskModel.fromFirestore(id, snap.data()!);
+      if (materialize && task.isSeriesMaster) {
+        final day = task.scheduledAt == null
+            ? RecurrenceOccurrence.dateOnly(DateTime.now())
+            : RecurrenceOccurrence.dateOnly(task.scheduledAt!);
+        return _materializeOccurrence(task, day);
+      }
+      return task;
+    }
+
+    final masterSnap = await _tasks.doc(virtual.seriesId).get();
+    if (!masterSnap.exists) return null;
+    final master = TaskModel.fromFirestore(
+      virtual.seriesId,
+      masterSnap.data()!,
+    );
+    final day =
+        RecurrenceOccurrence.parseDateKey(virtual.dateKey) ??
+        RecurrenceOccurrence.dateOnly(DateTime.now());
+    final existing = await _exceptionFor(virtual.seriesId, virtual.dateKey);
+    if (existing != null) {
+      if (existing.recurrenceException == RecurrenceExceptionKind.skip) {
+        return existing;
+      }
+      return existing.copyWith(recurrenceType: master.recurrenceType);
+    }
+    if (!materialize) return _virtualOccurrence(master, day);
+    return _materializeOccurrence(master, day);
+  }
+
+  Future<TaskModel> _materializeOccurrence(
+    TaskModel master,
+    DateTime day,
+  ) async {
+    final dateKey = RecurrenceOccurrence.dateKey(day);
+    final existing = await _exceptionFor(master.id, dateKey);
+    if (existing != null &&
+        existing.recurrenceException != RecurrenceExceptionKind.skip) {
+      return existing.copyWith(recurrenceType: master.recurrenceType);
+    }
+
+    final scheduledAt = RecurrenceGenerator.scheduledAtFor(
+      start: master.scheduledAt ?? day,
+      date: day,
+    );
+    final alarmAt = RecurrenceGenerator.alarmAtFor(
+      alarmAt: master.alarmAt,
+      occurrence: scheduledAt,
+    );
+    final ref = _tasks.doc();
+    await ref.set({
+      ...master.toFirestoreMap(),
+      'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      'alarmAt': alarmAt == null ? null : Timestamp.fromDate(alarmAt.toUtc()),
+      'status': 'PENDING',
+      'startedAt': null,
+      'completedAt': null,
+      'parentTaskId': null,
+      'isInbox': false,
+      'recurrenceType': 'NONE',
+      'recurrenceInterval': 1,
+      'recurrenceUnit': null,
+      'recurrenceSeriesId': master.id,
+      'recurrenceRootId': _rootId(master),
+      'recurrenceUntil': null,
+      'occurrenceDate': dateKey,
+      'recurrenceException': 'OVERRIDE',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    if (master.subtasks.isNotEmpty) {
+      await addSubtasksToTask(
+        parentId: ref.id,
+        subtasks: master.subtasks
+            .map(
+              (sub) => (
+                title: sub.title,
+                durationMinutes: sub.durationMinutes,
+                color: sub.color,
+              ),
+            )
+            .toList(),
+      );
+    } else {
+      final templateSubs = await _tasks
+          .where('parentTaskId', isEqualTo: master.id)
+          .get();
+      if (templateSubs.docs.isNotEmpty) {
+        final titles = [...templateSubs.docs]
+          ..sort(
+            (a, b) => ((a.data()['sortOrder'] as num?)?.toInt() ?? 0).compareTo(
+              (b.data()['sortOrder'] as num?)?.toInt() ?? 0,
+            ),
+          );
+        await addSubtasksToTask(
+          parentId: ref.id,
+          subtasks: titles
+              .map(
+                (doc) => (
+                  title: (doc.data()['title'] as String?) ?? '',
+                  durationMinutes:
+                      (doc.data()['durationMinutes'] as num?)?.toInt() ?? 5,
+                  color: (doc.data()['color'] as String?) ?? master.color,
+                ),
+              )
+              .toList(),
         );
       }
-      DateTime? nextAlarm;
-      if (clearAlarmAt) {
-        nextAlarm = null;
-      } else if (alarmAt != null && nextScheduled != null) {
-        nextAlarm = _alarmForOccurrence(alarmAt, nextScheduled);
-      } else if (alarmAt != null && existingStart != null) {
-        nextAlarm = _alarmForOccurrence(alarmAt, existingStart);
-      }
+    }
+    final snap = await ref.get();
+    return TaskModel.fromFirestore(
+      ref.id,
+      snap.data()!,
+    ).copyWith(recurrenceType: master.recurrenceType);
+  }
 
-      batch.update(doc.reference, {
-        'updatedAt': FieldValue.serverTimestamp(),
-        if (title != null) 'title': title.trim(),
-        if (description != null) 'description': description,
-        if (clearDescription) 'description': null,
-        if (color != null) 'color': color,
-        if (icon != null) 'icon': icon,
-        if (durationMinutes != null) 'durationMinutes': durationMinutes,
-        if (nextScheduled != null)
-          'scheduledAt': Timestamp.fromDate(nextScheduled.toUtc()),
-        if (nextAlarm != null) 'alarmAt': Timestamp.fromDate(nextAlarm.toUtc()),
-        if (clearAlarmAt) 'alarmAt': null,
-        if (reminderLeadMinutes != null)
-          'reminderLeadMinutes': reminderLeadMinutes,
-        if (clearReminderLeadMinutes) 'reminderLeadMinutes': null,
-        if (isTimed != null) 'isTimed': isTimed,
-        if (dayPeriod != null) 'dayPeriod': _dayPeriodValue(dayPeriod),
-        if (isInbox != null) 'isInbox': isInbox,
-      });
-      affected.add(doc.id);
-      ops++;
-      if (ops >= 400) {
-        await batch.commit();
-        batch = _tasks.newBatch();
-        ops = 0;
+  Future<TaskModel?> _exceptionFor(String seriesId, String dateKey) async {
+    final snap = await _tasks
+        .where('recurrenceSeriesId', isEqualTo: seriesId)
+        .where('occurrenceDate', isEqualTo: dateKey)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    final doc = snap.docs.first;
+    return TaskModel.fromFirestore(doc.id, doc.data());
+  }
+
+  Future<void> _skipOccurrence(TaskModel task, DateTime day) async {
+    final dateKey = RecurrenceOccurrence.dateKey(day);
+    final seriesId = task.recurrenceSeriesId ?? task.id;
+    final existing = await _exceptionFor(seriesId, dateKey);
+    if (existing != null) {
+      if (!existing.isVirtualOccurrence) {
+        await _tasks.doc(existing.id).update({
+          'recurrenceException': 'SKIP',
+          'status': 'SKIPPED',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      return;
+    }
+    final master = task.isSeriesMaster ? task : await _requireMaster(seriesId);
+    final scheduledAt = RecurrenceGenerator.scheduledAtFor(
+      start: master.scheduledAt ?? day,
+      date: day,
+    );
+    await _tasks.doc().set({
+      ...master.toFirestoreMap(),
+      'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      'status': 'SKIPPED',
+      'startedAt': null,
+      'completedAt': null,
+      'parentTaskId': null,
+      'isInbox': false,
+      'recurrenceType': 'NONE',
+      'recurrenceSeriesId': seriesId,
+      'recurrenceRootId': _rootId(master),
+      'occurrenceDate': dateKey,
+      'recurrenceException': 'SKIP',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _endSeriesFrom(TaskModel task, DateTime day) async {
+    final master = await _requireMaster(task.recurrenceSeriesId ?? task.id);
+    final untilKey = RecurrenceOccurrence.dateKey(day);
+    final startKey = master.scheduledAt == null
+        ? untilKey
+        : RecurrenceOccurrence.dateKey(master.scheduledAt!);
+    if (untilKey == startKey) {
+      await _deleteSeriesTree(master);
+      return;
+    }
+    await _tasks.doc(master.id).update({
+      'recurrenceUntil': untilKey,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    final later = await _mastersForRoot(_rootId(master));
+    for (final other in later) {
+      if (other.id == master.id || other.scheduledAt == null) continue;
+      if (!RecurrenceOccurrence.dateOnly(
+        other.scheduledAt!,
+      ).isBefore(RecurrenceOccurrence.dateOnly(day))) {
+        await _deleteSingle(other.id);
       }
     }
-    if (ops > 0) await batch.commit();
-    return affected;
   }
+
+  Future<void> _deleteSeriesTree(TaskModel task) async {
+    final rootId = _rootId(task);
+    final masters = await _mastersForRoot(rootId);
+    final seriesIds = {
+      for (final master in masters) master.id,
+      if (task.recurrenceSeriesId != null) task.recurrenceSeriesId!,
+    };
+    for (final seriesId in seriesIds) {
+      final related = await _tasks
+          .where('recurrenceSeriesId', isEqualTo: seriesId)
+          .get();
+      for (final doc in related.docs) {
+        await _deleteSingle(doc.id);
+      }
+      await _deleteSingle(seriesId);
+    }
+  }
+
+  Future<TaskModel> _splitSeriesFrom(TaskModel task, DateTime day) async {
+    final master = await _requireMaster(task.recurrenceSeriesId ?? task.id);
+    final startKey = master.scheduledAt == null
+        ? RecurrenceOccurrence.dateKey(day)
+        : RecurrenceOccurrence.dateKey(master.scheduledAt!);
+    final dayKey = RecurrenceOccurrence.dateKey(day);
+    if (startKey == dayKey) return master;
+
+    await _tasks.doc(master.id).update({
+      'recurrenceUntil': dayKey,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    final ref = _tasks.doc();
+    final scheduledAt = RecurrenceGenerator.scheduledAtFor(
+      start: master.scheduledAt ?? day,
+      date: day,
+    );
+    await ref.set({
+      ...master.toFirestoreMap(),
+      'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
+      'status': 'PENDING',
+      'startedAt': null,
+      'completedAt': null,
+      'isInbox': false,
+      'recurrenceType': _recurrenceTypeApi(master.recurrenceType),
+      'recurrenceInterval': master.recurrenceInterval,
+      'recurrenceUnit': master.recurrenceUnit == null
+          ? null
+          : switch (master.recurrenceUnit!) {
+              RecurrenceUnit.days => 'DAYS',
+              RecurrenceUnit.weeks => 'WEEKS',
+              RecurrenceUnit.months => 'MONTHS',
+            },
+      'recurrenceSeriesId': ref.id,
+      'recurrenceRootId': _rootId(master),
+      'recurrenceUntil': master.recurrenceUntil,
+      'occurrenceDate': null,
+      'recurrenceException': null,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    final snap = await ref.get();
+    return TaskModel.fromFirestore(ref.id, snap.data()!);
+  }
+
+  Future<List<TaskModel>> _mastersForRoot(String rootId) async {
+    final snap = await _tasks
+        .where('recurrenceRootId', isEqualTo: rootId)
+        .get();
+    final masters = snap.docs
+        .map((doc) => TaskModel.fromFirestore(doc.id, doc.data()))
+        .where((task) => task.isSeriesMaster)
+        .toList();
+    if (masters.isNotEmpty) return masters;
+    final fallback = await _tasks.doc(rootId).get();
+    if (!fallback.exists) return const [];
+    return [TaskModel.fromFirestore(rootId, fallback.data()!)];
+  }
+
+  Future<TaskModel> _requireMaster(String seriesId) async {
+    final snap = await _tasks.doc(seriesId).get();
+    if (!snap.exists) throw StateError('Task not found');
+    return TaskModel.fromFirestore(seriesId, snap.data()!);
+  }
+
+  String _rootId(TaskModel task) =>
+      task.recurrenceRootId ?? task.recurrenceSeriesId ?? task.id;
+
+  DateTime _occurrenceDay(TaskModel task) {
+    final fromKey = RecurrenceOccurrence.parseDateKey(task.occurrenceDate);
+    if (fromKey != null) return fromKey;
+    final virtual = RecurrenceOccurrence.parse(task.id);
+    if (virtual != null) {
+      return RecurrenceOccurrence.parseDateKey(virtual.dateKey) ??
+          RecurrenceOccurrence.dateOnly(DateTime.now());
+    }
+    if (task.scheduledAt != null) {
+      return RecurrenceOccurrence.dateOnly(task.scheduledAt!);
+    }
+    return RecurrenceOccurrence.dateOnly(DateTime.now());
+  }
+
+  bool _seriesOccursOn(TaskModel master, DateTime day) {
+    if (master.scheduledAt == null) return false;
+    return RecurrenceGenerator.occursOn(
+      date: day,
+      start: master.scheduledAt!,
+      type: master.recurrenceType,
+      interval: master.recurrenceInterval,
+      unit: master.recurrenceUnit,
+      until: RecurrenceOccurrence.parseDateKey(master.recurrenceUntil),
+    );
+  }
+
+  bool _seriesOccupiedOnDay(
+    String seriesId,
+    DateTime day,
+    Iterable<TaskModel> tasks,
+  ) {
+    final dateKey = RecurrenceOccurrence.dateKey(day);
+    for (final task in tasks) {
+      if (task.recurrenceSeriesId != seriesId && task.id != seriesId) continue;
+      if (task.isSeriesMaster) continue;
+      if (task.occurrenceDate == dateKey) return true;
+      if (task.occurrenceDate == null &&
+          task.scheduledAt != null &&
+          RecurrenceOccurrence.dateKey(task.scheduledAt!) == dateKey) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  TaskModel _virtualOccurrence(TaskModel master, DateTime day) {
+    final scheduledAt = RecurrenceGenerator.scheduledAtFor(
+      start: master.scheduledAt ?? day,
+      date: day,
+    );
+    return master.copyWith(
+      id: RecurrenceOccurrence.id(master.id, day),
+      scheduledAt: scheduledAt,
+      alarmAt: RecurrenceGenerator.alarmAtFor(
+        alarmAt: master.alarmAt,
+        occurrence: scheduledAt,
+      ),
+      clearAlarmAt: master.alarmAt == null,
+      status: TaskStatus.pending,
+      startedAt: null,
+      completedAt: null,
+      clearStartedAt: true,
+      clearCompletedAt: true,
+      isInbox: false,
+      recurrenceSeriesId: master.id,
+      recurrenceRootId: _rootId(master),
+      occurrenceDate: RecurrenceOccurrence.dateKey(day),
+      subtasks: const [],
+    );
+  }
+
+  String _recurrenceTypeApi(RecurrenceType type) => switch (type) {
+    RecurrenceType.none => 'NONE',
+    RecurrenceType.daily => 'DAILY',
+    RecurrenceType.weekly => 'WEEKLY',
+    RecurrenceType.monthly => 'MONTHLY',
+    RecurrenceType.yearly => 'YEARLY',
+    RecurrenceType.custom => 'CUSTOM',
+  };
 
   Future<FocusSessionModel?> getFocusSession() async => null;
 

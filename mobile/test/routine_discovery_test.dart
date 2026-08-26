@@ -30,9 +30,16 @@ void main() {
     );
     for (final theme in routineThemes) {
       expect(theme.tasks, hasLength(10));
+      expect(theme.icon, isNot('other'));
+      expect(taskCategoryByStorageName.containsKey(theme.icon), isTrue);
+      final taskIcons = theme.tasks.map((task) => task.icon).toSet();
+      expect(taskIcons, isNot(equals({theme.icon})), reason: theme.name);
       for (final task in theme.tasks) {
         expect(task.durationMinutes, greaterThan(0));
         expect(task.subtasks, isNotEmpty);
+        expect(task.icon, isNotEmpty);
+        expect(task.icon, isNot('other'));
+        expect(taskCategoryByStorageName.containsKey(task.icon), isTrue);
       }
     }
   });
@@ -161,8 +168,8 @@ void main() {
     final taskIcon = tester.widget<TaskIconBadge>(
       find.byKey(const ValueKey('routine-task-icon-Spor Çantanı Topla')),
     );
-    expect(themeIcon.category, TaskCategory.travel);
-    expect(taskIcon.category, TaskCategory.organizing);
+    expect(themeIcon.category, TaskCategory.home);
+    expect(taskIcon.category, TaskCategory.gym);
   });
 
   testWidgets('searches and selects a ready routine without an API step', (
@@ -251,39 +258,40 @@ void main() {
     expect(selected?.task.id, 'frequent-focus');
   });
 
-  testWidgets('frequently used cards use theme surface instead of solid yellow', (
-    tester,
-  ) async {
-    final summary = TaskUsageSummary(
-      task: _task('frequent-focus', 'Odaklan'),
-      usageCount: 4,
-      lastCreatedAt: DateTime(2026, 8, 19),
-    );
-
-    for (final theme in [FlorienTheme.light, FlorienTheme.dark]) {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: theme,
-          home: RoutineDiscoveryScreen(
-            frequentlyUsedTasks: [summary],
-            onTaskSelected: (_, _) async {},
-          ),
-        ),
+  testWidgets(
+    'frequently used cards use theme surface instead of solid yellow',
+    (tester) async {
+      final summary = TaskUsageSummary(
+        task: _task('frequent-focus', 'Odaklan'),
+        usageCount: 4,
+        lastCreatedAt: DateTime(2026, 8, 19),
       );
-      await tester.pumpAndSettle();
 
-      final card = tester.widget<Ink>(
-        find.descendant(
-          of: find.byKey(
-            const ValueKey('frequently-used-task-frequent-focus'),
+      for (final theme in [FlorienTheme.light, FlorienTheme.dark]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: RoutineDiscoveryScreen(
+              frequentlyUsedTasks: [summary],
+              onTaskSelected: (_, _) async {},
+            ),
           ),
-          matching: find.byType(Ink),
-        ),
-      );
-      final decoration = card.decoration! as BoxDecoration;
-      final palette = theme.extension<FlorienPalette>()!;
-      expect(decoration.color, palette.surface);
-      expect(decoration.color, isNot(FlorienColors.primary));
-    }
-  });
+        );
+        await tester.pumpAndSettle();
+
+        final card = tester.widget<Ink>(
+          find.descendant(
+            of: find.byKey(
+              const ValueKey('frequently-used-task-frequent-focus'),
+            ),
+            matching: find.byType(Ink),
+          ),
+        );
+        final decoration = card.decoration! as BoxDecoration;
+        final palette = theme.extension<FlorienPalette>()!;
+        expect(decoration.color, palette.surface);
+        expect(decoration.color, isNot(FlorienColors.primary));
+      }
+    },
+  );
 }

@@ -35,8 +35,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Hizmet şartları'), findsOneWidget);
-    expect(find.text('Gizlilik politikası'), findsOneWidget);
+    expect(find.byKey(const ValueKey('settings-apple-health')), findsOneWidget);
+    expect(find.text('Apple Sağlık'), findsOneWidget);
+    expect(find.byKey(const ValueKey('settings-rate-us')), findsOneWidget);
+    expect(find.text('Bizi değerlendirin'), findsOneWidget);
 
     await tester.tap(find.text('Bağlı Takvimler'));
     await tester.pumpAndSettle();

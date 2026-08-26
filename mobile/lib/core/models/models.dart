@@ -85,7 +85,13 @@ class TaskModel {
   final String? motivation;
   final int transitionBufferMinutes;
   final RecurrenceType recurrenceType;
+  final int recurrenceInterval;
+  final RecurrenceUnit? recurrenceUnit;
   final String? recurrenceSeriesId;
+  final String? recurrenceRootId;
+  final String? recurrenceUntil;
+  final String? occurrenceDate;
+  final RecurrenceExceptionKind recurrenceException;
   final TaskPriority priority;
   final DayPeriod dayPeriod;
 
@@ -115,7 +121,13 @@ class TaskModel {
     this.motivation,
     this.transitionBufferMinutes = 0,
     this.recurrenceType = RecurrenceType.none,
+    this.recurrenceInterval = 1,
+    this.recurrenceUnit,
     this.recurrenceSeriesId,
+    this.recurrenceRootId,
+    this.recurrenceUntil,
+    this.occurrenceDate,
+    this.recurrenceException = RecurrenceExceptionKind.none,
     this.priority = TaskPriority.none,
     this.dayPeriod = DayPeriod.anytime,
     this.todoListId,
@@ -148,7 +160,15 @@ class TaskModel {
     motivation: json['motivation'] as String?,
     transitionBufferMinutes: json['transitionBufferMinutes'] as int? ?? 0,
     recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
+    recurrenceInterval: (json['recurrenceInterval'] as num?)?.toInt() ?? 1,
+    recurrenceUnit: _parseRecurrenceUnit(json['recurrenceUnit'] as String?),
     recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
+    recurrenceRootId: json['recurrenceRootId'] as String?,
+    recurrenceUntil: json['recurrenceUntil'] as String?,
+    occurrenceDate: json['occurrenceDate'] as String?,
+    recurrenceException: _parseRecurrenceException(
+      json['recurrenceException'] as String?,
+    ),
     priority: _parsePriority(json['priority'] as String?),
     dayPeriod: _parseDayPeriod(json['dayPeriod'] as String?),
     todoListId: json['todoListId'] as String?,
@@ -182,7 +202,15 @@ class TaskModel {
     transitionBufferMinutes:
         (data['transitionBufferMinutes'] as num?)?.toInt() ?? 0,
     recurrenceType: _parseRecurrenceType(data['recurrenceType'] as String?),
+    recurrenceInterval: (data['recurrenceInterval'] as num?)?.toInt() ?? 1,
+    recurrenceUnit: _parseRecurrenceUnit(data['recurrenceUnit'] as String?),
     recurrenceSeriesId: data['recurrenceSeriesId'] as String?,
+    recurrenceRootId: data['recurrenceRootId'] as String?,
+    recurrenceUntil: data['recurrenceUntil'] as String?,
+    occurrenceDate: data['occurrenceDate'] as String?,
+    recurrenceException: _parseRecurrenceException(
+      data['recurrenceException'] as String?,
+    ),
     priority: _parsePriority(data['priority'] as String?),
     dayPeriod: _parseDayPeriod(data['dayPeriod'] as String?),
     todoListId: data['todoListId'] as String?,
@@ -216,7 +244,13 @@ class TaskModel {
     'motivation': motivation,
     'transitionBufferMinutes': transitionBufferMinutes,
     'recurrenceType': _recurrenceTypeApi(recurrenceType),
+    'recurrenceInterval': recurrenceInterval,
+    'recurrenceUnit': _recurrenceUnitApi(recurrenceUnit),
     'recurrenceSeriesId': recurrenceSeriesId,
+    'recurrenceRootId': recurrenceRootId,
+    'recurrenceUntil': recurrenceUntil,
+    'occurrenceDate': occurrenceDate,
+    'recurrenceException': _recurrenceExceptionApi(recurrenceException),
     'priority': priorityApiValue,
     'dayPeriod': dayPeriodApiValue,
     'todoListId': todoListId,
@@ -272,7 +306,14 @@ class TaskModel {
     String? motivation,
     int? transitionBufferMinutes,
     RecurrenceType? recurrenceType,
+    int? recurrenceInterval,
+    RecurrenceUnit? recurrenceUnit,
     String? recurrenceSeriesId,
+    String? recurrenceRootId,
+    String? recurrenceUntil,
+    bool clearRecurrenceUntil = false,
+    String? occurrenceDate,
+    RecurrenceExceptionKind? recurrenceException,
     TaskPriority? priority,
     DayPeriod? dayPeriod,
     String? todoListId,
@@ -303,7 +344,15 @@ class TaskModel {
     transitionBufferMinutes:
         transitionBufferMinutes ?? this.transitionBufferMinutes,
     recurrenceType: recurrenceType ?? this.recurrenceType,
+    recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+    recurrenceUnit: recurrenceUnit ?? this.recurrenceUnit,
     recurrenceSeriesId: recurrenceSeriesId ?? this.recurrenceSeriesId,
+    recurrenceRootId: recurrenceRootId ?? this.recurrenceRootId,
+    recurrenceUntil: clearRecurrenceUntil
+        ? null
+        : (recurrenceUntil ?? this.recurrenceUntil),
+    occurrenceDate: occurrenceDate ?? this.occurrenceDate,
+    recurrenceException: recurrenceException ?? this.recurrenceException,
     priority: priority ?? this.priority,
     dayPeriod: dayPeriod ?? this.dayPeriod,
     todoListId: clearTodoListId ? null : (todoListId ?? this.todoListId),
@@ -335,6 +384,34 @@ class TaskModel {
     _ => RecurrenceType.none,
   };
 
+  static RecurrenceUnit? _parseRecurrenceUnit(String? value) => switch (value) {
+    'DAYS' => RecurrenceUnit.days,
+    'WEEKS' => RecurrenceUnit.weeks,
+    'MONTHS' => RecurrenceUnit.months,
+    _ => null,
+  };
+
+  static String? _recurrenceUnitApi(RecurrenceUnit? unit) => switch (unit) {
+    RecurrenceUnit.days => 'DAYS',
+    RecurrenceUnit.weeks => 'WEEKS',
+    RecurrenceUnit.months => 'MONTHS',
+    null => null,
+  };
+
+  static RecurrenceExceptionKind _parseRecurrenceException(String? value) =>
+      switch (value) {
+        'OVERRIDE' => RecurrenceExceptionKind.override,
+        'SKIP' => RecurrenceExceptionKind.skip,
+        _ => RecurrenceExceptionKind.none,
+      };
+
+  static String? _recurrenceExceptionApi(RecurrenceExceptionKind kind) =>
+      switch (kind) {
+        RecurrenceExceptionKind.override => 'OVERRIDE',
+        RecurrenceExceptionKind.skip => 'SKIP',
+        RecurrenceExceptionKind.none => null,
+      };
+
   static TaskStatus _parseStatus(String status) => switch (status) {
     'PENDING' => TaskStatus.pending,
     'IN_PROGRESS' => TaskStatus.inProgress,
@@ -363,6 +440,14 @@ class TaskModel {
   bool get hasSubtasks => subtasks.isNotEmpty;
   bool get hasReward => reward != null && reward!.isNotEmpty;
   bool get hasMotivation => motivation != null && motivation!.isNotEmpty;
+  bool get isVirtualOccurrence => RecurrenceOccurrence.isVirtualId(id);
+
+  bool get isSeriesMaster =>
+      !isVirtualOccurrence &&
+      recurrenceType != RecurrenceType.none &&
+      occurrenceDate == null &&
+      recurrenceException == RecurrenceExceptionKind.none;
+
   bool get isRecurring =>
       recurrenceSeriesId != null || recurrenceType != RecurrenceType.none;
 

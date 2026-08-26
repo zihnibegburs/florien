@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florien/features/task_icon/domain/task_category.dart';
+import 'package:florien/features/task_icon/data/task_icon_lexicon.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_mapper.dart';
 
 class TaskIcons {
@@ -46,6 +47,10 @@ class TaskIcons {
 
   static IconData iconForTask({required String title, required String icon}) =>
       fromName(icon);
+
+  static String nameForTitle(String title, {String fallback = defaultName}) {
+    return TaskIconLexicon.match(title)?.storageName ?? fallback;
+  }
 
   static IconData fromName(String name) {
     final category = taskCategoryByStorageName[name];

@@ -143,6 +143,8 @@ import home_widget
       switch call.method {
       case "requestAuthorization":
         self.requestHealthAuthorization(result)
+      case "isSharingAuthorized":
+        self.resolve(result, value: self.isHealthSharingAuthorized())
       case "saveDailyMood":
         self.saveDailyMood(call.arguments, result)
       case "readDailyMoods":
@@ -151,6 +153,13 @@ import home_widget
         result(FlutterMethodNotImplemented)
       }
     }
+  }
+
+  private func isHealthSharingAuthorized() -> Bool {
+    guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else {
+      return false
+    }
+    return healthStore.authorizationStatus(for: HKObjectType.stateOfMindType()) == .sharingAuthorized
   }
 
   private func requestHealthAuthorization(_ result: @escaping FlutterResult) {
@@ -164,7 +173,8 @@ import home_widget
         self.resolve(result, error: error)
         return
       }
-      self.resolve(result, value: success)
+      // HealthKit `success` only means the sheet finished, not that the user allowed access.
+      self.resolve(result, value: success && self.isHealthSharingAuthorized())
     }
   }
 

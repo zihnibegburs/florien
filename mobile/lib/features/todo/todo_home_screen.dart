@@ -476,7 +476,12 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
       bottomNavigationBar: FlorienBottomNavigation(
         key: const ValueKey('home-scroll-chrome-navigation'),
         selectedIndex: _selectedIndex,
-        onDestinationSelected: _selectTab,
+        onDestinationSelected: (index) {
+          if (index == 1) {
+            ref.read(dailyPlannerDateRequestProvider.notifier).state = _today();
+          }
+          _selectTab(index);
+        },
         destinations: [
           FlorienNavDestination(
             label: context.l10n('To-do'),

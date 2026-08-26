@@ -3,8 +3,6 @@ import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/data/routine_catalog.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/theme/florien_theme.dart';
-import 'package:florien/features/task_icon/data/task_icon_lexicon.dart';
-import 'package:florien/features/task_icon/domain/task_category.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 
 RoutinePresetTask _localizedRoutinePreset(
@@ -458,8 +456,7 @@ class _RoutineTaskRow extends StatelessWidget {
   final RoutinePresetTask task;
   final VoidCallback onTap;
 
-  String get _iconName =>
-      TaskIconLexicon.match(task.title)?.storageName ?? task.icon;
+  String get _iconName => task.icon;
 
   @override
   Widget build(BuildContext context) => Semantics(

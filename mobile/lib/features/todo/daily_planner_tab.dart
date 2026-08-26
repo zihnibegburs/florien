@@ -32,7 +32,12 @@ import 'package:florien/features/todo/task_breakdown_action.dart';
 import 'package:florien/features/todo/todo_list_tab.dart';
 
 typedef DailyTaskGroupMover =
-    Future<void> Function(TaskModel task, DayPeriod? period, DateTime date);
+    Future<void> Function(
+      TaskModel task,
+      DayPeriod? period,
+      DateTime date, {
+      RecurrenceScope scope,
+    });
 typedef DailyTaskRescheduler =
     Future<void> Function(TaskModel task, DateTime date);
 typedef DailyTaskCompleter = Future<CompletionCounts> Function(String taskId);
@@ -50,6 +55,7 @@ class DailyTaskEditInput {
     required this.recurrence,
     required this.subtasks,
     required this.icon,
+    this.scope = RecurrenceScope.thisOccurrence,
   });
 
   final String title;
@@ -63,6 +69,7 @@ class DailyTaskEditInput {
   final RecurrenceSelection recurrence;
   final List<String> subtasks;
   final String icon;
+  final RecurrenceScope scope;
 }
 
 typedef DailyTaskUpdater =
@@ -78,8 +85,9 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
     final durationMinutes = input.isTimed
         ? input.endsAt!.difference(input.startsAt!).inMinutes
         : input.durationMinutes;
-    await repository.updateTaskAndFollowing(
+    final updated = await repository.updateRecurringTask(
       id: task.id,
+      scope: input.scope,
       title: input.title,
       description: input.description.trim().isEmpty ? null : input.description,
       clearDescription: input.description.trim().isEmpty,
@@ -91,34 +99,42 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       dayPeriod: input.period,
       isInbox: false,
     );
-    await repository.replaceSubtasks(parentId: task.id, titles: input.subtasks);
+    await repository.replaceSubtasks(
+      parentId: updated.id,
+      titles: input.subtasks,
+    );
     try {
       await ref.read(notificationReconcileProvider)();
     } catch (error) {
       debugPrint('Updated daily task notifications failed: $error');
     }
-    ref.invalidate(dailyTimelineProvider(previousDate));
-    ref.invalidate(dailyTimelineProvider(_dateOnly(input.date)));
+    invalidateDailyTimelines(ref);
   };
 });
 
 final dailyTaskGroupMoverProvider = Provider<DailyTaskGroupMover>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
-  return (task, period, date) async {
+  return (
+    task,
+    period,
+    date, {
+    RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+  }) async {
     if (period == null) {
       if (!task.isCompleted) await repository.completeTask(task.id);
       await ref.read(taskAlarmServiceProvider).cancel(task.id);
     } else {
       if (task.isCompleted) await repository.uncompleteTask(task.id);
-      if (task.dayPeriod != period || task.isCompleted) {
-        await repository.updateTask(
+      if (task.dayPeriod != period || task.isCompleted || task.isRecurring) {
+        await repository.updateRecurringTask(
           id: task.id,
+          scope: scope,
           dayPeriod: period,
           scheduledAt: _scheduledAt(date, period),
         );
       }
     }
-    ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    invalidateDailyTimelines(ref);
     ref.invalidate(completionCountsProvider);
     unawaited(ref.read(notificationReconcileProvider)());
   };
@@ -138,11 +154,7 @@ final dailyTaskReschedulerProvider = Provider<DailyTaskRescheduler>((ref) {
       clearStartedAt: leavesToday,
     );
     if (leavesToday) abandonFocusForTask(ref, task.id);
-    final previousDate = task.scheduledAt;
-    if (previousDate != null) {
-      ref.invalidate(dailyTimelineProvider(_dateOnly(previousDate)));
-    }
-    ref.invalidate(dailyTimelineProvider(_dateOnly(date)));
+    invalidateDailyTimelines(ref);
     ref.invalidate(completionCountsProvider);
     unawaited(ref.read(notificationReconcileProvider)());
   };
@@ -154,7 +166,7 @@ final dailyTaskCompleterProvider = Provider<DailyTaskCompleter>((ref) {
     await repository.completeTask(taskId);
     await ref.read(taskAlarmServiceProvider).cancel(taskId);
     ref.invalidate(inboxProvider);
-    ref.invalidate(dailyTimelineProvider);
+    invalidateDailyTimelines(ref);
     unawaited(ref.read(notificationReconcileProvider)());
     return ref.read(manualCompletionSummaryProvider)(taskId);
   };
@@ -211,6 +223,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
         final tasks =
             ref.read(dailyTimelineProvider(_selectedDate)).valueOrNull?.tasks ??
             const <TaskModel>[];
+        if (!tasks.any((task) => !task.isCompleted)) return;
         unawaited(_showRescheduleReview(tasks));
       },
     );
@@ -237,6 +250,9 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
     final timeline = ref.watch(dailyTimelineProvider(_selectedDate));
     final dateKey = _timelineCacheKey(_selectedDate);
     final resolved = timeline.valueOrNull;
+    if (timeline.isRefreshing) {
+      _timelineTasksByDate.clear();
+    }
     if (resolved != null) {
       _timelineTasksByDate[dateKey] = resolved.tasks;
     }
@@ -246,8 +262,11 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
 
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: () async =>
-            ref.refresh(dailyTimelineProvider(_selectedDate).future),
+        onRefresh: () async {
+          _timelineTasksByDate.clear();
+          ref.invalidate(dailyTimelineProvider);
+          await ref.read(dailyTimelineProvider(_selectedDate).future);
+        },
         child: Stack(
           children: [
             _DailyBody(
@@ -261,7 +280,9 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
               onMoveTask: _moveTaskToGroup,
               grouping: _grouping,
               onGroupingChanged: _setGrouping,
-              onRescheduleTasks: () => _showRescheduleReview(tasks),
+              onRescheduleTasks: tasks.any((task) => !task.isCompleted)
+                  ? () => _showRescheduleReview(tasks)
+                  : null,
               onDiscoverRoutines: _showRoutineDiscovery,
               onShare: () => _showDailyShare(tasks),
               showPremiumUpsell: widget.showPremiumUpsell,
@@ -351,14 +372,31 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
       );
     } else {
       await _createDailyTask(ref, draft);
+      if (mounted) _prefetchAdjacentDates(_selectedDate);
     }
   }
 
   Future<void> _moveTaskToGroup(TaskModel task, DayPeriod? period) async {
-    await ref.read(dailyTaskGroupMoverProvider)(task, period, _selectedDate);
+    var scope = RecurrenceScope.thisOccurrence;
+    if (task.isRecurring && period != null && context.mounted) {
+      final selected = await _showRecurrenceScopeSheet(
+        context,
+        deleting: false,
+      );
+      if (!mounted) return;
+      if (selected == null) return;
+      scope = selected;
+    }
+    await ref.read(dailyTaskGroupMoverProvider)(
+      task,
+      period,
+      _selectedDate,
+      scope: scope,
+    );
   }
 
   Future<void> _showRescheduleReview(List<TaskModel> tasks) async {
+    if (!tasks.any((task) => !task.isCompleted)) return;
     await pushFlorienOverlayRoute<void>(
       context: context,
       builder: (_) => DailyRescheduleReviewFlow(
@@ -368,7 +406,10 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
             ref.read(dailyTaskReschedulerProvider)(task, date),
       ),
     );
-    if (mounted) ref.invalidate(dailyTimelineProvider(_selectedDate));
+    if (mounted) {
+      _timelineTasksByDate.clear();
+      ref.invalidate(dailyTimelineProvider);
+    }
   }
 
   Future<void> _showRoutineDiscovery() async {
@@ -469,7 +510,7 @@ class _DailyBody extends StatelessWidget {
   final Future<void> Function(TaskModel task, DayPeriod? period) onMoveTask;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
-  final VoidCallback onRescheduleTasks;
+  final VoidCallback? onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
   final bool showPremiumUpsell;
@@ -558,7 +599,7 @@ class _DailyHeader extends StatelessWidget {
   final VoidCallback onOpenDatePicker;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
-  final VoidCallback onRescheduleTasks;
+  final VoidCallback? onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
   final bool showPremiumUpsell;
@@ -691,21 +732,23 @@ class _DailyUtilityActions extends StatelessWidget {
     required this.onDiscoverRoutines,
   });
 
-  final VoidCallback onRescheduleTasks;
+  final VoidCallback? onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _QuietActionChip(
-          key: const ValueKey('daily-menu-reschedule'),
-          icon: Icons.event_repeat_rounded,
-          label: context.l10n('Yeniden zamanla'),
-          tooltip: context.l10n('Görevleri yeniden zamanla'),
-          onTap: onRescheduleTasks,
-        ),
-        const SizedBox(width: 8),
+        if (onRescheduleTasks != null) ...[
+          _QuietActionChip(
+            key: const ValueKey('daily-menu-reschedule'),
+            icon: Icons.event_repeat_rounded,
+            label: context.l10n('Yeniden zamanla'),
+            tooltip: context.l10n('Görevleri yeniden zamanla'),
+            onTap: onRescheduleTasks!,
+          ),
+          const SizedBox(width: 8),
+        ],
         _QuietActionChip(
           key: const ValueKey('daily-menu-routines'),
           icon: Icons.auto_awesome_outlined,
@@ -1852,7 +1895,7 @@ class _DailyTaskCard extends ConsumerWidget {
           }
         } on StateError {
           if (!context.mounted) return;
-          ref.invalidate(dailyTimelineProvider(selectedDate));
+          ref.invalidate(dailyTimelineProvider);
           return;
         } catch (error) {
           debugPrint('Daily task completion could not be changed: $error');
@@ -1865,7 +1908,7 @@ class _DailyTaskCard extends ConsumerWidget {
           }
         }
         if (!context.mounted) return;
-        ref.invalidate(dailyTimelineProvider(selectedDate));
+        ref.invalidate(dailyTimelineProvider);
       },
       icon: Icon(
         task.isCompleted ? Icons.check_circle_rounded : Icons.circle_outlined,
@@ -2094,20 +2137,29 @@ class _DailyTaskCard extends ConsumerWidget {
       case _DailyTaskMenuAction.suggestBreakdown:
         await suggestTaskBreakdown(context: context, ref: ref, task: task);
       case _DailyTaskMenuAction.startFocus:
-        await ref.read(startTaskFocusProvider)(task);
+        final started = await ref.read(startTaskFocusProvider)(task);
         if (!context.mounted) return;
         ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
-          taskId: task.id,
-          title: task.title,
-          durationMinutes: task.durationMinutes,
-          icon: task.icon,
-          color: task.color,
+          taskId: started.id,
+          title: started.title,
+          durationMinutes: started.durationMinutes,
+          icon: started.icon,
+          color: started.color,
         );
       case _DailyTaskMenuAction.edit:
         await _showEdit(context, ref);
       case _DailyTaskMenuAction.delete:
-        await ref.read(dailyDeleteTaskProvider)(task.id);
-        ref.invalidate(dailyTimelineProvider(selectedDate));
+        var scope = RecurrenceScope.thisOccurrence;
+        if (task.isRecurring) {
+          final selected = await _showRecurrenceScopeSheet(
+            context,
+            deleting: true,
+          );
+          if (!context.mounted || selected == null) return;
+          scope = selected;
+        }
+        await ref.read(dailyDeleteTaskProvider)(task.id, scope: scope);
+        ref.invalidate(dailyTimelineProvider);
       case null:
         return;
     }
@@ -2158,22 +2210,34 @@ class _DailyTaskCard extends ConsumerWidget {
           icon: task.icon,
           color: task.color,
         ),
-        onSave: (draft) => ref.read(dailyTaskUpdaterProvider)(
-          task,
-          DailyTaskEditInput(
-            title: draft.title,
-            description: draft.description,
-            date: draft.date,
-            period: draft.period,
-            durationMinutes: draft.durationMinutes,
-            isTimed: draft.isTimed,
-            startsAt: draft.startsAt,
-            endsAt: draft.endsAt,
-            recurrence: draft.recurrence,
-            subtasks: draft.subtasks,
-            icon: draft.icon,
-          ),
-        ),
+        onSave: (draft) async {
+          var scope = RecurrenceScope.thisOccurrence;
+          if (task.isRecurring) {
+            final selected = await _showRecurrenceScopeSheet(
+              context,
+              deleting: false,
+            );
+            if (selected == null) throw const _RecurrenceScopeCancelled();
+            scope = selected;
+          }
+          await ref.read(dailyTaskUpdaterProvider)(
+            task,
+            DailyTaskEditInput(
+              title: draft.title,
+              description: draft.description,
+              date: draft.date,
+              period: draft.period,
+              durationMinutes: draft.durationMinutes,
+              isTimed: draft.isTimed,
+              startsAt: draft.startsAt,
+              endsAt: draft.endsAt,
+              recurrence: draft.recurrence,
+              subtasks: draft.subtasks,
+              icon: draft.icon,
+              scope: scope,
+            ),
+          );
+        },
       ),
     );
   }
@@ -2932,6 +2996,8 @@ class _DailyTaskDetailScreenState
         await onSave(draft);
       }
       if (mounted) Navigator.pop(context, true);
+    } on _RecurrenceScopeCancelled {
+      return;
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -3248,7 +3314,10 @@ class _DailyTaskDetailScreenState
                     for (var index = 0; index < _subtasks.length; index++)
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.circle_outlined, size: 18),
+                        leading: TaskIconBadge.forTask(
+                          icon: TaskIcons.nameForTitle(_subtasks[index]),
+                          size: 28,
+                        ),
                         title: Text(_subtasks[index]),
                         trailing: IconButton(
                           onPressed: () =>
@@ -3792,6 +3861,94 @@ Future<RecurrenceType?> _showRecurrencePicker(
   ),
 );
 
+Future<RecurrenceScope?> _showRecurrenceScopeSheet(
+  BuildContext context, {
+  required bool deleting,
+}) => showFlorienBottomSheet<RecurrenceScope>(
+  context: context,
+  isScrollControlled: true,
+  builder: (_) => _RecurrenceScopeSheet(deleting: deleting),
+);
+
+class _RecurrenceScopeSheet extends StatelessWidget {
+  const _RecurrenceScopeSheet({required this.deleting});
+
+  final bool deleting;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.palette.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: context.palette.border)),
+        ),
+        child: ListView(
+          key: const ValueKey('daily-recurrence-scope-sheet'),
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 18),
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.palette.border,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+              child: Text(
+                context.l10n(deleting ? 'Görevi sil' : 'Görevi düzenle'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            for (final value in RecurrenceScope.values)
+              _DailyTaskActionTile(
+                icon: deleting
+                    ? Icons.delete_outline_rounded
+                    : Icons.edit_outlined,
+                label: deleting
+                    ? _recurrenceScopeDeleteLabel(value)
+                    : _recurrenceScopeUpdateLabel(value),
+                destructive: deleting,
+                onTap: () => Navigator.pop(context, value),
+              ),
+            _DailyTaskActionTile(
+              icon: Icons.close_rounded,
+              label: context.l10n('Vazgeç'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _recurrenceScopeUpdateLabel(RecurrenceScope value) => switch (value) {
+  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bu günü güncelle'),
+  RecurrenceScope.future => ActiveLanguage.s('Gelecektekileri güncelle'),
+  RecurrenceScope.all => ActiveLanguage.s('Hepsini güncelle'),
+};
+
+String _recurrenceScopeDeleteLabel(RecurrenceScope value) => switch (value) {
+  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bu günü sil'),
+  RecurrenceScope.future => ActiveLanguage.s('Gelecektekileri sil'),
+  RecurrenceScope.all => ActiveLanguage.s('Hepsini sil'),
+};
+
+class _RecurrenceScopeCancelled implements Exception {
+  const _RecurrenceScopeCancelled();
+}
+
 class _DailyTaskDraft {
   const _DailyTaskDraft({
     required this.date,
@@ -3904,7 +4061,7 @@ Future<void> _createDailyTask(WidgetRef ref, _DailyTaskDraft draft) async {
   } catch (error) {
     debugPrint('Created daily task notifications failed: $error');
   }
-  ref.invalidate(dailyTimelineProvider(_dateOnly(draft.date)));
+  ref.invalidate(dailyTimelineProvider);
 }
 
 class _HeaderButton extends StatelessWidget {

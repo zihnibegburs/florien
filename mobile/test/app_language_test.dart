@@ -6,10 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('uses the phone language when it is supported', () {
     expect(
-      resolveAppLanguage(
-        savedOverride: null,
-        deviceLocale: const Locale('de'),
-      ),
+      resolveAppLanguage(savedOverride: null, deviceLocale: const Locale('de')),
       'de',
     );
     expect(
@@ -33,27 +30,18 @@ void main() {
 
   test('falls back to English when the phone language is unsupported', () {
     expect(
-      resolveAppLanguage(
-        savedOverride: null,
-        deviceLocale: const Locale('hi'),
-      ),
+      resolveAppLanguage(savedOverride: null, deviceLocale: const Locale('hi')),
       'en',
     );
   });
 
   test('keeps a manual override saved on the phone', () {
     expect(
-      resolveAppLanguage(
-        savedOverride: 'tr',
-        deviceLocale: const Locale('en'),
-      ),
+      resolveAppLanguage(savedOverride: 'tr', deviceLocale: const Locale('en')),
       'tr',
     );
     expect(
-      resolveAppLanguage(
-        savedOverride: 'ja',
-        deviceLocale: const Locale('fr'),
-      ),
+      resolveAppLanguage(savedOverride: 'ja', deviceLocale: const Locale('fr')),
       'ja',
     );
   });
@@ -79,10 +67,9 @@ void main() {
     expect(const S('en')('Temizle'), 'Clear');
     expect(const S('en')('Yinelemek'), 'Repeat');
     expect(const S('en')('Sesli planlama'), 'Voice planning');
-    expect(
-      const S('tr').premiumDailyPrice('₺3,33'),
-      'Günde yaklaşık ₺3,33',
-    );
+    expect(const S('en')('Odak'), 'Focus');
+    expect(const S('en')('Sohbet'), 'Chat');
+    expect(const S('tr').premiumDailyPrice('₺3,33'), 'Günde yaklaşık ₺3,33');
     expect(const S('en').premiumDailyPrice('{price}'), 'About {price} per day');
   });
 

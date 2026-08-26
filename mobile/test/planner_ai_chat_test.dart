@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
@@ -206,7 +207,10 @@ void main() {
       find.byKey(const ValueKey('planner-ai-mode-switcher')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('planner-ai-header-image')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-header-image')),
+      findsOneWidget,
+    );
 
     await tester.enterText(
       find.byKey(const ValueKey('planner-ai-input')),
@@ -379,5 +383,33 @@ void main() {
       find.text('$plannerAiChatMaxCharacters / $plannerAiChatMaxCharacters'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('AI mode chips follow the app language', (tester) async {
+    ActiveLanguage.code = 'en';
+    addTearDown(() => ActiveLanguage.code = 'tr');
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+          stringsProvider.overrideWithValue(const S('en')),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('planner-ai-mode-focus')), findsOneWidget);
+    expect(find.text('Focus'), findsOneWidget);
+    expect(find.text('Odak'), findsNothing);
   });
 }

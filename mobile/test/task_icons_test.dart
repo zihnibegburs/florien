@@ -24,6 +24,8 @@ void main() {
       TaskIcons.iconForTask(title: 'Eski görev', icon: 'directions_run'),
       Icons.directions_run_rounded,
     );
+    expect(TaskIcons.nameForTitle('Su iç ve bedenini uyandır'), 'drinks');
+    expect(TaskIcons.nameForTitle('Bilinmeyen adım', fallback: 'work'), 'work');
   });
 
   test('every category maps to an IconPark icon', () {

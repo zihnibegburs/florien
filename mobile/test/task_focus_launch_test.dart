@@ -251,10 +251,7 @@ void main() {
 
     expect(createdDuration, 5);
     _expectActiveTaskFocus(tester, title: 'Odaklan', remaining: '5:00');
-    expect(
-      find.byKey(const ValueKey('focus-default-hourglass')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('focus-default-hourglass')), findsNothing);
 
     await tester.tap(find.byTooltip('Kapat'));
     await tester.pump();
@@ -291,7 +288,10 @@ void main() {
 
     expect(find.text('Florien AI'), findsWidgets);
     expect(find.byKey(const ValueKey('planner-ai-input')), findsOneWidget);
-    expect(find.byKey(const ValueKey('planner-ai-mode-switcher')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-mode-switcher')),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('planner-ai-todo-card')), findsNothing);
   });
 
@@ -318,9 +318,7 @@ void main() {
     expect(find.text('Florien'), findsOneWidget);
   });
 
-  testWidgets('planner AI chat opens for a free account', (
-    tester,
-  ) async {
+  testWidgets('planner AI chat opens for a free account', (tester) async {
     await _pumpHome(
       tester,
       inboxOverride: _EmptyInboxNotifier.new,
@@ -362,6 +360,7 @@ Future<void> _pumpHome(
         ),
         startTaskFocusProvider.overrideWithValue((task) async {
           onStarted?.call(task);
+          return task;
         }),
         if (onStandaloneFocusStarted != null)
           createStandaloneFocusTaskProvider.overrideWithValue(

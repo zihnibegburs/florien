@@ -1864,7 +1864,9 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
         await pushFlorienOverlayRoute<bool>(
           context: context,
           builder: (_) => TodoDetailScreen(
-            initialTitle: context.l10n('{title} (Kopya)', {'title': task.title}),
+            initialTitle: context.l10n('{title} (Kopya)', {
+              'title': task.title,
+            }),
             initialDescription: task.description ?? '',
             initialSubtasks: task.subtasks
                 .map((subtask) => subtask.title)
@@ -1881,14 +1883,14 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
       case _TaskMenuAction.suggestBreakdown:
         await suggestTaskBreakdown(context: context, ref: ref, task: task);
       case _TaskMenuAction.startFocus:
-        await ref.read(startTaskFocusProvider)(task);
+        final started = await ref.read(startTaskFocusProvider)(task);
         if (!context.mounted) return;
         ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
-          taskId: task.id,
-          title: task.title,
-          durationMinutes: task.durationMinutes,
-          icon: task.icon,
-          color: task.color,
+          taskId: started.id,
+          title: started.title,
+          durationMinutes: started.durationMinutes,
+          icon: started.icon,
+          color: started.color,
         );
       case _TaskMenuAction.edit:
         await pushFlorienOverlayRoute<bool>(

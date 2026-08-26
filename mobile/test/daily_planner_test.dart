@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
@@ -83,6 +84,8 @@ void main() {
     expect(find.text('SABAH (0)'), findsOneWidget);
     expect(find.text('GÜNDÜZ (0)'), findsOneWidget);
     expect(find.text('AKŞAM (0)'), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-menu-reschedule')), findsNothing);
+    expect(find.byKey(const ValueKey('daily-menu-routines')), findsOneWidget);
 
     await tester.tap(find.text('Bu gruba görev ekle'));
     await tester.pumpAndSettle();
@@ -807,6 +810,61 @@ void main() {
     expect(find.byKey(const ValueKey('daily-planner-page')), findsOneWidget);
   });
 
+  testWidgets('tapping daily tab returns the planner to today', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inboxProvider.overrideWith(_EmptyInboxNotifier.new),
+          todoListsProvider.overrideWith(_EmptyListsNotifier.new),
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: const []),
+          ),
+          premiumMembershipProvider.overrideWith(
+            _NonPremiumMembershipNotifier.new,
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const TodoHomeScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.tap(find.text('Günlük'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      find.byKey(const ValueKey('daily-open-date-picker')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('daily-date-picker-trigger')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    tester
+        .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
+        .onDateChanged(tomorrow);
+    await tester.pump();
+    await tester.tap(find.byTooltip('Seçilen tarihe git'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const ValueKey('daily-return-today')), findsOneWidget);
+
+    await tester.tap(find.text('Günlük'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      find.byKey(const ValueKey('daily-open-date-picker')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('daily-return-today')), findsNothing);
+  });
+
   testWidgets('premium upsell is available in todo and daily lists', (
     tester,
   ) async {
@@ -1009,7 +1067,10 @@ void main() {
             (ref, date) async =>
                 TimelineModel(date: date, tasks: deleted ? const [] : [task]),
           ),
-          dailyDeleteTaskProvider.overrideWithValue((id) async {
+          dailyDeleteTaskProvider.overrideWithValue((
+            id, {
+            RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+          }) async {
             expect(id, 'daily-task-1');
             deleted = true;
           }),
@@ -1096,6 +1157,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(completed.title), findsOneWidget);
+    expect(find.byKey(const ValueKey('daily-menu-reschedule')), findsNothing);
+    expect(find.byKey(const ValueKey('daily-menu-routines')), findsOneWidget);
   });
 
   testWidgets('daily task edit opens prefilled and updates the same task', (

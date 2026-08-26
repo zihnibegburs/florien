@@ -25,6 +25,17 @@ class AppleHealthMoodService {
     }
   }
 
+  Future<bool> isSharingAuthorized() async {
+    if (!isSupported) return false;
+    try {
+      return await _channel.invokeMethod<bool>('isSharingAuthorized') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   Future<bool> save(MoodEntry entry) async {
     if (!isSupported) return false;
     try {

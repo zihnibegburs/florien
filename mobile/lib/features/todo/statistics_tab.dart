@@ -1,15 +1,14 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/services/review_feedback_service.dart';
+import 'package:florien/core/services/store_review.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/achievement_collection.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/todo/settings_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Insights / statistics tab inspired by the reference layout.
 class StatisticsTab extends ConsumerWidget {
@@ -696,28 +695,6 @@ class _LowRatingFeedbackDialogState extends State<_LowRatingFeedbackDialog> {
       ),
     ),
   );
-}
-
-Future<bool> openFlorienStoreReview() async {
-  const appStoreReview =
-      'https://apps.apple.com/app/id6799938907?action=write-review';
-  const playStoreMarket = 'market://details?id=com.florien.app';
-  const playStoreWeb =
-      'https://play.google.com/store/apps/details?id=com.florien.app';
-
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    if (await _launchExternal(Uri.parse(playStoreMarket))) return true;
-    return _launchExternal(Uri.parse(playStoreWeb));
-  }
-  return _launchExternal(Uri.parse(appStoreReview));
-}
-
-Future<bool> _launchExternal(Uri uri) async {
-  try {
-    return await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    return false;
-  }
 }
 
 class _MoodSection extends ConsumerWidget {

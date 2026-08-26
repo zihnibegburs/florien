@@ -10,6 +10,7 @@ import 'package:florien/features/todo/live_activity_settings_screen.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
+import 'package:florien/core/services/store_review.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Full settings page.
@@ -119,6 +120,17 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 _SettingsRow(
+                  key: const ValueKey('settings-apple-health'),
+                  icon: Icons.health_and_safety_outlined,
+                  label: strings('Apple Sağlık'),
+                  trailingLabel:
+                      (ref.watch(appleHealthSyncEnabledProvider).valueOrNull ??
+                          false)
+                      ? strings('Bağlı')
+                      : null,
+                  onTap: () => _connectAppleHealth(context, ref),
+                ),
+                _SettingsRow(
                   icon: Icons.wb_sunny_outlined,
                   label: strings('Görünüm'),
                   trailingLabel: _themeLabel(strings, themeMode),
@@ -130,6 +142,12 @@ class SettingsScreen extends ConsumerWidget {
                   label: strings('Dil'),
                   trailingLabel: _languageLabel(language),
                   onTap: () => _showLanguageSheet(context, ref, language),
+                ),
+                _SettingsRow(
+                  key: const ValueKey('settings-rate-us'),
+                  icon: Icons.star_outline_rounded,
+                  label: strings('Bizi değerlendirin'),
+                  onTap: () => _rateFlorien(context),
                 ),
               ],
             ),
@@ -235,6 +253,18 @@ class SettingsScreen extends ConsumerWidget {
     return match.isEmpty ? code : match.first.nativeName;
   }
 
+  Future<void> _rateFlorien(BuildContext context) async {
+    final opened = await openFlorienStoreReview();
+    if (opened || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.l10n('Mağaza şu anda açılamadı. Lütfen tekrar dene.'),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openLegalUrl(BuildContext context, String url) async {
     try {
       final opened = await launchUrl(
@@ -253,6 +283,26 @@ class SettingsScreen extends ConsumerWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ProfileManagementScreen()));
+  }
+
+  Future<void> _connectAppleHealth(BuildContext context, WidgetRef ref) async {
+    final connected = await ref
+        .read(moodEntriesProvider.notifier)
+        .connectAppleHealth();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          connected
+              ? context.l10n(
+                  'Apple Sağlık bağlandı. Bu haftanın ruh halleri eşitlendi.',
+                )
+              : context.l10n(
+                  'Apple Sağlık izni verilmedi veya bu iPhone desteklenmiyor.',
+                ),
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {

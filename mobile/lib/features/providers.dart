@@ -7,6 +7,7 @@ import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/achievement.dart';
 import 'package:florien/core/models/models.dart';
+import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/repositories/repositories.dart';
 import 'package:florien/core/services/apple_health_mood_service.dart';
@@ -346,6 +347,15 @@ final appleHealthMoodServiceProvider = Provider<AppleHealthMoodService>(
   (ref) => AppleHealthMoodService(),
 );
 
+final appleHealthSyncEnabledProvider = FutureProvider<bool>((ref) async {
+  final scope = ref.watch(activeProfileScopeProvider);
+  final optedIn = await ref
+      .watch(moodStorageProvider)
+      .isHealthSyncEnabled(scope);
+  if (!optedIn) return false;
+  return ref.watch(appleHealthMoodServiceProvider).isSharingAuthorized();
+});
+
 final moodEntriesProvider =
     AsyncNotifierProvider<MoodEntriesNotifier, List<MoodEntry>>(
       MoodEntriesNotifier.new,
@@ -386,10 +396,11 @@ class MoodEntriesNotifier extends AsyncNotifier<List<MoodEntry>> {
     final allowed = await ref
         .read(appleHealthMoodServiceProvider)
         .requestAuthorization();
-    if (!allowed) return false;
     await ref
         .read(moodStorageProvider)
-        .setHealthSyncEnabled(_profileScope, true);
+        .setHealthSyncEnabled(_profileScope, allowed);
+    ref.invalidate(appleHealthSyncEnabledProvider);
+    if (!allowed) return false;
     await syncCurrentWeek();
     return true;
   }
@@ -726,14 +737,26 @@ final dailyTimelineProvider = FutureProvider.autoDispose
       }
     });
 
-final dailyDeleteTaskProvider = Provider<Future<void> Function(String)>((ref) {
-  final repository = ref.watch(taskRepositoryProvider);
-  return (id) async {
-    await repository.deleteTask(id);
-    await ref.read(taskAlarmServiceProvider).cancel(id);
-    unawaited(ref.read(notificationReconcileProvider)());
-  };
-});
+/// Recurring series are expanded onto every matching day at read time, and
+/// each visited/prefetched day stays cached. Drop the whole family so other
+/// dates cannot keep a deleted series or miss a newly created one.
+void invalidateDailyTimelines(Ref ref) {
+  ref.invalidate(dailyTimelineProvider);
+}
+
+final dailyDeleteTaskProvider =
+    Provider<Future<void> Function(String, {RecurrenceScope scope})>((ref) {
+      final repository = ref.watch(taskRepositoryProvider);
+      return (
+        id, {
+        RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+      }) async {
+        await repository.deleteTask(id, scope: scope);
+        await ref.read(taskAlarmServiceProvider).cancel(id);
+        invalidateDailyTimelines(ref);
+        unawaited(ref.read(notificationReconcileProvider)());
+      };
+    });
 
 final dailyMoveToTodoProvider =
     Provider<Future<void> Function(String, String?)>((ref) {
@@ -961,25 +984,27 @@ DayPeriod dayPeriodForLocalTime(DateTime localTime) {
   return DayPeriod.evening;
 }
 
-final startTaskFocusProvider = Provider<Future<void> Function(TaskModel)>((
+final startTaskFocusProvider = Provider<Future<TaskModel> Function(TaskModel)>((
   ref,
 ) {
   final repository = ref.watch(taskRepositoryProvider);
   return (task) async {
     final now = DateTime.now();
+    var current = task;
     if (task.isInbox) {
-      await repository.scheduleFromInbox(
+      current = await repository.scheduleFromInbox(
         task.id,
         now,
         dayPeriod: dayPeriodForLocalTime(now),
       );
     } else if (task.isCompleted) {
-      await repository.uncompleteTask(task.id);
+      current = await repository.uncompleteTask(task.id);
     }
-    await repository.startTask(task.id);
+    current = await repository.startTask(current.id);
     ref.invalidate(inboxProvider);
     ref.invalidate(dailyTimelineProvider);
     ref.invalidate(completionCountsProvider);
+    return current;
   };
 });
 

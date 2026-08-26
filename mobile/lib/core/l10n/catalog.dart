@@ -684,7 +684,7 @@ const kL10nTable = <String, List<String>>{
   "Pop": <String>["Pop", "Pop", "Pop", "Pop", "Pop", "ポップ", "팝", "流行", "بوب"],
   "Gece": <String>["Night", "Noche", "Nacht", "Nuit", "Noite", "夜", "밤", "夜晚", "ليل"],
   "Okyanus": <String>["Ocean", "Océano", "Ozean", "Océan", "Oceano", "海", "바다", "海洋", "محيط"],
-  "Bugün için paylaşılacak görev yok.": <String>["No tasks to share for today.", "No hay tareas para compartir hoy.", "Heute gibt’s nichts zu teilen.", "Rien à partager pour aujourd’hui.", "Não há tarefas para partilhar hoje.", "今日シェアするタスクはないよ。", "오늘 공유할 할 일이 없어요.", "今天没有可分享的任务。", "لا مهام للمشاركة اليوم."],
+  "Bugün için paylaşılacak görev yok.": <String>["No tasks to share for today.", "No hay tareas para compartir hoy.", "Heute nichts zum Teilen.", "Rien à partager pour aujourd’hui.", "Não há tarefas para compartilhar hoje.", "今日共有するタスクはないよ。", "오늘 공유할 할 일이 없어요.", "今天没有可分享的任务。", "لا مهام لمشاركتها اليوم."],
   "Tarih seç": <String>["Choose a date", "Elige una fecha", "Datum wählen", "Choisir une date", "Escolher uma data", "日付を選ぶ", "날짜 선택", "选择日期", "اختر تاريخًا"],
   "Tarihe git": <String>["Go to date", "Ir a la fecha", "Zum Datum", "Aller à la date", "Ir à data", "日付へ", "날짜로 이동", "前往日期", "اذهب إلى التاريخ"],
   "Bugüne dön": <String>["Back to today", "Volver a hoy", "Zurück zu heute", "Retour à aujourd’hui", "Voltar para hoje", "今日に戻る", "오늘로 돌아가기", "回到今天", "العودة إلى اليوم"],
@@ -875,6 +875,7 @@ const kL10nTable = <String, List<String>>{
   "Geri bildirimi gönder": <String>["Send feedback", "Enviar comentario", "Feedback senden", "Envoyer le retour", "Enviar feedback", "フィードバックを送る", "의견 보내기", "发送反馈", "أرسل الملاحظات"],
   "Ruh Hali ve Günlük Yansımalar": <String>["Mood and daily reflections", "Ánimo y reflexiones diarias", "Stimmung und tägliche Reflexionen", "Humeur et réflexions du jour", "Humor e reflexões diárias", "気分と日々の振り返り", "기분과 하루 성찰", "心情与每日回顾", "المزاج والتأملات اليومية"],
   "Apple Sağlık": <String>["Apple Health", "Apple Salud", "Apple Gesundheit", "Apple Santé", "Apple Saúde", "Appleヘルスケア", "Apple 건강", "Apple 健康", "Apple الصحة"],
+  "Bağlı": <String>["Connected", "Conectado", "Verbunden", "Connecté", "Ligado", "接続中", "연결됨", "已连接", "متصل"],
   "Bugün veya geçmiş günler için nasıl hissettiğini seç.": <String>["Choose how you felt today or on a past day.", "Elige cómo te sentiste hoy o en un día pasado.", "Wähle, wie du dich heute oder an einem früheren Tag gefühlt hast.", "Choisis comment tu t’es senti aujourd’hui ou un jour passé.", "Escolha como você se sentiu hoje ou em um dia passado.", "今日か過去の日の気持ちを選んで。", "오늘이나 지난날 기분을 고르세요.", "选出今天或过去某天的感受。", "اختر كيف شعرت اليوم أو في يوم سابق."],
   "Apple Sağlık bağlandı. Bu haftanın ruh halleri eşitlendi.": <String>["Apple Health is connected. This week’s moods were synced.", "Apple Salud está conectado. Se igualaron los ánimos de esta semana.", "Apple Gesundheit ist verbunden. Die Stimmungen dieser Woche sind abgeglichen.", "Apple Santé est connecté. Les humeurs de la semaine sont synchronisées.", "O Apple Saúde está ligado. Os humores desta semana foram sincronizados.", "Appleヘルスケアがつながった。今週の気分を揃えたよ。", "Apple 건강이 연결됐어요. 이번 주 기분이 맞춰졌어요.", "已连接 Apple 健康。本周心情已同步。", "تم ربط Apple الصحة. زامنت أمزجة هذا الأسبوع."],
   "Apple Sağlık izni verilmedi veya bu iPhone desteklenmiyor.": <String>["Apple Health permission wasn’t given, or this iPhone isn’t supported.", "No se dio permiso de Apple Salud o este iPhone no es compatible.", "Keine Erlaubnis für Apple Gesundheit, oder dieses iPhone wird nicht unterstützt.", "Pas d’autorisation Apple Santé, ou cet iPhone n’est pas pris en charge.", "Sem permissão do Apple Saúde, ou este iPhone não é suportado.", "Appleヘルスケアの許可がないか、このiPhoneは非対応。", "Apple 건강 권한이 없거나 이 iPhone은 지원되지 않아요.", "未授予 Apple 健康权限，或此 iPhone 不受支持。", "لم يُمنح إذن Apple الصحة أو هذا iPhone غير مدعوم."],
@@ -933,6 +934,7 @@ const kL10nTable = <String, List<String>>{
   "{hours} sa": <String>["{hours} h", "{hours} h", "{hours} Std.", "{hours} h", "{hours} h", "{hours}時間", "{hours}시간", "{hours} 小时", "{hours} س"],
   "{hours} sa {minutes} dk": <String>["{hours} h {minutes} min", "{hours} h {minutes} min", "{hours} Std. {minutes} Min.", "{hours} h {minutes} min", "{hours} h {minutes} min", "{hours}時間{minutes}分", "{hours}시간 {minutes}분", "{hours} 小时 {minutes} 分钟", "{hours} س {minutes} د"],
   "Sohbet": <String>["Chat", "Chat", "Chat", "Discussion", "Chat", "チャット", "채팅", "聊天", "محادثة"],
+  "Odak": <String>["Focus", "Foco", "Fokus", "Focus", "Foco", "フォーカス", "집중", "专注", "تركيز"],
   "Temizle": <String>["Clear", "Limpiar", "Leeren", "Effacer", "Limpar", "クリア", "지우기", "清除", "مسح"],
   "Yeniden planla": <String>["Reschedule", "Reprogramar", "Neu planen", "Replanifier", "Reagendar", "予定を変える", "다시 일정 잡기", "改期", "إعادة الجدولة"],
   "Biter": <String>["Ends", "Termina", "Ende", "Fin", "Termina", "終了", "종료", "结束", "ينتهي"],
@@ -949,6 +951,13 @@ const kL10nTable = <String, List<String>>{
   "+1 dk": <String>["+1 min", "+1 min", "+1 Min.", "+1 min", "+1 min", "+1分", "+1분", "+1 分钟", "+١ د"],
   "− 1 dk": <String>["− 1 min", "− 1 min", "− 1 Min.", "− 1 min", "− 1 min", "− 1分", "− 1분", "− 1 分钟", "− ١ د"],
   "+ 1 dk": <String>["+ 1 min", "+ 1 min", "+ 1 Min.", "+ 1 min", "+ 1 min", "+ 1分", "+ 1분", "+ 1 分钟", "+ ١ د"],
+  "Bu günü güncelle": <String>["Update this day", "Actualizar este día", "Diesen Tag ändern", "Modifier ce jour", "Atualizar este dia", "この日を更新", "이 날만 수정", "更新这一天", "تحديث هذا اليوم"],
+  "Gelecektekileri güncelle": <String>["Update this and future", "Actualizar este y los siguientes", "Diesen und künftige ändern", "Modifier celui-ci et les suivants", "Atualizar este e os futuros", "これ以降を更新", "이후도 수정", "更新这天及以后", "تحديث هذا واللاحق"],
+  "Hepsini güncelle": <String>["Update the whole series", "Actualizar toda la serie", "Die ganze Reihe ändern", "Modifier toute la série", "Atualizar toda a série", "シリーズ全部を更新", "전체 반복 수정", "更新整个系列", "تحديث السلسلة كلها"],
+  "Bu günü sil": <String>["Delete this day", "Eliminar este día", "Diesen Tag löschen", "Supprimer ce jour", "Apagar este dia", "この日を削除", "이 날만 삭제", "删除这一天", "حذف هذا اليوم"],
+  "Gelecektekileri sil": <String>["Delete this and future", "Eliminar este y los siguientes", "Diesen und künftige löschen", "Supprimer celui-ci et les suivants", "Apagar este e os futuros", "これ以降を削除", "이후도 삭제", "删除这天及以后", "حذف هذا واللاحق"],
+  "Hepsini sil": <String>["Delete the whole series", "Eliminar toda la serie", "Die ganze Reihe löschen", "Supprimer toute la série", "Apagar toda a série", "シリーズ全部を削除", "전체 반복 삭제", "删除整个系列", "حذف السلسلة كلها"],
+  "Tekrarlayan görev": <String>["Repeating task", "Tarea repetida", "Wiederkehrende Aufgabe", "Tâche répétée", "Tarefa repetida", "くり返しのタスク", "반복 할 일", "重复任务", "مهمة متكررة"],
 };
 
 String lookupTranslation(
