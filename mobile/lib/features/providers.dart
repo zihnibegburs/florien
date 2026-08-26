@@ -10,6 +10,7 @@ import 'package:florien/core/models/models.dart';
 import 'package:florien/core/models/mood_entry.dart';
 import 'package:florien/core/repositories/repositories.dart';
 import 'package:florien/core/services/apple_health_mood_service.dart';
+import 'package:florien/core/services/qwen_on_device_ai.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
@@ -512,12 +513,16 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository(RoutedTaskCollection(router.resolve));
 });
 
+final qwenOnDeviceAiProvider = ChangeNotifierProvider<QwenOnDeviceAi>(
+  (ref) => QwenOnDeviceAi(),
+);
+
 final plannerAiGatewayProvider = Provider<PlannerAiGateway>(
-  (ref) => FirebasePlannerAiGateway(ref.watch(cloudFunctionsProvider)),
+  (ref) => ref.watch(qwenOnDeviceAiProvider),
 );
 
 final taskBreakdownServiceProvider = Provider<TaskBreakdownService>(
-  (ref) => FirebaseTaskBreakdownService(ref.watch(cloudFunctionsProvider)),
+  (ref) => ref.watch(qwenOnDeviceAiProvider),
 );
 
 final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(

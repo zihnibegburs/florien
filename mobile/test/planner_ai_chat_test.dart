@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
+import 'package:florien/core/services/qwen_on_device_ai.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
@@ -25,6 +27,46 @@ class _FakePlannerAiGateway implements PlannerAiGateway {
       ],
     );
   }
+}
+
+class _ReadyQwenStore implements QwenModelStore {
+  @override
+  Stream<QwenModelUpdate> acquire(String outputDir) async* {
+    yield QwenModelUpdate(progress: 1, modelPath: '$outputDir/fake.gguf');
+  }
+
+  @override
+  void dispose() {}
+}
+
+class _SilentQwenCompleter implements QwenCompleter {
+  @override
+  Future<String> complete({
+    required String systemPrompt,
+    required List<PlannerChatTurn> conversation,
+  }) async {
+    return '{"reply":"ok","tasks":[]}';
+  }
+}
+
+List<Override> _plannerAiChatOverrides({
+  PremiumMembershipNotifier Function()? premium,
+}) {
+  return [
+    plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+    qwenOnDeviceAiProvider.overrideWith(
+      (ref) => QwenOnDeviceAi(
+        completer: _SilentQwenCompleter(),
+        models: _ReadyQwenStore(),
+        documentsDirectory: () async => Directory.systemTemp,
+        nGpuLayers: 0,
+      ),
+    ),
+    inboxProvider.overrideWith(_AiInboxNotifier.new),
+    premiumMembershipProvider.overrideWith(
+      premium ?? _PremiumMembershipNotifier.new,
+    ),
+  ];
 }
 
 class _FakeSpeechInput implements SpeechInput {
@@ -141,20 +183,16 @@ class _FreeQuotaExhaustedPremiumNotifier extends PremiumMembershipNotifier {
 void main() {
   setUp(_AiInboxNotifier.addedTasks.clear);
 
-  testWidgets('exhausted free quota locks input and opens premium on tap', (
+  testWidgets('local Qwen chat stays open when Gemini quota is exhausted', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(430, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
-          inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(
-            _FreeQuotaExhaustedPremiumNotifier.new,
-          ),
-        ],
+        overrides: _plannerAiChatOverrides(
+          premium: _FreeQuotaExhaustedPremiumNotifier.new,
+        ),
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: const PlannerAiChatScreen(),
@@ -164,19 +202,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ne yapmak istiyorsun?'), findsOneWidget);
-    expect(
-      find.text(
-        'Ücretsiz mesaj hakkın bitti. Sınırsız AI sohbet için Premium gerekli.',
-      ),
-      findsNothing,
-    );
-    expect(find.textContaining('ücretsiz AI mesaj hakkın'), findsNothing);
+    expect(find.byKey(const ValueKey('planner-ai-voice')), findsOneWidget);
+    expect(find.text('Florien Premium'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('planner-ai-input')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Florien Premium'), findsWidgets);
-    expect(find.byKey(const ValueKey('planner-ai-voice')), findsNothing);
+    expect(find.text('Florien Premium'), findsNothing);
+    expect(find.byKey(const ValueKey('planner-ai-voice')), findsOneWidget);
   });
 
   testWidgets('AI suggestions are saved only after user approval', (
@@ -186,13 +219,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
-          inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(
-            _PremiumMembershipNotifier.new,
-          ),
-        ],
+        overrides: _plannerAiChatOverrides(),
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: const PlannerAiChatScreen(),
@@ -206,7 +233,10 @@ void main() {
       find.byKey(const ValueKey('planner-ai-mode-switcher')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('planner-ai-header-image')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-header-image')),
+      findsOneWidget,
+    );
 
     await tester.enterText(
       find.byKey(const ValueKey('planner-ai-input')),
@@ -238,13 +268,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
-          inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(
-            _PremiumMembershipNotifier.new,
-          ),
-        ],
+        overrides: _plannerAiChatOverrides(),
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: PlannerAiChatScreen(speechInput: speechInput),
@@ -346,13 +370,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
-          inboxProvider.overrideWith(_AiInboxNotifier.new),
-          premiumMembershipProvider.overrideWith(
-            _PremiumMembershipNotifier.new,
-          ),
-        ],
+        overrides: _plannerAiChatOverrides(),
         child: MaterialApp(
           theme: FlorienTheme.light,
           home: const PlannerAiChatScreen(),

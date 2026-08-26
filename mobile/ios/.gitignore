@@ -25,7 +25,8 @@ Flutter/app.zip
 Flutter/flutter_assets/
 Flutter/flutter_export_environment.sh
 ServiceDefinitions.json
-Runner/GeneratedPluginRegistrant.*
+Frameworks/llama.xcframework
+Frameworks/*.zip
 
 # Exceptions to above rules.
 !default.mode1v3
