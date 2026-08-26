@@ -24,15 +24,7 @@ import home_widget
     configureHealthMoodChannel()
     configureNotificationSettingsChannel()
     configureStoreKitChannel()
-    configureLlamaChannel()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-
-  private func configureLlamaChannel() {
-    guard let controller = window?.rootViewController as? FlutterViewController else {
-      return
-    }
-    FlorienLlamaChannel.register(with: controller.binaryMessenger)
   }
 
   private func configureStoreKitChannel() {

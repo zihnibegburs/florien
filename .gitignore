@@ -22,8 +22,7 @@ mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.pub-cache/
 mobile/.pub/
-mobile/ios/Frameworks/llama.xcframework
-mobile/ios/Frameworks/*.zip
+mobile/ios/Pods/
 mobile/ios/.symlinks/
 mobile/ios/fastlane/ExportOptions.plist
 mobile/android/.gradle/

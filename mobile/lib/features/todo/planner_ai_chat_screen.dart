@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
-import 'package:florien/core/services/qwen_on_device_ai.dart';
 import 'package:florien/core/services/speech_input_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai.dart';
@@ -273,25 +272,18 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     await requirePremiumAccess(context, ref, PremiumFeature.aiChat);
   }
 
-  String _qwenStatusLabel(BuildContext context, QwenAiStatus status) {
-    return switch (status.phase) {
-      QwenAiPhase.downloading =>
-        status.progress == null
-            ? context.l10n('AI modeli indiriliyor…')
-            : context.l10n('AI modeli indiriliyor… {percent}%', {
-                'percent': '${(status.progress! * 100).round()}',
-              }),
-      QwenAiPhase.loading => context.l10n('AI modeli hazırlanıyor…'),
-      QwenAiPhase.failed =>
-        status.error ??
-            context.l10n('AI modeli yüklenemedi. Tekrar deneyebilirsin.'),
-      _ => '',
-    };
-  }
-
   Future<void> _send() async {
     final text = clipPlannerAiChatText(_controller.text.trim());
     if (text.isEmpty || _sending) return;
+
+    final premium = ref.read(premiumMembershipProvider).valueOrNull;
+    final usage = _chatUsage ?? premium?.aiChatUsage;
+    final freeQuotaExhausted =
+        premium?.hasActivePremium != true && usage?.isExhausted == true;
+    if (freeQuotaExhausted) {
+      await _openPremiumForChat();
+      return;
+    }
 
     FocusScope.of(context).unfocus();
     _controller.clear();
@@ -439,9 +431,11 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     final activeFocus = ref.watch(activeFocusTaskProvider);
     final premium = ref.watch(premiumMembershipProvider).valueOrNull;
     final alarms = ref.read(taskAlarmServiceProvider);
+    final chatUsage = _chatUsage ?? premium?.aiChatUsage;
     final requiresPremiumToAdd = premium?.hasActivePremium != true;
-    const freeQuotaExhausted = false;
-    final qwen = ref.watch(qwenOnDeviceAiProvider);
+    final freeQuotaExhausted = !requiresPremiumToAdd
+        ? false
+        : chatUsage?.isExhausted == true;
 
     return Theme(
       data: FlorienTheme.dark,
@@ -572,19 +566,6 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                         )
                       : const SizedBox(width: double.infinity),
                 ),
-                if (!_isFocusMode &&
-                    (qwen.status.phase == QwenAiPhase.downloading ||
-                        qwen.status.phase == QwenAiPhase.loading ||
-                        qwen.status.phase == QwenAiPhase.failed))
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                    child: Text(
-                      _qwenStatusLabel(context, qwen.status),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: context.palette.textSecondary,
-                      ),
-                    ),
-                  ),
                 if (!_isFocusMode)
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 260),
