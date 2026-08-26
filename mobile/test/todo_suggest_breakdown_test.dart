@@ -166,6 +166,8 @@ void main() {
     await tester.tap(find.text('Ayrım öner'));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const ValueKey('daily-detail-title')), findsNothing);
+    expect(find.text('Görevi düzenle'), findsNothing);
     expect(breakdown.lastTitle, _dailyTask.title);
     expect(appliedTask?.id, _dailyTask.id);
     expect(appliedTitles, ['İlk adımı hazırla', 'Başla']);
@@ -181,6 +183,9 @@ void main() {
       breakdown: _FakeTaskBreakdownService(),
       onApply: (task, titles) async {},
     );
+
+    expect(find.text('Hazırlık yap'), findsOneWidget);
+    expect(find.text('0 / 1 alt görev'), findsOneWidget);
 
     await tester.tap(find.text(_dailyParent.title));
     await tester.pumpAndSettle();

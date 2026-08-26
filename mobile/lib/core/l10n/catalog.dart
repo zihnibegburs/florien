@@ -951,12 +951,16 @@ const kL10nTable = <String, List<String>>{
   "+1 dk": <String>["+1 min", "+1 min", "+1 Min.", "+1 min", "+1 min", "+1分", "+1분", "+1 分钟", "+١ د"],
   "− 1 dk": <String>["− 1 min", "− 1 min", "− 1 Min.", "− 1 min", "− 1 min", "− 1分", "− 1분", "− 1 分钟", "− ١ د"],
   "+ 1 dk": <String>["+ 1 min", "+ 1 min", "+ 1 Min.", "+ 1 min", "+ 1 min", "+ 1分", "+ 1분", "+ 1 分钟", "+ ١ د"],
-  "Bu günü güncelle": <String>["Update this day", "Actualizar este día", "Diesen Tag ändern", "Modifier ce jour", "Atualizar este dia", "この日を更新", "이 날만 수정", "更新这一天", "تحديث هذا اليوم"],
+  "Bunu güncelle": <String>["Update this", "Actualizar esto", "Diesen ändern", "Modifier celui-ci", "Atualizar este", "これだけ更新", "이것만 수정", "更新这一项", "تحديث هذا"],
   "Gelecektekileri güncelle": <String>["Update this and future", "Actualizar este y los siguientes", "Diesen und künftige ändern", "Modifier celui-ci et les suivants", "Atualizar este e os futuros", "これ以降を更新", "이후도 수정", "更新这天及以后", "تحديث هذا واللاحق"],
   "Hepsini güncelle": <String>["Update the whole series", "Actualizar toda la serie", "Die ganze Reihe ändern", "Modifier toute la série", "Atualizar toda a série", "シリーズ全部を更新", "전체 반복 수정", "更新整个系列", "تحديث السلسلة كلها"],
-  "Bu günü sil": <String>["Delete this day", "Eliminar este día", "Diesen Tag löschen", "Supprimer ce jour", "Apagar este dia", "この日を削除", "이 날만 삭제", "删除这一天", "حذف هذا اليوم"],
+  "Bunu sil": <String>["Delete this", "Eliminar esto", "Diesen löschen", "Supprimer celui-ci", "Apagar este", "これだけ削除", "이것만 삭제", "删除这一项", "حذف هذا"],
   "Gelecektekileri sil": <String>["Delete this and future", "Eliminar este y los siguientes", "Diesen und künftige löschen", "Supprimer celui-ci et les suivants", "Apagar este e os futuros", "これ以降を削除", "이후도 삭제", "删除这天及以后", "حذف هذا واللاحق"],
   "Hepsini sil": <String>["Delete the whole series", "Eliminar toda la serie", "Die ganze Reihe löschen", "Supprimer toute la série", "Apagar toda a série", "シリーズ全部を削除", "전체 반복 삭제", "删除整个系列", "حذف السلسلة كلها"],
+  "Görevi taşı": <String>["Move task", "Mover tarea", "Aufgabe verschieben", "Déplacer la tâche", "Mover tarefa", "タスクを移動", "할 일 이동", "移动任务", "نقل المهمة"],
+  "Bunu taşı": <String>["Move this", "Mover esto", "Diesen verschieben", "Déplacer celui-ci", "Mover este", "これだけ移動", "이것만 이동", "移动这一项", "نقل هذا"],
+  "Gelecektekileri taşı": <String>["Move this and future", "Mover este y los siguientes", "Diesen und künftige verschieben", "Déplacer celui-ci et les suivants", "Mover este e os futuros", "これ以降を移動", "이후도 이동", "移动这天及以后", "نقل هذا واللاحق"],
+  "Hepsini taşı": <String>["Move the whole series", "Mover toda la serie", "Die ganze Reihe verschieben", "Déplacer toute la série", "Mover toda a série", "シリーズ全部を移動", "전체 반복 이동", "移动整个系列", "نقل السلسلة كلها"],
   "Tekrarlayan görev": <String>["Repeating task", "Tarea repetida", "Wiederkehrende Aufgabe", "Tâche répétée", "Tarefa repetida", "くり返しのタスク", "반복 할 일", "重复任务", "مهمة متكررة"],
 };
 

@@ -39,7 +39,11 @@ typedef DailyTaskGroupMover =
       RecurrenceScope scope,
     });
 typedef DailyTaskRescheduler =
-    Future<void> Function(TaskModel task, DateTime date);
+    Future<void> Function(
+      TaskModel task,
+      DateTime date, {
+      RecurrenceScope scope,
+    });
 typedef DailyTaskCompleter = Future<CompletionCounts> Function(String taskId);
 
 class DailyTaskEditInput {
@@ -78,7 +82,6 @@ typedef DailyTaskUpdater =
 final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
   return (task, input) async {
-    final previousDate = _dateOnly(task.scheduledAt ?? input.date);
     final scheduledAt = input.isTimed
         ? input.startsAt!
         : _scheduledAt(input.date, input.period);
@@ -99,10 +102,17 @@ final dailyTaskUpdaterProvider = Provider<DailyTaskUpdater>((ref) {
       dayPeriod: input.period,
       isInbox: false,
     );
-    await repository.replaceSubtasks(
-      parentId: updated.id,
-      titles: input.subtasks,
-    );
+    if (task.isRecurring && input.scope != RecurrenceScope.thisOccurrence) {
+      await repository.replaceSubtasksForSeries(
+        id: updated.id,
+        titles: input.subtasks,
+      );
+    } else {
+      await repository.replaceSubtasks(
+        parentId: updated.id,
+        titles: input.subtasks,
+      );
+    }
     try {
       await ref.read(notificationReconcileProvider)();
     } catch (error) {
@@ -142,17 +152,31 @@ final dailyTaskGroupMoverProvider = Provider<DailyTaskGroupMover>((ref) {
 
 final dailyTaskReschedulerProvider = Provider<DailyTaskRescheduler>((ref) {
   final repository = ref.watch(taskRepositoryProvider);
-  return (task, date) async {
+  return (
+    task,
+    date, {
+    RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+  }) async {
     if (task.isCompleted) await repository.uncompleteTask(task.id);
     final leavesToday = florienRescheduleLeavesToday(date, DateTime.now());
-    await repository.updateTask(
-      id: task.id,
-      scheduledAt: _scheduledAt(date, task.dayPeriod),
-      dayPeriod: task.dayPeriod,
-      isInbox: false,
-      status: leavesToday ? TaskStatus.pending : null,
-      clearStartedAt: leavesToday,
-    );
+    if (task.isRecurring) {
+      await repository.updateRecurringTask(
+        id: task.id,
+        scope: scope,
+        scheduledAt: _scheduledAt(date, task.dayPeriod),
+        dayPeriod: task.dayPeriod,
+        isInbox: false,
+      );
+    } else {
+      await repository.updateTask(
+        id: task.id,
+        scheduledAt: _scheduledAt(date, task.dayPeriod),
+        dayPeriod: task.dayPeriod,
+        isInbox: false,
+        status: leavesToday ? TaskStatus.pending : null,
+        clearStartedAt: leavesToday,
+      );
+    }
     if (leavesToday) abandonFocusForTask(ref, task.id);
     invalidateDailyTimelines(ref);
     ref.invalidate(completionCountsProvider);
@@ -378,14 +402,17 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
 
   Future<void> _moveTaskToGroup(TaskModel task, DayPeriod? period) async {
     var scope = RecurrenceScope.thisOccurrence;
-    if (task.isRecurring && period != null && context.mounted) {
-      final selected = await _showRecurrenceScopeSheet(
-        context,
-        deleting: false,
-      );
-      if (!mounted) return;
-      if (selected == null) return;
-      scope = selected;
+    if (period != null && task.isRecurring) {
+      if (task.hasUniqueOccurrenceTitle) {
+        scope = RecurrenceScope.thisOccurrence;
+      } else {
+        final selected = await _showRecurrenceScopeSheet(
+          context,
+          prompt: _RecurrenceScopePrompt.move,
+        );
+        if (!mounted || selected == null) return;
+        scope = selected;
+      }
     }
     await ref.read(dailyTaskGroupMoverProvider)(
       task,
@@ -1917,26 +1944,8 @@ class _DailyTaskCard extends ConsumerWidget {
             : context.palette.textSecondary,
       ),
     );
-    if (timelineStyle) {
-      return AnimatedOpacity(
-        opacity: task.isCompleted ? .55 : 1,
-        duration: const Duration(milliseconds: 180),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              color.withValues(alpha: task.isCompleted ? 0.04 : 0.10),
-              context.palette.surface,
-            ),
-            borderRadius: BorderRadius.circular(FlorienRadius.lg),
-            border: Border.all(
-              color: progress == null
-                  ? context.palette.border
-                  : color.withValues(alpha: .55),
-              width: FlorienBorders.thin,
-            ),
-          ),
-          child: InkWell(
+    final header = timelineStyle
+        ? InkWell(
             onTap: () => _showTaskActions(context, ref),
             borderRadius: BorderRadius.circular(FlorienRadius.lg),
             child: Padding(
@@ -1990,10 +1999,49 @@ class _DailyTaskCard extends ConsumerWidget {
                 ],
               ),
             ),
-          ),
-        ),
-      );
-    }
+          )
+        : ListTile(
+            dense: true,
+            visualDensity: const VisualDensity(vertical: -4),
+            minTileHeight: 42,
+            minVerticalPadding: 0,
+            contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
+            leading: _DailyTaskIcon(
+              task: task,
+              color: color,
+              progress: progress,
+              dimension: 24,
+            ),
+            title: Text(
+              task.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                decoration: task.isCompleted
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+              ),
+            ),
+            subtitle: Text(
+              progress != null && scheduledRemaining != null
+                  ? _remainingTimelineLabel(scheduledRemaining!)
+                  : showTimeRange && task.isTimed && task.scheduledAt != null
+                  ? '${_clockLabel(task.scheduledAt!)} → ${_clockLabel(task.scheduledAt!.add(Duration(minutes: task.durationMinutes)))}'
+                  : _durationLabel(task.durationMinutes),
+              key: ValueKey('daily-task-status-${task.id}'),
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                fontSize: 11,
+                decoration: task.isCompleted
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+              ),
+            ),
+            trailing: completionButton,
+            onTap: () => _showTaskActions(context, ref),
+          );
     return AnimatedOpacity(
       opacity: task.isCompleted ? .55 : 1,
       duration: const Duration(milliseconds: 180),
@@ -2006,51 +2054,17 @@ class _DailyTaskCard extends ConsumerWidget {
           ),
           borderRadius: BorderRadius.circular(FlorienRadius.lg),
           border: Border.all(
-            color: context.palette.border,
+            color: timelineStyle && progress != null
+                ? color.withValues(alpha: .55)
+                : context.palette.border,
             width: FlorienBorders.thin,
           ),
         ),
-        child: ListTile(
-          dense: true,
-          visualDensity: const VisualDensity(vertical: -4),
-          minTileHeight: 42,
-          minVerticalPadding: 0,
-          contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
-          leading: _DailyTaskIcon(
-            task: task,
-            color: color,
-            progress: progress,
-            dimension: 24,
-          ),
-          title: Text(
-            task.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              decoration: task.isCompleted
-                  ? TextDecoration.lineThrough
-                  : TextDecoration.none,
-            ),
-          ),
-          subtitle: Text(
-            progress != null && scheduledRemaining != null
-                ? _remainingTimelineLabel(scheduledRemaining!)
-                : showTimeRange && task.isTimed && task.scheduledAt != null
-                ? '${_clockLabel(task.scheduledAt!)} → ${_clockLabel(task.scheduledAt!.add(Duration(minutes: task.durationMinutes)))}'
-                : _durationLabel(task.durationMinutes),
-            key: ValueKey('daily-task-status-${task.id}'),
-            style: TextStyle(
-              color: context.palette.textSecondary,
-              fontSize: 11,
-              decoration: task.isCompleted
-                  ? TextDecoration.lineThrough
-                  : TextDecoration.none,
-            ),
-          ),
-          trailing: completionButton,
-          onTap: () => _showTaskActions(context, ref),
+        child: Column(
+          children: [
+            header,
+            if (task.hasSubtasks) _DailyTaskSubtasks(task: task),
+          ],
         ),
       ),
     );
@@ -2065,6 +2079,14 @@ class _DailyTaskCard extends ConsumerWidget {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
           children: [
+            _DailyTaskActionTile(
+              icon: Icons.restart_alt_rounded,
+              label: task.isCompleted
+                  ? context.l10n('Görevi yeniden başlat')
+                  : context.l10n('Görevi başlat'),
+              onTap: () =>
+                  Navigator.pop(context, _DailyTaskMenuAction.startFocus),
+            ),
             _DailyTaskActionTile(
               icon: Icons.copy_all_outlined,
               label: context.l10n('Bir kopya oluştur'),
@@ -2099,14 +2121,6 @@ class _DailyTaskCard extends ConsumerWidget {
                 ),
               ),
             _DailyTaskActionTile(
-              icon: Icons.restart_alt_rounded,
-              label: task.isCompleted
-                  ? context.l10n('Görevi yeniden başlat')
-                  : context.l10n('Görevi başlat'),
-              onTap: () =>
-                  Navigator.pop(context, _DailyTaskMenuAction.startFocus),
-            ),
-            _DailyTaskActionTile(
               icon: Icons.edit_outlined,
               label: context.l10n('Görevi düzenle'),
               onTap: () => Navigator.pop(context, _DailyTaskMenuAction.edit),
@@ -2130,9 +2144,16 @@ class _DailyTaskCard extends ConsumerWidget {
       case _DailyTaskMenuAction.reschedule:
         await _showReschedule(context, ref);
       case _DailyTaskMenuAction.tomorrow:
+        var scope = RecurrenceScope.thisOccurrence;
+        if (task.isRecurring) {
+          final selected = await _showRecurrenceScopeSheet(context);
+          if (!context.mounted || selected == null) return;
+          scope = selected;
+        }
         await ref.read(dailyTaskReschedulerProvider)(
           task,
           _dateOnly(selectedDate).add(const Duration(days: 1)),
+          scope: scope,
         );
       case _DailyTaskMenuAction.suggestBreakdown:
         await suggestTaskBreakdown(context: context, ref: ref, task: task);
@@ -2153,7 +2174,7 @@ class _DailyTaskCard extends ConsumerWidget {
         if (task.isRecurring) {
           final selected = await _showRecurrenceScopeSheet(
             context,
-            deleting: true,
+            prompt: _RecurrenceScopePrompt.delete,
           );
           if (!context.mounted || selected == null) return;
           scope = selected;
@@ -2175,7 +2196,7 @@ class _DailyTaskCard extends ConsumerWidget {
           title: context.l10n('{title} (Kopya)', {'title': task.title}),
           description: task.description ?? '',
           durationMinutes: task.durationMinutes,
-          recurrence: RecurrenceSelection(type: task.recurrenceType),
+          recurrence: const RecurrenceSelection(),
           isTimed: task.isTimed,
           startsAt: task.isTimed ? task.scheduledAt : null,
           endsAt: task.isTimed && task.scheduledAt != null
@@ -2213,10 +2234,7 @@ class _DailyTaskCard extends ConsumerWidget {
         onSave: (draft) async {
           var scope = RecurrenceScope.thisOccurrence;
           if (task.isRecurring) {
-            final selected = await _showRecurrenceScopeSheet(
-              context,
-              deleting: false,
-            );
+            final selected = await _showRecurrenceScopeSheet(context);
             if (selected == null) throw const _RecurrenceScopeCancelled();
             scope = selected;
           }
@@ -2319,7 +2337,13 @@ class _DailyTaskCard extends ConsumerWidget {
       ),
     );
     if (date == null || !context.mounted) return;
-    await ref.read(dailyTaskReschedulerProvider)(task, date);
+    var scope = RecurrenceScope.thisOccurrence;
+    if (task.isRecurring) {
+      final selected = await _showRecurrenceScopeSheet(context);
+      if (!context.mounted || selected == null) return;
+      scope = selected;
+    }
+    await ref.read(dailyTaskReschedulerProvider)(task, date, scope: scope);
   }
 }
 
@@ -2332,6 +2356,172 @@ enum _DailyTaskMenuAction {
   startFocus,
   edit,
   delete,
+}
+
+class _DailyTaskSubtasks extends ConsumerStatefulWidget {
+  const _DailyTaskSubtasks({required this.task});
+
+  final TaskModel task;
+
+  @override
+  ConsumerState<_DailyTaskSubtasks> createState() => _DailyTaskSubtasksState();
+}
+
+class _DailyTaskSubtasksState extends ConsumerState<_DailyTaskSubtasks> {
+  bool _expanded = true;
+
+  @override
+  void didUpdateWidget(covariant _DailyTaskSubtasks oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.task.hasSubtasks) _expanded = true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final task = widget.task;
+    final completedSubtasks = task.completedSubtaskCount;
+    final subtaskProgress = completedSubtasks / task.subtasks.length;
+    return Column(
+      children: [
+        Divider(height: 1, color: context.palette.border),
+        Tooltip(
+          message: _expanded
+              ? context.l10n('Alt görevleri gizle')
+              : context.l10n('Alt görevleri göster'),
+          child: InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 5, 8, 5),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 44,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        value: subtaskProgress,
+                        minHeight: 4,
+                        backgroundColor: context.palette.surfaceMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      context.l10n('{done} / {total} alt görev', {
+                        'done': '$completedSubtasks',
+                        'total': '${task.subtasks.length}',
+                      }),
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _expanded ? .5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: context.palette.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        ClipRect(
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            child: _expanded
+                ? Column(
+                    children: [
+                      for (final subtask in task.subtasks)
+                        _DailySubtaskRow(parent: task, subtask: subtask),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DailySubtaskRow extends ConsumerWidget {
+  const _DailySubtaskRow({required this.parent, required this.subtask});
+
+  final TaskModel parent;
+  final TaskModel subtask;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AnimatedOpacity(
+    duration: const Duration(milliseconds: 180),
+    opacity: subtask.isCompleted ? .55 : 1,
+    child: Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.palette.border)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 6, 4, 6),
+      child: Row(
+        children: [
+          TaskIconBadge.forTask(icon: subtask.icon, size: 24),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              subtask.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                decoration: subtask.isCompleted
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+                decorationThickness: 2,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: subtask.isCompleted
+                ? context.l10n('{title} tamamlanmadı olarak işaretle', {
+                    'title': subtask.title,
+                  })
+                : context.l10n('{title} tamamla', {'title': subtask.title}),
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+            onPressed: () => _toggleCompletion(ref),
+            icon: Icon(
+              subtask.isCompleted
+                  ? Icons.check_circle_rounded
+                  : Icons.circle_outlined,
+              color: subtask.isCompleted
+                  ? Theme.of(context).colorScheme.primary
+                  : context.palette.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _toggleCompletion(WidgetRef ref) async {
+    try {
+      await ref
+          .read(taskRepositoryProvider)
+          .toggleSubtask(parentId: parent.id, subtaskId: subtask.id);
+    } catch (error) {
+      debugPrint('Daily subtask completion could not be changed: $error');
+    }
+    ref.invalidate(dailyTimelineProvider);
+    ref.invalidate(completionCountsProvider);
+  }
 }
 
 class _DailyTaskIcon extends StatelessWidget {
@@ -3035,9 +3225,7 @@ class _DailyTaskDetailScreenState
 
   Future<void> _generateSubtasks() async {
     final title = _title.text.trim();
-    if (title.isEmpty ||
-        _generatingSubtasks ||
-        _subtasks.length >= TaskModel.userSubtaskLimit) {
+    if (title.isEmpty || _generatingSubtasks || _subtasks.isNotEmpty) {
       return;
     }
     if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
@@ -3048,10 +3236,7 @@ class _DailyTaskDetailScreenState
     setState(() => _generatingSubtasks = true);
     try {
       final generated = widget.initialDraft.presetSubtasks.isNotEmpty
-          ? await Future<List<String>>.delayed(
-              const Duration(milliseconds: 450),
-              () => widget.initialDraft.presetSubtasks,
-            )
+          ? widget.initialDraft.presetSubtasks
           : await ref
                 .read(taskBreakdownServiceProvider)
                 .generateSubtasks(title);
@@ -3282,9 +3467,7 @@ class _DailyTaskDetailScreenState
                             'Adımları dilediğin sırayla düzenleyebilirsin.',
                           ),
                     color: FlorienColors.aiLavender,
-                    trailing:
-                        _title.text.trim().isNotEmpty &&
-                            _subtasks.length < TaskModel.userSubtaskLimit
+                    trailing: _title.text.trim().isNotEmpty && _subtasks.isEmpty
                         ? IconButton.filledTonal(
                             key: const ValueKey('daily-ai-subtasks-button'),
                             tooltip: context.l10n('AI ile alt görev oluştur'),
@@ -3320,8 +3503,9 @@ class _DailyTaskDetailScreenState
                         ),
                         title: Text(_subtasks[index]),
                         trailing: IconButton(
-                          onPressed: () =>
-                              setState(() => _subtasks.removeAt(index)),
+                          onPressed: () {
+                            setState(() => _subtasks.removeAt(index));
+                          },
                           icon: const Icon(Icons.close_rounded, size: 18),
                         ),
                       ),
@@ -3861,22 +4045,25 @@ Future<RecurrenceType?> _showRecurrencePicker(
   ),
 );
 
+enum _RecurrenceScopePrompt { update, delete, move }
+
 Future<RecurrenceScope?> _showRecurrenceScopeSheet(
   BuildContext context, {
-  required bool deleting,
+  _RecurrenceScopePrompt prompt = _RecurrenceScopePrompt.update,
 }) => showFlorienBottomSheet<RecurrenceScope>(
   context: context,
   isScrollControlled: true,
-  builder: (_) => _RecurrenceScopeSheet(deleting: deleting),
+  builder: (_) => _RecurrenceScopeSheet(prompt: prompt),
 );
 
 class _RecurrenceScopeSheet extends StatelessWidget {
-  const _RecurrenceScopeSheet({required this.deleting});
+  const _RecurrenceScopeSheet({required this.prompt});
 
-  final bool deleting;
+  final _RecurrenceScopePrompt prompt;
 
   @override
   Widget build(BuildContext context) {
+    final deleting = prompt == _RecurrenceScopePrompt.delete;
     return SafeArea(
       top: false,
       child: Container(
@@ -3904,7 +4091,11 @@ class _RecurrenceScopeSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
               child: Text(
-                context.l10n(deleting ? 'Görevi sil' : 'Görevi düzenle'),
+                context.l10n(switch (prompt) {
+                  _RecurrenceScopePrompt.delete => 'Görevi sil',
+                  _RecurrenceScopePrompt.move => 'Görevi taşı',
+                  _RecurrenceScopePrompt.update => 'Görevi düzenle',
+                }),
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
@@ -3912,12 +4103,22 @@ class _RecurrenceScopeSheet extends StatelessWidget {
             ),
             for (final value in RecurrenceScope.values)
               _DailyTaskActionTile(
-                icon: deleting
-                    ? Icons.delete_outline_rounded
-                    : Icons.edit_outlined,
-                label: deleting
-                    ? _recurrenceScopeDeleteLabel(value)
-                    : _recurrenceScopeUpdateLabel(value),
+                icon: switch (prompt) {
+                  _RecurrenceScopePrompt.delete => Icons.delete_outline_rounded,
+                  _RecurrenceScopePrompt.move => Icons.swap_vert_rounded,
+                  _RecurrenceScopePrompt.update => Icons.edit_outlined,
+                },
+                label: switch (prompt) {
+                  _RecurrenceScopePrompt.delete => _recurrenceScopeDeleteLabel(
+                    value,
+                  ),
+                  _RecurrenceScopePrompt.move => _recurrenceScopeMoveLabel(
+                    value,
+                  ),
+                  _RecurrenceScopePrompt.update => _recurrenceScopeUpdateLabel(
+                    value,
+                  ),
+                },
                 destructive: deleting,
                 onTap: () => Navigator.pop(context, value),
               ),
@@ -3934,15 +4135,21 @@ class _RecurrenceScopeSheet extends StatelessWidget {
 }
 
 String _recurrenceScopeUpdateLabel(RecurrenceScope value) => switch (value) {
-  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bu günü güncelle'),
+  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bunu güncelle'),
   RecurrenceScope.future => ActiveLanguage.s('Gelecektekileri güncelle'),
   RecurrenceScope.all => ActiveLanguage.s('Hepsini güncelle'),
 };
 
 String _recurrenceScopeDeleteLabel(RecurrenceScope value) => switch (value) {
-  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bu günü sil'),
+  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bunu sil'),
   RecurrenceScope.future => ActiveLanguage.s('Gelecektekileri sil'),
   RecurrenceScope.all => ActiveLanguage.s('Hepsini sil'),
+};
+
+String _recurrenceScopeMoveLabel(RecurrenceScope value) => switch (value) {
+  RecurrenceScope.thisOccurrence => ActiveLanguage.s('Bunu taşı'),
+  RecurrenceScope.future => ActiveLanguage.s('Gelecektekileri taşı'),
+  RecurrenceScope.all => ActiveLanguage.s('Hepsini taşı'),
 };
 
 class _RecurrenceScopeCancelled implements Exception {

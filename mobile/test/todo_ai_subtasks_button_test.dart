@@ -98,6 +98,7 @@ void main() {
     expect(find.text('Başla'), findsNothing);
     await tester.pump(subtaskCreationStagger);
     expect(find.text('Başla'), findsOneWidget);
+    expect(find.byKey(buttonKey), findsNothing);
   });
 
   testWidgets('kullanıcı beşten fazla alt görev ekleyebilir', (tester) async {

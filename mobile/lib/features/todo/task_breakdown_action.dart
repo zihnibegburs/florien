@@ -12,16 +12,23 @@ typedef TaskBreakdownApplier =
 final applyAiBreakdownProvider = Provider<TaskBreakdownApplier>((ref) {
   return (task, titles) async {
     if (titles.isEmpty) return;
-    await ref
-        .read(taskRepositoryProvider)
-        .replaceSubtasks(
-          parentId: task.id,
-          titles: [...task.subtasks.map((subtask) => subtask.title), ...titles],
-        );
-    await ref.read(inboxProvider.notifier).refresh();
-    ref.invalidate(dailyTimelineProvider);
+    await ref.read(replaceSeriesSubtasksProvider)(task.id, [
+      ...task.subtasks.map((subtask) => subtask.title),
+      ...titles,
+    ]);
   };
 });
+
+final replaceSeriesSubtasksProvider =
+    Provider<Future<void> Function(String, List<String>)>((ref) {
+      return (id, titles) async {
+        await ref
+            .read(taskRepositoryProvider)
+            .replaceSubtasksForSeries(id: id, titles: titles);
+        await ref.read(inboxProvider.notifier).refresh();
+        invalidateDailyTimelines(ref);
+      };
+    });
 
 Future<void> suggestTaskBreakdown({
   required BuildContext context,

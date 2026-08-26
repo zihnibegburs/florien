@@ -9,6 +9,7 @@ import 'package:florien/core/services/task_alarm_service.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
+import 'package:florien/core/utils/subtask_sequence.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
@@ -494,12 +495,13 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('daily-ai-subtasks-button')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
+    await tester.pump(subtaskCreationStagger);
+    expect(find.text('Rutin için gerekenleri hazırla'), findsOneWidget);
+    await tester.pump(subtaskCreationStagger);
 
     expect(find.byType(PremiumMembershipScreen), findsNothing);
-    expect(find.text('Su iç ve bedenini uyandır'), findsOneWidget);
-    expect(find.text('Rutin için gerekenleri hazırla'), findsOneWidget);
     expect(find.text('Başlangıcı tamamlayıp güne geç'), findsOneWidget);
   });
 
@@ -1059,6 +1061,8 @@ void main() {
       sortOrder: 0,
       isInbox: false,
       dayPeriod: DayPeriod.daytime,
+      recurrenceType: RecurrenceType.daily,
+      recurrenceSeriesId: 'daily-task-1',
     );
     await tester.pumpWidget(
       ProviderScope(
@@ -1106,6 +1110,8 @@ void main() {
       find.byKey(const ValueKey('daily-detail-title')),
     );
     expect(copyTitle.controller?.text, '${task.title} (Kopya)');
+    expect(find.text('Hayır'), findsOneWidget);
+    expect(find.text('Her gün'), findsNothing);
 
     await tester.tap(find.byTooltip('Kapat'));
     await tester.pumpAndSettle();
@@ -1113,6 +1119,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Görevi sil'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bunu sil'));
     await tester.pumpAndSettle();
     expect(deleted, isTrue);
     expect(find.text('Günlük deneme görevi'), findsNothing);
@@ -1227,7 +1235,7 @@ void main() {
     );
     expect(title.controller?.text, task.title);
     expect(find.text(task.description!), findsOneWidget);
-    expect(find.text('İlk adım'), findsOneWidget);
+    expect(find.text('İlk adım'), findsWidgets);
 
     await tester.enterText(
       find.byKey(const ValueKey('daily-detail-title')),
@@ -1401,7 +1409,11 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: [task]),
           ),
-          dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+          dailyTaskReschedulerProvider.overrideWithValue((
+            task,
+            date, {
+            RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+          }) async {
             rescheduledTask = task;
             rescheduledDate = date;
           }),
@@ -1483,7 +1495,11 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: [task]),
           ),
-          dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+          dailyTaskReschedulerProvider.overrideWithValue((
+            task,
+            date, {
+            RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+          }) async {
             rescheduledDate = date;
             rescheduledPeriod = task.dayPeriod;
           }),
@@ -1556,7 +1572,11 @@ void main() {
               (ref, date) async =>
                   TimelineModel(date: date, tasks: [completed, first, second]),
             ),
-            dailyTaskReschedulerProvider.overrideWithValue((task, date) async {
+            dailyTaskReschedulerProvider.overrideWithValue((
+              task,
+              date, {
+              RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+            }) async {
               movedDates[task.id] = date;
             }),
           ],
@@ -1673,7 +1693,13 @@ void main() {
           dailyTimelineProvider.overrideWith(
             (ref, date) async => TimelineModel(date: date, tasks: [task]),
           ),
-          dailyTaskReschedulerProvider.overrideWithValue((_, _) async {}),
+          dailyTaskReschedulerProvider.overrideWithValue(
+            (
+              _,
+              _, {
+              RecurrenceScope scope = RecurrenceScope.thisOccurrence,
+            }) async {},
+          ),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,

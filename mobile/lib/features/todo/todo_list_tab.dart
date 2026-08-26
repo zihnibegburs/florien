@@ -1777,6 +1777,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                           children: [
                             for (final subtask in task.subtasks)
                               _TodoSubtaskRow(
+                                parent: task,
                                 subtask: subtask,
                                 parentColor: color,
                                 onToggleCompletion: widget.onToggleCompletion,
@@ -1817,6 +1818,11 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
           children: [
             _TaskOptionTile(
+              icon: Icons.play_circle_outline_rounded,
+              label: context.l10n('Görevi başlat'),
+              onTap: () => Navigator.pop(context, _TaskMenuAction.startFocus),
+            ),
+            _TaskOptionTile(
               icon: Icons.copy_all_outlined,
               label: context.l10n('Bir kopya oluştur'),
               onTap: () => Navigator.pop(context, _TaskMenuAction.createCopy),
@@ -1838,11 +1844,6 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
                 onTap: () =>
                     Navigator.pop(context, _TaskMenuAction.suggestBreakdown),
               ),
-            _TaskOptionTile(
-              icon: Icons.play_circle_outline_rounded,
-              label: context.l10n('Görevi başlat'),
-              onTap: () => Navigator.pop(context, _TaskMenuAction.startFocus),
-            ),
             _TaskOptionTile(
               icon: Icons.edit_outlined,
               label: context.l10n('Yapılacakları düzenle'),
@@ -1974,11 +1975,13 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
 
 class _TodoSubtaskRow extends ConsumerWidget {
   const _TodoSubtaskRow({
+    required this.parent,
     required this.subtask,
     required this.parentColor,
     this.onToggleCompletion,
   });
 
+  final TaskModel parent;
   final TaskModel subtask;
   final Color parentColor;
   final Future<void> Function(TaskModel task)? onToggleCompletion;
@@ -2027,6 +2030,13 @@ class _TodoSubtaskRow extends ConsumerWidget {
               final onToggle = onToggleCompletion;
               if (onToggle != null) {
                 await onToggle(subtask);
+                return;
+              }
+              if (parent.isRecurring) {
+                await ref
+                    .read(taskRepositoryProvider)
+                    .toggleSubtask(parentId: parent.id, subtaskId: subtask.id);
+                await ref.read(inboxProvider.notifier).refresh();
                 return;
               }
               final notifier = ref.read(inboxProvider.notifier);

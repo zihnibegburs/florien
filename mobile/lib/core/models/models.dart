@@ -92,6 +92,10 @@ class TaskModel {
   final String? recurrenceUntil;
   final String? occurrenceDate;
   final RecurrenceExceptionKind recurrenceException;
+
+  /// Sparse OVERRIDE keys. `null` is a legacy full clone; `[]` inherits all
+  /// template fields except status / completion.
+  final List<String>? recurrenceOwnedFields;
   final TaskPriority priority;
   final DayPeriod dayPeriod;
 
@@ -128,6 +132,7 @@ class TaskModel {
     this.recurrenceUntil,
     this.occurrenceDate,
     this.recurrenceException = RecurrenceExceptionKind.none,
+    this.recurrenceOwnedFields,
     this.priority = TaskPriority.none,
     this.dayPeriod = DayPeriod.anytime,
     this.todoListId,
@@ -169,6 +174,7 @@ class TaskModel {
     recurrenceException: _parseRecurrenceException(
       json['recurrenceException'] as String?,
     ),
+    recurrenceOwnedFields: _parseOwnedFields(json['recurrenceOwnedFields']),
     priority: _parsePriority(json['priority'] as String?),
     dayPeriod: _parseDayPeriod(json['dayPeriod'] as String?),
     todoListId: json['todoListId'] as String?,
@@ -211,6 +217,7 @@ class TaskModel {
     recurrenceException: _parseRecurrenceException(
       data['recurrenceException'] as String?,
     ),
+    recurrenceOwnedFields: _parseOwnedFields(data['recurrenceOwnedFields']),
     priority: _parsePriority(data['priority'] as String?),
     dayPeriod: _parseDayPeriod(data['dayPeriod'] as String?),
     todoListId: data['todoListId'] as String?,
@@ -251,6 +258,7 @@ class TaskModel {
     'recurrenceUntil': recurrenceUntil,
     'occurrenceDate': occurrenceDate,
     'recurrenceException': _recurrenceExceptionApi(recurrenceException),
+    'recurrenceOwnedFields': recurrenceOwnedFields,
     'priority': priorityApiValue,
     'dayPeriod': dayPeriodApiValue,
     'todoListId': todoListId,
@@ -314,6 +322,7 @@ class TaskModel {
     bool clearRecurrenceUntil = false,
     String? occurrenceDate,
     RecurrenceExceptionKind? recurrenceException,
+    List<String>? recurrenceOwnedFields,
     TaskPriority? priority,
     DayPeriod? dayPeriod,
     String? todoListId,
@@ -353,6 +362,7 @@ class TaskModel {
         : (recurrenceUntil ?? this.recurrenceUntil),
     occurrenceDate: occurrenceDate ?? this.occurrenceDate,
     recurrenceException: recurrenceException ?? this.recurrenceException,
+    recurrenceOwnedFields: recurrenceOwnedFields ?? this.recurrenceOwnedFields,
     priority: priority ?? this.priority,
     dayPeriod: dayPeriod ?? this.dayPeriod,
     todoListId: clearTodoListId ? null : (todoListId ?? this.todoListId),
@@ -405,6 +415,11 @@ class TaskModel {
         _ => RecurrenceExceptionKind.none,
       };
 
+  static List<String>? _parseOwnedFields(dynamic value) {
+    if (value is! List) return null;
+    return [for (final item in value) '$item'];
+  }
+
   static String? _recurrenceExceptionApi(RecurrenceExceptionKind kind) =>
       switch (kind) {
         RecurrenceExceptionKind.override => 'OVERRIDE',
@@ -450,6 +465,12 @@ class TaskModel {
 
   bool get isRecurring =>
       recurrenceSeriesId != null || recurrenceType != RecurrenceType.none;
+
+  /// THIS rename (or any owned title). Group-only / status-only overrides
+  /// are not unique; those still inherit the series name.
+  bool get hasUniqueOccurrenceTitle =>
+      recurrenceException == RecurrenceExceptionKind.override &&
+      (recurrenceOwnedFields?.contains(RecurrencePatch.title) ?? false);
 
   int get completedSubtaskCount => subtasks.where((s) => s.isCompleted).length;
 

@@ -6,6 +6,22 @@ enum RecurrenceScope { thisOccurrence, all, future }
 
 enum RecurrenceExceptionKind { none, override, skip }
 
+/// Sparse OVERRIDE fields. Missing [TaskModel.recurrenceOwnedFields] means a
+/// legacy full clone; an empty list inherits every template field.
+abstract final class RecurrencePatch {
+  static const title = 'title';
+  static const description = 'description';
+  static const color = 'color';
+  static const icon = 'icon';
+  static const durationMinutes = 'durationMinutes';
+  static const scheduledAt = 'scheduledAt';
+  static const alarmAt = 'alarmAt';
+  static const reminderLeadMinutes = 'reminderLeadMinutes';
+  static const isTimed = 'isTimed';
+  static const dayPeriod = 'dayPeriod';
+  static const isInbox = 'isInbox';
+}
+
 extension RecurrenceScopeX on RecurrenceScope {
   String apiValue() => switch (this) {
     RecurrenceScope.thisOccurrence => 'THIS',

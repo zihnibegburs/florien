@@ -10,6 +10,7 @@ import 'package:florien/core/models/recurrence.dart';
 import 'package:florien/core/models/task_usage_summary.dart';
 import 'package:florien/core/storage/task_collection.dart';
 import 'package:florien/core/utils/recurrence_generator.dart';
+import 'package:florien/core/utils/recurrence_merge.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/firebase_options.dart';
 import 'package:florien/core/l10n/app_strings.dart';
@@ -443,6 +444,16 @@ class TaskRepository {
           : RecurrenceOccurrence.dateOnly(task.scheduledAt!);
       if (scheduledDay != null && scheduledDay != day) continue;
       final master = seriesById[task.recurrenceSeriesId];
+      if (master != null &&
+          task.recurrenceException == RecurrenceExceptionKind.override) {
+        visible.add(
+          mergeRecurrenceException(
+            template: _virtualOccurrence(master, day),
+            exception: task,
+          ),
+        );
+        continue;
+      }
       visible.add(
         master == null
             ? task
@@ -464,7 +475,10 @@ class TaskRepository {
         return left.compareTo(right);
       });
 
-    final parentIds = all.map((t) => t.id).toList();
+    final parentIds = <String>{
+      for (final task in all) task.id,
+      ...seriesById.keys,
+    }.toList();
     final subtasksByParent = <String, List<TaskModel>>{};
     if (parentIds.isNotEmpty) {
       // Firestore whereIn is limited to 30; chunk if needed.
@@ -487,9 +501,19 @@ class TaskRepository {
       }
     }
 
-    final tasks = all
-        .map((t) => t.copyWith(subtasks: subtasksByParent[t.id] ?? const []))
-        .toList();
+    final tasks = all.map((task) {
+      final own = subtasksByParent[task.id];
+      if (own != null && own.isNotEmpty) {
+        return task.copyWith(subtasks: own);
+      }
+      final seriesId = task.recurrenceSeriesId;
+      if (seriesId != null &&
+          (task.isVirtualOccurrence ||
+              task.recurrenceException == RecurrenceExceptionKind.override)) {
+        return task.copyWith(subtasks: subtasksByParent[seriesId] ?? const []);
+      }
+      return task.copyWith(subtasks: own ?? const []);
+    }).toList();
 
     TaskModel? activeTask;
     final activeSnap = await _tasks
@@ -685,6 +709,49 @@ class TaskRepository {
         recurrence != null &&
         current.occurrenceDate == null &&
         current.recurrenceException == RecurrenceExceptionKind.none;
+    final proposedOwned = <String>[
+      if (title != null) RecurrencePatch.title,
+      if (description != null || clearDescription) RecurrencePatch.description,
+      if (color != null) RecurrencePatch.color,
+      if (icon != null) RecurrencePatch.icon,
+      if (durationMinutes != null) RecurrencePatch.durationMinutes,
+      if (scheduledAt != null) RecurrencePatch.scheduledAt,
+      if (alarmAt != null || clearAlarmAt) RecurrencePatch.alarmAt,
+      if (reminderLeadMinutes != null || clearReminderLeadMinutes)
+        RecurrencePatch.reminderLeadMinutes,
+      if (isTimed != null) RecurrencePatch.isTimed,
+      if (dayPeriod != null) RecurrencePatch.dayPeriod,
+      if (isInbox != null) RecurrencePatch.isInbox,
+    ];
+    final sparseOverride =
+        current.recurrenceException == RecurrenceExceptionKind.override &&
+        current.recurrenceOwnedFields != null;
+    List<String>? nextOwned;
+    if (sparseOverride && proposedOwned.isNotEmpty) {
+      nextOwned = await _reconcileSparseOwnedFields(
+        current: current,
+        proposed: proposedOwned,
+        title: title,
+        description: description,
+        clearDescription: clearDescription,
+        color: color,
+        icon: icon,
+        durationMinutes: durationMinutes,
+        scheduledAt: scheduledAt,
+        alarmAt: alarmAt,
+        clearAlarmAt: clearAlarmAt,
+        reminderLeadMinutes: reminderLeadMinutes,
+        clearReminderLeadMinutes: clearReminderLeadMinutes,
+        isTimed: isTimed,
+        dayPeriod: dayPeriod,
+        isInbox: isInbox,
+      );
+    }
+    String? nextOccurrenceDate;
+    if (scheduledAt != null &&
+        current.recurrenceException == RecurrenceExceptionKind.override) {
+      nextOccurrenceDate = RecurrenceOccurrence.dateKey(scheduledAt);
+    }
     final patch = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
       if (title != null) 'title': title.trim(),
@@ -702,6 +769,15 @@ class TaskRepository {
       if (clearReminderLeadMinutes) 'reminderLeadMinutes': null,
       if (isTimed != null) 'isTimed': isTimed,
       if (applyRecurrence) ...recurrence!.toApiJson(),
+      if (applyRecurrence && recurrence!.hasRecurrence) ...{
+        'recurrenceSeriesId': current.recurrenceSeriesId ?? id,
+        'recurrenceRootId': current.recurrenceRootId ?? id,
+      },
+      if (applyRecurrence && !recurrence!.hasRecurrence) ...{
+        'recurrenceSeriesId': null,
+        'recurrenceRootId': null,
+        'recurrenceUntil': null,
+      },
       if (reward != null) 'reward': _normalizeText(reward) ?? '',
       if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
       if (motivation != null) 'motivation': _normalizeText(motivation) ?? '',
@@ -714,6 +790,8 @@ class TaskRepository {
       if (clearTodoListId) 'todoListId': null,
       if (status != null) 'status': _statusValue(status),
       if (clearStartedAt) 'startedAt': null,
+      if (nextOccurrenceDate != null) 'occurrenceDate': nextOccurrenceDate,
+      if (nextOwned != null) 'recurrenceOwnedFields': nextOwned,
     };
     await _tasks.doc(id).update(patch);
     final snap = await _tasks.doc(id).get();
@@ -907,6 +985,41 @@ class TaskRepository {
     await batch.commit();
   }
 
+  /// Writes the same subtask titles onto a one-off parent, or onto every
+  /// series master and OVERRIDE exception when [id] belongs to a series.
+  Future<void> replaceSubtasksForSeries({
+    required String id,
+    required List<String> titles,
+  }) async {
+    final resolved = await _resolveTask(id, materialize: false);
+    if (resolved == null) throw StateError('Task not found');
+    if (!resolved.isRecurring) {
+      final target = resolved.isVirtualOccurrence
+          ? await _ensureMaterialized(id)
+          : resolved;
+      await replaceSubtasks(parentId: target.id, titles: titles);
+      return;
+    }
+
+    final masters = await _mastersForRoot(_rootId(resolved));
+    final targets = <String>{};
+    for (final master in masters) {
+      targets.add(master.id);
+      for (final exception in await _overrideExceptionsForSeries(master.id)) {
+        final children = await _tasks
+            .where('parentTaskId', isEqualTo: exception.id)
+            .get();
+        if (children.docs.isEmpty && exception.recurrenceOwnedFields != null) {
+          continue;
+        }
+        targets.add(exception.id);
+      }
+    }
+    for (final targetId in targets) {
+      await replaceSubtasks(parentId: targetId, titles: titles);
+    }
+  }
+
   Future<TaskModel> startTask(String id) async {
     id = (await _ensureMaterialized(id)).id;
     final ref = _tasks.doc(id);
@@ -971,11 +1084,20 @@ class TaskRepository {
         return d.data()['status'] == 'COMPLETED';
       });
       if (allDone) {
-        await _tasks.doc(task.parentTaskId!).update({
-          'status': 'COMPLETED',
-          'completedAt': Timestamp.fromDate(DateTime.now().toUtc()),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        final parentSnap = await _tasks.doc(task.parentTaskId!).get();
+        if (parentSnap.exists) {
+          final parent = TaskModel.fromFirestore(
+            parentSnap.id,
+            parentSnap.data()!,
+          );
+          if (!parent.isSeriesMaster) {
+            await _tasks.doc(task.parentTaskId!).update({
+              'status': 'COMPLETED',
+              'completedAt': Timestamp.fromDate(DateTime.now().toUtc()),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+        }
       }
     }
 
@@ -1015,6 +1137,48 @@ class TaskRepository {
 
     final updated = await ref.get();
     return TaskModel.fromFirestore(id, updated.data()!);
+  }
+
+  Future<void> toggleSubtask({
+    required String parentId,
+    required String subtaskId,
+  }) async {
+    final parent = await _resolveTask(parentId, materialize: false);
+    if (parent == null) throw StateError('Task not found');
+    final subSnap = await _tasks.doc(subtaskId).get();
+    if (!subSnap.exists) throw StateError('Task not found');
+    final subtask = TaskModel.fromFirestore(subtaskId, subSnap.data()!);
+    var targetId = subtaskId;
+    final inheritsTemplate =
+        parent.isVirtualOccurrence ||
+        (parent.recurrenceException == RecurrenceExceptionKind.override &&
+            subtask.parentTaskId != parent.id);
+    if (inheritsTemplate) {
+      final materialized = await _ensureMaterialized(parentId);
+      await _copyTemplateSubtasksTo(
+        fromParentId: parent.recurrenceSeriesId ?? materialized.id,
+        toParentId: materialized.id,
+      );
+      final copies = await _tasks
+          .where('parentTaskId', isEqualTo: materialized.id)
+          .get();
+      final match = copies.docs.where((doc) {
+        return (doc.data()['title'] as String? ?? '') == subtask.title;
+      });
+      if (match.isNotEmpty) {
+        targetId = match.first.id;
+      } else {
+        return;
+      }
+    }
+    final targetSnap = await _tasks.doc(targetId).get();
+    if (!targetSnap.exists) throw StateError('Task not found');
+    final target = TaskModel.fromFirestore(targetId, targetSnap.data()!);
+    if (target.isCompleted) {
+      await uncompleteTask(targetId);
+    } else {
+      await completeTask(targetId);
+    }
   }
 
   Future<void> deleteTask(
@@ -1069,11 +1233,26 @@ class TaskRepository {
         )
         .get();
 
+    final seriesById = <String, TaskModel>{};
+    for (final doc in seriesSnap.docs) {
+      final task = TaskModel.fromFirestore(doc.id, doc.data());
+      if (task.isSeriesMaster) seriesById[task.id] = task;
+    }
+
     final byId = <String, TaskModel>{};
     for (final doc in scheduledSnap.docs) {
-      final task = TaskModel.fromFirestore(doc.id, doc.data());
+      var task = TaskModel.fromFirestore(doc.id, doc.data());
       if (task.isSeriesMaster) continue;
-      byId.putIfAbsent(doc.id, () => task);
+      if (task.recurrenceException == RecurrenceExceptionKind.skip) continue;
+      final master = seriesById[task.recurrenceSeriesId];
+      if (master != null &&
+          task.recurrenceException == RecurrenceExceptionKind.override) {
+        task = mergeRecurrenceException(
+          template: _virtualOccurrence(master, _occurrenceDay(task)),
+          exception: task,
+        );
+      }
+      byId.putIfAbsent(task.id, () => task);
     }
 
     var cursor = RecurrenceOccurrence.dateOnly(from);
@@ -1264,8 +1443,51 @@ class TaskRepository {
         dayPeriod: dayPeriod,
         isInbox: isInbox,
       );
+      for (final exception in await _overrideExceptionsForSeries(master.id)) {
+        if (exception.recurrenceOwnedFields != null) {
+          if (dayPeriod != null || scheduledAt != null || isTimed != null) {
+            await _releaseOwnedPlacementFields(exception);
+          }
+          continue;
+        }
+        await updateTask(
+          id: exception.id,
+          title: title,
+          description: description,
+          clearDescription: clearDescription,
+          color: color,
+          icon: icon,
+          durationMinutes: durationMinutes,
+          scheduledAt: scheduledAt == null
+              ? null
+              : RecurrenceGenerator.scheduledAtFor(
+                  start: scheduledAt,
+                  date: _occurrenceDay(exception),
+                ),
+          alarmAt: alarmAt,
+          clearAlarmAt: clearAlarmAt,
+          reminderLeadMinutes: reminderLeadMinutes,
+          clearReminderLeadMinutes: clearReminderLeadMinutes,
+          isTimed: isTimed,
+          dayPeriod: dayPeriod,
+          isInbox: isInbox,
+        );
+      }
     }
     return latest ?? resolved;
+  }
+
+  Future<List<TaskModel>> _overrideExceptionsForSeries(String seriesId) async {
+    final related = await _tasks
+        .where('recurrenceSeriesId', isEqualTo: seriesId)
+        .get();
+    return [
+      for (final doc in related.docs)
+        TaskModel.fromFirestore(doc.id, doc.data()),
+    ].where((task) {
+      if (task.isSeriesMaster || task.parentTaskId != null) return false;
+      return task.recurrenceException == RecurrenceExceptionKind.override;
+    }).toList();
   }
 
   Future<TaskModel> _materializeThisOccurrence(
@@ -1321,7 +1543,10 @@ class TaskRepository {
       if (existing.recurrenceException == RecurrenceExceptionKind.skip) {
         return existing;
       }
-      return existing.copyWith(recurrenceType: master.recurrenceType);
+      return mergeRecurrenceException(
+        template: _virtualOccurrence(master, day),
+        exception: existing,
+      );
     }
     if (!materialize) return _virtualOccurrence(master, day);
     return _materializeOccurrence(master, day);
@@ -1335,7 +1560,10 @@ class TaskRepository {
     final existing = await _exceptionFor(master.id, dateKey);
     if (existing != null &&
         existing.recurrenceException != RecurrenceExceptionKind.skip) {
-      return existing.copyWith(recurrenceType: master.recurrenceType);
+      return mergeRecurrenceException(
+        template: _virtualOccurrence(master, day),
+        exception: existing,
+      );
     }
 
     final scheduledAt = RecurrenceGenerator.scheduledAtFor(
@@ -1348,14 +1576,20 @@ class TaskRepository {
     );
     final ref = _tasks.doc();
     await ref.set({
-      ...master.toFirestoreMap(),
+      'title': master.title,
+      'description': master.description,
+      'color': master.color,
+      'icon': master.icon,
+      'durationMinutes': master.durationMinutes,
       'scheduledAt': Timestamp.fromDate(scheduledAt.toUtc()),
       'alarmAt': alarmAt == null ? null : Timestamp.fromDate(alarmAt.toUtc()),
       'status': 'PENDING',
+      'sortOrder': master.sortOrder,
+      'isInbox': false,
       'startedAt': null,
       'completedAt': null,
       'parentTaskId': null,
-      'isInbox': false,
+      'isTimed': master.isTimed,
       'recurrenceType': 'NONE',
       'recurrenceInterval': 1,
       'recurrenceUnit': null,
@@ -1364,53 +1598,18 @@ class TaskRepository {
       'recurrenceUntil': null,
       'occurrenceDate': dateKey,
       'recurrenceException': 'OVERRIDE',
+      'recurrenceOwnedFields': <String>[],
+      'priority': master.priorityApiValue,
+      'dayPeriod': master.dayPeriodApiValue,
+      'todoListId': master.todoListId,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
-    if (master.subtasks.isNotEmpty) {
-      await addSubtasksToTask(
-        parentId: ref.id,
-        subtasks: master.subtasks
-            .map(
-              (sub) => (
-                title: sub.title,
-                durationMinutes: sub.durationMinutes,
-                color: sub.color,
-              ),
-            )
-            .toList(),
-      );
-    } else {
-      final templateSubs = await _tasks
-          .where('parentTaskId', isEqualTo: master.id)
-          .get();
-      if (templateSubs.docs.isNotEmpty) {
-        final titles = [...templateSubs.docs]
-          ..sort(
-            (a, b) => ((a.data()['sortOrder'] as num?)?.toInt() ?? 0).compareTo(
-              (b.data()['sortOrder'] as num?)?.toInt() ?? 0,
-            ),
-          );
-        await addSubtasksToTask(
-          parentId: ref.id,
-          subtasks: titles
-              .map(
-                (doc) => (
-                  title: (doc.data()['title'] as String?) ?? '',
-                  durationMinutes:
-                      (doc.data()['durationMinutes'] as num?)?.toInt() ?? 5,
-                  color: (doc.data()['color'] as String?) ?? master.color,
-                ),
-              )
-              .toList(),
-        );
-      }
-    }
     final snap = await ref.get();
-    return TaskModel.fromFirestore(
-      ref.id,
-      snap.data()!,
-    ).copyWith(recurrenceType: master.recurrenceType);
+    return mergeRecurrenceException(
+      template: _virtualOccurrence(master, day),
+      exception: TaskModel.fromFirestore(ref.id, snap.data()!),
+    );
   }
 
   Future<TaskModel?> _exceptionFor(String seriesId, String dateKey) async {
@@ -1475,6 +1674,17 @@ class TaskRepository {
       'recurrenceUntil': untilKey,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    final related = await _tasks
+        .where('recurrenceSeriesId', isEqualTo: master.id)
+        .get();
+    for (final doc in related.docs) {
+      final exception = TaskModel.fromFirestore(doc.id, doc.data());
+      if (exception.isSeriesMaster || exception.parentTaskId != null) continue;
+      final key = exception.occurrenceDate;
+      if (key != null && key.compareTo(untilKey) >= 0) {
+        await _deleteSingle(exception.id);
+      }
+    }
     final later = await _mastersForRoot(_rootId(master));
     for (final other in later) {
       if (other.id == master.id || other.scheduledAt == null) continue;
@@ -1542,11 +1752,72 @@ class TaskRepository {
       'recurrenceUntil': master.recurrenceUntil,
       'occurrenceDate': null,
       'recurrenceException': null,
+      'recurrenceOwnedFields': null,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    await _copyTemplateSubtasksTo(fromParentId: master.id, toParentId: ref.id);
+    await _reassignExceptions(
+      fromSeriesId: master.id,
+      toSeriesId: ref.id,
+      fromDateKey: dayKey,
+    );
     final snap = await ref.get();
     return TaskModel.fromFirestore(ref.id, snap.data()!);
+  }
+
+  Future<void> _copyTemplateSubtasksTo({
+    required String fromParentId,
+    required String toParentId,
+  }) async {
+    if (fromParentId == toParentId) return;
+    final existing = await _tasks
+        .where('parentTaskId', isEqualTo: toParentId)
+        .get();
+    if (existing.docs.isNotEmpty) return;
+    final templateSubs = await _tasks
+        .where('parentTaskId', isEqualTo: fromParentId)
+        .get();
+    if (templateSubs.docs.isEmpty) return;
+    final titles = [...templateSubs.docs]
+      ..sort(
+        (a, b) => ((a.data()['sortOrder'] as num?)?.toInt() ?? 0).compareTo(
+          (b.data()['sortOrder'] as num?)?.toInt() ?? 0,
+        ),
+      );
+    await addSubtasksToTask(
+      parentId: toParentId,
+      subtasks: titles
+          .map(
+            (doc) => (
+              title: (doc.data()['title'] as String?) ?? '',
+              durationMinutes:
+                  (doc.data()['durationMinutes'] as num?)?.toInt() ?? 5,
+              color: (doc.data()['color'] as String?) ?? '#4F52B2',
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<void> _reassignExceptions({
+    required String fromSeriesId,
+    required String toSeriesId,
+    required String fromDateKey,
+  }) async {
+    final related = await _tasks
+        .where('recurrenceSeriesId', isEqualTo: fromSeriesId)
+        .get();
+    for (final doc in related.docs) {
+      final exception = TaskModel.fromFirestore(doc.id, doc.data());
+      if (exception.isSeriesMaster || exception.parentTaskId != null) continue;
+      final key = exception.occurrenceDate;
+      if (key == null || key.compareTo(fromDateKey) < 0) continue;
+      await _tasks.doc(exception.id).update({
+        'recurrenceSeriesId': toSeriesId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   Future<List<TaskModel>> _mastersForRoot(String rootId) async {
@@ -1567,6 +1838,134 @@ class TaskRepository {
     final snap = await _tasks.doc(seriesId).get();
     if (!snap.exists) throw StateError('Task not found');
     return TaskModel.fromFirestore(seriesId, snap.data()!);
+  }
+
+  static const _placementOwnedFields = {
+    RecurrencePatch.dayPeriod,
+    RecurrencePatch.scheduledAt,
+    RecurrencePatch.isTimed,
+  };
+
+  Future<void> _releaseOwnedPlacementFields(TaskModel exception) async {
+    final owned = exception.recurrenceOwnedFields;
+    if (owned == null) return;
+    final next = [
+      for (final field in owned)
+        if (!_placementOwnedFields.contains(field)) field,
+    ];
+    if (next.length == owned.length) return;
+    await _tasks.doc(exception.id).update({
+      'recurrenceOwnedFields': next,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<List<String>> _reconcileSparseOwnedFields({
+    required TaskModel current,
+    required List<String> proposed,
+    String? title,
+    String? description,
+    bool clearDescription = false,
+    String? color,
+    String? icon,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+    DateTime? alarmAt,
+    bool clearAlarmAt = false,
+    int? reminderLeadMinutes,
+    bool clearReminderLeadMinutes = false,
+    bool? isTimed,
+    DayPeriod? dayPeriod,
+    bool? isInbox,
+  }) async {
+    final owned = {...current.recurrenceOwnedFields!};
+    final seriesId = current.recurrenceSeriesId;
+    TaskModel? template;
+    if (seriesId != null) {
+      try {
+        final master = await _requireMaster(seriesId);
+        template = _virtualOccurrence(master, _occurrenceDay(current));
+      } catch (_) {
+        template = null;
+      }
+    }
+    if (template == null) {
+      owned.addAll(proposed);
+      return owned.toList();
+    }
+
+    void apply(String field, bool matchesTemplate) {
+      if (!proposed.contains(field)) return;
+      if (matchesTemplate) {
+        owned.remove(field);
+      } else {
+        owned.add(field);
+      }
+    }
+
+    apply(
+      RecurrencePatch.title,
+      title == null || title.trim() == template.title,
+    );
+    final nextDescription = clearDescription ? null : description;
+    apply(
+      RecurrencePatch.description,
+      proposed.contains(RecurrencePatch.description) &&
+          _sameOptionalText(nextDescription, template.description),
+    );
+    apply(RecurrencePatch.color, color == null || color == template.color);
+    apply(RecurrencePatch.icon, icon == null || icon == template.icon);
+    apply(
+      RecurrencePatch.durationMinutes,
+      durationMinutes == null || durationMinutes == template.durationMinutes,
+    );
+    apply(
+      RecurrencePatch.scheduledAt,
+      scheduledAt == null ||
+          _sameOccurrenceClock(scheduledAt, template.scheduledAt),
+    );
+    final nextAlarm = clearAlarmAt ? null : alarmAt;
+    apply(
+      RecurrencePatch.alarmAt,
+      !proposed.contains(RecurrencePatch.alarmAt) ||
+          _sameOccurrenceClock(nextAlarm, template.alarmAt),
+    );
+    final nextReminder = clearReminderLeadMinutes ? null : reminderLeadMinutes;
+    apply(
+      RecurrencePatch.reminderLeadMinutes,
+      !proposed.contains(RecurrencePatch.reminderLeadMinutes) ||
+          nextReminder == template.reminderLeadMinutes,
+    );
+    apply(
+      RecurrencePatch.isTimed,
+      isTimed == null || isTimed == template.isTimed,
+    );
+    apply(
+      RecurrencePatch.dayPeriod,
+      dayPeriod == null || dayPeriod == template.dayPeriod,
+    );
+    apply(
+      RecurrencePatch.isInbox,
+      isInbox == null || isInbox == template.isInbox,
+    );
+    return owned.toList();
+  }
+
+  bool _sameOptionalText(String? a, String? b) {
+    final left = a?.trim() ?? '';
+    final right = b?.trim() ?? '';
+    return left == right;
+  }
+
+  bool _sameOccurrenceClock(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return a == b;
+    final left = a.toLocal();
+    final right = b.toLocal();
+    return left.year == right.year &&
+        left.month == right.month &&
+        left.day == right.day &&
+        left.hour == right.hour &&
+        left.minute == right.minute;
   }
 
   String _rootId(TaskModel task) =>

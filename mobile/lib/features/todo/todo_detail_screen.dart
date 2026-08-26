@@ -106,9 +106,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
 
   Future<void> _generateSubtasks() async {
     final title = _title.text.trim();
-    if (title.isEmpty ||
-        _generatingSubtasks ||
-        _subtasks.length >= TaskModel.userSubtaskLimit) {
+    if (title.isEmpty || _generatingSubtasks || _subtasks.isNotEmpty) {
       return;
     }
     if (!await requirePremiumAccess(context, ref, PremiumFeature.subtasks)) {
@@ -348,9 +346,7 @@ class _TodoDetailScreenState extends ConsumerState<TodoDetailScreen> {
                             'Adımları dilediğin sırayla düzenleyebilirsin.',
                           ),
                     color: FlorienColors.aiLavender,
-                    trailing:
-                        _title.text.trim().isNotEmpty &&
-                            _subtasks.length < TaskModel.userSubtaskLimit
+                    trailing: _title.text.trim().isNotEmpty && _subtasks.isEmpty
                         ? IconButton.filledTonal(
                             key: const ValueKey('todo-ai-subtasks-button'),
                             tooltip: isPremium
