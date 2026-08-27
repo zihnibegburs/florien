@@ -22,7 +22,7 @@ class _CalendarConnectionsScreenState
   CalendarProvider? _connecting;
 
   Future<void> _connect(CalendarProvider provider) async {
-    if (_connecting != null) return;
+    if (!kCalendarConnectionsEnabled || _connecting != null) return;
     if (!await requirePremiumAccess(
       context,
       ref,

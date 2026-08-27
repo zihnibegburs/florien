@@ -4,6 +4,7 @@ import 'package:florien/core/l10n/app_strings.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_card.dart';
+import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/features/todo/calendar_connections_screen.dart';
 import 'package:florien/features/todo/notification_settings_screen.dart';
 import 'package:florien/features/todo/live_activity_settings_screen.dart';
@@ -110,15 +111,16 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _SettingsRow(
-                  icon: Icons.calendar_month_outlined,
-                  label: strings('Bağlı Takvimler'),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const CalendarConnectionsScreen(),
+                if (kCalendarConnectionsEnabled)
+                  _SettingsRow(
+                    icon: Icons.calendar_month_outlined,
+                    label: strings('Bağlı Takvimler'),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const CalendarConnectionsScreen(),
+                      ),
                     ),
                   ),
-                ),
                 _SettingsRow(
                   key: const ValueKey('settings-apple-health'),
                   icon: Icons.health_and_safety_outlined,

@@ -6,6 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:florien/core/storage/settings_storage.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 
+/// Flip to true after Google OAuth verification for Calendar is complete.
+const kCalendarConnectionsEnabled = false;
+
 enum CalendarProvider { apple, google }
 
 class CalendarConnection {
@@ -54,11 +57,13 @@ class CalendarConnectionService {
     ];
   }
 
-  Future<CalendarConnection?> connect(CalendarProvider provider) =>
-      switch (provider) {
-        CalendarProvider.apple => _connectAppleCalendar(),
-        CalendarProvider.google => _connectGoogleCalendar(),
-      };
+  Future<CalendarConnection?> connect(CalendarProvider provider) {
+    if (!kCalendarConnectionsEnabled) return Future<CalendarConnection?>.value();
+    return switch (provider) {
+      CalendarProvider.apple => _connectAppleCalendar(),
+      CalendarProvider.google => _connectGoogleCalendar(),
+    };
+  }
 
   Future<void> disconnect(CalendarProvider provider) =>
       _settingsStorage.clearCalendarConnection(provider.name);

@@ -1,4 +1,5 @@
 import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:flutter/material.dart';
 
 enum PremiumFeature {
@@ -30,7 +31,11 @@ extension PremiumFeatureCopy on PremiumFeature {
   };
 }
 
-const premiumFeatures = PremiumFeature.values;
+final premiumFeatures = [
+  for (final feature in PremiumFeature.values)
+    if (feature != PremiumFeature.calendarImport || kCalendarConnectionsEnabled)
+      feature,
+];
 
 class PlanComparisonFeature {
   const PlanComparisonFeature({

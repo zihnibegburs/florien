@@ -18,7 +18,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('settings opens Apple and Google calendar connections', (
+  testWidgets('settings hides calendar connections while the feature is off', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -39,17 +39,7 @@ void main() {
     expect(find.text('Apple Sağlık'), findsOneWidget);
     expect(find.byKey(const ValueKey('settings-rate-us')), findsOneWidget);
     expect(find.text('Bizi değerlendirin'), findsOneWidget);
-
-    await tester.tap(find.text('Bağlı Takvimler'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(CalendarConnectionsScreen), findsOneWidget);
-    expect(find.text('Apple Takvimini Bağla'), findsOneWidget);
-    expect(find.text('Google Takvimini Bağla'), findsOneWidget);
-
-    await tester.tap(find.text('Apple Takvimini Bağla'));
-    await tester.pumpAndSettle();
-    expect(find.text('Florien özellikleri'), findsOneWidget);
-    expect(find.text('Takvim aktarma'), findsOneWidget);
+    expect(find.text('Bağlı Takvimler'), findsNothing);
+    expect(find.byType(CalendarConnectionsScreen), findsNothing);
   });
 }

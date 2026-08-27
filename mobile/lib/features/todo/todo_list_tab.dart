@@ -288,7 +288,7 @@ class _TodoListTabState extends ConsumerState<TodoListTab> {
     await showFlorienSoftDialog<void>(
       context: context,
       maxWidth: 340,
-      builder: (_) => _TodoOptionsDialog(
+      builder: (_) => TaskDurationVisibilityDialog(
         showDuration: _showDuration,
         onChanged: (value) => setState(() => _showDuration = value),
       ),
@@ -840,8 +840,9 @@ class _EditListsScreenState extends State<_EditListsScreen> {
   );
 }
 
-class _TodoOptionsDialog extends StatefulWidget {
-  const _TodoOptionsDialog({
+class TaskDurationVisibilityDialog extends StatefulWidget {
+  const TaskDurationVisibilityDialog({
+    super.key,
     required this.showDuration,
     required this.onChanged,
   });
@@ -849,10 +850,12 @@ class _TodoOptionsDialog extends StatefulWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  State<_TodoOptionsDialog> createState() => _TodoOptionsDialogState();
+  State<TaskDurationVisibilityDialog> createState() =>
+      _TaskDurationVisibilityDialogState();
 }
 
-class _TodoOptionsDialogState extends State<_TodoOptionsDialog> {
+class _TaskDurationVisibilityDialogState
+    extends State<TaskDurationVisibilityDialog> {
   late bool _showDuration = widget.showDuration;
   @override
   Widget build(BuildContext context) => AlertDialog(

@@ -626,6 +626,80 @@ void main() {
     expect(find.byKey(const ValueKey('daily-list-view')), findsOneWidget);
   });
 
+  testWidgets('daily duration visibility hides card times like todo', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final today = DateTime.now();
+    final timedStart = DateTime(today.year, today.month, today.day, 10);
+    final timedEnd = timedStart.add(const Duration(minutes: 30));
+    String clockLabel(DateTime value) =>
+        '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
+    final tasks = [
+      TaskModel(
+        id: 'timed-task',
+        title: 'Saatli görüşme',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 30,
+        scheduledAt: timedStart,
+        status: TaskStatus.pending,
+        sortOrder: 0,
+        isInbox: false,
+        isTimed: true,
+        dayPeriod: DayPeriod.morning,
+      ),
+      TaskModel(
+        id: 'anytime-task',
+        title: 'Saati olmayan görev',
+        color: '#6C5CE7',
+        icon: 'task',
+        durationMinutes: 15,
+        scheduledAt: DateTime(today.year, today.month, today.day, 8),
+        status: TaskStatus.pending,
+        sortOrder: 1,
+        isInbox: false,
+        dayPeriod: DayPeriod.anytime,
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dailyTimelineProvider.overrideWith(
+            (ref, date) async => TimelineModel(date: date, tasks: tasks),
+          ),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const Scaffold(body: DailyPlannerTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('${clockLabel(timedStart)} → ${clockLabel(timedEnd)}'),
+      findsOneWidget,
+    );
+    expect(find.text('15 dk'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('daily-duration-settings')));
+    await tester.pumpAndSettle();
+    expect(find.text('Görev süresi'), findsOneWidget);
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('${clockLabel(timedStart)} → ${clockLabel(timedEnd)}'),
+      findsNothing,
+    );
+    expect(find.text('15 dk'), findsNothing);
+    expect(find.text('Saatli görüşme'), findsOneWidget);
+    expect(find.text('Saati olmayan görev'), findsOneWidget);
+  });
+
   testWidgets(
     'overlapping scheduled cards stay ordered with one progress ring',
     (tester) async {

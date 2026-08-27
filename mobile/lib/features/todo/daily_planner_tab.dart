@@ -219,6 +219,7 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
   final Map<String, List<TaskModel>> _timelineTasksByDate = {};
   final Set<DayPeriod> _collapsed = {};
   DailyPlannerGrouping _grouping = DailyPlannerGrouping.list;
+  bool _showDuration = true;
   late final ProviderSubscription<DateTime?> _dateRequestSubscription;
   late final ProviderSubscription<int> _reviewLaunchSubscription;
   int _lastReviewLaunchSignal = 0;
@@ -304,6 +305,8 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
               onMoveTask: _moveTaskToGroup,
               grouping: _grouping,
               onGroupingChanged: _setGrouping,
+              showDuration: _showDuration,
+              onShowDurationSettings: _showDurationSettings,
               onRescheduleTasks: tasks.any((task) => !task.isCompleted)
                   ? () => _showRescheduleReview(tasks)
                   : null,
@@ -365,6 +368,17 @@ class _DailyPlannerTabState extends ConsumerState<DailyPlannerTab> {
 
   void _setGrouping(DailyPlannerGrouping value) {
     setState(() => _grouping = value);
+  }
+
+  Future<void> _showDurationSettings() async {
+    await showFlorienSoftDialog<void>(
+      context: context,
+      maxWidth: 340,
+      builder: (_) => TaskDurationVisibilityDialog(
+        showDuration: _showDuration,
+        onChanged: (value) => setState(() => _showDuration = value),
+      ),
+    );
   }
 
   Future<void> _showDailyShare(List<TaskModel> tasks) =>
@@ -520,6 +534,8 @@ class _DailyBody extends StatelessWidget {
     required this.onMoveTask,
     required this.grouping,
     required this.onGroupingChanged,
+    required this.showDuration,
+    required this.onShowDurationSettings,
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
     required this.onShare,
@@ -537,6 +553,8 @@ class _DailyBody extends StatelessWidget {
   final Future<void> Function(TaskModel task, DayPeriod? period) onMoveTask;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final bool showDuration;
+  final VoidCallback onShowDurationSettings;
   final VoidCallback? onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
@@ -560,6 +578,8 @@ class _DailyBody extends StatelessWidget {
               onOpenDatePicker: onOpenDatePicker,
               grouping: grouping,
               onGroupingChanged: onGroupingChanged,
+              showDuration: showDuration,
+              onShowDurationSettings: onShowDurationSettings,
               onRescheduleTasks: onRescheduleTasks,
               onDiscoverRoutines: onDiscoverRoutines,
               onShare: onShare,
@@ -585,6 +605,7 @@ class _DailyBody extends StatelessWidget {
                   onToggleSection: onToggleSection,
                   onAdd: onAdd,
                   onMoveTask: onMoveTask,
+                  showDuration: showDuration,
                 )
               else
                 _DailyTimelineSections(
@@ -592,12 +613,14 @@ class _DailyBody extends StatelessWidget {
                   tasks: activeTasks,
                   selectedDate: selectedDate,
                   onAdd: () => onAdd(DayPeriod.anytime),
+                  showDuration: showDuration,
                 ),
               if (completedTasks.isNotEmpty)
                 _DailyCompletedSection(
                   tasks: completedTasks,
                   selectedDate: selectedDate,
                   onTaskDropped: (task) => onMoveTask(task, null),
+                  showDuration: showDuration,
                 ),
             ],
           ),
@@ -614,6 +637,8 @@ class _DailyHeader extends StatelessWidget {
     required this.onOpenDatePicker,
     required this.grouping,
     required this.onGroupingChanged,
+    required this.showDuration,
+    required this.onShowDurationSettings,
     required this.onRescheduleTasks,
     required this.onDiscoverRoutines,
     required this.onShare,
@@ -626,6 +651,8 @@ class _DailyHeader extends StatelessWidget {
   final VoidCallback onOpenDatePicker;
   final DailyPlannerGrouping grouping;
   final ValueChanged<DailyPlannerGrouping> onGroupingChanged;
+  final bool showDuration;
+  final VoidCallback onShowDurationSettings;
   final VoidCallback? onRescheduleTasks;
   final Future<void> Function() onDiscoverRoutines;
   final VoidCallback onShare;
@@ -675,6 +702,15 @@ class _DailyHeader extends StatelessWidget {
               tooltip: context.l10n('Günü paylaş'),
               icon: Icons.ios_share_rounded,
               onTap: onShare,
+            ),
+            const SizedBox(width: 6),
+            _SquareButton(
+              key: const ValueKey('daily-duration-settings'),
+              tooltip: context.l10n('Görünüm ayarları'),
+              icon: showDuration
+                  ? Icons.timer_outlined
+                  : Icons.timer_off_outlined,
+              onTap: onShowDurationSettings,
             ),
             const SizedBox(width: 6),
             _DailyViewToggle(grouping: grouping, onChanged: onGroupingChanged),
@@ -1063,6 +1099,7 @@ class _DailyListSections extends ConsumerStatefulWidget {
     required this.onToggleSection,
     required this.onAdd,
     required this.onMoveTask,
+    required this.showDuration,
   });
 
   final List<TaskModel> tasks;
@@ -1071,6 +1108,7 @@ class _DailyListSections extends ConsumerStatefulWidget {
   final ValueChanged<DayPeriod> onToggleSection;
   final ValueChanged<DayPeriod> onAdd;
   final Future<void> Function(TaskModel task, DayPeriod? period) onMoveTask;
+  final bool showDuration;
 
   @override
   ConsumerState<_DailyListSections> createState() => _DailyListSectionsState();
@@ -1136,6 +1174,7 @@ class _DailyListSectionsState extends ConsumerState<_DailyListSections> {
             progressTaskId: progressTask?.id,
             progress: progress,
             remaining: remaining,
+            showDuration: widget.showDuration,
           ),
           const SizedBox(height: 16),
         ],
@@ -1150,11 +1189,13 @@ class _DailyTimelineSections extends ConsumerStatefulWidget {
     required this.tasks,
     required this.selectedDate,
     required this.onAdd,
+    required this.showDuration,
   });
 
   final List<TaskModel> tasks;
   final DateTime selectedDate;
   final VoidCallback onAdd;
+  final bool showDuration;
 
   @override
   ConsumerState<_DailyTimelineSections> createState() =>
@@ -1223,6 +1264,7 @@ class _DailyTimelineSectionsState
                         key: ValueKey('timeline-anytime-${task.id}'),
                         task: task,
                         selectedDate: widget.selectedDate,
+                        showDuration: widget.showDuration,
                       ),
                   ],
                 ),
@@ -1255,6 +1297,7 @@ class _DailyTimelineSectionsState
                                   ? focus!.progress
                                   : scheduledTaskProgressAt(task, _now)
                             : null,
+                        showDuration: widget.showDuration,
                       ),
                     _TimelinePlanGap(tasks: scheduled),
                     const SizedBox(height: 10),
@@ -1391,12 +1434,14 @@ class _TimelineTaskRow extends StatelessWidget {
     required this.selectedDate,
     required this.now,
     required this.progress,
+    required this.showDuration,
   });
 
   final TaskModel task;
   final DateTime selectedDate;
   final DateTime now;
   final double? progress;
+  final bool showDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -1423,6 +1468,7 @@ class _TimelineTaskRow extends StatelessWidget {
             timelineStyle: true,
             scheduledProgress: progress,
             scheduledRemaining: progress == null ? null : end.difference(now),
+            showDuration: showDuration,
           ),
           Text(
             _clockLabel(end),
@@ -1523,6 +1569,7 @@ class _DailySection extends StatelessWidget {
     required this.progressTaskId,
     required this.progress,
     required this.remaining,
+    required this.showDuration,
   });
 
   final DayPeriod period;
@@ -1535,6 +1582,7 @@ class _DailySection extends StatelessWidget {
   final String? progressTaskId;
   final double? progress;
   final Duration? remaining;
+  final bool showDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -1623,6 +1671,7 @@ class _DailySection extends StatelessWidget {
                     task: task,
                     selectedDate: selectedDate,
                     showTimeRange: true,
+                    showDuration: showDuration,
                     scheduledProgress: progressTaskId == task.id
                         ? progress
                         : null,
@@ -1686,11 +1735,13 @@ class _DailyCompletedSection extends StatelessWidget {
     required this.tasks,
     required this.selectedDate,
     required this.onTaskDropped,
+    required this.showDuration,
   });
 
   final List<TaskModel> tasks;
   final DateTime selectedDate;
   final Future<void> Function(TaskModel task) onTaskDropped;
+  final bool showDuration;
 
   @override
   Widget build(BuildContext context) => DragTarget<TaskModel>(
@@ -1749,6 +1800,7 @@ class _DailyCompletedSection extends StatelessWidget {
               key: ValueKey('completed-${task.id}'),
               task: task,
               selectedDate: selectedDate,
+              showDuration: showDuration,
             ),
         ],
       ),
@@ -1762,6 +1814,7 @@ class _DailyDraggableTask extends StatelessWidget {
     required this.task,
     required this.selectedDate,
     this.showTimeRange = false,
+    this.showDuration = true,
     this.timelineStyle = false,
     this.scheduledProgress,
     this.scheduledRemaining,
@@ -1770,6 +1823,7 @@ class _DailyDraggableTask extends StatelessWidget {
   final TaskModel task;
   final DateTime selectedDate;
   final bool showTimeRange;
+  final bool showDuration;
   final bool timelineStyle;
   final double? scheduledProgress;
   final Duration? scheduledRemaining;
@@ -1780,6 +1834,7 @@ class _DailyDraggableTask extends StatelessWidget {
       task: task,
       selectedDate: selectedDate,
       showTimeRange: showTimeRange,
+      showDuration: showDuration,
       timelineStyle: timelineStyle,
       scheduledProgress: scheduledProgress,
       scheduledRemaining: scheduledRemaining,
@@ -1796,7 +1851,7 @@ class _DailyDraggableTask extends StatelessWidget {
             child: Opacity(
               key: ValueKey('daily-drag-feedback-${task.id}'),
               opacity: .72,
-              child: _DailyDragPreview(task: task),
+              child: _DailyDragPreview(task: task, showDuration: showDuration),
             ),
           ),
         ),
@@ -1815,9 +1870,10 @@ class _DailyDraggableTask extends StatelessWidget {
 }
 
 class _DailyDragPreview extends StatelessWidget {
-  const _DailyDragPreview({required this.task});
+  const _DailyDragPreview({required this.task, required this.showDuration});
 
   final TaskModel task;
+  final bool showDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -1854,13 +1910,14 @@ class _DailyDragPreview extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  _durationLabel(task.durationMinutes),
-                  style: TextStyle(
-                    color: context.palette.textSecondary,
-                    fontSize: 11,
+                if (showDuration)
+                  Text(
+                    _durationLabel(task.durationMinutes),
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
+                      fontSize: 11,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1876,6 +1933,7 @@ class _DailyTaskCard extends ConsumerWidget {
     required this.task,
     required this.selectedDate,
     this.showTimeRange = false,
+    this.showDuration = true,
     this.timelineStyle = false,
     this.scheduledProgress,
     this.scheduledRemaining,
@@ -1884,6 +1942,7 @@ class _DailyTaskCard extends ConsumerWidget {
   final TaskModel task;
   final DateTime selectedDate;
   final bool showTimeRange;
+  final bool showDuration;
   final bool timelineStyle;
   final double? scheduledProgress;
   final Duration? scheduledRemaining;
@@ -1944,6 +2003,16 @@ class _DailyTaskCard extends ConsumerWidget {
             : context.palette.textSecondary,
       ),
     );
+    final remainingLabel =
+        scheduledRemaining != null && (timelineStyle || progress != null)
+        ? _remainingTimelineLabel(scheduledRemaining!)
+        : null;
+    final durationLabel = !showDuration
+        ? null
+        : showTimeRange && task.isTimed && task.scheduledAt != null
+        ? '${_clockLabel(task.scheduledAt!)} → ${_clockLabel(task.scheduledAt!.add(Duration(minutes: task.durationMinutes)))}'
+        : _durationLabel(task.durationMinutes);
+    final statusLabel = remainingLabel ?? durationLabel;
     final header = timelineStyle
         ? InkWell(
             onTap: () => _showTaskActions(context, ref),
@@ -1975,17 +2044,17 @@ class _DailyTaskCard extends ConsumerWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          scheduledRemaining == null
-                              ? _durationLabel(task.durationMinutes)
-                              : _remainingTimelineLabel(scheduledRemaining!),
-                          key: ValueKey('timeline-task-status-${task.id}'),
-                          style: TextStyle(
-                            color: context.palette.textSecondary,
-                            fontSize: 11,
+                        if (statusLabel != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            statusLabel,
+                            key: ValueKey('timeline-task-status-${task.id}'),
+                            style: TextStyle(
+                              color: context.palette.textSecondary,
+                              fontSize: 11,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -2003,7 +2072,7 @@ class _DailyTaskCard extends ConsumerWidget {
         : ListTile(
             dense: true,
             visualDensity: const VisualDensity(vertical: -4),
-            minTileHeight: 42,
+            minTileHeight: statusLabel == null ? 38 : 42,
             minVerticalPadding: 0,
             contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
             leading: _DailyTaskIcon(
@@ -2024,21 +2093,19 @@ class _DailyTaskCard extends ConsumerWidget {
                     : TextDecoration.none,
               ),
             ),
-            subtitle: Text(
-              progress != null && scheduledRemaining != null
-                  ? _remainingTimelineLabel(scheduledRemaining!)
-                  : showTimeRange && task.isTimed && task.scheduledAt != null
-                  ? '${_clockLabel(task.scheduledAt!)} → ${_clockLabel(task.scheduledAt!.add(Duration(minutes: task.durationMinutes)))}'
-                  : _durationLabel(task.durationMinutes),
-              key: ValueKey('daily-task-status-${task.id}'),
-              style: TextStyle(
-                color: context.palette.textSecondary,
-                fontSize: 11,
-                decoration: task.isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-              ),
-            ),
+            subtitle: statusLabel == null
+                ? null
+                : Text(
+                    statusLabel,
+                    key: ValueKey('daily-task-status-${task.id}'),
+                    style: TextStyle(
+                      color: context.palette.textSecondary,
+                      fontSize: 11,
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
+                  ),
             trailing: completionButton,
             onTap: () => _showTaskActions(context, ref),
           );
