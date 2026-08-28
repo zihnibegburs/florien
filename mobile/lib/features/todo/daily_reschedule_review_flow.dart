@@ -149,8 +149,9 @@ class _DailyRescheduleReviewFlowState extends State<DailyRescheduleReviewFlow> {
                   onMoreDates: _showMoreDates,
                   onFinish: _showFinished,
                 ),
-                _ReviewPhase.finished => const _FinishedReview(
+                _ReviewPhase.finished => _FinishedReview(
                   key: ValueKey('daily-review-finished'),
+                  remainingCount: _remaining.length,
                 ),
               },
             ),
@@ -394,7 +395,9 @@ class _ReviewTaskCard extends StatelessWidget {
 }
 
 class _FinishedReview extends StatelessWidget {
-  const _FinishedReview({super.key});
+  const _FinishedReview({super.key, required this.remainingCount});
+
+  final int remainingCount;
 
   @override
   Widget build(BuildContext context) {
@@ -440,9 +443,14 @@ class _FinishedReview extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  context.l10n(
-                    'Bugünün planı tamamlandı.\nDinlenme ve şarj olma zamanı.',
-                  ),
+                  remainingCount == 0
+                      ? context.l10n(
+                          'Bugünün planı tamamlandı.\nDinlenme ve şarj olma zamanı.',
+                        )
+                      : context.l10n(
+                          'Bugün {count} görev hâlâ açık.\nİstersen yarın devam edebilirsin.',
+                          {'count': '$remainingCount'},
+                        ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: context.palette.textSecondary,

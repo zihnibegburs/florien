@@ -629,6 +629,16 @@ class FlorienTheme {
       datePickerTheme: DatePickerThemeData(
         backgroundColor: palette.background,
         surfaceTintColor: Colors.transparent,
+        // Keep today discoverable when another day is selected, without
+        // competing with the warmer selected-day treatment.
+        todayBackgroundColor: WidgetStatePropertyAll(
+          palette.accent.withValues(alpha: isDark ? 0.18 : 0.14),
+        ),
+        todayForegroundColor: WidgetStatePropertyAll(palette.textPrimary),
+        todayBorder: BorderSide(
+          color: palette.accent.withValues(alpha: isDark ? 0.62 : 0.5),
+          width: FlorienBorders.thin,
+        ),
         shape: RoundedRectangleBorder(
           side: BorderSide(color: palette.border, width: FlorienBorders.thin),
           borderRadius: BorderRadius.circular(FlorienRadius.lg),

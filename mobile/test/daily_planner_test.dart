@@ -1794,6 +1794,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('daily-review-finish')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('daily-review-finished')), findsOneWidget);
+    expect(
+      find.text('Bugün 1 görev hâlâ açık.\nİstersen yarın devam edebilirsin.'),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('daily-review-close')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('daily-review-close')));
     await tester.pumpAndSettle();

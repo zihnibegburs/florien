@@ -59,7 +59,9 @@ class TaskIconClassifier {
 
     if (normalizedText.runes.length < 3) return fallback();
 
-    final cacheKey = normalizedText;
+    // Canonicalize casing, punctuation and spacing so the same title has a
+    // single cached result.
+    final cacheKey = TaskIconLexicon.normalize(normalizedText);
     final cached = _cache.remove(cacheKey);
     if (cached != null) {
       _cache[cacheKey] = cached;

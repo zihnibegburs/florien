@@ -126,6 +126,16 @@ void main() {
     expect(embeddings.calls, 2);
   });
 
+  test('uses one cached result for equivalent normalized titles', () async {
+    final embeddings = _FakeEmbeddingService();
+    final classifier = _classifier(embeddings);
+
+    await classifier.classify('Alpha unique prototype title');
+    await classifier.classify('  alpha, unique prototype title  ');
+
+    expect(embeddings.calls, 1);
+  });
+
   test('short titles take the best guess without a margin', () async {
     final classifier = _classifier(
       _FakeEmbeddingService(),
@@ -150,6 +160,17 @@ void main() {
     final result = await classifier.classify(
       'alpha unique prototype title after quarterly briefing session',
     );
+
+    expect(result.category, TaskCategory.other);
+  });
+
+  test('rejects low-confidence guesses for short titles', () async {
+    final classifier = TaskIconClassifier(
+      embeddingService: _FakeEmbeddingService(),
+      similarityIndex: _LowConfidenceIndex(),
+    );
+
+    final result = await classifier.classify('unclear');
 
     expect(result.category, TaskCategory.other);
   });

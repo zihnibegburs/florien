@@ -1961,13 +1961,10 @@ class _DailyTaskCard extends ConsumerWidget {
       tooltip: task.isCompleted
           ? context.l10n('Tamamlanmadı')
           : context.l10n('Tamamla'),
-      iconSize: timelineStyle ? 22 : 20,
+      iconSize: 24,
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
-      constraints: BoxConstraints.tightFor(
-        width: timelineStyle ? 30 : 26,
-        height: timelineStyle ? 30 : 26,
-      ),
+      constraints: BoxConstraints.tightFor(width: 32, height: 32),
       onPressed: () async {
         try {
           if (task.isCompleted) {
@@ -2180,7 +2177,7 @@ class _DailyTaskCard extends ConsumerWidget {
             ),
             if (!task.hasSubtasks)
               _DailyTaskActionTile(
-                icon: Icons.auto_awesome_rounded,
+                icon: Icons.account_tree_rounded,
                 label: context.l10n('Ayrım öner'),
                 onTap: () => Navigator.pop(
                   context,
@@ -4431,57 +4428,68 @@ class _DayButton extends StatelessWidget {
   final ValueChanged<DateTime> onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 2),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTap(date),
-        borderRadius: BorderRadius.circular(FlorienRadius.md),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? context.palette.primaryMuted : Colors.transparent,
-            borderRadius: BorderRadius.circular(FlorienRadius.md),
-            border: selected
-                ? Border.all(
-                    color: context.palette.border.withValues(alpha: 0.18),
-                    width: FlorienBorders.thin,
-                  )
-                : null,
-          ),
-          child: Column(
-            children: [
-              Text(
-                _weekdayShort(date),
-                style: TextStyle(
-                  color: selected
-                      ? FlorienColors.onPrimary
-                      : today
-                      ? FlorienColors.onPrimary.withValues(alpha: 0.7)
-                      : context.palette.textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(date),
+          borderRadius: BorderRadius.circular(FlorienRadius.md),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: selected
+                  ? context.palette.primaryMuted
+                  : today
+                  ? context.palette.accent.withValues(
+                      alpha: isDark ? 0.18 : 0.14,
+                    )
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(FlorienRadius.md),
+              border: selected || today
+                  ? Border.all(
+                      color: selected
+                          ? context.palette.border.withValues(alpha: 0.18)
+                          : context.palette.accent.withValues(alpha: 0.5),
+                      width: FlorienBorders.thin,
+                    )
+                  : null,
+            ),
+            child: Column(
+              children: [
+                Text(
+                  _weekdayShort(date),
+                  style: TextStyle(
+                    color: selected
+                        ? FlorienColors.onPrimary
+                        : today
+                        ? context.palette.textPrimary.withValues(alpha: 0.82)
+                        : context.palette.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${date.day}',
-                style: TextStyle(
-                  color: selected
-                      ? FlorienColors.onPrimary
-                      : context.palette.textPrimary,
-                  fontSize: 20,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                const SizedBox(height: 4),
+                Text(
+                  '${date.day}',
+                  style: TextStyle(
+                    color: selected
+                        ? FlorienColors.onPrimary
+                        : context.palette.textPrimary,
+                    fontSize: 20,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _QuickChip extends StatelessWidget {

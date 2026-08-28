@@ -785,31 +785,45 @@ class _EditListsScreenState extends State<_EditListsScreen> {
     body: ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: _lists.length + 1,
+      buildDefaultDragHandles: false,
       onReorder: (oldIndex, newIndex) async {
-        if (oldIndex >= _lists.length) return;
+        // The built-in To-do list is always the first item and cannot move.
+        if (oldIndex == 0) return;
+        if (newIndex == 0) newIndex = 1;
         if (newIndex > oldIndex) newIndex--;
-        if (newIndex >= _lists.length) newIndex = _lists.length - 1;
+        final oldListIndex = oldIndex - 1;
+        var newListIndex = newIndex - 1;
+        if (newListIndex >= _lists.length) newListIndex = _lists.length - 1;
         setState(() {
-          final item = _lists.removeAt(oldIndex);
-          _lists.insert(newIndex, item);
+          final item = _lists.removeAt(oldListIndex);
+          _lists.insert(newListIndex, item);
         });
         await _save();
       },
       itemBuilder: (context, index) {
-        if (index == _lists.length) {
+        if (index == 0) {
           return Card(
             key: ValueKey('default'),
             child: ListTile(
+              minTileHeight: 72,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
               title: Text(
                 context.l10n('To-do'),
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(context.l10n('Varsayılan liste')),
               trailing: Icon(Icons.lock_outline_rounded),
             ),
           );
         }
-        final list = _lists[index];
+        final listIndex = index - 1;
+        final list = _lists[listIndex];
         return Dismissible(
           key: ValueKey(list.id),
           direction: DismissDirection.startToEnd,
@@ -819,18 +833,25 @@ class _EditListsScreenState extends State<_EditListsScreen> {
             padding: const EdgeInsets.only(left: 20),
             child: const Icon(Icons.delete_outline, color: Colors.white),
           ),
-          onDismissed: (_) => _delete(index),
+          onDismissed: (_) => _delete(listIndex),
           child: Card(
             child: ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+              minTileHeight: 72,
+              contentPadding: const EdgeInsets.fromLTRB(18, 10, 14, 10),
               title: Text(
                 list.name,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: list.description.isEmpty
                   ? Text(context.l10n('Tanım yok'))
                   : Text(list.description),
-              trailing: const Icon(Icons.drag_handle_rounded),
+              trailing: ReorderableDragStartListener(
+                index: index,
+                child: const Icon(Icons.drag_handle_rounded),
+              ),
               onTap: () => _edit(list),
             ),
           ),
@@ -1842,7 +1863,7 @@ class _TodoTaskCardState extends ConsumerState<_TodoTaskCard> {
             ),
             if (!task.hasSubtasks)
               _TaskOptionTile(
-                icon: Icons.auto_awesome_rounded,
+                icon: Icons.account_tree_rounded,
                 label: context.l10n('Ayrım öner'),
                 onTap: () =>
                     Navigator.pop(context, _TaskMenuAction.suggestBreakdown),

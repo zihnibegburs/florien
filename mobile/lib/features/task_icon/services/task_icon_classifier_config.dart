@@ -10,7 +10,7 @@ class TaskIconClassifierConfig {
     this.topExamplesPerCategory = 3,
     this.minimumConfidence = .47,
     this.minimumConfidenceMargin = .05,
-    this.shortTextMinimumConfidence = .08,
+    this.shortTextMinimumConfidence = .47,
     this.shortTextCodePointLimit = 48,
     this.switchMargin = .045,
     this.cacheCapacity = 128,
@@ -27,7 +27,8 @@ class TaskIconClassifierConfig {
   final double minimumConfidence;
   final double minimumConfidenceMargin;
 
-  /// Floor for everyday titles. Best-guess is enough; accuracy can be coarse.
+  /// Floor for short titles. Low-confidence guesses are too unstable while
+  /// people type, so those use the neutral icon until the intent is clearer.
   final double shortTextMinimumConfidence;
   final int shortTextCodePointLimit;
   final double switchMargin;

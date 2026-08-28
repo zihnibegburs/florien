@@ -58,7 +58,9 @@ class CalendarConnectionService {
   }
 
   Future<CalendarConnection?> connect(CalendarProvider provider) {
-    if (!kCalendarConnectionsEnabled) return Future<CalendarConnection?>.value();
+    if (!kCalendarConnectionsEnabled) {
+      return Future<CalendarConnection?>.value();
+    }
     return switch (provider) {
       CalendarProvider.apple => _connectAppleCalendar(),
       CalendarProvider.google => _connectGoogleCalendar(),
