@@ -368,6 +368,10 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
   }
 
   void _onFocusTaskProgressChanged(ActiveFocusTask? progress) {
+    // The focus tab publishes its final state while it is being disposed. By
+    // then this parent may already be unmounted, so Riverpod's ref is no
+    // longer safe to use.
+    if (!mounted) return;
     ref.read(activeFocusTaskProvider.notifier).state = progress;
     unawaited(_syncFocusLiveActivity(progress));
   }
