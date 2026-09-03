@@ -129,11 +129,8 @@ void main() {
     );
     expect(find.text('10 dk'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('Evden Hazır Çık'),
-      240,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(find.text('Evden Hazır Çık'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Evden Hazır Çık'));
     await tester.pumpAndSettle();
     expect(

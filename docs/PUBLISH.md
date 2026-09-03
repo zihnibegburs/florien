@@ -44,8 +44,8 @@ Kodda hazır olanlar:
 
 Kodda / süreçte kapanması gerekenler:
 
-- Privacy manifest eklendi (`Runner` + widget); `ITSAppUsesNonExemptEncryption` hâlâ yok
-- `ITSAppUsesNonExemptEncryption` Info.plist’te yok (yüklemede soru çıkar)
+- Privacy manifest eklendi (`Runner` + widget)
+- Encryption flag eklendi (`ITSAppUsesNonExemptEncryption` = false)
 - Fastlane şu an yalnızca TestFlight’a yükler; mağaza sürümünü App Store Connect’ten elle yayınlarsın
 - Android / web `firebase_options` hâlâ placeholder; iOS yayınını etkilemez
 
@@ -356,14 +356,7 @@ Tracking kapalı. App Store Connect’teki App Privacy etiketlerini bu dosyayla 
 
 ### 6.2 Export compliance
 
-`Info.plist` içine ekle (yalnızca HTTPS kullanıyorsan, özel kriptografi yoksa):
-
-```xml
-<key>ITSAppUsesNonExemptEncryption</key>
-<false/>
-```
-
-Böylece her yüklemede “Export Compliance” sorusu kalkar.
+Hazır. `Info.plist` içinde `ITSAppUsesNonExemptEncryption = false`. HTTPS / TLS / Keychain / StoreKit muaf; özel kriptografi yok. Sonraki TestFlight yüklemelerinde Export Compliance sorusu çıkmamalı.
 
 ### 6.3 Widget görünen adı
 
@@ -651,7 +644,7 @@ Operasyon:
 - [ ] Abonelik grup + 2 ürün Ready to Submit
 - [ ] S2S V2 URL kayıtlı
 - [x] Privacy manifest eklendi
-- [ ] Encryption flag eklendi
+- [x] Encryption flag eklendi
 - [ ] 1024 ikon alfa’sız
 
 ### D. Build ve inceleme

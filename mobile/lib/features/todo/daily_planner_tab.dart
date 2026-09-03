@@ -669,17 +669,23 @@ class _DailyHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            _HeaderButton(
-              key: ValueKey(
-                isToday ? 'daily-open-date-picker' : 'daily-return-today',
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: _HeaderButton(
+                  key: ValueKey(
+                    isToday ? 'daily-open-date-picker' : 'daily-return-today',
+                  ),
+                  label: isToday
+                      ? context.l10n('Tarih seç')
+                      : context.l10n('Bugüne dön'),
+                  icon: isToday
+                      ? Icons.calendar_month_outlined
+                      : Icons.today_rounded,
+                  onTap: isToday ? onOpenDatePicker : () => onSelectDate(today),
+                ),
               ),
-              label: isToday
-                  ? context.l10n('Tarih seç')
-                  : context.l10n('Bugüne dön'),
-              icon: isToday
-                  ? Icons.calendar_month_outlined
-                  : Icons.today_rounded,
-              onTap: isToday ? onOpenDatePicker : () => onSelectDate(today),
             ),
             if (showPremiumUpsell && onPremiumUpsellPressed != null) ...[
               const SizedBox(width: 6),

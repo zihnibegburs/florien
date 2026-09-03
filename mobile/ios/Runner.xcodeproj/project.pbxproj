@@ -24,16 +24,16 @@
 		A1FLORIENW0000000000000019 /* focus-default-hourglass.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001A /* focus-default-hourglass.png */; };
 		A1FLORIENW000000000000001B /* florien-live-activity-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001C /* florien-live-activity-icon.png */; };
 		A1FLORIENW000000000000001E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1FLORIENW000000000000001D /* Assets.xcassets */; };
+		A1IPLRES0000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1IPLGRP0000000000000001 /* InfoPlist.strings */; };
 		A1L10N0000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
 		A1L10N0000000000000003 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1L10N0000000000000001 /* Localizable.xcstrings */; };
-		A1IPLRES0000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1IPLGRP0000000000000001 /* InfoPlist.strings */; };
 		A1PRIVACY000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1PRIVACY000000000000001 /* PrivacyInfo.xcprivacy */; };
 		A1PRIVACY000000000000004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1PRIVACY000000000000003 /* PrivacyInfo.xcprivacy */; };
 		A1SIRI0000000000000001 /* FlorienSharedStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000005 /* FlorienSharedStorage.swift */; };
-		A1STOREKIT00000000000001 /* FlorienStoreKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1STOREKIT00000000000002 /* FlorienStoreKit.swift */; };
 		A1SIRI0000000000000002 /* FlorienTaskApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000006 /* FlorienTaskApi.swift */; };
 		A1SIRI0000000000000003 /* AddFlorienTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */; };
 		A1SIRI0000000000000004 /* FlorienShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1SIRI0000000000000008 /* FlorienShortcuts.swift */; };
+		A1STOREKIT00000000000001 /* FlorienStoreKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1STOREKIT00000000000002 /* FlorienStoreKit.swift */; };
 		D84D71E2C470CF85FDD9AB84 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
 
@@ -115,24 +115,24 @@
 		A1FLORIENW000000000000001A /* focus-default-hourglass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "focus-default-hourglass.png"; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001C /* florien-live-activity-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "florien-live-activity-icon.png"; sourceTree = "<group>"; };
 		A1FLORIENW000000000000001D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		A1IPLEN00000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		A1IPLTR00000000000000001 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		A1IPLES00000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLAR00000000000000001 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1IPLDE00000000000000001 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLEN00000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLES00000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1IPLFR00000000000000001 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		A1IPLPT00000000000000001 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1IPLJA00000000000000001 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1IPLKO00000000000000001 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLPT00000000000000001 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1IPLTR00000000000000001 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1IPLZH00000000000000001 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		A1IPLAR00000000000000001 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1L10N0000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A1PRIVACY000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A1PRIVACY000000000000003 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A1SIRI0000000000000005 /* FlorienSharedStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienSharedStorage.swift; sourceTree = "<group>"; };
-		A1STOREKIT00000000000002 /* FlorienStoreKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienStoreKit.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000006 /* FlorienTaskApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienTaskApi.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000007 /* AddFlorienTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFlorienTaskIntent.swift; sourceTree = "<group>"; };
 		A1SIRI0000000000000008 /* FlorienShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienShortcuts.swift; sourceTree = "<group>"; };
+		A1STOREKIT00000000000002 /* FlorienStoreKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlorienStoreKit.swift; sourceTree = "<group>"; };
 		A6E18073599FE3CB9B589CE3 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5ED8E3001EC2F5FF41C096F /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C862F5DFA37465BFD81B7E50 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -458,9 +458,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

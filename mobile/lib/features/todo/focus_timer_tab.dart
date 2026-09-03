@@ -204,9 +204,10 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     final keepRunningInBackground =
         _sessionActive && (_timer?.isActive ?? false);
     _timer?.cancel();
-    if (keepRunningInBackground) {
-      _publishTaskProgress(runningOverride: true);
-    } else {
+    // Progress is already published when the timer starts and on every tick.
+    // Publishing again during dispose can mutate a Riverpod provider while the
+    // owning widget tree is being unmounted.
+    if (!keepRunningInBackground) {
       unawaited(_cancelFocusAlarm());
     }
     unawaited(_focusMusicPlayer.dispose());

@@ -1,2866 +1,2870 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "intent.add_task.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe hinzufügen"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "api.error.invalid_configuration" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعدادات Florien ناقصة. افتح التطبيق مرة."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Task"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien-Konfiguration fehlt. Öffne die App einmal."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir tarea"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien configuration is missing. Open the app once."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter une tâche"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta la configuración de Florien. Abre la app una vez."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görev Ekle"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuration Florien manquante. Ouvrez l'app une fois."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adicionar tarefa"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florienの設定がないよ。アプリを一度開いて。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タスクを追加"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien 설정이 없어요. 앱을 한 번 열어 주세요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "할 일 추가"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta a configuração do Florien. Abre a app uma vez."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加任务"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien yapılandırması eksik. Uygulamayı bir kez aç."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إضافة مهمة"
-          }
-        }
-      }
-    },
-    "intent.add_task.description": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fügt Florien eine neue Aufgabe hinzu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adds a new task to Florien."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añade una nueva tarea a Florien."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajoute une nouvelle tâche à Florien."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien'ya yeni bir görev ekler."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adiciona uma nova tarefa ao Florien."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florienに新しいタスクを追加します。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien에 새 할 일을 추가해요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "向 Florien 添加一项新任务。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يضيف مهمة جديدة إلى Florien."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少 Florien 配置。请先打开一次应用。"
           }
         }
       }
     },
-    "intent.add_task.parameter.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe"
+    "api.error.invalid_response" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "استجابة غير صالحة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Task"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige Antwort"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarea"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid response"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâche"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuesta no válida"
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görev"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réponse invalide"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefa"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無効な応答"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タスク"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "잘못된 응답"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "할 일"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resposta inválida"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任务"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geçersiz yanıt"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مهمة"
-          }
-        }
-      }
-    },
-    "intent.add_task.parameter.prompt": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Was möchtest du hinzufügen?"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What would you like to add?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Qué quieres añadir?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Que voulez-vous ajouter ?"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ne eklemek istiyorsun?"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O que queres adicionar?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "何を追加する？"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "무엇을 추가할까요?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你想添加什么？"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ماذا تريد أن تضيف؟"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效响应"
           }
         }
       }
     },
-    "intent.add_task.error.empty": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sag den Aufgabennamen."
+    "api.error.network" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطأ في الاتصال: %@"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Say the task name."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindungsfehler: %@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Di el nombre de la tarea."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection error: %@"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dites le nom de la tâche."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error de conexión: %@"
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görev adını söyle."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur de connexion : %@"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diz o nome da tarefa."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接続エラー: %@"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タスク名を言って。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "연결 오류: %@"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "할 일 이름을 말해 주세요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro de ligação: %@"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "说出任务名称。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı hatası: %@"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قل اسم المهمة."
-          }
-        }
-      }
-    },
-    "intent.add_task.error.failed": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe konnte nicht hinzugefügt werden."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not add task."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo añadir la tarea."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible d'ajouter la tâche."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görev eklenemedi."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível adicionar a tarefa."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タスクを追加できなかったよ。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "할 일을 추가하지 못했어요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法添加任务。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذر إضافة المهمة."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接错误：%@"
           }
         }
       }
     },
-    "intent.add_task.success": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Okay, \"%@\" wurde hinzugefügt."
+    "api.error.not_authenticated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سجّل الدخول إلى Florien أولًا."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done, added \"%@\"."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte melde dich zuerst bei Florien an."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listo, se añadió \"%@\"."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please log in to Florien first."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C'est fait, « %@ » a été ajouté."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primero inicia sesión en Florien."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tamam, \"%@\" görevini ekledim."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous d'abord à Florien."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronto, adicionei \"%@\"."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先にFlorienにログインして。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "できたよ。「%@」を追加した。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 Florien에 로그인해 주세요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "완료, \"%@\"을(를) 추가했어요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entra primeiro no Florien."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "好了，已添加“%@”。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce Florien'da oturum açman gerekiyor."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تم، أضفت \"%@\"."
-          }
-        }
-      }
-    },
-    "intent.add_task.error.retry": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe konnte nicht hinzugefügt werden. Versuche es später erneut."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not add task. Try again later."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo añadir la tarea. Inténtalo más tarde."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible d'ajouter la tâche. Réessayez plus tard."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görev eklenemedi. Biraz sonra tekrar dene."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível adicionar a tarefa. Tenta mais tarde."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タスクを追加できなかった。あとでまた試して。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "할 일을 추가하지 못했어요. 잠시 후 다시 시도해 주세요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法添加任务。稍后再试。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذر إضافة المهمة. حاول لاحقًا."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先登录 Florien。"
           }
         }
       }
     },
-    "api.error.not_authenticated": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please log in to Florien first."
+    "Florien" : {
+      "comment" : "A heading for a task.",
+      "isCommentAutoGenerated" : true
+    },
+    "intent.add_task.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضيف مهمة جديدة إلى Florien."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Önce Florien'da oturum açman gerekiyor."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fügt Florien eine neue Aufgabe hinzu."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Primero inicia sesión en Florien."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds a new task to Florien."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connectez-vous d'abord à Florien."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una nueva tarea a Florien."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bitte melde dich zuerst bei Florien an."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute une nouvelle tâche à Florien."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entra primeiro no Florien."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florienに新しいタスクを追加します。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先にFlorienにログインして。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien에 새 할 일을 추가해요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "먼저 Florien에 로그인해 주세요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona uma nova tarefa ao Florien."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请先登录 Florien。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien'ya yeni bir görev ekler."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "سجّل الدخول إلى Florien أولًا."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向 Florien 添加一项新任务。"
           }
         }
       }
     },
-    "api.error.invalid_configuration": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien configuration is missing. Open the app once."
+    "intent.add_task.error.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قل اسم المهمة."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien yapılandırması eksik. Uygulamayı bir kez aç."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag den Aufgabennamen."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falta la configuración de Florien. Abre la app una vez."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say the task name."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configuration Florien manquante. Ouvrez l'app une fois."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di el nombre de la tarea."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien-Konfiguration fehlt. Öffne die App einmal."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites le nom de la tâche."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falta a configuração do Florien. Abre a app uma vez."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク名を言って。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florienの設定がないよ。アプリを一度開いて。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할 일 이름을 말해 주세요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien 설정이 없어요. 앱을 한 번 열어 주세요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diz o nome da tarefa."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缺少 Florien 配置。请先打开一次应用。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev adını söyle."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إعدادات Florien ناقصة. افتح التطبيق مرة."
-          }
-        }
-      }
-    },
-    "api.error.network": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connection error: %@"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bağlantı hatası: %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Error de conexión: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erreur de connexion : %@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verbindungsfehler: %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erro de ligação: %@"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "接続エラー: %@"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "연결 오류: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连接错误：%@"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "خطأ في الاتصال: %@"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说出任务名称。"
           }
         }
       }
     },
-    "api.error.invalid_response": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invalid response"
+    "intent.add_task.error.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذر إضافة المهمة."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geçersiz yanıt"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe konnte nicht hinzugefügt werden."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Respuesta no válida"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not add task."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réponse invalide"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo añadir la tarea."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ungültige Antwort"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'ajouter la tâche."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resposta inválida"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを追加できなかったよ。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無効な応答"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할 일을 추가하지 못했어요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "잘못된 응답"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível adicionar a tarefa."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无效响应"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev eklenemedi."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "استجابة غير صالحة"
-          }
-        }
-      }
-    },
-    "widget.desc.daily": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bugün tamamlanmamış görevlerini gör."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "See today’s open tasks."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mira las tareas abiertas de hoy."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sieh dir die offenen Aufgaben von heute an."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vois tes tâches ouvertes du jour."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vê as tarefas em aberto de hoje."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日の未完了タスクを見る。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "오늘 끝나지 않은 할 일을 봐요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查看今天尚未完成的任务。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اعرض مهام اليوم غير المكتملة."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法添加任务。"
           }
         }
       }
     },
-    "widget.desc.todo": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tamamlanmamış To-do görevlerini gör ve ekle."
+    "intent.add_task.error.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذر إضافة المهمة. حاول لاحقًا."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "See and add open To-do tasks."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe konnte nicht hinzugefügt werden. Versuche es später erneut."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mira y añade To-dos pendientes."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not add task. Try again later."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sieh offene To-dos und füge welche hinzu."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo añadir la tarea. Inténtalo más tarde."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vois et ajoute tes To-dos ouverts."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'ajouter la tâche. Réessayez plus tard."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vê e adiciona To-dos em aberto."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを追加できなかった。あとでまた試して。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未完了のTo-doを見て追加する。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할 일을 추가하지 못했어요. 잠시 후 다시 시도해 주세요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "끝나지 않은 To-do를 보고 추가해요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível adicionar a tarefa. Tenta mais tarde."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "查看并添加未完成的待办。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev eklenemedi. Biraz sonra tekrar dene."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اعرض To-do غير المكتمل وأضف مهامًا."
-          }
-        }
-      }
-    },
-    "widget.desc.focus15": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tek dokunuşla 15 dakikalık odak turu başlat."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start a 15-minute focus round with one tap."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empieza 15 minutos de foco con un toque."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Starte mit einem Tipp 15 Minuten Fokus."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lance 15 minutes de focus d’un tap."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Começa 15 minutos de foco com um toque."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タップひとつで15分のフォーカスを始める。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "한 번에 15분 집중을 시작해요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点一下即可开始 15 分钟专注。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ابدأ جولة تركيز لـ ١٥ دقيقة بلمسة واحدة."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法添加任务。稍后再试。"
           }
         }
       }
     },
-    "widget.desc.presets": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5, 10, 15 veya 30 dakikalık odak turu başlat."
+    "intent.add_task.parameter.prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ماذا تريد أن تضيف؟"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start a 5, 10, 15, or 30 minute focus round."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was möchtest du hinzufügen?"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empieza un foco de 5, 10, 15 o 30 minutos."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What would you like to add?"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Starte 5, 10, 15 oder 30 Minuten Fokus."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué quieres añadir?"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lance 5, 10, 15 ou 30 minutes de focus."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que voulez-vous ajouter ?"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Começa 5, 10, 15 ou 30 minutos de foco."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "何を追加する？"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5・10・15・30分のフォーカスを始める。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "무엇을 추가할까요?"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5, 10, 15, 30분 집중을 시작해요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que queres adicionar?"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始 5、10、15 或 30 分钟专注。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne eklemek istiyorsun?"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ابدأ تركيزًا لمدة ٥ أو ١٠ أو ١٥ أو ٣٠ دقيقة."
-          }
-        }
-      }
-    },
-    "widget.desc.quick_add": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aklına geleni hızlıca To-do listene ekle."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quickly add what’s on your mind to your To-do list."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añade rápido lo que se te ocurra a tu To-do."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Füge schnell hinzu, was dir einfällt."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajoute vite ce qui te passe par la tête à tes To-dos."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adiciona depressa o que te ocorreu à lista To-do."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "思いついたことをすぐTo-doに足す。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "떠오른 걸 바로 To-do에 넣어요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "把刚想到的事快速加入待办。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أضف ما يخطر ببالك بسرعة إلى قائمة To-do."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想添加什么？"
           }
         }
       }
     },
-    "widget.desc.quick_actions": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI, planlama, To-do ve odaklana tek dokunuşla ulaş."
+    "intent.add_task.parameter.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مهمة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reach AI, planning, To-do, and focus in one tap."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Llega a la IA, el plan, To-do y el foco de un toque."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erreiche KI, Plan, To-do und Fokus mit einem Tipp."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Accède à l’IA, au plan, aux To-dos et au focus d’un tap."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâche"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chega à IA, ao plano, ao To-do e ao foco num toque."
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスク"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI・計画・To-do・フォーカスにすぐ届く。"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할 일"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI, 계획, To-do, 집중에 한 번에 닿아요."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefa"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一键打开 AI、计划、待办和专注。"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "صل إلى الذكاء والخطة وTo-do والتركيز بلمسة."
-          }
-        }
-      }
-    },
-    "widget.chrome_name_daily": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Günlük Plan"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Daily Plan"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan diario"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tagesplan"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan du jour"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plano do dia"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日の計画"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "하루 계획"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日计划"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الخطة اليومية"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任务"
           }
         }
       }
     },
-    "widget.chrome_name_todo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+    "intent.add_task.success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم، أضفت \"%@\"."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okay, \"%@\" wurde hinzugefügt."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done, added \"%@\"."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo, se añadió \"%@\"."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est fait, « %@ » a été ajouté."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "できたよ。「%@」を追加した。"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료, \"%@\"을(를) 추가했어요."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pronto, adicionei \"%@\"."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamam, \"%@\" görevini ekledim."
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
-          }
-        }
-      }
-    },
-    "widget.chrome_name_focus15": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 dk Odaklan"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min Focus"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min Foco"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 Min. Fokus"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min Focus"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min Foco"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15分フォーカス"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15분 집중"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 分钟专注"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تركيز ١٥ د"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好了，已添加“%@”。"
           }
         }
       }
     },
-    "widget.chrome_name_presets": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odak Süresi"
+    "intent.add_task.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إضافة مهمة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Focus duration"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe hinzufügen"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duración de foco"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Task"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fokusdauer"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir tarea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Durée de focus"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une tâche"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duração do foco"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タスクを追加"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フォーカス時間"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "할 일 추가"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "집중 시간"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tarefa"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "专注时长"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev Ekle"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مدة التركيز"
-          }
-        }
-      }
-    },
-    "widget.chrome_name_quick_add": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hızlı To-do"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quick to-do"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do rápido"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schnelles To-do"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do rapide"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do rápido"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "クイックTo-do"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "빠른 To-do"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "快速待办"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do سريع"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加任务"
           }
         }
       }
     },
-    "widget.chrome_name_quick_actions": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien Hızlı Eylemler"
+    "widget.chrome_ai_prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ما الخطة؟"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien Quick Actions"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was ist der Plan?"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Acciones rápidas de Florien"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What’s the plan?"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien-Schnellaktionen"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuál es el plan?"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actions rapides Florien"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est quoi le plan ?"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ações rápidas do Florien"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "計画は？"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florienクイック操作"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획이 뭐예요?"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien 빠른 동작"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qual é o plano?"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien 快捷操作"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planın nedir?"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إجراءات Florien السريعة"
-          }
-        }
-      }
-    },
-    "widget.chrome_daily_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Günlük plan"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Daily plan"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan diario"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tagesplan"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plan du jour"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plano do dia"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日の計画"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "하루 계획"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每日计划"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الخطة اليومية"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "计划是什么？"
           }
         }
       }
     },
-    "widget.chrome_todo_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+    "widget.chrome_daily_empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطة اليوم فارغة"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Plan für heute ist leer"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today’s plan is empty"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan de hoy está vacío"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton plan du jour est vide"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の計画は空だよ"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오늘 계획이 비어 있어요"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu plano de hoje está vazio"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün için planın boş"
           }
         },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do"
-          }
-        }
-      }
-    },
-    "widget.chrome_daily_empty": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bugün için planın boş"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today’s plan is empty"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu plan de hoy está vacío"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Plan für heute ist leer"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ton plan du jour est vide"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seu plano de hoje está vazio"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今日の計画は空だよ"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "오늘 계획이 비어 있어요"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天的计划是空的"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "خطة اليوم فارغة"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天的计划是空的"
           }
         }
       }
     },
-    "widget.chrome_todo_empty": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do listen şu an boş"
+    "widget.chrome_daily_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخطة اليومية"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your To-do list is empty"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagesplan"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu lista To-do está vacía"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily plan"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine To-do-Liste ist leer"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan diario"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ta liste To-do est vide"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan du jour"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A tua lista To-do está vazia"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の計画"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-doリストは空だよ"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "하루 계획"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do 목록이 비어 있어요"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plano do dia"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待办列表是空的"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük plan"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قائمة To-do فارغة"
-          }
-        }
-      }
-    },
-    "widget.chrome_empty_hint": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kendine biraz alan aç."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Give yourself a little space."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date un poco de espacio."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gib dir ein bisschen Raum."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Laisse-toi un peu d’espace."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dá-te um pouco de espaço."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "少し余白をつくって。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "자신에게 조금 공간을 주세요."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "给自己留一点空间。"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "امنح نفسك مساحة صغيرة."
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日计划"
           }
         }
       }
     },
-    "widget.chrome_focus_brand": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Odaklan"
+    "widget.chrome_empty_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "امنح نفسك مساحة صغيرة."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Focus"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib dir ein bisschen Raum."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Foco"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give yourself a little space."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Fokus"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date un poco de espacio."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Focus"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laisse-toi un peu d’espace."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · Foco"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少し余白をつくって。"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · フォーカス"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자신에게 조금 공간을 주세요."
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · 집중"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dá-te um pouco de espaço."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · 专注"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendine biraz alan aç."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Florien · تركيز"
-          }
-        }
-      }
-    },
-    "widget.chrome_focus_ready_nl": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 dakikalık\nalanın hazır"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your 15-minute\nspace is ready"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tus 15 minutos\nestán listos"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine 15 Minuten\nsind bereit"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tes 15 minutes\nsont prêtes"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seus 15 minutos\nestão prontos"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15分のスペースの\n準備できたよ"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15분 공간이\n준비됐어요"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 分钟空间\n已就绪"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مساحة الـ ١٥ دقيقة\nجاهزة"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "给自己留一点空间。"
           }
         }
       }
     },
-    "widget.chrome_start": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Başla"
+    "widget.chrome_focus_brand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · تركيز"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Start"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Fokus"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Empezar"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Focus"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Start"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Foco"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Commencer"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Focus"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ Começar"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · フォーカス"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ 開始"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · 집중"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ 시작"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Foco"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ 开始"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · Odaklan"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "▶ ابدأ"
-          }
-        }
-      }
-    },
-    "widget.chrome_focus_how_long": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ne kadar odaklanmak istersin?"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How long do you want to focus?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Cuánto quieres enfocarte?"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wie lange willst du fokussieren?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Combien de temps veux-tu rester focus ?"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Por quanto tempo quer focar?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "どれくらい集中する？"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "얼마나 집중할까요?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你想专注多久？"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "كم تريد أن تركز؟"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien · 专注"
           }
         }
       }
     },
-    "widget.chrome_min_5": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 dk"
+    "widget.chrome_focus_how_long" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كم تريد أن تركز؟"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 min"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie lange willst du fokussieren?"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 min"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How long do you want to focus?"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 Min."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuánto quieres enfocarte?"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 min"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien de temps veux-tu rester focus ?"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 min"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どれくらい集中する？"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5分"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "얼마나 집중할까요?"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5분"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por quanto tempo quer focar?"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 分钟"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne kadar odaklanmak istersin?"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "٥ د"
-          }
-        }
-      }
-    },
-    "widget.chrome_min_10": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 dk"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 min"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 min"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 Min."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 min"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 min"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10分"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10분"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10 分钟"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "١٠ د"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想专注多久？"
           }
         }
       }
     },
-    "widget.chrome_min_15": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 dk"
+    "widget.chrome_focus_ready_nl" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مساحة الـ ١٥ دقيقة\nجاهزة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine 15 Minuten\nsind bereit"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your 15-minute\nspace is ready"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 Min."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus 15 minutos\nestán listos"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes 15 minutes\nsont prêtes"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 min"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分のスペースの\n準備できたよ"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15分"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15분 공간이\n준비됐어요"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15분"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus 15 minutos\nestão prontos"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 分钟"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dakikalık\nalanın hazır"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "١٥ د"
-          }
-        }
-      }
-    },
-    "widget.chrome_min_30": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 dk"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 min"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 min"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 Min."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 min"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 min"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30分"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30분"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 分钟"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "٣٠ د"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 分钟空间\n已就绪"
           }
         }
       }
     },
-    "widget.chrome_quick_prompt": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aklına bir şey mi geldi?"
+    "widget.chrome_min_5" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "٥ د"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Got something in mind?"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 Min."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Se te ocurrió algo?"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 min"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ist dir etwas eingefallen?"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quelque chose t’est venu ?"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 min"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Veio-te alguma coisa à cabeça?"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5分"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "何か思いついた？"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5분"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "뭔가 떠올랐나요?"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 min"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "想到什么了吗？"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 dk"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "هل خطر ببالك شيء؟"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 分钟"
           }
         }
       }
     },
-    "widget.chrome_quick_cta": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ To-do ekle"
+    "widget.chrome_min_10" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "١٠ د"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ Add to-do"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 Min."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ Añadir To-do"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 min"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ To-do hinzufügen"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ Ajouter un To-do"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 min"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ Adicionar To-do"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10分"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ To-doを追加"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10분"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ To-do 추가"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 min"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ 添加待办"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 dk"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "＋ أضف To-do"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 分钟"
           }
         }
       }
     },
-    "widget.chrome_ai_prompt": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Planın nedir?"
+    "widget.chrome_min_15" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "١٥ د"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What’s the plan?"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 Min."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Cuál es el plan?"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Was ist der Plan?"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C’est quoi le plan ?"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qual é o plano?"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "計画は？"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15분"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "계획이 뭐예요?"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "计划是什么？"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dk"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ما الخطة؟"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 分钟"
           }
         }
       }
     },
-    "widget.chrome_stop": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Durdur"
+    "widget.chrome_min_30" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "٣٠ د"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stop"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 Min."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 min"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stopp"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 min"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrêter"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 min"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30分"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "止める"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30분"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "정지"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 min"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停止"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 dk"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إيقاف"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 分钟"
           }
         }
       }
     },
-    "widget.chrome_stop_a11y": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odaklanmayı durdur"
+    "widget.chrome_name_daily" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخطة اليومية"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stop focusing"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagesplan"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar el foco"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Plan"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fokus stoppen"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan diario"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arrêter le focus"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan du jour"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar o foco"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の計画"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "フォーカスを止める"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "하루 계획"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "집중 멈추기"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plano do dia"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停止专注"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük Plan"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إيقاف التركيز"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日计划"
           }
         }
       }
     },
-    "widget.chrome_open_tasks": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} tamamlanmamış görev"
+    "widget.chrome_name_focus15" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تركيز ١٥ د"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} open tasks"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 Min. Fokus"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} tareas pendientes"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min Focus"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} offene Aufgaben"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min Foco"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} tâches ouvertes"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min Focus"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} tarefas em aberto"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分フォーカス"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未完了 {count} 件"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15분 집중"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "미완료 {count}개"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 min Foco"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} 项未完成"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dk Odaklan"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} مهام غير مكتملة"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 分钟专注"
           }
         }
       }
     },
-    "widget.chrome_open_short": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} tamamlanmamış"
+    "widget.chrome_name_presets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مدة التركيز"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} open"
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fokusdauer"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} pendientes"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus duration"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} offen"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duración de foco"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} ouvertes"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durée de focus"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} em aberto"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォーカス時間"
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "未完了{count}"
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집중 시간"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "미완료 {count}"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duração do foco"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} 项未完成"
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odak Süresi"
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "{count} غير مكتملة"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专注时长"
+          }
+        }
+      }
+    },
+    "widget.chrome_name_quick_actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إجراءات Florien السريعة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien-Schnellaktionen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien Quick Actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acciones rápidas de Florien"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions rapides Florien"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florienクイック操作"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien 빠른 동작"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ações rápidas do Florien"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien Hızlı Eylemler"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Florien 快捷操作"
+          }
+        }
+      }
+    },
+    "widget.chrome_name_quick_add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do سريع"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schnelles To-do"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick to-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do rápido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do rapide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クイックTo-do"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빠른 To-do"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do rápido"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hızlı To-do"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速待办"
+          }
+        }
+      }
+    },
+    "widget.chrome_name_todo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        }
+      }
+    },
+    "widget.chrome_open_short" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} غير مكتملة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} offen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} pendientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} ouvertes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未完了{count}"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미완료 {count}"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} em aberto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} tamamlanmamış"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} 项未完成"
+          }
+        }
+      }
+    },
+    "widget.chrome_open_tasks" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} مهام غير مكتملة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} offene Aufgaben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} open tasks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} tareas pendientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} tâches ouvertes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未完了 {count} 件"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미완료 {count}개"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} tarefas em aberto"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} tamamlanmamış görev"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "{count} 项未完成"
+          }
+        }
+      }
+    },
+    "widget.chrome_quick_cta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ أضف To-do"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ To-do hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ Add to-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ Añadir To-do"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ Ajouter un To-do"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ To-doを追加"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ To-do 추가"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ Adicionar To-do"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ To-do ekle"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "＋ 添加待办"
+          }
+        }
+      }
+    },
+    "widget.chrome_quick_prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل خطر ببالك شيء؟"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ist dir etwas eingefallen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got something in mind?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Se te ocurrió algo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelque chose t’est venu ?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "何か思いついた？"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뭔가 떠올랐나요?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veio-te alguma coisa à cabeça?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aklına bir şey mi geldi?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想到什么了吗？"
+          }
+        }
+      }
+    },
+    "widget.chrome_start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ ابدأ"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Start"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Start"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Commencer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ 開始"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ 시작"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Começar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ Başla"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▶ 开始"
+          }
+        }
+      }
+    },
+    "widget.chrome_stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إيقاف"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopp"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrêter"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "止める"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "정지"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durdur"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止"
+          }
+        }
+      }
+    },
+    "widget.chrome_stop_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إيقاف التركيز"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fokus stoppen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop focusing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar el foco"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrêter le focus"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォーカスを止める"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집중 멈추기"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar o foco"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odaklanmayı durdur"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止专注"
+          }
+        }
+      }
+    },
+    "widget.chrome_todo_empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قائمة To-do فارغة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine To-do-Liste ist leer"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your To-do list is empty"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu lista To-do está vacía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta liste To-do est vide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-doリストは空だよ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do 목록이 비어 있어요"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua lista To-do está vazia"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do listen şu an boş"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待办列表是空的"
+          }
+        }
+      }
+    },
+    "widget.chrome_todo_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To-do"
+          }
+        }
+      }
+    },
+    "widget.desc.daily" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اعرض مهام اليوم غير المكتملة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sieh dir die offenen Aufgaben von heute an."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See today’s open tasks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira las tareas abiertas de hoy."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vois tes tâches ouvertes du jour."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の未完了タスクを見る。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "오늘 끝나지 않은 할 일을 봐요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vê as tarefas em aberto de hoje."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün tamamlanmamış görevlerini gör."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看今天尚未完成的任务。"
+          }
+        }
+      }
+    },
+    "widget.desc.focus15" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابدأ جولة تركيز لـ ١٥ دقيقة بلمسة واحدة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starte mit einem Tipp 15 Minuten Fokus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a 15-minute focus round with one tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza 15 minutos de foco con un toque."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lance 15 minutes de focus d’un tap."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タップひとつで15分のフォーカスを始める。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한 번에 15분 집중을 시작해요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Começa 15 minutos de foco com um toque."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tek dokunuşla 15 dakikalık odak turu başlat."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点一下即可开始 15 分钟专注。"
+          }
+        }
+      }
+    },
+    "widget.desc.presets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابدأ تركيزًا لمدة ٥ أو ١٠ أو ١٥ أو ٣٠ دقيقة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starte 5, 10, 15 oder 30 Minuten Fokus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a 5, 10, 15, or 30 minute focus round."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza un foco de 5, 10, 15 o 30 minutos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lance 5, 10, 15 ou 30 minutes de focus."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5・10・15・30分のフォーカスを始める。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5, 10, 15, 30분 집중을 시작해요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Começa 5, 10, 15 ou 30 minutos de foco."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5, 10, 15 veya 30 dakikalık odak turu başlat."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始 5、10、15 或 30 分钟专注。"
+          }
+        }
+      }
+    },
+    "widget.desc.quick_actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صل إلى الذكاء والخطة وTo-do والتركيز بلمسة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreiche KI, Plan, To-do und Fokus mit einem Tipp."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reach AI, planning, To-do, and focus in one tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llega a la IA, el plan, To-do y el foco de un toque."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accède à l’IA, au plan, aux To-dos et au focus d’un tap."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI・計画・To-do・フォーカスにすぐ届く。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI, 계획, To-do, 집중에 한 번에 닿아요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chega à IA, ao plano, ao To-do e ao foco num toque."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI, planlama, To-do ve odaklana tek dokunuşla ulaş."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一键打开 AI、计划、待办和专注。"
+          }
+        }
+      }
+    },
+    "widget.desc.quick_add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أضف ما يخطر ببالك بسرعة إلى قائمة To-do."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge schnell hinzu, was dir einfällt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quickly add what’s on your mind to your To-do list."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade rápido lo que se te ocurra a tu To-do."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute vite ce qui te passe par la tête à tes To-dos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "思いついたことをすぐTo-doに足す。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "떠오른 걸 바로 To-do에 넣어요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona depressa o que te ocorreu à lista To-do."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aklına geleni hızlıca To-do listene ekle."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把刚想到的事快速加入待办。"
+          }
+        }
+      }
+    },
+    "widget.desc.todo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اعرض To-do غير المكتمل وأضف مهامًا."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sieh offene To-dos und füge welche hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See and add open To-do tasks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira y añade To-dos pendientes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vois et ajoute tes To-dos ouverts."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未完了のTo-doを見て追加する。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "끝나지 않은 To-do를 보고 추가해요."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vê e adiciona To-dos em aberto."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamamlanmamış To-do görevlerini gör ve ekle."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看并添加未完成的待办。"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.1"
 }

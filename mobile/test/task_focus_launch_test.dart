@@ -250,7 +250,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(createdDuration, 5);
-    _expectActiveTaskFocus(tester, title: 'Odaklan', remaining: '5:00');
+    // The persisted launch has an absolute end time, so the running clock has
+    // already advanced by one second after the test pumps the start action.
+    _expectActiveTaskFocus(tester, title: 'Odaklan', remaining: '4:59');
     expect(find.byKey(const ValueKey('focus-default-hourglass')), findsNothing);
 
     await tester.tap(find.byTooltip('Kapat'));

@@ -5,42 +5,42 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000281">
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000342">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.003264">
+      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.047671">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: latest_testflight_build_number" time="1.578249">
+      <testcase classname="fastlane.lanes" name="2: latest_testflight_build_number" time="2.159969">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: install_provisioning_profile" time="0.372946">
+      <testcase classname="fastlane.lanes" name="3: install_provisioning_profile" time="0.457955">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: install_provisioning_profile" time="0.268684">
+      <testcase classname="fastlane.lanes" name="4: install_provisioning_profile" time="0.275758">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="5: flutter pub get" time="2.714075">
+      <testcase classname="fastlane.lanes" name="5: flutter pub get" time="3.530888">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="6: flutter build ipa --release --build-number\=16 --export-options-plist\=/Users/zihnicanbegburs/Project/Florien/mobile/ios/fastlane/ExportOptions.plist" time="466.74523">
+      <testcase classname="fastlane.lanes" name="6: flutter build ipa --release --build-number\=20 --export-options-plist\=/Users/zihnicanbegburs/Project/Florien/mobile/ios/fastlane/ExportOptions.plist" time="361.277024">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="7: upload_to_testflight" time="156.666677">
+      <testcase classname="fastlane.lanes" name="7: upload_to_testflight" time="163.654098">
         
       </testcase>
     
