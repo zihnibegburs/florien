@@ -271,6 +271,7 @@ class _FlorienAppState extends ConsumerState<FlorienApp>
       final isLoggedIn = next.valueOrNull != null;
       if (!wasLoggedIn && isLoggedIn) {
         unawaited(_reconcileNotifications());
+        unawaited(_refreshPremiumEntitlement());
       }
     });
     ref.listen(premiumMembershipProvider, (previous, next) {

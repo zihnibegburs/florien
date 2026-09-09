@@ -111,7 +111,12 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
   Future<PremiumMembership> build() async {
     // Read once — watching authState/firebaseUser rebuilds this notifier and
     // cancels in-flight StoreKit queries (products then look "missing").
-    final firebaseUser = ref.read(firebaseUserProvider).valueOrNull;
+    // `authStateChanges` may not have emitted its first value yet at app
+    // startup. Reading the cached Firebase user avoids treating an already
+    // signed-in Premium member as free for that first frame.
+    final firebaseUser =
+        ref.read(optionalFirebaseAuthProvider)?.currentUser ??
+        ref.read(firebaseUserProvider).valueOrNull;
     await _purchaseSubscription?.cancel();
     _restoreSettleTimer?.cancel();
     final initialMembership = Completer<PremiumMembership>();
@@ -147,14 +152,20 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       );
     }
 
-    // StoreKit first — never wait on Cloud Functions before showing plans.
+    // StoreKit loading and entitlement lookup run in parallel.
     final products = await _loadProductsWithRetry();
+    // Do not publish an optimistic free membership before the server has
+    // answered. Home uses this state to decide whether to render its Premium
+    // CTA, so doing so would briefly show the CTA to Premium members.
+    final entitlement = await entitlementFuture;
     final membership = PremiumMembership(
       storeAvailable: true,
       products: products.products,
       selectedProductId: products.products.isEmpty
           ? null
           : _availableSelection(products.products),
+      isPremium: entitlement.isPremium,
+      premiumUntil: entitlement.premiumUntil,
       paywallConfig: paywallConfig,
       message: products.products.isEmpty
           ? strings.premiumProductsTemporarilyUnavailable
@@ -163,23 +174,10 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     );
     _completeInitialMembership(membership, initialMembership);
 
-    // Entitlement + restore in the background; must not clear [products].
-    unawaited(_applyEntitlementWhenReady(entitlementFuture));
+    // Restore can still refine the verified entitlement in the background;
+    // it must not clear [products].
     if (firebaseUser != null) unawaited(_startRestore());
     return membership;
-  }
-
-  Future<void> _applyEntitlementWhenReady(
-    Future<PremiumEntitlement> entitlementFuture,
-  ) async {
-    try {
-      final entitlement = await entitlementFuture;
-      final current = state.valueOrNull;
-      if (current == null) return;
-      state = AsyncData(_applyServerEntitlement(current, entitlement));
-    } catch (error) {
-      debugPrint('Premium entitlement apply failed: $error');
-    }
   }
 
   PremiumMembership _completeInitialMembership(
