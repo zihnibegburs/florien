@@ -120,6 +120,8 @@ class S {
   String premiumPurchaseCta(String price) =>
       this('{price} karşılığında Premium ol', {'price': price});
   String get restorePurchases => this('Satın alımları geri yükle');
+  String get termsOfUse => this('Hizmet şartları');
+  String get privacyPolicy => this('Gizlilik politikası');
   String get continueLabel => this('Devam et');
   String get skipForNow => this('Şimdilik geç');
   String get notificationIntroTitle => this('Florien sana nazikçe hatırlatsın');

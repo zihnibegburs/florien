@@ -45,7 +45,7 @@ add(
     e("Satın alımları geri yükle", "Restore purchases", "Restaurar compras", "Käufe wiederherstellen", "Restaurer les achats", "Restaurar compras", "購入を復元", "구매 복원", "恢复购买", "استعادة المشتريات"),
     e("Çıkış yap", "Log out", "Cerrar sesión", "Abmelden", "Se déconnecter", "Sair", "ログアウト", "로그아웃", "退出登录", "تسجيل الخروج"),
     e("Hesabı sil", "Delete account", "Eliminar cuenta", "Konto löschen", "Supprimer le compte", "Excluir conta", "アカウントを削除", "계정 삭제", "删除账户", "حذف الحساب"),
-    e("Hizmet şartları", "Terms of service", "Términos del servicio", "Nutzungsbedingungen", "Conditions d’utilisation", "Termos de serviço", "利用規約", "서비스 약관", "服务条款", "شروط الخدمة"),
+    e("Hizmet şartları", "Terms of Use", "Términos de uso", "Nutzungsbedingungen", "Conditions d’utilisation", "Termos de uso", "利用規約", "이용 약관", "使用条款", "شروط الاستخدام"),
     e("Gizlilik politikası", "Privacy policy", "Política de privacidad", "Datenschutz", "Politique de confidentialité", "Política de privacidade", "プライバシーポリシー", "개인정보 처리방침", "隐私政策", "سياسة الخصوصية"),
     e("Sayfa açılamadı.", "The page could not be opened.", "No se pudo abrir la página.", "Die Seite konnte nicht geöffnet werden.", "Impossible d’ouvrir la page.", "Não foi possível abrir a página.", "ページを開けませんでした。", "페이지를 열 수 없습니다.", "无法打开页面。", "تعذر فتح الصفحة."),
     e("Çıkış yapılsın mı?", "Log out?", "¿Cerrar sesión?", "Abmelden?", "Se déconnecter ?", "Sair?", "ログアウトしますか？", "로그아웃할까요?", "要退出登录吗？", "هل تريد تسجيل الخروج؟"),

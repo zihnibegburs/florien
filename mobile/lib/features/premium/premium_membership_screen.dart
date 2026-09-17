@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/l10n/app_strings.dart';
+import 'package:florien/core/legal/florien_legal.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/services/premium_purchase_service.dart';
 import 'package:florien/core/widgets/florien_buttons.dart';
@@ -457,8 +458,55 @@ class _PremiumMembershipScreenState
                       .restorePurchases(),
             child: Text(strings.restorePurchases),
           ),
+          const SizedBox(height: FlorienSpacing.xs),
+          _PaywallLegalLinks(strings: strings),
         ],
       ),
+    );
+  }
+}
+
+class _PaywallLegalLinks extends StatelessWidget {
+  const _PaywallLegalLinks({required this.strings});
+
+  final S strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: context.palette.textSecondary,
+      decoration: TextDecoration.underline,
+      fontWeight: FontWeight.w600,
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: TextButton(
+            key: const ValueKey('paywall-terms-of-use'),
+            onPressed: () => openFlorienLegalUrl(context, florienTermsOfUseUrl),
+            child: Text(
+              strings.termsOfUse,
+              textAlign: TextAlign.center,
+              style: style,
+            ),
+          ),
+        ),
+        Text('·', style: TextStyle(color: context.palette.textSecondary)),
+        Flexible(
+          child: TextButton(
+            key: const ValueKey('paywall-privacy-policy'),
+            onPressed: () =>
+                openFlorienLegalUrl(context, florienPrivacyPolicyUrl),
+            child: Text(
+              strings.privacyPolicy,
+              textAlign: TextAlign.center,
+              style: style,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

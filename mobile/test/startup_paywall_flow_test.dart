@@ -213,9 +213,7 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: PremiumMembershipScreen(
-            onContinue: () async {},
-          ),
+          home: PremiumMembershipScreen(onContinue: () async {}),
         ),
       ),
     );
@@ -444,5 +442,37 @@ void main() {
     expect(find.textContaining('per day'), findsNWidgets(2));
     expect(find.textContaining('3.33'), findsOneWidget);
     expect(find.textContaining('2.19'), findsOneWidget);
+    expect(find.text('Terms of Use'), findsOneWidget);
+    expect(find.text('Privacy policy'), findsOneWidget);
+  });
+
+  testWidgets('paywall shows Terms of Use and Privacy Policy links', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          premiumMembershipProvider.overrideWith(_PremiumPlansNotifier.new),
+        ],
+        child: const MaterialApp(home: PremiumMembershipScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final terms = find.byKey(const ValueKey('paywall-terms-of-use'));
+    final privacy = find.byKey(const ValueKey('paywall-privacy-policy'));
+    await tester.scrollUntilVisible(
+      terms,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(terms, findsOneWidget);
+    expect(privacy, findsOneWidget);
+    expect(find.text('Hizmet şartları'), findsOneWidget);
+    expect(find.text('Gizlilik politikası'), findsOneWidget);
   });
 }

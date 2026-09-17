@@ -1,3 +1,4 @@
+import 'package:florien/core/services/premium_purchase_service.dart';
 import 'package:florien/features/premium/premium_membership.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,5 +26,33 @@ void main() {
     const inactive = PremiumMembership(storeAvailable: true, isPremium: false);
     expect(active.hasActivePremium, isTrue);
     expect(inactive.hasActivePremium, isFalse);
+  });
+
+  test('failed entitlement fetch does not demote Premium', () {
+    final membership = PremiumMembership(
+      storeAvailable: true,
+      isPremium: true,
+      premiumUntil: DateTime.now().add(const Duration(days: 30)),
+    );
+    final next = applyServerEntitlement(
+      membership,
+      const PremiumEntitlement.unavailable(),
+    );
+    expect(next.hasActivePremium, isTrue);
+    expect(next.premiumUntil, membership.premiumUntil);
+  });
+
+  test('server inactive entitlement clears Premium', () {
+    final membership = PremiumMembership(
+      storeAvailable: true,
+      isPremium: true,
+      premiumUntil: DateTime.now().add(const Duration(days: 30)),
+    );
+    final next = applyServerEntitlement(
+      membership,
+      const PremiumEntitlement.none(),
+    );
+    expect(next.hasActivePremium, isFalse);
+    expect(next.premiumUntil, isNull);
   });
 }

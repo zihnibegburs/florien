@@ -102,36 +102,62 @@ function appleApiToken(credentials: AppleCredentials): string {
   return `${unsigned}.${signature}`;
 }
 
+function appleTransactionHosts(environment: string | undefined): string[] {
+  const production = "https://api.storekit.itunes.apple.com";
+  const sandbox = "https://api.storekit-sandbox.itunes.apple.com";
+  switch (environment?.toLowerCase()) {
+    case "sandbox":
+    case "xcode":
+      return [sandbox];
+    case "production":
+      return [production, sandbox];
+    default:
+      // Review and local builds often omit environment. Production lookup of a
+      // sandbox transaction can stall for several seconds before 404.
+      return [sandbox, production];
+  }
+}
+
 export async function fetchAppleTransaction(
   transactionId: string,
   environment: string | undefined,
   credentials: AppleCredentials
 ): Promise<AppleTransaction> {
-  const production = "https://api.storekit.itunes.apple.com";
-  const sandbox = "https://api.storekit-sandbox.itunes.apple.com";
-  const hosts = environment?.toLowerCase() === "sandbox" ?
-    [sandbox, production] : [production, sandbox];
   const token = appleApiToken(credentials);
+  const hosts = appleTransactionHosts(environment);
+  const timeoutMs = hosts.length > 1 ? 4_000 : 8_000;
 
   for (const host of hosts) {
-    const response = await fetch(
-      `${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 404) continue;
-    if (!response.ok) {
-      throw new HttpsError(
-        response.status === 401 || response.status === 403 ?
-          "failed-precondition" : "unavailable",
-        "App Store purchase verification is unavailable.",
-        { reason: "PREMIUM_VERIFICATION_UNAVAILABLE" }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(
+        `${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        }
       );
+      if (response.status === 404) continue;
+      if (!response.ok) {
+        throw new HttpsError(
+          response.status === 401 || response.status === 403 ?
+            "failed-precondition" : "unavailable",
+          "App Store purchase verification is unavailable.",
+          { reason: "PREMIUM_VERIFICATION_UNAVAILABLE" }
+        );
+      }
+      const body = await response.json() as { signedTransactionInfo?: string };
+      if (!body.signedTransactionInfo) {
+        throw invalidPurchase("App Store transaction was not found.");
+      }
+      return decodeJwsPayload<AppleTransaction>(body.signedTransactionInfo);
+    } catch (error) {
+      if (error instanceof HttpsError) throw error;
+      continue;
+    } finally {
+      clearTimeout(timer);
     }
-    const body = await response.json() as { signedTransactionInfo?: string };
-    if (!body.signedTransactionInfo) {
-      throw invalidPurchase("App Store transaction was not found.");
-    }
-    return decodeJwsPayload<AppleTransaction>(body.signedTransactionInfo);
   }
   throw invalidPurchase("App Store transaction was not found.");
 }

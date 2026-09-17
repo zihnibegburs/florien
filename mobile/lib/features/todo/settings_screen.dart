@@ -11,8 +11,8 @@ import 'package:florien/features/todo/live_activity_settings_screen.dart';
 import 'package:florien/features/todo/profile_management_screen.dart';
 import 'package:florien/features/providers.dart';
 import 'package:florien/features/premium/premium_membership_screen.dart';
+import 'package:florien/core/legal/florien_legal.dart';
 import 'package:florien/core/services/store_review.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Full settings page.
 class SettingsScreen extends ConsumerWidget {
@@ -221,20 +221,16 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   key: const ValueKey('settings-terms'),
                   icon: Icons.description_outlined,
-                  label: strings('Hizmet şartları'),
-                  onTap: () => _openLegalUrl(
-                    context,
-                    'https://www.wirefire.co/florien/terms',
-                  ),
+                  label: strings.termsOfUse,
+                  onTap: () =>
+                      openFlorienLegalUrl(context, florienTermsOfUseUrl),
                 ),
                 _SettingsRow(
                   key: const ValueKey('settings-privacy'),
                   icon: Icons.privacy_tip_outlined,
-                  label: strings('Gizlilik politikası'),
-                  onTap: () => _openLegalUrl(
-                    context,
-                    'https://www.wirefire.co/florien/privacy',
-                  ),
+                  label: strings.privacyPolicy,
+                  onTap: () =>
+                      openFlorienLegalUrl(context, florienPrivacyPolicyUrl),
                 ),
               ],
             ),
@@ -265,20 +261,6 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _openLegalUrl(BuildContext context, String url) async {
-    try {
-      final opened = await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-      if (opened || !context.mounted) return;
-    } catch (_) {}
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n('Sayfa açılamadı.'))));
   }
 
   void _openProfiles(BuildContext context) {

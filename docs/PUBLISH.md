@@ -278,7 +278,30 @@ App Information ve her lokalizasyonda:
 | Support URL | `https://www.wirefire.co/florien` veya destek sayfan |
 | Marketing URL | Opsiyonel; site hazırsa ekle |
 
-Uygulama içi Ayarlar zaten terms + privacy’ye gidiyor. Apple, özellikle **abonelik** için privacy URL’sini zorunlu tutar.
+Guideline 3.1.2(c) için iki yer şart:
+
+1. **Uygulama içi satın alma ekranı** (Florien Premium paywall): Terms of Use + Privacy Policy tıklanabilir linkleri. Yalnızca Ayarlar yetmez.
+2. **App Store metadata:** Privacy Policy URL alanı + Terms of Use (custom EULA alanı veya App Description içinde).
+
+App Description’a (her lokalizasyon) şunu ekle:
+
+```
+Terms of Use: https://www.wirefire.co/florien/terms
+Privacy Policy: https://www.wirefire.co/florien/privacy
+```
+
+App Store Connect → App Information → License Agreement → **Apply a custom EULA** → `https://www.wirefire.co/florien/terms`.
+
+Review Notes’a (App Review Information) şunu yaz ve paywall’dan her iki linkin açıldığı kısa bir ekran kaydı ekle:
+
+```
+Guideline 3.1.2(c): The Premium purchase screen includes tappable Terms of Use and Privacy Policy links under Restore purchases.
+Terms of Use: https://www.wirefire.co/florien/terms
+Privacy Policy: https://www.wirefire.co/florien/privacy
+The same URLs are in App Store metadata (Privacy Policy field, custom EULA, and App Description).
+
+Guideline 2.5.4: Florien uses background audio only for Focus timer music. After starting Focus and playing a track, the looping audio continues on the Home Screen until the session is paused or finished. A screen recording of this flow is attached.
+```
 
 ### 4.2 App Review iletişim
 
@@ -480,6 +503,14 @@ Demo hesap production Firebase’de gerçek bir kullanıcı olsun; inceleme gün
 
 Hesapsız kullanılamıyorsa reviewer’ın takılmaması için demo hesap şart. Misafir akışı varsa notta belirt.
 
+### 8.9 Background audio (2.5.4)
+
+Odak zamanlayıcısı döngüsel müzik çalar; `UIBackgroundModes` içinde `audio` bu yüzden var. Kullanılmayan `fetch` yok.
+
+Apple 2.5.4 ile reddederse Resolution Center’a şunu yaz ve fiziksel cihaz kaydını Notes’a ekle (Home Screen’e çıkışı göster):
+
+> Guideline 2.5.4: Florien uses the audio background mode for Focus timer music. How to reproduce: open the app → tap the AI button in the tab bar → tap Focus → Start → tap the sound control to play a focus track → go to the Home Screen. The looping audio continues while Florien is in the background. This is the only use of UIBackgroundModes.
+
 ---
 
 ## 9. App Privacy (Nutrition Label)
@@ -672,6 +703,7 @@ Operasyon:
 | Eksik iPad screenshot | Universal target `1,2` |
 | 1024 ikon şeffaf | Düz kare PNG |
 | Subscription restore yok | Üyelik ekranında var |
+| 3.1.2(c) EULA/privacy link yok | Paywall’da Terms of Use + Privacy Policy; metadata’da da aynı URL’ler |
 | AI’yi sağlık tavsiyesi gibi satmak | Listing + review notu |
 | Functions Spark’ta kalmış | Blaze |
 

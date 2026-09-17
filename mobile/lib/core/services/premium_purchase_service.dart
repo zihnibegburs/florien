@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -19,13 +21,18 @@ class PremiumEntitlement {
     required this.isPremium,
     this.premiumUntil,
     this.aiChatUsage,
+    this.fetchFailed = false,
   });
 
   const PremiumEntitlement.none() : this(isPremium: false);
 
+  const PremiumEntitlement.unavailable()
+    : this(isPremium: false, fetchFailed: true);
+
   final bool isPremium;
   final DateTime? premiumUntil;
   final AiChatUsage? aiChatUsage;
+  final bool fetchFailed;
 }
 
 class PremiumStoreQueryResult {
@@ -192,7 +199,7 @@ class PremiumPurchaseService {
       );
     } catch (error) {
       debugPrint('Premium entitlement fetch failed: $error');
-      return const PremiumEntitlement.none();
+      return const PremiumEntitlement.unavailable();
     }
   }
 
@@ -270,7 +277,7 @@ class PremiumPurchaseService {
       return PremiumBuyResult(started: false, entitledUntil: grantedUntil);
     }
 
-    await _registerAppleAppAccountToken();
+    unawaited(_registerAppleAppAccountToken());
     try {
       final started = await _store.buyNonConsumable(
         purchaseParam: _purchaseParam(product),
@@ -318,7 +325,7 @@ class PremiumPurchaseService {
   Future<void> restore() async {
     await prepareStore();
     debugPrint('[PremiumStore] restorePurchases');
-    await _registerAppleAppAccountToken();
+    unawaited(_registerAppleAppAccountToken());
     await _store.restorePurchases(applicationUserName: _appAccountToken);
   }
 

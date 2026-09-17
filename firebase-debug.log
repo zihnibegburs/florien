@@ -1,0 +1,56 @@
+[debug] [2026-09-16T16:35:16.167Z] ----------------------------------------------------------------------
+[debug] [2026-09-16T16:35:16.175Z] Command:       /opt/homebrew/Cellar/node/23.6.0/bin/node /opt/homebrew/bin/firebase projects:list
+[debug] [2026-09-16T16:35:16.175Z] CLI Version:   15.24.0
+[debug] [2026-09-16T16:35:16.175Z] Platform:      darwin
+[debug] [2026-09-16T16:35:16.175Z] Node Version:  v23.6.0
+[debug] [2026-09-16T16:35:16.175Z] Detected Agent: cursor
+[debug] [2026-09-16T16:35:16.175Z] Time:          Wed Sep 16 2026 23:35:16 GMT+0700 (Indochina Time)
+[debug] [2026-09-16T16:35:16.176Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-16T16:35:16.186Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-16T16:35:16.327Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-16T16:35:16.327Z] > authorizing via signed-in user (zihnibegburs@gmail.com)
+[debug] [2026-09-16T16:35:16.328Z] Checked if tokens are valid: false, expires at: 1789372424787
+[debug] [2026-09-16T16:35:16.328Z] Checked if tokens are valid: false, expires at: 1789372424787
+[debug] [2026-09-16T16:35:16.328Z] > refreshing access token with scopes: []
+[debug] [2026-09-16T16:35:16.329Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-09-16T16:35:16.329Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-09-16T16:35:16.420Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET","dispatcher":{"_events":{},"_eventsCount":0}}): Error: Request was cancelled.
+[warn] ⚠  Unable to fetch the CLI MOTD and remote config. This is not a fatal error, but may indicate an issue with your network connection. 
+[debug] [2026-09-16T16:35:16.421Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2026-09-16T16:35:16.578Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-09-16T16:35:16.578Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-09-16T16:35:16.579Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-09-16T16:35:16.590Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/opt/homebrew/lib/node_modules/firebase-tools/lib/auth.js:176:12)
+    at refreshTokens (/opt/homebrew/lib/node_modules/firebase-tools/lib/auth.js:589:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getAccessToken (/opt/homebrew/lib/node_modules/firebase-tools/lib/apiv2.js:53:18)
+    at async Client.addAuthHeader (/opt/homebrew/lib/node_modules/firebase-tools/lib/apiv2.js:209:21)
+    at async Client.request (/opt/homebrew/lib/node_modules/firebase-tools/lib/apiv2.js:156:34)
+    at async getProjectPage (/opt/homebrew/lib/node_modules/firebase-tools/lib/management/projects.js:287:17)
+    at async getFirebaseProjectPage (/opt/homebrew/lib/node_modules/firebase-tools/lib/management/projects.js:304:23)
+    at async listFirebaseProjects (/opt/homebrew/lib/node_modules/firebase-tools/lib/management/projects.js:333:29)
+    at async Command.actionFn (/opt/homebrew/lib/node_modules/firebase-tools/lib/commands/projects-list.js:51:20)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-09-16T16:35:16.857Z] Error: EPERM: operation not permitted, open '/Users/zihnicanbegburs/.config/configstore/firebase-tools.json.4262101314'
+    at Object.openSync (node:fs:563:18)
+    at Function.writeFileSync [as sync] (/opt/homebrew/lib/node_modules/firebase-tools/node_modules/write-file-atomic/index.js:205:13)
+    at set all (/opt/homebrew/lib/node_modules/firebase-tools/node_modules/configstore/index.js:61:20)
+    at Configstore.delete (/opt/homebrew/lib/node_modules/firebase-tools/node_modules/configstore/index.js:101:12)
+    at process.<anonymous> (/opt/homebrew/lib/node_modules/firebase-tools/lib/bin/cli.js:95:45)
+    at process.emit (node:events:519:35)
+    at process.exit (node:internal/process/per_thread:180:15)
+    at Timeout._onTimeout (/opt/homebrew/lib/node_modules/firebase-tools/lib/errorOut.js:20:17)
+    at listOnTimeout (node:internal/timers:614:17)
+    at process.processTimers (node:internal/timers:549:7)
+[error] 
+[error] Error: An unexpected error has occurred.

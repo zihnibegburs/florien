@@ -94,6 +94,35 @@ final premiumPurchaseServiceProvider = Provider<PremiumPurchaseService>(
   ),
 );
 
+/// Server is source of truth when it reports inactive; when active, keep the
+/// later of server/local expiry (a concurrent verify may be slightly newer).
+/// A failed fetch must not demote an already-active membership.
+/// Never clears loaded StoreKit [products].
+PremiumMembership applyServerEntitlement(
+  PremiumMembership membership,
+  PremiumEntitlement entitlement,
+) {
+  if (entitlement.fetchFailed) return membership;
+  final withUsage = membership.copyWith(aiChatUsage: entitlement.aiChatUsage);
+  if (!entitlement.isPremium) {
+    return withUsage.copyWith(isPremium: false, clearPremiumUntil: true);
+  }
+  final serverUntil = entitlement.premiumUntil;
+  final localUntil = membership.premiumUntil;
+  final bestUntil = switch ((serverUntil, localUntil)) {
+    (final DateTime server, final DateTime local) =>
+      server.isAfter(local) ? server : local,
+    (final DateTime server, null) => server,
+    (null, final DateTime local) => local,
+    (null, null) => null,
+  };
+  return withUsage.copyWith(
+    isPremium: bestUntil != null && bestUntil.isAfter(DateTime.now()),
+    premiumUntil: bestUntil,
+    clearPremiumUntil: bestUntil == null,
+  );
+}
+
 final premiumMembershipProvider =
     AsyncNotifierProvider<PremiumMembershipNotifier, PremiumMembership>(
       PremiumMembershipNotifier.new,
@@ -106,6 +135,7 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
   Completer<PremiumMembership>? _initialMembership;
   Timer? _restoreSettleTimer;
   late final PremiumPurchaseService _service;
+  var _pendingServerVerify = 0;
 
   @override
   Future<PremiumMembership> build() async {
@@ -381,11 +411,16 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
 
   Future<void> refreshEntitlement() async {
     final membership = state.valueOrNull;
-    if (membership == null) return;
+    if (membership == null ||
+        membership.isPurchasing ||
+        _pendingServerVerify > 0) {
+      return;
+    }
     final entitlement = await _service.fetchEntitlement();
     final current = state.valueOrNull ?? membership;
+    if (current.isPurchasing || _pendingServerVerify > 0) return;
     state = AsyncData(
-      _applyServerEntitlement(
+      applyServerEntitlement(
         current,
         entitlement,
       ).copyWith(isPurchasing: false),
@@ -412,39 +447,12 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       final entitlement = await _service.fetchEntitlement();
       final latest = state.valueOrNull ?? current;
       state = AsyncData(
-        _applyServerEntitlement(
+        applyServerEntitlement(
           latest,
           entitlement,
         ).copyWith(isPurchasing: false),
       );
     });
-  }
-
-  /// Server is source of truth when it reports inactive; when active, keep the
-  /// later of server/local expiry (a concurrent verify may be slightly newer).
-  /// Never clears loaded StoreKit [products].
-  PremiumMembership _applyServerEntitlement(
-    PremiumMembership membership,
-    PremiumEntitlement entitlement,
-  ) {
-    final withUsage = membership.copyWith(aiChatUsage: entitlement.aiChatUsage);
-    if (!entitlement.isPremium) {
-      return withUsage.copyWith(isPremium: false, clearPremiumUntil: true);
-    }
-    final serverUntil = entitlement.premiumUntil;
-    final localUntil = membership.premiumUntil;
-    final bestUntil = switch ((serverUntil, localUntil)) {
-      (final DateTime server, final DateTime local) =>
-        server.isAfter(local) ? server : local,
-      (final DateTime server, null) => server,
-      (null, final DateTime local) => local,
-      (null, null) => null,
-    };
-    return withUsage.copyWith(
-      isPremium: bestUntil != null && bestUntil.isAfter(DateTime.now()),
-      premiumUntil: bestUntil,
-      clearPremiumUntil: bestUntil == null,
-    );
   }
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> purchases) async {
@@ -462,12 +470,24 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
     String? failureMessage;
     var sawPending = false;
     var sawTerminalFailure = false;
+    var grantedOptimistically = false;
 
     for (final purchase in purchases) {
       if (!premiumProductIds.contains(purchase.productID)) continue;
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          // StoreKit already charged. Show Premium immediately, then confirm.
+          if (membership.isPurchasing && !membership.hasActivePremium) {
+            grantedOptimistically = true;
+            membership = membership.copyWith(
+              isPremium: true,
+              isPurchasing: false,
+              clearMessage: true,
+            );
+            state = AsyncData(membership);
+          }
+          _pendingServerVerify++;
           try {
             final until = await _service.verify(purchase);
             anyVerified = true;
@@ -490,6 +510,7 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
             }
             debugPrint('[PremiumStore] verify error: $error');
           } finally {
+            _pendingServerVerify = (_pendingServerVerify - 1).clamp(0, 1 << 30);
             // Always finish StoreKit txs we handled — unfinished ones block
             // the next buy with storekit_duplicate_product_object.
             if (purchase.pendingCompletePurchase) {
@@ -523,11 +544,15 @@ class PremiumMembershipNotifier extends AsyncNotifier<PremiumMembership> {
       // buyPremium/restorePurchases already set isPurchasing when the user acts.
     } else if (sawTerminalFailure) {
       _restoreSettleTimer?.cancel();
-      // Keep an already-active entitlement; only clear purchasing / show error
-      // when the user started a purchase/restore (otherwise restore noise).
+      // Keep an already-active entitlement unless we only showed Premium
+      // because StoreKit said purchased and the server then rejected it.
       membership = membership.copyWith(
         isPurchasing: false,
-        message: membership.isPurchasing ? failureMessage : membership.message,
+        isPremium: grantedOptimistically ? false : membership.isPremium,
+        clearPremiumUntil: grantedOptimistically,
+        message: (membership.isPurchasing || grantedOptimistically)
+            ? failureMessage
+            : membership.message,
       );
     }
 
