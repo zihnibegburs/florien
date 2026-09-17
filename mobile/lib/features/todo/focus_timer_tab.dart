@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter/services.dart';
+import 'package:florien/core/services/focus_music_service.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/utils/task_icons.dart';
 import 'package:florien/features/task_icon/presentation/task_icon_badge.dart';
 import 'package:florien/features/providers.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const _focusCompletionIconAsset = 'assets/focus/focus-default-check.png';
 const _focusDefaultIconAsset = 'assets/focus/focus-default-hourglass.png';
@@ -32,6 +31,7 @@ class FocusTimerTab extends StatefulWidget {
     this.alarmAvailable = true,
     this.onPremiumAlarmPressed,
     this.aiShellLayout = false,
+    this.musicService,
   });
 
   final FocusTaskLaunch? launchRequest;
@@ -50,6 +50,8 @@ class FocusTimerTab extends StatefulWidget {
   final bool alarmAvailable;
   final VoidCallback? onPremiumAlarmPressed;
   final bool aiShellLayout;
+  /// Shared app-wide player. When null (tests), a local owned instance is used.
+  final FocusMusicService? musicService;
 
   @override
   State<FocusTimerTab> createState() => _FocusTimerTabState();
@@ -57,9 +59,6 @@ class FocusTimerTab extends StatefulWidget {
 
 class _FocusTimerTabState extends State<FocusTimerTab>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static const _selectedMusicPreferenceKey = 'focus_timer_selected_music';
-  static const _musicAutoPlayPreferenceKey = 'focus_timer_music_auto_play';
-
   int _selectedMinutes = 5;
   int _remainingSeconds = 5 * 60;
   int _sessionTotalSeconds = 5 * 60;
@@ -81,24 +80,31 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   bool _isFinishing = false;
   bool _focusDurationEnded = false;
   bool _focusAlarmScheduled = false;
-  late final AudioPlayer _focusMusicPlayer;
-  _FocusMusicTrack? _selectedMusic;
-  String? _loadedMusicId;
-  bool _musicAutoPlay = false;
-  bool _musicActiveForSession = false;
+  late final FocusMusicService _music;
+  late final bool _ownsMusic;
+  StreamSubscription<PlayerState>? _musicStateSubscription;
   late final AnimationController _completionController;
   late final Animation<double> _completionScale;
   late final Animation<double> _completionCelebrationOpacity;
+
+  FocusMusicTrack? get _selectedMusic => _music.selectedTrack;
+  bool get _musicAutoPlay => _music.autoPlay;
+  bool get _musicActiveForSession => _music.activeForSession;
+  bool get _musicPlaying => _music.isPlaying;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _alarmEnabled = widget.alarmAvailable;
-    _focusMusicPlayer = AudioPlayer();
-    unawaited(_focusMusicPlayer.setLoopMode(LoopMode.one));
-    unawaited(_focusMusicPlayer.setVolume(.58));
-    unawaited(_restoreMusicSettings());
+    _ownsMusic = widget.musicService == null;
+    _music = widget.musicService ?? FocusMusicService();
+    unawaited(_music.ensureSettingsLoaded().then((_) {
+      if (mounted) setState(() {});
+    }));
+    _musicStateSubscription = _music.playerStateStream.listen((_) {
+      if (mounted) setState(() {});
+    });
     _completionController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -209,130 +215,73 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     // owning widget tree is being unmounted.
     if (!keepRunningInBackground) {
       unawaited(_cancelFocusAlarm());
+      // Shared player only stops when the focus session itself ends.
+      if (!_ownsMusic) unawaited(_music.endSession());
     }
-    unawaited(_focusMusicPlayer.dispose());
+    unawaited(_musicStateSubscription?.cancel());
+    if (_ownsMusic) {
+      unawaited(_music.dispose());
+    }
     _completionController.dispose();
     super.dispose();
   }
 
-  Future<void> _restoreMusicSettings() async {
-    final preferences = await SharedPreferences.getInstance();
-    final selectedId = preferences.getString(_selectedMusicPreferenceKey);
-    final selectedMusic = _focusMusicTracks
-        .where((track) => track.id == selectedId)
-        .firstOrNull;
-    if (!mounted) return;
-    setState(() {
-      _selectedMusic = selectedMusic;
-      _musicAutoPlay =
-          preferences.getBool(_musicAutoPlayPreferenceKey) ?? false;
-    });
+  Future<void> _stopFocusMusic() async {
+    await _music.endSession();
+    if (mounted) setState(() {});
   }
 
-  Future<void> _persistMusicSettings() async {
-    final preferences = await SharedPreferences.getInstance();
-    final selectedId = _selectedMusic?.id;
-    if (selectedId == null) {
-      await preferences.remove(_selectedMusicPreferenceKey);
-    } else {
-      await preferences.setString(_selectedMusicPreferenceKey, selectedId);
-    }
-    await preferences.setBool(_musicAutoPlayPreferenceKey, _musicAutoPlay);
-  }
-
-  Future<void> _prepareSelectedMusic() async {
-    final selectedMusic = _selectedMusic;
-    if (selectedMusic == null || _loadedMusicId == selectedMusic.id) return;
-    await _focusMusicPlayer.setAsset(selectedMusic.assetPath);
-    await _focusMusicPlayer.setLoopMode(LoopMode.one);
-    _loadedMusicId = selectedMusic.id;
-  }
-
-  Future<void> _playSelectedMusic({bool showError = false}) async {
-    if (_selectedMusic == null) return;
-    try {
-      final audioSession = await AudioSession.instance;
-      await audioSession.configure(AudioSessionConfiguration.music());
-      await _prepareSelectedMusic();
-      unawaited(_focusMusicPlayer.play());
+  Future<void> _handleMusicMenuSelection(String value) async {
+    if (value == FocusMusicMenuValue.none) {
+      await _music.clearSelection();
       if (mounted) setState(() {});
-    } catch (error) {
-      debugPrint('Focus music could not be played: $error');
-      if (showError && mounted) {
+      return;
+    }
+
+    if (value == FocusMusicMenuValue.autoPlayOn ||
+        value == FocusMusicMenuValue.autoPlayOff) {
+      final autoPlay = value == FocusMusicMenuValue.autoPlayOn;
+      try {
+        await _music.setAutoPlay(autoPlay, timerRunning: _isRunning);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n('Müzik şu anda oynatılamadı.')),
+            ),
+          );
+        }
+      }
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final selectedMusic = focusMusicTracks
+        .where((track) => value == FocusMusicMenuValue.track(track.id))
+        .firstOrNull;
+    if (selectedMusic == null) return;
+
+    try {
+      await _music.selectTrack(
+        selectedMusic,
+        sessionActive: _sessionActive,
+        timerRunning: _isRunning,
+      );
+    } catch (_) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n('Müzik şu anda oynatılamadı.'))),
         );
       }
     }
-  }
-
-  Future<void> _pauseFocusMusic() async {
-    try {
-      await _focusMusicPlayer.pause();
-      if (mounted) setState(() {});
-    } catch (error) {
-      debugPrint('Focus music could not be paused: $error');
-    }
-  }
-
-  Future<void> _stopFocusMusic() async {
-    try {
-      await _focusMusicPlayer.pause();
-      await _focusMusicPlayer.seek(Duration.zero);
-      if (mounted) setState(() {});
-    } catch (error) {
-      debugPrint('Focus music could not be stopped: $error');
-    }
-  }
-
-  Future<void> _handleMusicMenuSelection(String value) async {
-    if (value == _FocusMusicMenuValue.none) {
-      setState(() {
-        _selectedMusic = null;
-        _loadedMusicId = null;
-        _musicActiveForSession = false;
-      });
-      await _stopFocusMusic();
-      await _persistMusicSettings();
-      return;
-    }
-
-    if (value == _FocusMusicMenuValue.autoPlayOn ||
-        value == _FocusMusicMenuValue.autoPlayOff) {
-      final autoPlay = value == _FocusMusicMenuValue.autoPlayOn;
-      setState(() => _musicAutoPlay = autoPlay);
-      if (autoPlay && _isRunning && _selectedMusic != null) {
-        _musicActiveForSession = true;
-        await _playSelectedMusic(showError: true);
-      } else if (!autoPlay && _musicActiveForSession) {
-        _musicActiveForSession = false;
-        await _pauseFocusMusic();
-      }
-      await _persistMusicSettings();
-      return;
-    }
-
-    final selectedMusic = _focusMusicTracks
-        .where((track) => value == _FocusMusicMenuValue.track(track.id))
-        .firstOrNull;
-    if (selectedMusic == null) return;
-
-    setState(() {
-      _selectedMusic = selectedMusic;
-      _loadedMusicId = null;
-      if (_sessionActive) _musicActiveForSession = true;
-    });
-    await _persistMusicSettings();
-    if (_isRunning) {
-      await _playSelectedMusic(showError: true);
-    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _toggleTimer() async {
     if (_isRunning) {
       _timer?.cancel();
       unawaited(_cancelFocusAlarm());
-      if (_musicActiveForSession) unawaited(_pauseFocusMusic());
+      if (_musicActiveForSession) unawaited(_music.onTimerPaused());
       setState(() {});
       _publishTaskProgress();
       return;
@@ -391,9 +340,6 @@ class _FocusTimerTabState extends State<FocusTimerTab>
         ? math.max(_sessionTotalSeconds, _remainingSeconds)
         : _remainingSeconds;
     _plannedEndAt = now.add(Duration(seconds: _remainingSeconds));
-    if (startingNewSession) {
-      _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
-    }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       _syncRemainingFromClock();
@@ -408,13 +354,16 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     setState(() {});
     _publishTaskProgress();
     unawaited(_scheduleFocusAlarm());
-    if (_musicActiveForSession) unawaited(_playSelectedMusic());
+    unawaited(
+      _music.onSessionRunning(startingNewSession: startingNewSession).then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
   }
 
   void _closeSession() {
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
-    _musicActiveForSession = false;
     unawaited(_stopFocusMusic());
     setState(() {
       _sessionStartedAt = null;
@@ -496,7 +445,6 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     }
 
     _timer?.cancel();
-    _musicActiveForSession = _musicAutoPlay && _selectedMusic != null;
     setState(() {
       _selectedMinutes = duration;
       _remainingSeconds = remaining;
@@ -573,7 +521,6 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     if (_focusDurationEnded || _isFinishing) return;
     _focusDurationEnded = true;
     _timer?.cancel();
-    _musicActiveForSession = false;
     unawaited(_stopFocusMusic());
     if (mounted) {
       setState(() {
@@ -705,7 +652,6 @@ class _FocusTimerTabState extends State<FocusTimerTab>
     final taskId = _taskId;
     _timer?.cancel();
     unawaited(_cancelFocusAlarm());
-    _musicActiveForSession = false;
     unawaited(_stopFocusMusic());
     if (taskId != null) {
       setState(() => _remainingSeconds = 0);
@@ -717,7 +663,6 @@ class _FocusTimerTabState extends State<FocusTimerTab>
 
   Future<void> _finishSessionWithAnimation() async {
     if (_isFinishing) return;
-    _musicActiveForSession = false;
     unawaited(_stopFocusMusic());
     setState(() => _isFinishing = true);
     unawaited(HapticFeedback.mediumImpact());
@@ -940,7 +885,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                         _FocusMusicMenuButton(
                           selectedMusic: _selectedMusic,
                           autoPlay: _musicAutoPlay,
-                          isPlaying: _focusMusicPlayer.playing,
+                          isPlaying: _musicPlaying,
                           onSelected: (value) =>
                               unawaited(_handleMusicMenuSelection(value)),
                         ),
@@ -1035,7 +980,7 @@ class _FocusTimerTabState extends State<FocusTimerTab>
                         soundTitle: context.l10n(
                           _selectedMusic?.title ?? context.l10n('Ses yok'),
                         ),
-                        soundPlaying: _focusMusicPlayer.playing,
+                        soundPlaying: _musicPlaying,
                         selectedMusic: _selectedMusic,
                         autoPlay: _musicAutoPlay,
                         onRemoveMinute: _removeMinute,
@@ -1062,19 +1007,16 @@ class _FocusTimerTabState extends State<FocusTimerTab>
   }
 
   Future<void> _toggleAiSound() async {
-    if (_selectedMusic == null) {
-      final first = _focusMusicTracks.firstOrNull;
-      if (first == null) return;
-      await _handleMusicMenuSelection(_FocusMusicMenuValue.track(first.id));
-      return;
+    try {
+      await _music.togglePlayback(sessionActive: _sessionActive);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n('Müzik şu anda oynatılamadı.'))),
+        );
+      }
     }
-    if (_focusMusicPlayer.playing) {
-      _musicActiveForSession = false;
-      await _pauseFocusMusic();
-      return;
-    }
-    _musicActiveForSession = true;
-    await _playSelectedMusic(showError: true);
+    if (mounted) setState(() {});
   }
 }
 
@@ -1197,7 +1139,7 @@ class _AiActiveFocusCard extends StatelessWidget {
   final bool isRunning;
   final String soundTitle;
   final bool soundPlaying;
-  final _FocusMusicTrack? selectedMusic;
+  final FocusMusicTrack? selectedMusic;
   final bool autoPlay;
   final VoidCallback onRemoveMinute;
   final VoidCallback onAddMinute;
@@ -2245,7 +2187,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
     this.child,
   });
 
-  final _FocusMusicTrack? selectedMusic;
+  final FocusMusicTrack? selectedMusic;
   final bool autoPlay;
   final bool isPlaying;
   final ValueChanged<String> onSelected;
@@ -2270,9 +2212,9 @@ class _FocusMusicMenuButton extends StatelessWidget {
     ),
     onSelected: onSelected,
     itemBuilder: (context) => [
-      for (final track in _focusMusicTracks)
+      for (final track in focusMusicTracks)
         PopupMenuItem<String>(
-          value: _FocusMusicMenuValue.track(track.id),
+          value: FocusMusicMenuValue.track(track.id),
           height: 46,
           padding: const EdgeInsets.symmetric(horizontal: 7),
           child: _MusicMenuItemContent(
@@ -2282,7 +2224,7 @@ class _FocusMusicMenuButton extends StatelessWidget {
           ),
         ),
       PopupMenuItem<String>(
-        value: _FocusMusicMenuValue.none,
+        value: FocusMusicMenuValue.none,
         height: 46,
         padding: const EdgeInsets.symmetric(horizontal: 7),
         child: _MusicMenuItemContent(
@@ -2294,8 +2236,8 @@ class _FocusMusicMenuButton extends StatelessWidget {
       const PopupMenuDivider(height: 9),
       PopupMenuItem<String>(
         value: autoPlay
-            ? _FocusMusicMenuValue.autoPlayOff
-            : _FocusMusicMenuValue.autoPlayOn,
+            ? FocusMusicMenuValue.autoPlayOff
+            : FocusMusicMenuValue.autoPlayOn,
         height: 46,
         padding: const EdgeInsets.symmetric(horizontal: 7),
         child: _MusicMenuItemContent(
@@ -2414,59 +2356,6 @@ class _MusicMenuItemContent extends StatelessWidget {
     ),
   );
 }
-
-class _FocusMusicTrack {
-  const _FocusMusicTrack({
-    required this.id,
-    required this.title,
-    required this.assetPath,
-  });
-
-  final String id;
-  final String title;
-  final String assetPath;
-}
-
-abstract final class _FocusMusicMenuValue {
-  static const none = 'music:none';
-  static const autoPlayOn = 'autoplay:on';
-  static const autoPlayOff = 'autoplay:off';
-
-  static String track(String id) => 'music:$id';
-}
-
-const _focusMusicTracks = <_FocusMusicTrack>[
-  _FocusMusicTrack(
-    id: 'gece-akisi',
-    title: 'Gece Akışı',
-    assetPath: 'assets/focus_music/01-gece-akisi.m4a',
-  ),
-  _FocusMusicTrack(
-    id: 'gun-isigi',
-    title: 'Gün Işığı',
-    assetPath: 'assets/focus_music/02-gun-isigi.m4a',
-  ),
-  _FocusMusicTrack(
-    id: 'sessiz-odak',
-    title: 'Sessiz Odak',
-    assetPath: 'assets/focus_music/03-sessiz-odak.m4a',
-  ),
-  _FocusMusicTrack(
-    id: 'hizli-baslangic',
-    title: 'Hızlı Başlangıç',
-    assetPath: 'assets/focus_music/04-hizli-baslangic.m4a',
-  ),
-  _FocusMusicTrack(
-    id: 'derin-akis',
-    title: 'Derin Akış',
-    assetPath: 'assets/focus_music/05-derin-akis.m4a',
-  ),
-  _FocusMusicTrack(
-    id: 'kafa-toparlama',
-    title: 'Kafa Toparlama',
-    assetPath: 'assets/focus_music/06-kafa-toparlama.m4a',
-  ),
-];
 
 class _TimerControlButton extends StatelessWidget {
   const _TimerControlButton({

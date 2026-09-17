@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -179,6 +180,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     switch (command.action) {
       case HomeWidgetLaunchAction.focus:
       case HomeWidgetLaunchAction.focusScreen:
+        _ensureFocusLaunchFromActiveProgress();
         unawaited(
           _openPlannerAi(
             initialMode: PlannerAiChatMode.focus,
@@ -187,6 +189,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
           ),
         );
       case HomeWidgetLaunchAction.focusStop:
+        unawaited(ref.read(focusMusicServiceProvider).endSession());
         unawaited(
           _openPlannerAi(
             initialMode: PlannerAiChatMode.focus,
@@ -222,6 +225,21 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
         final taskId = command.taskId;
         if (taskId != null) unawaited(_completeWidgetTask(taskId));
     }
+  }
+
+  void _ensureFocusLaunchFromActiveProgress() {
+    if (ref.read(focusTaskLaunchProvider) != null) return;
+    final progress = ref.read(activeFocusTaskProvider);
+    if (progress == null || progress.remainingSeconds <= 0) return;
+    ref.read(focusTaskLaunchProvider.notifier).state = FocusTaskLaunch(
+      taskId: progress.taskId,
+      title: progress.title,
+      durationMinutes: math.max(1, (progress.totalSeconds / 60).ceil()),
+      icon: progress.icon,
+      color: '#6C5CE7',
+      startedAt: progress.startedAt,
+      endsAt: progress.endsAt,
+    );
   }
 
   Future<void> _dismissWidgetOverlays() async {
@@ -329,6 +347,7 @@ class _TodoHomeScreenState extends ConsumerState<TodoHomeScreen> {
     if (ref.read(focusTaskLaunchProvider)?.taskId == progress.taskId) {
       ref.read(focusTaskLaunchProvider.notifier).state = null;
     }
+    unawaited(ref.read(focusMusicServiceProvider).endSession());
     await _completeFocusedTask(progress.taskId);
     if (!mounted) return;
     await ref.read(liveActivityServiceProvider).endFocus();

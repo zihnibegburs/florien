@@ -14,6 +14,7 @@ import 'package:florien/core/services/apple_health_mood_service.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/calendar_connection_service.dart';
 import 'package:florien/core/services/home_screen_widget_service.dart';
+import 'package:florien/core/services/focus_music_service.dart';
 import 'package:florien/core/services/live_activity_service.dart';
 import 'package:florien/core/services/social_auth_service.dart';
 import 'package:florien/core/services/task_alarm_service.dart';
@@ -184,6 +185,13 @@ final liveActivityServiceProvider = Provider<FlorienLiveActivityService>(
   (ref) => FlorienLiveActivityService(),
 );
 
+final focusMusicServiceProvider = Provider<FocusMusicService>((ref) {
+  final service = FocusMusicService();
+  unawaited(service.ensureSettingsLoaded());
+  ref.onDispose(() => unawaited(service.dispose()));
+  return service;
+});
+
 final liveActivityPreferencesProvider = FutureProvider<LiveActivityPreferences>(
   (ref) => ref.watch(settingsStorageProvider).getLiveActivityPreferences(),
 );
@@ -285,6 +293,7 @@ class AppProfilesNotifier extends AsyncNotifier<AppProfilesState> {
     ref.read(activeFocusTaskProvider.notifier).state = null;
     ref.read(focusTaskLaunchProvider.notifier).state = null;
     ref.read(focusTimerResetSignalProvider.notifier).state++;
+    unawaited(ref.read(focusMusicServiceProvider).endSession());
     ref.invalidate(inboxProvider);
     ref.invalidate(todoListsProvider);
     ref.invalidate(dailyTimelineProvider);
@@ -882,6 +891,7 @@ void abandonFocusForTask(Ref ref, String taskId) {
     ref.read(focusTimerResetSignalProvider.notifier).state++;
     unawaited(ref.read(taskAlarmServiceProvider).cancelFocusTimerAlarm());
     unawaited(ref.read(liveActivityServiceProvider).endFocus());
+    unawaited(ref.read(focusMusicServiceProvider).endSession());
   }
 }
 

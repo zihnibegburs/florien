@@ -517,6 +517,7 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                       FocusTimerTab(
                         key: const ValueKey('planner-ai-focus-timer'),
                         aiShellLayout: true,
+                        musicService: ref.read(focusMusicServiceProvider),
                         launchRequest: requestedFocus ?? scheduledFocus,
                         resumeProgress: activeFocus,
                         resetSignal: ref.watch(focusTimerResetSignalProvider),
