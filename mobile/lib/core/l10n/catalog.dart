@@ -8630,6 +8630,17 @@ const kL10nTable = <String, List<String>>{
     "{count} 项已加入待办。想的话我们还可以再做一份计划。",
     "أُضيفت {count} مهام إلى To-do. يمكننا إعداد خطة أخرى إن أحببت.",
   ],
+  "{count} görev {list} listene eklendi. İstersen yeni bir plan daha hazırlayabiliriz.": <String>[
+    "{count} tasks were added to {list}. We can make another plan if you like.",
+    "Se añadieron {count} tareas a {list}. Podemos hacer otro plan si quieres.",
+    "{count} Aufgaben sind auf {list}. Wir können einen weiteren Plan machen.",
+    "{count} tâches ont été ajoutées à {list}. On peut faire un autre plan si tu veux.",
+    "{count} tarefas foram para {list}. Podemos fazer outro plano se quiser.",
+    "{list}に{count}件足したよ。別の計画も作れる。",
+    "{list}에 {count}개가 추가됐어요. 원하면 다른 계획도 만들 수 있어요.",
+    "{count} 项已加入{list}。想的话我们还可以再做一份计划。",
+    "أُضيفت {count} مهام إلى {list}. يمكننا إعداد خطة أخرى إن أحببت.",
+  ],
   "Görevler To-do listesine eklenemedi.": <String>[
     "The tasks couldn’t be added to the to-do list.",
     "No se pudieron añadir las tareas al To-do.",

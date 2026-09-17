@@ -46,7 +46,7 @@ export async function callGeminiJson(
       config: {
         abortSignal: controller.signal,
         systemInstruction: request.systemPrompt ??
-          "Sen yardımcı bir planlama asistanısın. Her zaman geçerli JSON döndür.",
+          "You are a helpful planning assistant. Always return valid JSON.",
         maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
         temperature: 0.2,
         responseMimeType: "application/json",

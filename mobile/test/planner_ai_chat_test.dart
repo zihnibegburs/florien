@@ -8,6 +8,7 @@ import 'package:florien/core/models/adhd_models.dart';
 import 'package:florien/core/models/models.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
+import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai_animation.dart';
 import 'package:florien/features/premium/premium_membership.dart';
@@ -15,12 +16,24 @@ import 'package:florien/features/providers.dart';
 import 'package:florien/features/todo/planner_ai_chat_screen.dart';
 
 class _FakePlannerAiGateway implements PlannerAiGateway {
+  _FakePlannerAiGateway({this.todoListName});
+
+  final String? todoListName;
+  String? lastLanguage;
+  List<String> lastTodoListNames = const [];
+
   @override
-  Future<PlannerAiReply> send(List<PlannerChatTurn> conversation) async {
-    expect(conversation.last.content, 'Bugün koşup kitap okuyacağım');
-    return const PlannerAiReply(
+  Future<PlannerAiReply> send(
+    List<PlannerChatTurn> conversation, {
+    String language = defaultLanguageCode,
+    List<String> todoListNames = const [],
+  }) async {
+    lastLanguage = language;
+    lastTodoListNames = todoListNames;
+    return PlannerAiReply(
       message: 'Bunu iki net göreve ayırdım.',
-      tasks: [
+      todoListName: todoListName,
+      tasks: const [
         PlannerTaskSuggestion(title: 'Koşuya çık', durationMinutes: 30),
         PlannerTaskSuggestion(title: 'Kitap oku', durationMinutes: 20),
       ],
@@ -139,6 +152,46 @@ class _FreeQuotaExhaustedPremiumNotifier extends PremiumMembershipNotifier {
   }
 }
 
+class _NamedTodoListsNotifier extends TodoListsNotifier {
+  @override
+  Future<List<TodoListDefinition>> build() async => const [
+    TodoListDefinition(id: 'work', name: 'Work'),
+    TodoListDefinition(id: 'groceries', name: 'Groceries'),
+  ];
+}
+
+class _EmptyTodoListsNotifier extends TodoListsNotifier {
+  @override
+  Future<List<TodoListDefinition>> build() async => const [];
+}
+
+class _SeededInboxNotifier extends InboxNotifier {
+  @override
+  Future<List<TaskModel>> build() async => const [
+    TaskModel(
+      id: 'default-1',
+      title: 'Buy flowers',
+      color: '#4F52B2',
+      icon: 'task',
+      durationMinutes: 15,
+      status: TaskStatus.pending,
+      sortOrder: 0,
+      isInbox: true,
+    ),
+    TaskModel(
+      id: 'work-1',
+      title: 'Write report',
+      color: '#4F52B2',
+      icon: 'task',
+      durationMinutes: 30,
+      status: TaskStatus.pending,
+      sortOrder: 1,
+      isInbox: true,
+      todoListId: 'work',
+    ),
+  ];
+}
+
 void main() {
   setUp(_AiInboxNotifier.addedTasks.clear);
 
@@ -155,6 +208,7 @@ void main() {
           premiumMembershipProvider.overrideWith(
             _FreeQuotaExhaustedPremiumNotifier.new,
           ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -193,6 +247,7 @@ void main() {
           premiumMembershipProvider.overrideWith(
             _PremiumMembershipNotifier.new,
           ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -222,6 +277,10 @@ void main() {
     expect(find.text('Bunu iki net göreve ayırdım.'), findsOneWidget);
     expect(find.text('Koşuya çık'), findsOneWidget);
     expect(find.text('Kitap oku'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-list-picker')),
+      findsOneWidget,
+    );
     expect(_AiInboxNotifier.addedTasks, isEmpty);
 
     await tester.tap(find.byKey(const ValueKey('planner-ai-approve')));
@@ -230,6 +289,10 @@ void main() {
     expect(_AiInboxNotifier.addedTasks.map((task) => task.title), [
       'Koşuya çık',
       'Kitap oku',
+    ]);
+    expect(_AiInboxNotifier.addedTasks.map((task) => task.todoListId), [
+      null,
+      null,
     ]);
     expect(find.text('Eklendi'), findsOneWidget);
   });
@@ -248,6 +311,7 @@ void main() {
           premiumMembershipProvider.overrideWith(
             _PremiumMembershipNotifier.new,
           ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -356,6 +420,7 @@ void main() {
           premiumMembershipProvider.overrideWith(
             _PremiumMembershipNotifier.new,
           ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
         ],
         child: MaterialApp(
           theme: FlorienTheme.light,
@@ -398,6 +463,7 @@ void main() {
           premiumMembershipProvider.overrideWith(
             _PremiumMembershipNotifier.new,
           ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
           stringsProvider.overrideWithValue(const S('en')),
         ],
         child: MaterialApp(
@@ -411,5 +477,172 @@ void main() {
     expect(find.byKey(const ValueKey('planner-ai-mode-focus')), findsOneWidget);
     expect(find.text('Focus'), findsOneWidget);
     expect(find.text('Odak'), findsNothing);
+  });
+
+  testWidgets('referenced todo list is preselected and can be changed', (
+    tester,
+  ) async {
+    final gateway = _FakePlannerAiGateway(todoListName: 'Work');
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(gateway),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+          todoListsProvider.overrideWith(_NamedTodoListsNotifier.new),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('planner-ai-input')),
+      'Add a run and reading to Work',
+    );
+    await tester.tap(find.byKey(const ValueKey('planner-ai-send')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.lastTodoListNames, ['Work', 'Groceries']);
+    expect(find.text('Work'), findsWidgets);
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-list-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('planner-ai-list-groceries')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Groceries'), findsWidgets);
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-approve')));
+    await tester.pumpAndSettle();
+
+    expect(_AiInboxNotifier.addedTasks.map((task) => task.todoListId).toSet(), {
+      'groceries',
+    });
+  });
+
+  testWidgets('unreferenced suggestions stay on the default to-do list', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+          todoListsProvider.overrideWith(_NamedTodoListsNotifier.new),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('planner-ai-input')),
+      'I will go to work tomorrow after reading',
+    );
+    await tester.tap(find.byKey(const ValueKey('planner-ai-send')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-approve')));
+    await tester.pumpAndSettle();
+
+    expect(_AiInboxNotifier.addedTasks.map((task) => task.todoListId), [
+      null,
+      null,
+    ]);
+  });
+
+  testWidgets('planner chat sends the app language to the AI', (tester) async {
+    final gateway = _FakePlannerAiGateway();
+    ActiveLanguage.code = 'en';
+    addTearDown(() => ActiveLanguage.code = 'tr');
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(gateway),
+          inboxProvider.overrideWith(_AiInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+          todoListsProvider.overrideWith(_EmptyTodoListsNotifier.new),
+          stringsProvider.overrideWithValue(const S('en')),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('planner-ai-input')),
+      'Plan a morning run and some reading',
+    );
+    await tester.tap(find.byKey(const ValueKey('planner-ai-send')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.lastLanguage, 'en');
+  });
+
+  testWidgets('todo card can switch lists when custom lists exist', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plannerAiGatewayProvider.overrideWithValue(_FakePlannerAiGateway()),
+          inboxProvider.overrideWith(_SeededInboxNotifier.new),
+          premiumMembershipProvider.overrideWith(
+            _PremiumMembershipNotifier.new,
+          ),
+          todoListsProvider.overrideWith(_NamedTodoListsNotifier.new),
+        ],
+        child: MaterialApp(
+          theme: FlorienTheme.light,
+          home: const PlannerAiChatScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-mode-todo')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('planner-ai-todo-card')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('planner-ai-todo-list-picker')),
+      findsOneWidget,
+    );
+    expect(find.text('Buy flowers'), findsOneWidget);
+    expect(find.text('Write report'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('planner-ai-todo-list-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('planner-ai-todo-list-work')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Work'), findsWidgets);
+    expect(find.text('Write report'), findsOneWidget);
+    expect(find.text('Buy flowers'), findsNothing);
   });
 }

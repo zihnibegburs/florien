@@ -53,4 +53,45 @@ void main() {
       plannerAiChatMaxCharacters,
     );
   });
+
+  test(
+    'resolvePlannerAiTodoListId prefers a named list the user mentioned',
+    () {
+      const lists = [
+        PlannerAiListOption(id: 'work', name: 'Work'),
+        PlannerAiListOption(id: 'groceries', name: 'Groceries'),
+      ];
+
+      expect(
+        resolvePlannerAiTodoListId(
+          userTexts: const ['Add milk and eggs to Groceries'],
+          lists: lists,
+        ),
+        'groceries',
+      );
+      expect(
+        resolvePlannerAiTodoListId(
+          userTexts: const ['Plan a morning run and some reading'],
+          lists: lists,
+          suggestedName: 'Work',
+        ),
+        'work',
+      );
+      expect(
+        resolvePlannerAiTodoListId(
+          userTexts: const ['I will go to work tomorrow after reading'],
+          lists: lists,
+        ),
+        isNull,
+      );
+      expect(
+        resolvePlannerAiTodoListId(
+          userTexts: const ['Add these to my to-do'],
+          lists: lists,
+          suggestedName: 'To-do',
+        ),
+        isNull,
+      );
+    },
+  );
 }

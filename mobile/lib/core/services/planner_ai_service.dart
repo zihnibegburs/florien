@@ -78,11 +78,13 @@ class PlannerAiReply {
     required this.message,
     required this.tasks,
     this.usage,
+    this.todoListName,
   });
 
   final String message;
   final List<PlannerTaskSuggestion> tasks;
   final AiChatUsage? usage;
+  final String? todoListName;
 }
 
 abstract interface class TaskBreakdownService {
@@ -119,7 +121,10 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
             'assistBreakdown',
             options: HttpsCallableOptions(timeout: const Duration(seconds: 40)),
           )
-          .call(<String, Object?>{'task': title});
+          .call(<String, Object?>{
+            'task': title,
+            'language': ActiveLanguage.code,
+          });
       final raw = result.data;
       if (raw is! Map)
         throw PlannerAiException(ActiveLanguage.s('Geçersiz AI yanıtı.'));
@@ -159,7 +164,11 @@ class FirebaseTaskBreakdownService implements TaskBreakdownService {
 }
 
 abstract interface class PlannerAiGateway {
-  Future<PlannerAiReply> send(List<PlannerChatTurn> conversation);
+  Future<PlannerAiReply> send(
+    List<PlannerChatTurn> conversation, {
+    String language = defaultLanguageCode,
+    List<String> todoListNames = const [],
+  });
 }
 
 class FirebasePlannerAiGateway implements PlannerAiGateway {
@@ -168,7 +177,11 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
   final FirebaseFunctions _functions;
 
   @override
-  Future<PlannerAiReply> send(List<PlannerChatTurn> conversation) async {
+  Future<PlannerAiReply> send(
+    List<PlannerChatTurn> conversation, {
+    String language = defaultLanguageCode,
+    List<String> todoListNames = const [],
+  }) async {
     final callable = _functions.httpsCallable(
       'assistPlannerChat',
       options: HttpsCallableOptions(timeout: const Duration(seconds: 40)),
@@ -178,6 +191,8 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
       final payloadTurns = trimConversationForAiRequest(conversation);
       result = await callable.call(<String, Object?>{
         'messages': payloadTurns.map((turn) => turn.toJson()).toList(),
+        'language': language,
+        'todoListNames': todoListNames,
       });
     } on FirebaseFunctionsException catch (error, stackTrace) {
       debugPrint(
@@ -208,6 +223,7 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
           .take(8)
           .toList(growable: false);
       final message = (data['reply']?.toString() ?? '').trim();
+      final todoListName = (data['todoListName']?.toString() ?? '').trim();
       return PlannerAiReply(
         message: message.isEmpty
             ? ActiveLanguage.s(
@@ -216,6 +232,7 @@ class FirebasePlannerAiGateway implements PlannerAiGateway {
             : message,
         tasks: tasks,
         usage: AiChatUsage.fromJson(data['usage']),
+        todoListName: todoListName.isEmpty ? null : todoListName,
       );
     } catch (error, stackTrace) {
       debugPrint('assistPlannerChat response failed: $error\n$stackTrace');
@@ -333,4 +350,86 @@ String _retrySuffix(Object? details) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return ' ${ActiveLanguage.s('{hour}:{minute} sonrasında tekrar deneyebilirsin.', {'hour': hour, 'minute': minute})}';
+}
+
+class PlannerAiListOption {
+  const PlannerAiListOption({required this.id, required this.name});
+
+  final String id;
+  final String name;
+}
+
+const _defaultTodoListNames = {
+  'to-do',
+  'todo',
+  'to do',
+  'inbox',
+  'default',
+  'yapılacaklar',
+  'varsayılan',
+};
+
+String _normalizePlannerListName(String name) =>
+    name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+bool isDefaultPlannerTodoListName(String name) {
+  final normalized = _normalizePlannerListName(name);
+  return normalized.isEmpty || _defaultTodoListNames.contains(normalized);
+}
+
+String? resolvePlannerAiTodoListId({
+  required Iterable<String> userTexts,
+  required Iterable<PlannerAiListOption> lists,
+  String? suggestedName,
+}) {
+  final options = lists.toList(growable: false);
+  final fromSuggestion = matchPlannerTodoListIdByName(options, suggestedName);
+  if (fromSuggestion != null) return fromSuggestion;
+  return matchReferencedPlannerTodoListId(userTexts, options);
+}
+
+String? matchPlannerTodoListIdByName(
+  Iterable<PlannerAiListOption> lists,
+  String? name,
+) {
+  final needle = _normalizePlannerListName(name ?? '');
+  if (needle.isEmpty || isDefaultPlannerTodoListName(needle)) return null;
+  for (final list in lists) {
+    if (_normalizePlannerListName(list.name) == needle) return list.id;
+  }
+  return null;
+}
+
+String? matchReferencedPlannerTodoListId(
+  Iterable<String> userTexts,
+  Iterable<PlannerAiListOption> lists,
+) {
+  final text = userTexts.join('\n');
+  if (text.trim().isEmpty) return null;
+  final sorted = [...lists]
+    ..sort((a, b) => b.name.trim().length.compareTo(a.name.trim().length));
+  for (final list in sorted) {
+    if (list.name.trim().length < 2) continue;
+    if (_mentionsPlannerListAsDestination(text, list.name)) return list.id;
+  }
+  return null;
+}
+
+bool _mentionsPlannerListAsDestination(String text, String name) {
+  final escaped = RegExp.escape(name.trim());
+  if (escaped.isEmpty) return false;
+  return RegExp(
+    '(?:'
+    '(?:add|put|move|save|ekle|koy)\\b[^\\n]{0,80}'
+    '(?:to|into|onto|on|in)?\\s+(?:my\\s+|the\\s+|our\\s+)?'
+    '$escaped(?:\\s+lists?)?'
+    '|'
+    '(?:to|into|onto|on)\\s+(?:my\\s+|the\\s+|our\\s+)'
+    '$escaped(?:\\s+lists?)?'
+    '|'
+    '$escaped\\s+lists?(?:e(?:sine)?)?'
+    ')',
+    caseSensitive: false,
+    unicode: true,
+  ).hasMatch(text);
 }

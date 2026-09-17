@@ -5,6 +5,7 @@ import 'package:florien/core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florien/core/services/planner_ai_service.dart';
 import 'package:florien/core/services/speech_input_service.dart';
+import 'package:florien/core/storage/todo_list_storage.dart';
 import 'package:florien/core/theme/florien_theme.dart';
 import 'package:florien/core/widgets/florien_ai.dart';
 import 'package:florien/core/widgets/florien_duration_picker.dart';
@@ -301,7 +302,16 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                 PlannerChatTurn(role: message.role, content: message.text),
           )
           .toList(growable: false);
-      final reply = await ref.read(plannerAiGatewayProvider).send(conversation);
+      final lists =
+          ref.read(todoListsProvider).valueOrNull ??
+          const <TodoListDefinition>[];
+      final reply = await ref
+          .read(plannerAiGatewayProvider)
+          .send(
+            conversation,
+            language: ActiveLanguage.code,
+            todoListNames: [for (final list in lists) list.name],
+          );
       if (!mounted) return;
       setState(() {
         if (reply.usage != null) {
@@ -312,6 +322,16 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
             role: 'assistant',
             text: reply.message,
             tasks: reply.tasks,
+            selectedTodoListId: resolvePlannerAiTodoListId(
+              userTexts: _messages
+                  .where((message) => message.role == 'user')
+                  .map((message) => message.text),
+              lists: [
+                for (final list in lists)
+                  PlannerAiListOption(id: list.id, name: list.name),
+              ],
+              suggestedName: reply.todoListName,
+            ),
           ),
         );
       });
@@ -363,17 +383,26 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
               title: task.title,
               durationMinutes: task.durationMinutes,
               icon: classification.category.storageName,
+              todoListId: message.selectedTodoListId,
             );
       }
       if (!mounted) return;
+      final lists =
+          ref.read(todoListsProvider).valueOrNull ??
+          const <TodoListDefinition>[];
+      final listName = _plannerTodoListName(
+        context,
+        lists,
+        message.selectedTodoListId,
+      );
       setState(() {
         message.decision = _ProposalDecision.approved;
         _messages.add(
           _PlannerChatMessage(
             role: 'assistant',
             text: context.l10n(
-              '{count} görev To-do listene eklendi. İstersen yeni bir plan daha hazırlayabiliriz.',
-              {'count': '${message.tasks.length}'},
+              '{count} görev {list} listene eklendi. İstersen yeni bir plan daha hazırlayabiliriz.',
+              {'count': '${message.tasks.length}', 'list': listName},
             ),
           ),
         );
@@ -407,6 +436,63 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _pickTodoListForMessage(int messageIndex) async {
+    final message = _messages[messageIndex];
+    if (message.decision != _ProposalDecision.pending) return;
+    const defaultList = '__default_todo_list__';
+    final lists =
+        ref.read(todoListsProvider).valueOrNull ?? const <TodoListDefinition>[];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 8),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+              child: Text(
+                context.l10n('Liste seç'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ListTile(
+              key: const ValueKey('planner-ai-list-default'),
+              leading: const Icon(Icons.checklist_rounded),
+              title: Text(context.l10n('To-do')),
+              subtitle: Text(context.l10n('Varsayılan yapılacaklar listesi')),
+              trailing: message.selectedTodoListId == null
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () => Navigator.pop(context, defaultList),
+            ),
+            for (final list in lists)
+              ListTile(
+                key: ValueKey('planner-ai-list-${list.id}'),
+                leading: const Icon(Icons.list_alt_rounded),
+                title: Text(list.name),
+                subtitle: list.description.isEmpty
+                    ? null
+                    : Text(
+                        list.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                trailing: message.selectedTodoListId == list.id
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.pop(context, list.id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      message.selectedTodoListId = selected == defaultList ? null : selected;
+    });
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
@@ -434,6 +520,9 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
     final alarms = ref.read(taskAlarmServiceProvider);
     final chatUsage = _chatUsage ?? premium?.aiChatUsage;
     final requiresPremiumToAdd = premium?.hasActivePremium != true;
+    final todoLists =
+        ref.watch(todoListsProvider).valueOrNull ??
+        const <TodoListDefinition>[];
     final freeQuotaExhausted = !requiresPremiumToAdd
         ? false
         : chatUsage?.isExhausted == true;
@@ -497,9 +586,12 @@ class _PlannerAiChatScreenState extends ConsumerState<PlannerAiChatScreen> {
                           for (var index = 0; index < _messages.length; index++)
                             _ChatMessageBubble(
                               message: _messages[index],
+                              lists: todoLists,
                               requiresPremiumToAdd: requiresPremiumToAdd,
                               onApprove: () => unawaited(_approveTasks(index)),
                               onReject: () => _rejectTasks(index),
+                              onPickList: () =>
+                                  unawaited(_pickTodoListForMessage(index)),
                             ),
                           if (_sending) const _TypingBubble(),
                           if (_mode == PlannerAiChatMode.todo)
@@ -873,26 +965,32 @@ class _PlannerChatMessage {
     required this.role,
     required this.text,
     this.tasks = const [],
+    this.selectedTodoListId,
   });
 
   final String role;
   final String text;
   final List<PlannerTaskSuggestion> tasks;
+  String? selectedTodoListId;
   _ProposalDecision decision = _ProposalDecision.pending;
 }
 
 class _ChatMessageBubble extends StatelessWidget {
   const _ChatMessageBubble({
     required this.message,
+    required this.lists,
     required this.requiresPremiumToAdd,
     required this.onApprove,
     required this.onReject,
+    required this.onPickList,
   });
 
   final _PlannerChatMessage message;
+  final List<TodoListDefinition> lists;
   final bool requiresPremiumToAdd;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final VoidCallback onPickList;
 
   @override
   Widget build(BuildContext context) {
@@ -913,8 +1011,26 @@ class _ChatMessageBubble extends StatelessWidget {
           if (message.tasks.isNotEmpty) ...[
             const SizedBox(height: 14),
             for (final task in message.tasks) ...[
-              _SuggestedTaskCard(task: task),
+              _SuggestedTaskCard(
+                task: task,
+                listName: _plannerTodoListName(
+                  context,
+                  lists,
+                  message.selectedTodoListId,
+                ),
+              ),
               const SizedBox(height: 8),
+            ],
+            if (message.decision == _ProposalDecision.pending) ...[
+              _TodoListPickerButton(
+                listName: _plannerTodoListName(
+                  context,
+                  lists,
+                  message.selectedTodoListId,
+                ),
+                onTap: onPickList,
+              ),
+              const SizedBox(height: 10),
             ],
             const SizedBox(height: 6),
             if (message.decision == _ProposalDecision.pending)
@@ -1047,10 +1163,70 @@ class _PremiumGradientActionButton extends StatelessWidget {
   }
 }
 
+class _TodoListPickerButton extends StatelessWidget {
+  const _TodoListPickerButton({required this.listName, required this.onTap});
+
+  final String listName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.palette.surfaceMuted,
+      borderRadius: BorderRadius.circular(FlorienRadius.md),
+      child: InkWell(
+        key: const ValueKey('planner-ai-list-picker'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(FlorienRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          child: Row(
+            children: [
+              Icon(
+                Icons.format_list_bulleted_rounded,
+                size: 18,
+                color: context.palette.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n('Liste seç'),
+                      style: TextStyle(
+                        color: context.palette.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      listName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.expand_more_rounded,
+                size: 20,
+                color: context.palette.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SuggestedTaskCard extends StatelessWidget {
-  const _SuggestedTaskCard({required this.task});
+  const _SuggestedTaskCard({required this.task, required this.listName});
 
   final PlannerTaskSuggestion task;
+  final String listName;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1095,9 +1271,7 @@ class _SuggestedTaskCard extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               Text(
-                context.l10n('To-do • {duration}', {
-                  'duration': _durationLabel(task.durationMinutes),
-                }),
+                '$listName • ${_durationLabel(task.durationMinutes)}',
                 style: TextStyle(
                   color: context.palette.textSecondary,
                   fontSize: 12,
@@ -1182,4 +1356,16 @@ String _durationLabel(int minutes) {
     'hours': '$hours',
     'minutes': '$remaining',
   });
+}
+
+String _plannerTodoListName(
+  BuildContext context,
+  List<TodoListDefinition> lists,
+  String? todoListId,
+) {
+  if (todoListId == null) return context.l10n('To-do');
+  for (final list in lists) {
+    if (list.id == todoListId) return list.name;
+  }
+  return context.l10n('To-do');
 }
